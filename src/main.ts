@@ -2,11 +2,11 @@ import "./style.css";
 
 import GameScene from "./game/game";
 
-import {PerspectiveCamera, WebGLRenderer, Vector2, Raycaster, Intersection} from "three";
+import {PerspectiveCamera, WebGLRenderer, Vector2, Raycaster, Intersection, Mesh} from "three";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-import { Piece } from "./game/piece";
+import {Selectable} from "./game/selectable";
 
 let camera: PerspectiveCamera;
 let renderer: WebGLRenderer;
@@ -18,9 +18,7 @@ let raycaster: Raycaster;
 
 let game: GameScene;
 
-/*
-
- */
+//-----------------------------------------------------------------------------
 function onResize() {
   let width: number = window.innerWidth;
   let height: number = window.innerHeight;
@@ -32,9 +30,8 @@ function onResize() {
   camera.updateProjectionMatrix();
 }
 
-/*
+function onClick() { game.onClick(); }
 
- */
 function onPointerMove(event: any) {
   // calculate pointer position in normalized device coordinates
   // (-1 to +1) for both components
@@ -43,18 +40,7 @@ function onPointerMove(event: any) {
   pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 }
 
-/*
-TODO make it so clicking doesnt remove selection (unless new selectable piece available)
-TODO dont deselect builder after move (same builder must move)
-sets hoveredPiece to selectedPiece if selectable
- */
-function onClick(): void {game.onClick()}
-
-function onKeyDown(e: KeyboardEvent): void {
-  switch (e.key) {}
-}
-
-function hoverBuilder(): Piece {
+function hoverBuilder(): Selectable {
   //TODO Stop Pieces from knowing their positions
   //TODO getSelectablePieces should return dict<Piece, Position>
   raycaster.setFromCamera(pointer, camera);
@@ -62,10 +48,14 @@ function hoverBuilder(): Piece {
   let intersects: Intersection[] = raycaster.intersectObjects(game.getSelectablePieces());
   let distance: number = Math.min(...intersects.map( ({distance}) => distance));
   let closest: Intersection = intersects.filter(intersection => intersection.distance == distance)[0];
-  let piece: Piece | undefined = closest?.object.parent as Piece;
-  game.hoverPiece(piece);
-  return piece
+  let hovered: Selectable | undefined = closest?.object.parent as unknown as Selectable;
+  game.hover(hovered);
+  return hovered;
 }
+
+
+
+
 
 function init(){
   game = new GameScene();
@@ -96,7 +86,6 @@ function init(){
   controls.maxPolarAngle = Math.PI / 2;
 
   window.addEventListener("resize", onResize);
-  window.addEventListener("keydown", onKeyDown);
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("click", onClick);
 }
@@ -113,14 +102,12 @@ function render() {
   renderer.render(game, camera);
 }
 
-
 function animate() {
   clear();
   update();
   render();
   requestAnimationFrame(animate);
 }
-
 
 function main() {
   init();

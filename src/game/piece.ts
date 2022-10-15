@@ -2,12 +2,15 @@ import { BufferGeometry, Material, Mesh, MeshPhongMaterial, Object3D, Vector2 } 
 
 import { builderGeometry, baseGeometry, midGeometry, topGeometry} from "./stlloader";
 
-export class Piece extends Object3D {
+import {Selectable} from "./selectable";
+
+export class Piece extends Object3D implements Selectable{
   mesh: Mesh;
+  selectable: boolean = false;
+
   Type: number;
   height: number = 0;
-  selectable: boolean = false;
-  grid_location: Vector2;
+  grid_position: Vector2;
 
   constructor(type: PieceType, grid_location: Vector2) {
     super();
@@ -15,7 +18,7 @@ export class Piece extends Object3D {
     this.mesh = new Mesh(); // TODO fix
     this.Type = type;
     this.selectable = false;
-    this.grid_location = grid_location;
+    this.grid_position = grid_location;
 
     // ugly fixe TODO
     let Yoffset: number = 0;

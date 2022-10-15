@@ -2,16 +2,19 @@ import {Mesh, BoxGeometry, MeshBasicMaterial, Group, Vector2, Material} from "th
 
 import {Piece, PieceType} from "./piece";
 
+import {Selectable} from "./selectable";
+
 export enum SpaceType {
   Light= 0x609130,
   Dark = 0x437314
 }
 
-export class Space extends Group {
+export class Space extends Group implements Selectable{
   height: number = 0;
   grid_position: Vector2;
   pieces: Piece[] = new Array<Piece>();
-  button: Mesh;
+  selectable: boolean = true;
+  mesh: Mesh;
 
   constructor(type: SpaceType, grid_position: Vector2) {
     super();
@@ -20,7 +23,7 @@ export class Space extends Group {
     const material = new MeshBasicMaterial( {color: "blue", transparent: true, opacity: 0, depthWrite: false} );
     let geometry = new BoxGeometry( 0.8, 0.3, 0.8 );
     const mesh = new Mesh(geometry, material);
-    this.button = mesh;
+    this.mesh = mesh;
     this.add(mesh);
 
     this.grid_position = grid_position;
@@ -50,22 +53,30 @@ export class Space extends Group {
 
   }
 
-  possible(): boolean{
+  available(): boolean{
     if (this.pieces.length > 0) return !this.pieces[this.pieces.length-1].selectable;
     return true;
   }
 
   showButton(){
     console.log("MOSTRAR BOTÃO: Espaço [" + this.grid_position.x + "][" + this.grid_position.y + "]");
-    if (this.button.material instanceof Material) {
-      this.button.material.opacity = 0.2;
+    if (this.mesh.material instanceof Material) {
+      this.mesh.material.opacity = 0.2;
     }
   }
 
   hideButton(){
-    if (this.button.material instanceof Material) {
-      this.button.material.opacity = 0;
+    if (this.mesh.material instanceof Material) {
+      this.mesh.material.opacity = 0;
     }
+  }
+
+  dim(){
+    (this.mesh.material as Material).opacity = 0.8;
+  }
+
+  deDim(){
+    (this.mesh.material as Material).opacity = 0.2;
   }
 
   /**

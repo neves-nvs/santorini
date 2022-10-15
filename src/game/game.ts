@@ -4,11 +4,12 @@ import {
   AmbientLight,
   AxesHelper,
   GridHelper,
-  Vector2
+  Vector2, Mesh
 } from "three";
 
 import { Board, Move, MoveType } from "./board";
 import {Piece} from "./piece";
+import {Selectable} from "./selectable";
 
 export default class GameScene extends Scene {
   board: Board;
@@ -39,9 +40,9 @@ export default class GameScene extends Scene {
 
   }
 
-  getSelectablePieces(): Piece[] {return this.board.getSelectablePieces()}
+  getSelectablePieces(): Mesh[] { return this.board.getSelectablePieces(); }
 
-  hoverPiece(piece: Piece | undefined): void{this.board.hoverPiece(piece);}
+  hover(hovered: Selectable | undefined) {this.board.hover(hovered);}
 
   resetPiece(){ this.board.resetPiece(); }
 

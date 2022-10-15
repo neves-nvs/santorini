@@ -4,13 +4,16 @@ import { Piece, PieceType } from "./piece";
 
 import { SpaceType, Space } from "./space";
 
+import { Selectable, SelectableType } from "./selectable";
+
+
 export class Board extends Group {
   spaces;
   builders: Piece[];
-  adjacents: Spaces[];
 
-  hoveredPiece: Piece | undefined;
-  selectedPiece: Piece | undefined;
+  adjacents: Space[] | undefined;
+  hoveredPiece: Selectable | undefined;
+  selectedPiece: Selectable | undefined;
 
   constructor() {
     super();
@@ -72,8 +75,15 @@ export class Board extends Group {
     return this.spaces[position.x][position.y];
   }
 
-  getBuilders() {
-    return this.builders;
+  getSelectablePieces(): Mesh[] {
+    let selectablePieces: Mesh[] = this.getBuilders().map(b => b.mesh);
+    const builder: Selectable | undefined = this.selectedPiece;
+    if ( builder != undefined) {
+      const adjacentPieces = this.getAdjacentSpaces( builder.grid_position );
+      selectablePieces = selectablePieces.concat( adjacentPieces.filter(s => s.available()).map(s => s.mesh) );
+    }
+
+    return selectablePieces;
   }
 
   /**
@@ -120,9 +130,9 @@ export class Board extends Group {
 
   get_possible_moves() {}
 
-  hoverPiece(piece: Piece | undefined) {this.hoveredPiece = piece}
+  hover(hovered: Selectable | undefined) {this.hoveredPiece = hovered;}
 
-  getSelectablePieces(): Piece[] { return this.builders; }
+  getBuilders(): Piece[] { return this.builders; }
 
   resetPiece(){ this.hoveredPiece?.deDim(); }
 
@@ -142,7 +152,7 @@ export class Board extends Group {
   onClick(){
     if (this.selectedPiece && this.hoveredPiece){
       // remove previously adjacent spaces
-      this.adjacents.forEach( s => s.hideButton() );
+      this.adjacents?.forEach( s => s.hideButton() );
     }
     if (this.hoveredPiece) { // only deselect previous selected piece if click is on selectable piece
       // unselect previously selected piece
@@ -150,9 +160,10 @@ export class Board extends Group {
       this.selectedPiece = this.hoveredPiece;
 
       // show possible squares if there is selected piece
-      this.adjacents = this.getAdjacentSpaces(this.selectedPiece.grid_location);
+      this.adjacents = this.getAdjacentSpaces(this.selectedPiece.grid_position);
+
       for (let space of this.adjacents){
-        if (space.possible()) space.showButton()
+        if (space.available()) space.showButton()
       }
     }
 
