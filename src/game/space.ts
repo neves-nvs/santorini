@@ -48,7 +48,6 @@ export class Space extends Group implements Selectable{
     return piece
   }
 
-  //TODO decide whether new position "steals" from previous or vice-versa
   movePiece(space: Space){
     let len: number = space.pieces.length;
     if (len > 0 ){

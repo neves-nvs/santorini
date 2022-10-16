@@ -4,44 +4,46 @@ import {STLLoader} from "three/examples/jsm/loaders/STLLoader";
 
 export {builderGeometry, baseGeometry, midGeometry, topGeometry}
 
+console.time('STL file loading');
 
 const stlloader: STLLoader = new STLLoader();
 
-async function loadSTL(filePath: string): Promise<BufferGeometry> {
-    return await stlloader.loadAsync(filePath);
+async function loadSTL(filePath: string){
+    await delay(0);
+    return stlloader.loadAsync(filePath);
 }
 
-/*TODO make STL file loading concurrent
-const loadSTL_concurrentTest = async(filePath: string) => {
-    await delay(1000);
-    return stlloader.loadAsync(filePath);
-};
+/**
+ * used for testing loading times
+ * @param ms
+ */
 function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
-*/
 
-const ASSETS_FOLDER: string = "assets/";
+const locations: string[] = [
+    "assets/Builder.stl",
+    "assets/Base.stl",
+    "assets/Mid.stl",
+    "assets/Top.stl"
+];
 
-const builderFileLocation: string = ASSETS_FOLDER.concat("Builder.stl");
+let builderGeometry: BufferGeometry;
+let baseGeometry: BufferGeometry;
+let midGeometry: BufferGeometry;
+let topGeometry: BufferGeometry;
 
-const baseFileLocation: string = ASSETS_FOLDER.concat("Base.stl");
+async function loadAllSTL(locations: string[]){
+    const promises: Promise<BufferGeometry>[] = locations.map( location => loadSTL(location));
+    await Promise.all(promises).then( geometries => {
+        builderGeometry = geometries[0];
+        baseGeometry = geometries[1];
+        midGeometry = geometries[2];
+        topGeometry = geometries[3]
+        })
+}
 
-const midFileLocation: string = ASSETS_FOLDER.concat("Mid.stl");
+await loadAllSTL(locations);
 
-const topFileLocation: string = ASSETS_FOLDER.concat("Top.stl");
-
-/**
- *
- */
-const builderGeometry:BufferGeometry = await loadSTL(builderFileLocation);
-
-const baseGeometry: BufferGeometry = await loadSTL(baseFileLocation);
-
-const midGeometry: BufferGeometry = await loadSTL(midFileLocation);
-
-const topGeometry: BufferGeometry = await loadSTL(topFileLocation);
-
-
-
+console.timeEnd('STL file loading');
 
