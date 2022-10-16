@@ -1,24 +1,25 @@
-import { BufferGeometry, Material, Mesh, MeshPhongMaterial, Object3D, Vector2 } from "three";
+import {BufferGeometry, Material, Mesh, MeshPhongMaterial, Object3D} from "three";
 
-import { builderGeometry, baseGeometry, midGeometry, topGeometry} from "./stlloader";
+import {baseGeometry, builderGeometry, midGeometry, topGeometry} from "./stlloader";
 
-import {Selectable} from "./selectable";
+import {Selectable, SelectableType} from "./selectable";
 
 export class Piece extends Object3D implements Selectable{
   mesh: Mesh;
-  selectable: boolean = false;
+  sel_type = SelectableType.Block;
+  x: number;
+  y: number;
 
   Type: number;
   height: number = 0;
-  grid_position: Vector2;
 
-  constructor(type: PieceType, grid_location: Vector2) {
+  constructor(type: PieceType, x:number, y:number) {
     super();
 
     this.mesh = new Mesh(); // TODO fix
     this.Type = type;
-    this.selectable = false;
-    this.grid_position = grid_location;
+    this.x = x;
+    this.y = y;
 
     // ugly fixe TODO
     let Yoffset: number = 0;
@@ -27,7 +28,7 @@ export class Piece extends Object3D implements Selectable{
     let geometry: BufferGeometry = new BufferGeometry();
     switch (type) {
       case PieceType.Builder:
-        this.selectable = true;
+        this.sel_type = SelectableType.Builder;
         geometry = builderGeometry;
         Yoffset = 0.47;
         Xrotation = -Math.PI / 2;
@@ -63,7 +64,6 @@ export class Piece extends Object3D implements Selectable{
     this.mesh.position.setY(Yoffset);
     this.mesh.scale.set(scale, scale, scale);
     this.mesh.rotateX(Xrotation);
-    console.log(this.mesh);
 
     this.add(this.mesh);
   }
@@ -76,6 +76,10 @@ export class Piece extends Object3D implements Selectable{
   deDim(){
     (this.mesh.material as Material).transparent = false;
     (this.mesh.material as Material).opacity = 1;
+  }
+
+  onClick(): Selectable | undefined {
+    return (this as Selectable);
   }
 }
 

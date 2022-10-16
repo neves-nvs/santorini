@@ -1,8 +1,8 @@
-import {Mesh, BoxGeometry, MeshBasicMaterial, Group, Vector2, Material} from "three";
+import {BoxGeometry, Group, Material, Mesh, MeshBasicMaterial} from "three";
 
 import {Piece, PieceType} from "./piece";
 
-import {Selectable} from "./selectable";
+import {Selectable, SelectableType} from "./selectable";
 
 export enum SpaceType {
   Light= 0x609130,
@@ -10,13 +10,15 @@ export enum SpaceType {
 }
 
 export class Space extends Group implements Selectable{
-  height: number = 0;
-  grid_position: Vector2;
-  pieces: Piece[] = new Array<Piece>();
-  selectable: boolean = true;
   mesh: Mesh;
+  sel_type = SelectableType.Space;
+  x: number;
+  y: number;
 
-  constructor(type: SpaceType, grid_position: Vector2) {
+  height: number = 0;
+  pieces: Piece[] = [];
+
+  constructor(type: SpaceType, x: number, y: number) {
     super();
     this.addFloorTile(type);
 
@@ -26,7 +28,8 @@ export class Space extends Group implements Selectable{
     this.mesh = mesh;
     this.add(mesh);
 
-    this.grid_position = grid_position;
+    this.x = x;
+    this.y = y
   }
 
   /**
@@ -34,7 +37,7 @@ export class Space extends Group implements Selectable{
    * @param type: PieceType
    */
   addPiece(type: PieceType): Piece {
-    const piece = new Piece(type, this.grid_position);
+    const piece = new Piece(type, this.x, this.y);
     this.pieces.push(piece);
     this.add(piece);
 
@@ -46,29 +49,42 @@ export class Space extends Group implements Selectable{
   }
 
   //TODO decide whether new position "steals" from previous or vice-versa
-  movePiece(space: Space, piece: Piece){
-    space.remove(piece);
-    this.add(piece);
-    this.height -= piece.height;
+  movePiece(space: Space){
+    let len: number = space.pieces.length;
+    if (len > 0 ){
+      let piece: Piece = space.pieces[len - 1];
+      if (piece.Type == PieceType.Builder){
+        // three js
+        space.remove(piece);
+        this.add(piece);
 
+        // height for addPiece()
+        space.height -= piece.height;
+        this.height += piece.height;
+
+        // logic array
+        space.pieces = space.pieces.filter( p => p != piece);
+        this.pieces.push(piece);
+
+        // piece's new coordinates
+        piece.x = this.x;
+        piece.y = this.y;
+      }
+    }
   }
 
   available(): boolean{
-    if (this.pieces.length > 0) return !this.pieces[this.pieces.length-1].selectable;
+    if (this.pieces.length > 0) return !(this.pieces[this.pieces.length-1].Type == PieceType.Builder);
     return true;
   }
 
   showButton(){
-    console.log("MOSTRAR BOTÃO: Espaço [" + this.grid_position.x + "][" + this.grid_position.y + "]");
-    if (this.mesh.material instanceof Material) {
-      this.mesh.material.opacity = 0.2;
-    }
+    (this.mesh.material as Material).opacity = 0.2;
+
   }
 
   hideButton(){
-    if (this.mesh.material instanceof Material) {
-      this.mesh.material.opacity = 0;
-    }
+    (this.mesh.material as Material).opacity = 0;
   }
 
   dim(){
@@ -78,6 +94,8 @@ export class Space extends Group implements Selectable{
   deDim(){
     (this.mesh.material as Material).opacity = 0.2;
   }
+
+  onClick(): Selectable | undefined { return undefined }
 
   /**
    *

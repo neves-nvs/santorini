@@ -4,11 +4,10 @@ import {
   AmbientLight,
   AxesHelper,
   GridHelper,
-  Vector2, Mesh
+  Mesh
 } from "three";
 
 import { Board, Move, MoveType } from "./board";
-import {Piece} from "./piece";
 import {Selectable} from "./selectable";
 
 export default class GameScene extends Scene {
@@ -34,9 +33,9 @@ export default class GameScene extends Scene {
     this.add(this.ambientLight);
     this.add(this.directionalLight);
 
-    this.board.play(new Move(MoveType.Place_Builder, new Vector2(0, 0)));
-    this.board.play(new Move(MoveType.Place_Builder, new Vector2(1, 1)));
-    this.board.play(new Move(MoveType.Place_Builder, new Vector2(3, 3)));
+    this.board.play(new Move(MoveType.Place_Builder, 0, 0));
+    this.board.play(new Move(MoveType.Place_Builder, 1, 1));
+    this.board.play(new Move(MoveType.Place_Builder, 3, 3));
 
   }
 

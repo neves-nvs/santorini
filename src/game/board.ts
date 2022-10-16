@@ -1,10 +1,10 @@
 import {Group, Mesh, Vector2} from "three";
 
-import { Piece, PieceType } from "./piece";
+import {Piece, PieceType} from "./piece";
 
-import { SpaceType, Space } from "./space";
+import {Space, SpaceType} from "./space";
 
-import { Selectable, SelectableType } from "./selectable";
+import {Selectable, SelectableType} from "./selectable";
 
 
 export class Board extends Group {
@@ -27,9 +27,8 @@ export class Board extends Group {
       this.spaces[x] = new Array(5);
 
       for (let z = 0; z < 5; z++) {
-        let position = new Vector2(x, z); // intended workaround vector2 property names
-        if (z % 2 == 0) space = new Space(x % 2 == 0 ? SpaceType.Light : SpaceType.Dark, position);
-        else space = new Space(x % 2 == 0 ? SpaceType.Dark : SpaceType.Light, position);
+        if (z % 2 == 0) space = new Space(x % 2 == 0 ? SpaceType.Light : SpaceType.Dark, x, z);
+        else space = new Space(x % 2 == 0 ? SpaceType.Dark : SpaceType.Light, x, z);
 
         space.position.set(x, 0, z);
         this.spaces[x][z] = space;
@@ -60,26 +59,26 @@ export class Board extends Group {
         //this.build(move.position);
         break;
       case MoveType.Place_Builder:
-        this.placeBuilder(move.position);
+        this.placeBuilder(move.x, move.y);
         break;
     }
   }
 
-  placeBuilder(position: Vector2) {
+  placeBuilder(x: number, y: number) {
     //const piece = new Piece(PieceType.Builder);
-    const piece: Piece = this.getSpace(position).addPiece(PieceType.Builder);
+    const piece: Piece = this.getSpace(x, y).addPiece(PieceType.Builder);
     this.builders.push(piece);
   }
 
-  private getSpace(position: Vector2) {
-    return this.spaces[position.x][position.y];
+  private getSpace(x: number, y: number) {
+    return this.spaces[x][y];
   }
 
   getSelectablePieces(): Mesh[] {
     let selectablePieces: Mesh[] = this.getBuilders().map(b => b.mesh);
     const builder: Selectable | undefined = this.selectedPiece;
     if ( builder != undefined) {
-      const adjacentPieces = this.getAdjacentSpaces( builder.grid_position );
+      const adjacentPieces = this.getAdjacentSpaces( builder.x, builder.y );
       selectablePieces = selectablePieces.concat( adjacentPieces.filter(s => s.available()).map(s => s.mesh) );
     }
 
@@ -89,30 +88,31 @@ export class Board extends Group {
   /**
    * PIECE MOVEMENT
    */
-  getAdjacentSpaces(position: Vector2): Space[] {
+  getAdjacentSpaces(x: number, y: number): Space[] {
     // TODO translate space
     let adjacentSpaces: Array<Space> = new Array<Space>();
+    let position = new Vector2(x, y);
 
     // TODO FIX THIS USE ARRAY<ARRAY<SPACE>>
     // top left boundary
-    if (position.x > 0 && position.y > 0) adjacentSpaces.push(this.getSpace(new Vector2(position.x-1, position.y-1)));
+    if (position.x > 0 && position.y > 0) adjacentSpaces.push(this.getSpace(position.x-1, position.y-1));
     // left boundary
-    if (position.x > 0) adjacentSpaces.push(this.getSpace(new Vector2(position.x-1, position.y)));
+    if (position.x > 0) adjacentSpaces.push(this.getSpace(position.x-1, position.y));
     // left bottom boundary
-    if (position.x > 0 && position.y < 4) adjacentSpaces.push(this.getSpace(new Vector2(position.x-1, position.y+1))) ;
+    if (position.x > 0 && position.y < 4) adjacentSpaces.push(this.getSpace(position.x-1, position.y+1)) ;
 
     // bottom boundary
-    if (position.y < 4) adjacentSpaces.push(this.getSpace(new Vector2(position.x, position.y+1)));
+    if (position.y < 4) adjacentSpaces.push(this.getSpace(position.x, position.y+1));
     // bottom right boundary
-    if(position.x < 4 && position.y < 4) adjacentSpaces.push(this.getSpace(new Vector2(position.x+1, position.y+1)));
+    if(position.x < 4 && position.y < 4) adjacentSpaces.push(this.getSpace(position.x+1, position.y+1));
 
     // right boundary
-    if (position.x < 4) adjacentSpaces.push(this.getSpace(new Vector2(position.x+1, position.y)));
+    if (position.x < 4) adjacentSpaces.push(this.getSpace(position.x+1, position.y));
     // right top boundary
-    if (position.x < 4 && position.y > 0) adjacentSpaces.push(this.getSpace(new Vector2(position.x+1, position.y-1)));
+    if (position.x < 4 && position.y > 0) adjacentSpaces.push(this.getSpace(position.x+1, position.y-1));
 
     // top boundary
-    if (position.y > 0) adjacentSpaces.push(this.getSpace(new Vector2(position.x, position.y-1)));
+    if (position.y > 0) adjacentSpaces.push(this.getSpace(position.x, position.y-1));
 
     return adjacentSpaces;
   }
@@ -150,25 +150,37 @@ export class Board extends Group {
    * MOUSE CLICK EVENT ---------------------------------------------------------
    */
   onClick(){
-    if (this.selectedPiece && this.hoveredPiece){
-      // remove previously adjacent spaces
-      this.adjacents?.forEach( s => s.hideButton() );
-    }
+    let previousPiece: Selectable | undefined = this.selectedPiece; // save current piece before its changes
+
+    // remove previously adjacent spaces
+    this.adjacents?.forEach( space => space.hideButton() );
+
     if (this.hoveredPiece) { // only deselect previous selected piece if click is on selectable piece
       // unselect previously selected piece
       this.selectedPiece?.deDim();
+    }
+
+    if (this.hoveredPiece){
       this.selectedPiece = this.hoveredPiece;
 
       // show possible squares if there is selected piece
-      this.adjacents = this.getAdjacentSpaces(this.selectedPiece.grid_position);
+      if (this.selectedPiece.sel_type == SelectableType.Builder){ // piece is a builder
 
-      for (let space of this.adjacents){
-        if (space.available()) space.showButton()
+        this.adjacents = this.getAdjacentSpaces(this.selectedPiece.x, this.selectedPiece.y);
+        for (let space of this.adjacents) {
+          if (space.available()) space.showButton()
+        }
+
+      } else if (this.selectedPiece.sel_type == SelectableType.Space && previousPiece) { // piece is a space
+
+        this.getSpace(this.hoveredPiece.x, this.hoveredPiece.y)
+            .movePiece(this.getSpace(previousPiece.x, previousPiece.y));
+
+        //this.adjacents?.forEach( space => space.hideButton());
+
+        this.selectedPiece = undefined;
       }
     }
-
-    // TODO Call onClick()/update_buttons for each space
-
 
 
     // dim piece to show selection
@@ -185,11 +197,13 @@ export class Board extends Group {
 
 export class Move {
   type: number;
-  position: Vector2;
+  x: number;
+  y: number;
 
-  constructor(type: number, position: Vector2) {
+  constructor(type: number, x: number, y: number) {
     this.type = type;
-    this.position = position;
+    this.x = x;
+    this.y = y;
   }
 }
 

@@ -2,7 +2,7 @@ import "./style.css";
 
 import GameScene from "./game/game";
 
-import {PerspectiveCamera, WebGLRenderer, Vector2, Raycaster, Intersection, Mesh} from "three";
+import {PerspectiveCamera, WebGLRenderer, Vector2, Raycaster, Intersection} from "three";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
