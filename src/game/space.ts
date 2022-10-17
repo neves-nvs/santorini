@@ -32,6 +32,10 @@ export class Space extends Group implements Selectable{
     this.y = y
   }
 
+  update(){
+
+  }
+
   /**
    * Receives PieceType, creates piece of that type and places it correctly
    * @param type: PieceType
@@ -53,6 +57,7 @@ export class Space extends Group implements Selectable{
     if (len > 0 ){
       let piece: Piece = space.pieces[len - 1];
       if (piece.Type == PieceType.Builder){
+        piece.position.setY(this.height);
         // three js
         space.remove(piece);
         this.add(piece);
@@ -69,7 +74,6 @@ export class Space extends Group implements Selectable{
         piece.x = this.x;
         piece.y = this.y;
 
-        piece.position.setY(this.height);
       }
     }
   }
@@ -124,7 +128,7 @@ export class Space extends Group implements Selectable{
    * @private
    */
   private addFloorTile(type: SpaceType){
-    const square = new BoxGeometry(1, 0.1, 1);
+    const square = new BoxGeometry(1, 0, 1);
     const color = new MeshBasicMaterial({ color: type });
     let mesh = new Mesh(square, color);
     mesh.position.setY(-0.05);
