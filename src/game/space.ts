@@ -1,10 +1,4 @@
-import {
-  BoxGeometry,
-  Group,
-  Material,
-  Mesh,
-  MeshBasicMaterial
-} from "three";
+import {BoxGeometry, Group, Material, Mesh, MeshBasicMaterial} from "three";
 
 import {Piece, PieceType} from "./piece";
 
@@ -74,7 +68,30 @@ export class Space extends Group implements Selectable{
         // piece's new coordinates
         piece.x = this.x;
         piece.y = this.y;
+
+        piece.position.setY(this.height);
       }
+    }
+  }
+
+  build() {
+    const height = this.pieces.length;
+    switch(height){
+      case 0:
+        this.addPiece( PieceType.Base );
+        break;
+      case 1:
+        this.addPiece( PieceType.Mid );
+        break;
+      case 2:
+        this.addPiece( PieceType.Top );
+        break;
+      case 3:
+        // this.addPiece( PieceType.Dome );
+        break;
+      default:
+        console.log("space.ts | build() | Building too high");
+        return;
     }
   }
 

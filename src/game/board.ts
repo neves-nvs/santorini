@@ -56,7 +56,7 @@ export class Board extends Group {
         //this.move(move.position);
         break;
       case MoveType.Build:
-        //this.build(move.position);
+        this.build(move.x, move.y);
         break;
       case MoveType.Place_Builder:
         this.placeBuilder(move.x, move.y);
@@ -65,7 +65,6 @@ export class Board extends Group {
   }
 
   placeBuilder(x: number, y: number) {
-    //const piece = new Piece(PieceType.Builder);
     const piece: Piece = this.getSpace(x, y).addPiece(PieceType.Builder);
     this.builders.push(piece);
   }
@@ -120,7 +119,15 @@ export class Board extends Group {
 
   //move(position: Vector2) {}
 
-  //build(position: Vector2) {}
+  build(x: number, y: number) {
+    const space: Space = this.getSpace(x, y);
+    if (!space.available()) {
+      console.log("Building on ocuppied space");
+      return;
+    }
+
+    space.build();
+  }
 
   start_game() {}
 

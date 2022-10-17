@@ -30,11 +30,13 @@ export class Piece extends Object3D implements Selectable{
     // ugly fixe TODO
     let Yoffset: number = 0;
     let Xrotation: number = 0;
+    let color: number = 0xCCCCCC;
 
     let geometry: BufferGeometry = new BufferGeometry();
     switch (type) {
       case PieceType.Builder:
         this.sel_type = SelectableType.Builder;
+        color = 0x3260a8;
         geometry = builderGeometry;
         Yoffset = 0.47;
         Xrotation = -Math.PI / 2;
@@ -63,7 +65,7 @@ export class Piece extends Object3D implements Selectable{
 
     this.height = 2 * Yoffset;
 
-    let material = new MeshStandardMaterial({color: 0x3260a8, transparent: true});
+    let material = new MeshStandardMaterial({color: color, transparent: true});
     geometry.center();
     this.mesh = new Mesh(geometry, material);
     let scale = 0.03;

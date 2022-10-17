@@ -37,6 +37,14 @@ export default class GameScene extends Scene {
     this.board.play(new Move(MoveType.Place_Builder, 1, 1));
     this.board.play(new Move(MoveType.Place_Builder, 3, 3));
 
+    this.board.play(new Move(MoveType.Build, 3, 3));
+    this.board.play(new Move(MoveType.Build, 1, 0));
+    this.board.play(new Move(MoveType.Build, 1, 0));
+    this.board.play(new Move(MoveType.Build, 2, 0));
+
+    this.board.play(new Move(MoveType.Build, 0, 1));
+
+
   }
 
   getSelectablePieces(): Mesh[] { return this.board.getSelectablePieces(); }
