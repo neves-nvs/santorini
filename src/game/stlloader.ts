@@ -2,8 +2,6 @@ import {BufferGeometry} from "three";
 
 import {STLLoader} from "three/examples/jsm/loaders/STLLoader";
 
-export {builderGeometry, baseGeometry, midGeometry, topGeometry}
-
 console.time('STL file loading');
 
 const stlloader: STLLoader = new STLLoader();
@@ -25,13 +23,17 @@ const locations: string[] = [
     "assets/Builder.stl",
     "assets/Base.stl",
     "assets/Mid.stl",
-    "assets/Top.stl"
+    "assets/Top.stl",
+    "assets/Dome.stl",
+    "assets/Board.stl"
 ];
 
-let builderGeometry: BufferGeometry;
-let baseGeometry: BufferGeometry;
-let midGeometry: BufferGeometry;
-let topGeometry: BufferGeometry;
+export let builderGeometry: BufferGeometry;
+export let baseGeometry: BufferGeometry;
+export let midGeometry: BufferGeometry;
+export let topGeometry: BufferGeometry;
+export let domeGeometry: BufferGeometry;
+export let boardGeometry: BufferGeometry;
 
 async function loadAllSTL(locations: string[]){
     const promises: Promise<BufferGeometry>[] = locations.map( location => loadSTL(location));
@@ -39,7 +41,9 @@ async function loadAllSTL(locations: string[]){
         builderGeometry = geometries[0];
         baseGeometry = geometries[1];
         midGeometry = geometries[2];
-        topGeometry = geometries[3]
+        topGeometry = geometries[3];
+        domeGeometry = geometries[4];
+        boardGeometry = geometries[5];
         })
 }
 
