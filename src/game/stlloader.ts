@@ -17,7 +17,7 @@ async function loadSTL(filePath: string){
  * used for testing loading times
  * @param ms
  */
-function delay(ms: number) {
+export function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
 

@@ -1,4 +1,10 @@
-import {BufferGeometry, Material, Mesh, MeshPhongMaterial, Object3D} from "three";
+import {
+  BufferGeometry,
+  Material,
+  Mesh,
+  MeshStandardMaterial,
+  Object3D
+} from "three";
 
 import {baseGeometry, builderGeometry, midGeometry, topGeometry} from "./stlloader";
 
@@ -57,7 +63,7 @@ export class Piece extends Object3D implements Selectable{
 
     this.height = 2 * Yoffset;
 
-    let material = new MeshPhongMaterial({color: 0xffffff, transparent: true});
+    let material = new MeshStandardMaterial({color: 0x3260a8, transparent: true});
     geometry.center();
     this.mesh = new Mesh(geometry, material);
     let scale = 0.03;

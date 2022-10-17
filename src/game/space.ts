@@ -1,12 +1,18 @@
-import {BoxGeometry, Group, Material, Mesh, MeshBasicMaterial} from "three";
+import {
+  BoxGeometry,
+  Group,
+  Material,
+  Mesh,
+  MeshBasicMaterial
+} from "three";
 
 import {Piece, PieceType} from "./piece";
 
 import {Selectable, SelectableType} from "./selectable";
 
 export enum SpaceType {
-  Light= 0x609130,
-  Dark = 0x437314
+  Light= 0x51a832,
+  Dark = 0x265c13
 }
 
 export class Space extends Group implements Selectable{

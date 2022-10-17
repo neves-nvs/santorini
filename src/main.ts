@@ -2,9 +2,20 @@ import "./style.css";
 
 import GameScene from "./game/game";
 
-import {PerspectiveCamera, WebGLRenderer, Vector2, Raycaster, Intersection} from "three";
+import {
+  PerspectiveCamera,
+  WebGLRenderer,
+  Vector2,
+  Raycaster,
+  Intersection,
+  ACESFilmicToneMapping
+} from "three";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+
+import Stats from 'three/examples/jsm/libs/stats.module';
+
+import { GUI } from 'dat.gui'
 
 import {Selectable} from "./game/selectable";
 
@@ -15,6 +26,12 @@ let controls: OrbitControls;
 
 let pointer: Vector2;
 let raycaster: Raycaster;
+
+let stats: Stats;
+
+let button = { restart: function(){ init() }};
+const gui: GUI = new GUI;
+gui.add(button,'restart');
 
 let game: GameScene;
 
@@ -72,9 +89,15 @@ function init(){
   const canvas = document.querySelector("canvas#webgl");
   renderer = new WebGLRenderer({
     canvas: canvas as HTMLElement,
+    antialias: true,
+    alpha: true
+
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.toneMapping = ACESFilmicToneMapping;
+  //renderer.outputEncoding = sRGBEncoding;
+  renderer.setClearColor(0x87CEEB, 1);
 
   pointer = new Vector2();
 
@@ -84,6 +107,9 @@ function init(){
   controls.position0.set(2, 2, 2);
   controls.target.set(2, 0, 2);
   controls.maxPolarAngle = Math.PI / 2;
+
+  stats = Stats();
+  document.body.appendChild(stats.dom);
 
   window.addEventListener("resize", onResize);
   window.addEventListener("pointermove", onPointerMove);
@@ -96,11 +122,13 @@ function update() {
   controls.update();
   hoverBuilder();
   game.update();
+  stats.update();
 }
 
 function render() {
   renderer.render(game, camera);
 }
+
 
 function animate() {
   clear();
@@ -114,4 +142,4 @@ function main() {
   animate();
 }
 
-main();
+await main();
