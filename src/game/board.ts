@@ -1,4 +1,9 @@
-import {Group, Mesh, Vector2} from "three";
+import {
+  Mesh,
+  MeshStandardMaterial,
+  Object3D,
+  Vector2
+} from "three";
 
 import {Piece, PieceType} from "./piece";
 
@@ -6,10 +11,14 @@ import {Space, SpaceType} from "./space";
 
 import {Selectable, SelectableType} from "./selectable";
 
+import {boardGeometry} from "./stlloader";
 
-export class Board extends Group {
+
+export class Board extends Object3D {
   spaces;
   builders: Piece[];
+
+  mesh: Mesh | undefined;
 
   adjacents: Space[] | undefined;
   hoveredPiece: Selectable | undefined;
@@ -48,6 +57,23 @@ export class Board extends Group {
         "|   |   |   |   |   |\n" +
         "|0_4|___|___|___|4_4|\n"
     );
+
+    this.addMesh();
+  }
+
+  addMesh(){
+    const geometry = boardGeometry;
+    geometry.center();
+    let material = new MeshStandardMaterial({color: "white"});
+    this.mesh = new Mesh(geometry, material);
+
+    let scale = 0.032;
+    this.mesh.scale.set(scale, scale, scale);
+    this.add(this.mesh);
+
+    this.mesh.rotateX(- Math.PI / 2);
+
+    this.mesh.position.set(2, -0.067, 2);
   }
 
   play(move: Move) {
