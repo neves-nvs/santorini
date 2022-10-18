@@ -3,10 +3,17 @@ import {
   Material,
   Mesh,
   MeshStandardMaterial,
-  Object3D
+  Object3D,
 } from "three";
 
-import {baseGeometry, builderGeometry, midGeometry, topGeometry} from "./stlloader";
+import {
+  STLImportConfig,
+  builderGeometry,
+  baseGeometry,
+  midGeometry,
+  topGeometry,
+  domeGeometry,
+} from "./stlloader";
 
 import {Selectable, SelectableType} from "./selectable";
 
@@ -27,62 +34,58 @@ export class Piece extends Object3D implements Selectable{
     this.x = x;
     this.y = y;
 
-    // ugly fixe TODO
-    let Yoffset: number = 0;
-    let Xrotation: number = 0;
+    let config: STLImportConfig = new STLImportConfig(0, 0, 0.03);
     let color: number = 0xCCCCCC;
 
     let geometry: BufferGeometry = new BufferGeometry();
     switch (type) {
       case PieceType.Builder:
         this.sel_type = SelectableType.Builder;
-        color = 0x3260a8;
         geometry = builderGeometry;
-        Yoffset = 0.47;
-        Xrotation = -Math.PI / 2;
+        config = new STLImportConfig(0.47, -Math.PI / 2, 0.03);
+        color = 0x3260a8;
         break;
       case PieceType.Base:
         geometry = baseGeometry;
-        Yoffset = 0.3;
-        Xrotation = -Math.PI / 2;
+        config = new STLImportConfig(0.231, -Math.PI / 2, 0.028);
         break;
       case PieceType.Mid:
         geometry = midGeometry;
-        Yoffset = 0.275;
-        Xrotation = -Math.PI / 2;
+        config = new STLImportConfig(0.275, -Math.PI / 2, 0.028);
         break;
       case PieceType.Top:
         geometry = topGeometry;
-        Xrotation = Math.PI / 2;
+        config = new STLImportConfig(0.165, Math.PI / 2, 0.028);
         break;
       case PieceType.Dome:
-        Yoffset = 0.165;
+        geometry = domeGeometry;
+        config = new STLImportConfig(0.1, -Math.PI / 2, 0.0165);
         break;
-
       default:
         console.log("Invalid piece type");
     }
 
-    this.height = 2 * Yoffset;
+    this.height = 2 * config.y_offset;
 
-    let material = new MeshStandardMaterial({color: color, transparent: true});
+    const material = new MeshStandardMaterial({color: color, transparent: true});
     geometry.center();
     this.mesh = new Mesh(geometry, material);
-    let scale = 0.03;
-    this.mesh.position.setY(Yoffset);
-    this.mesh.scale.set(scale, scale, scale);
-    this.mesh.rotateX(Xrotation);
+    this.mesh.position.setY(config.y_offset);
+    this.mesh.scale.set(config.scale, config.scale, config.scale);
+    this.mesh.rotateX(config.x_rotation);
 
     this.add(this.mesh);
   }
 
-  dim(){
-    (this.mesh.material as Material).transparent = true;
+  highlight(){
     (this.mesh.material as Material).opacity = 0.5;
   }
 
-  deDim(){
-    (this.mesh.material as Material).transparent = false;
+  normal(){
+    (this.mesh.material as Material).opacity = 1;
+  }
+
+  reset(){
     (this.mesh.material as Material).opacity = 1;
   }
 
@@ -91,7 +94,6 @@ export class Piece extends Object3D implements Selectable{
   }
 }
 
-// TODO interface for every other piecetype to add method to build a playable space
 export enum PieceType {
   Builder,
   Base,

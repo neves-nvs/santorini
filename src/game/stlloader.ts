@@ -1,22 +1,28 @@
-import {BufferGeometry} from "three";
+import { BufferGeometry } from "three";
 
-import {STLLoader} from "three/examples/jsm/loaders/STLLoader";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 
 console.time('STL file loading');
 
 const stlloader: STLLoader = new STLLoader();
-
 async function loadSTL(filePath: string){
     await delay(0);
     return stlloader.loadAsync(filePath);
 }
 
-/**
- * used for testing loading times
- * @param ms
- */
 export function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
+}
+
+export class STLImportConfig{
+    y_offset: number = 0;
+    x_rotation: number = 0;
+    scale: number = 0.03;
+    constructor(y_offset: number, x_rotation: number, scale: number) {
+        this.y_offset = y_offset;
+        this.x_rotation = x_rotation;
+        this.scale = scale;
+    }
 }
 
 const locations: string[] = [
