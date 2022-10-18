@@ -23,7 +23,6 @@ export default class GameScene extends Scene {
     this.board = new Board();
     this.axesHelper = new AxesHelper(5);
     this.gridHelper = new GridHelper(11, 11);
-    this.gridHelper.position.set(2,0,2);
     this.ambientLight = new AmbientLight(0x404040);
     this.directionalLight = new DirectionalLight(0xffffff, 0.5);
 
@@ -38,6 +37,8 @@ export default class GameScene extends Scene {
     this.board.play(new Move(MoveType.Place_Builder, 3, 3));
 
     this.board.play(new Move(MoveType.Build, 3, 3));
+    this.board.play(new Move(MoveType.Build, 1, 0));
+    this.board.play(new Move(MoveType.Build, 1, 0));
     this.board.play(new Move(MoveType.Build, 1, 0));
     this.board.play(new Move(MoveType.Build, 1, 0));
     this.board.play(new Move(MoveType.Build, 2, 0));

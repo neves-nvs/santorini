@@ -54,6 +54,11 @@ export class Space extends Group implements Selectable{
 
   movePiece(space: Space){
     let len: number = space.pieces.length;
+
+    if (this.pieces.length == 4) return;
+
+    // TODO return if moving up more than 2 and dont return it in availability
+
     if (len > 0 ){
       let piece: Piece = space.pieces[len - 1];
       if (piece.Type == PieceType.Builder){
@@ -67,13 +72,12 @@ export class Space extends Group implements Selectable{
         this.height += piece.height;
 
         // logic array
-        space.pieces = space.pieces.filter( p => p != piece);
+        space.pieces = space.pieces.filter( p => p != piece );
         this.pieces.push(piece);
 
         // piece's new coordinates
         piece.x = this.x;
         piece.y = this.y;
-
       }
     }
   }
@@ -91,7 +95,7 @@ export class Space extends Group implements Selectable{
         this.addPiece( PieceType.Top );
         break;
       case 3:
-        // this.addPiece( PieceType.Dome );
+        this.addPiece( PieceType.Dome );
         break;
       default:
         console.log("space.ts | build() | Building too high");
@@ -104,21 +108,18 @@ export class Space extends Group implements Selectable{
     return true;
   }
 
-  showButton(){
-    (this.mesh.material as Material).opacity = 0.2;
-
-  }
-
-  hideButton(){
-    (this.mesh.material as Material).opacity = 0;
-  }
-
-  dim(){
+  highlight(){
     (this.mesh.material as Material).opacity = 0.8;
+
   }
 
-  deDim(){
+  normal(){
     (this.mesh.material as Material).opacity = 0.2;
+
+  }
+
+  reset(){
+    (this.mesh.material as Material).opacity = 0;
   }
 
   onClick(): Selectable | undefined { return undefined }
@@ -128,7 +129,8 @@ export class Space extends Group implements Selectable{
    * @private
    */
   private addFloorTile(type: SpaceType){
-    const square = new BoxGeometry(1, 0, 1);
+    const size: number = 0.969;
+    const square = new BoxGeometry(size, 0, size);
     const color = new MeshBasicMaterial({ color: type });
     let mesh = new Mesh(square, color);
     mesh.position.setY(-0.05);

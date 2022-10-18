@@ -20,7 +20,7 @@ export class Board extends Object3D {
 
   mesh: Mesh | undefined;
 
-  adjacents: Space[] | undefined;
+  adjacent: Space[] | undefined;
   hoveredPiece: Selectable | undefined;
   selectedPiece: Selectable | undefined;
 
@@ -67,7 +67,7 @@ export class Board extends Object3D {
     let material = new MeshStandardMaterial({color: "white"});
     this.mesh = new Mesh(geometry, material);
 
-    let scale = 0.032;
+    let scale = 0.031747;
     this.mesh.scale.set(scale, scale, scale);
     this.add(this.mesh);
 
@@ -148,7 +148,7 @@ export class Board extends Object3D {
   build(x: number, y: number) {
     const space: Space = this.getSpace(x, y);
     if (!space.available()) {
-      console.log("Building on ocuppied space");
+      console.log("Building on occupied space");
       return;
     }
 
@@ -167,15 +167,15 @@ export class Board extends Object3D {
 
   getBuilders(): Piece[] { return this.builders; }
 
-  resetPiece(){ this.hoveredPiece?.deDim(); }
+  resetPiece(){ this.hoveredPiece?.normal(); }
 
   /**
    *
    */
   update(){
     // dim hovered and selected pieces
-    this.hoveredPiece?.dim();
-    this.selectedPiece?.dim();
+    this.hoveredPiece?.highlight();
+    this.selectedPiece?.highlight();
     //
   }
 
@@ -185,23 +185,25 @@ export class Board extends Object3D {
   onClick(){
     let previousPiece: Selectable | undefined = this.selectedPiece; // save current piece before its changes
 
-    // remove previously adjacent spaces
-    this.adjacents?.forEach( space => space.hideButton() );
 
     if (this.hoveredPiece) { // only deselect previous selected piece if click is on selectable piece
-      // unselect previously selected piece
-      this.selectedPiece?.deDim();
-    }
+      // ----- CLEAR PREVIOUS CLICK -----
 
-    if (this.hoveredPiece){
+      // remove previously adjacent spaces
+      this.adjacent?.forEach(space => space.reset() );
+      // unselect previously selected piece
+      this.selectedPiece?.normal();
+
+
+      // ----- CURRENT CLICK -----
       this.selectedPiece = this.hoveredPiece;
 
       // show possible squares if there is selected piece
       if (this.selectedPiece.sel_type == SelectableType.Builder){ // piece is a builder
 
-        this.adjacents = this.getAdjacentSpaces(this.selectedPiece.x, this.selectedPiece.y);
-        for (let space of this.adjacents) {
-          if (space.available()) space.showButton()
+        this.adjacent = this.getAdjacentSpaces(this.selectedPiece.x, this.selectedPiece.y);
+        for (let space of this.adjacent) {
+          if (space.available()) space.normal()
         }
 
       } else if (this.selectedPiece.sel_type == SelectableType.Space && previousPiece) { // piece is a space
@@ -209,15 +211,13 @@ export class Board extends Object3D {
         this.getSpace(this.hoveredPiece.x, this.hoveredPiece.y)
             .movePiece(this.getSpace(previousPiece.x, previousPiece.y));
 
-        //this.adjacents?.forEach( space => space.hideButton());
-
+        //this.adjacent?.forEach(space => space.hideButton());
         this.selectedPiece = undefined;
       }
     }
 
-
     // dim piece to show selection
-    this.selectedPiece?.dim();
+    //this.selectedPiece?.dim();
   }
 
   /**

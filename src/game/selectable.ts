@@ -7,9 +7,12 @@ export interface Selectable{
     y: number
     sel_type: SelectableType;
 
-    dim(): void;
+    highlight(): void;
+    
+    normal(): void;
 
-    deDim(): void;
+    reset(): void;
+
 
     /**
      * if class is supposed to be selected, onClick() return itself, undefined otherwise
