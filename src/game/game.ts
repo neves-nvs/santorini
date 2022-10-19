@@ -7,8 +7,8 @@ import {
   Mesh
 } from "three";
 
-import { Board, Move, MoveType } from "./board";
-import {Selectable} from "./selectable";
+import { Board, Move, MoveType } from "./game/board";
+import {Selectable} from "./game/selectable";
 
 export default class GameScene extends Scene {
   board: Board;
@@ -44,17 +44,64 @@ export default class GameScene extends Scene {
     this.board.play(new Move(MoveType.Build, 2, 0));
 
     this.board.play(new Move(MoveType.Build, 0, 1));
-
-
   }
 
-  getSelectablePieces(): Mesh[] { return this.board.getSelectablePieces(); }
+  getSelectablePieces(): Mesh[] {
+    // rename to getAdjacent
+    // add gameplay logic here
+    return this.board.getSelectablePieces();
+  }
 
-  hover(hovered: Selectable | undefined) {this.board.hover(hovered);}
+  hover(hovered: Selectable | undefined) {
+    this.board.hover(hovered);
+  }
 
-  resetPiece(){ this.board.resetPiece(); }
+  resetPiece(){
+    this.board.resetPiece();
+  }
 
-  update(){this.board.update();}
+  update(){
+    this.board.update();
+  }
 
-  onClick(){this.board.onClick();}
+  onClick(){
+    // save previously selected piece
+    // get now clicked piece
+    this.board.onClick();
+    // call move or build depending on whether state is building or moving
+    /*
+    if (clickObject == undefined) return // to be decided
+    if (state == gamestart)
+    else if (state == build)
+      build(x, y)
+    else if (state == move)
+      move(piece, x, y)
+     */
+
+  }
 }
+
+
+// STATE MACHINE
+class GameState {
+
+  handle()
+}
+
+class PlayerPhase {
+  handle(){
+
+  }
+}
+class MovePhase extends PlayerPhase {
+  handle(){
+
+  }
+}
+
+class BuildPhase extends PlayerPhase {
+  handle(){
+
+  }
+}
+

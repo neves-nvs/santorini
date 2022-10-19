@@ -13,7 +13,7 @@ import {
   midGeometry,
   topGeometry,
   domeGeometry,
-} from "./stlloader";
+} from "../assets_loader/stlloader";
 
 import {Selectable, SelectableType} from "./selectable";
 

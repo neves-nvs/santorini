@@ -11,7 +11,7 @@ import {Space, SpaceType} from "./space";
 
 import {Selectable, SelectableType} from "./selectable";
 
-import {boardGeometry} from "./stlloader";
+import {boardGeometry} from "../assets_loader/stlloader";
 
 
 export class Board extends Object3D {
@@ -182,7 +182,7 @@ export class Board extends Object3D {
   /**
    * MOUSE CLICK EVENT ---------------------------------------------------------
    */
-  onClick(){
+  onClick(): Selectable | undefined{
     let previousPiece: Selectable | undefined = this.selectedPiece; // save current piece before its changes
 
 
@@ -218,6 +218,7 @@ export class Board extends Object3D {
 
     // dim piece to show selection
     //this.selectedPiece?.dim();
+    return this.selectedPiece;
   }
 
   /**

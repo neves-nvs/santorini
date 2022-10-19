@@ -17,7 +17,7 @@ import Stats from 'three/examples/jsm/libs/stats.module';
 
 import { GUI } from 'dat.gui'
 
-import {Selectable} from "./game/selectable";
+import {Selectable} from "./game/game/selectable";
 
 let camera: PerspectiveCamera;
 let renderer: WebGLRenderer;
@@ -49,31 +49,15 @@ function onResize() {
 
 function onClick() { game.onClick(); }
 
-function onPointerMove(event: any) {
+function onPointerMove(event: MouseEvent) {
   // calculate pointer position in normalized device coordinates
-  // (-1 to +1) for both components
-
+  // (-1 to +1) for both game
   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 }
 
-function hoverBuilder(): Selectable {
-  //TODO Stop Pieces from knowing their positions
-  //TODO getSelectablePieces should return dict<Piece, Position>
-  raycaster.setFromCamera(pointer, camera);
 
-  let intersects: Intersection[] = raycaster.intersectObjects(game.getSelectablePieces());
-  let distance: number = Math.min(...intersects.map( ({distance}) => distance));
-  let closest: Intersection = intersects.filter(intersection => intersection.distance == distance)[0];
-  let hovered: Selectable | undefined = closest?.object.parent as unknown as Selectable;
-  game.hover(hovered);
-  return hovered;
-}
-
-
-
-
-
+//-----------------------------------------------------------------------------
 function init(){
   game = new GameScene();
   camera = new PerspectiveCamera(
@@ -91,7 +75,6 @@ function init(){
     canvas: canvas as HTMLElement,
     antialias: true,
     alpha: true
-
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -104,7 +87,6 @@ function init(){
   raycaster = new Raycaster();
 
   controls = new OrbitControls(camera, renderer.domElement);
-  controls.position0.set(2, 2, 2);
   controls.target.set(2, 0, 2);
   controls.maxPolarAngle = Math.PI / 2;
 
@@ -116,6 +98,22 @@ function init(){
   window.addEventListener("click", onClick);
 }
 
+
+//-----------------------------------------------------------------------------
+function hoverBuilder(): Selectable {
+  //TODO Stop Pieces from knowing their positions
+  //TODO getSelectablePieces should return dict<Piece, Position>
+  raycaster.setFromCamera(pointer, camera);
+
+  let intersects: Intersection[] = raycaster.intersectObjects(game.getSelectablePieces());
+  let distance: number = Math.min(...intersects.map( ({distance}) => distance));
+  let closest: Intersection = intersects.filter(intersection => intersection.distance == distance)[0];
+  let hovered: Selectable | undefined = closest?.object.parent as unknown as Selectable;
+  game.hover(hovered);
+  return hovered;
+}
+
+//-----------------------------------------------------------------------------
 function clear() { game.resetPiece(); }
 
 function update() {
@@ -129,7 +127,7 @@ function render() {
   renderer.render(game, camera);
 }
 
-
+//-----------------------------------------------------------------------------
 function animate() {
   clear();
   update();
@@ -137,9 +135,11 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
+//-----------------------------------------------------------------------------
 function main() {
   init();
   animate();
 }
 
-await main();
+//-----------------------------------------------------------------------------
+main();
