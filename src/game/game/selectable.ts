@@ -1,6 +1,5 @@
 import {Mesh} from "three";
 
-
 export interface Selectable{
     mesh: Mesh
     x: number
@@ -12,11 +11,6 @@ export interface Selectable{
     normal(): void;
 
     reset(): void;
-
-
-    /**
-     * if class is supposed to be selected, onClick() return itself, undefined otherwise
-     */
 }
 
 export enum SelectableType {

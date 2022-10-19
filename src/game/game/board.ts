@@ -5,13 +5,13 @@ import {
   Vector2
 } from "three";
 
-import {Piece, PieceType} from "./piece";
+import { Selectable } from "./selectable";
 
-import {Space, SpaceType} from "./space";
+import { Space, SpaceType } from "./space";
 
-import {Selectable, SelectableType} from "./selectable";
+import { Piece, PieceType } from "./piece";
 
-import {boardGeometry} from "../assets_loader/stlloader";
+import { boardGeometry } from "../assets_loader/stlloader";
 
 
 export class Board extends Object3D {
@@ -76,7 +76,7 @@ export class Board extends Object3D {
     this.mesh.position.set(2, -0.067, 2);
   }
 
-  play(move: Move) {
+  play(move: Move) { // TODO remove (move to game)
     switch (move.type) {
       case MoveType.Move:
         //this.move(move.position);
@@ -90,24 +90,8 @@ export class Board extends Object3D {
     }
   }
 
-  placeBuilder(x: number, y: number) {
-    const piece: Piece = this.getSpace(x, y).addPiece(PieceType.Builder);
-    this.builders.push(piece);
-  }
-
-  private getSpace(x: number, y: number) {
+  getSpace(x: number, y: number) {
     return this.spaces[x][y];
-  }
-
-  getSelectablePieces(): Mesh[] {
-    let selectablePieces: Mesh[] = this.getBuilders().map(b => b.mesh);
-    const builder: Selectable | undefined = this.selectedPiece;
-    if ( builder != undefined) {
-      const adjacentPieces = this.getAdjacentSpaces( builder.x, builder.y );
-      selectablePieces = selectablePieces.concat( adjacentPieces.filter(s => s.available()).map(s => s.mesh) );
-    }
-
-    return selectablePieces;
   }
 
   /**
@@ -142,8 +126,14 @@ export class Board extends Object3D {
     return adjacentSpaces;
   }
 
+  placeBuilder(x: number, y: number) {
+    const piece: Piece = this.getSpace(x, y).addPiece(PieceType.Builder);
+    this.builders.push(piece);
+  }
 
-  //move(position: Vector2) {}
+  move(x_source: number, y_source: number, x_dest: number, y_dest:number) {
+
+  }
 
   build(x: number, y: number) {
     const space: Space = this.getSpace(x, y);
@@ -155,70 +145,21 @@ export class Board extends Object3D {
     space.build();
   }
 
-  start_game() {}
-
-  reset_game() {}
-
-  game_over() {}
-
-  get_possible_moves() {}
-
-  hover(hovered: Selectable | undefined) {this.hoveredPiece = hovered;}
-
   getBuilders(): Piece[] { return this.builders; }
 
-  resetPiece(){ this.hoveredPiece?.normal(); }
+  getMovablePieces(): Selectable[]{
+    return this.builders;
+  }
 
+  getBuildableBlocks() {}
   /**
    *
    */
   update(){
     // dim hovered and selected pieces
-    this.hoveredPiece?.highlight();
-    this.selectedPiece?.highlight();
+    //this.hoveredPiece?.highlight();
+    //this.selectedPiece?.highlight();
     //
-  }
-
-  /**
-   * MOUSE CLICK EVENT ---------------------------------------------------------
-   */
-  onClick(): Selectable | undefined{
-    let previousPiece: Selectable | undefined = this.selectedPiece; // save current piece before its changes
-
-
-    if (this.hoveredPiece) { // only deselect previous selected piece if click is on selectable piece
-      // ----- CLEAR PREVIOUS CLICK -----
-
-      // remove previously adjacent spaces
-      this.adjacent?.forEach(space => space.reset() );
-      // unselect previously selected piece
-      this.selectedPiece?.normal();
-
-
-      // ----- CURRENT CLICK -----
-      this.selectedPiece = this.hoveredPiece;
-
-      // show possible squares if there is selected piece
-      if (this.selectedPiece.sel_type == SelectableType.Builder){ // piece is a builder
-
-        this.adjacent = this.getAdjacentSpaces(this.selectedPiece.x, this.selectedPiece.y);
-        for (let space of this.adjacent) {
-          if (space.available()) space.normal()
-        }
-
-      } else if (this.selectedPiece.sel_type == SelectableType.Space && previousPiece) { // piece is a space
-
-        this.getSpace(this.hoveredPiece.x, this.hoveredPiece.y)
-            .movePiece(this.getSpace(previousPiece.x, previousPiece.y));
-
-        //this.adjacent?.forEach(space => space.hideButton());
-        this.selectedPiece = undefined;
-      }
-    }
-
-    // dim piece to show selection
-    //this.selectedPiece?.dim();
-    return this.selectedPiece;
   }
 
   /**

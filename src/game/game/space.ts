@@ -104,6 +104,7 @@ export class Space extends Group implements Selectable{
   }
 
   available(): boolean{
+    if (this.pieces.length > 3) return false;
     if (this.pieces.length > 0) return !(this.pieces[this.pieces.length-1].Type == PieceType.Builder);
     return true;
   }
@@ -114,8 +115,8 @@ export class Space extends Group implements Selectable{
   }
 
   normal(){
+    this.mesh.position.setY(this.height);
     (this.mesh.material as Material).opacity = 0.2;
-
   }
 
   reset(){

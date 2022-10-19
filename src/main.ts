@@ -8,7 +8,8 @@ import {
   Vector2,
   Raycaster,
   Intersection,
-  ACESFilmicToneMapping
+  ACESFilmicToneMapping,
+  Mesh,
 } from "three";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -100,15 +101,16 @@ function init(){
 
 
 //-----------------------------------------------------------------------------
-function hoverBuilder(): Selectable {
+function hover(): Selectable {
   //TODO Stop Pieces from knowing their positions
   //TODO getSelectablePieces should return dict<Piece, Position>
   raycaster.setFromCamera(pointer, camera);
 
-  let intersects: Intersection[] = raycaster.intersectObjects(game.getSelectablePieces());
-  let distance: number = Math.min(...intersects.map( ({distance}) => distance));
-  let closest: Intersection = intersects.filter(intersection => intersection.distance == distance)[0];
-  let hovered: Selectable | undefined = closest?.object.parent as unknown as Selectable;
+  const selectable: Mesh[] = game.getSelectablePieces().map(s => s.mesh);
+  const intersects: Intersection[] = raycaster.intersectObjects(selectable);
+  const distance: number = Math.min(...intersects.map( ({distance}) => distance));
+  const closest: Intersection = intersects.filter(intersection => intersection.distance == distance)[0];
+  const hovered: Selectable | undefined = closest?.object.parent as unknown as Selectable;
   game.hover(hovered);
   return hovered;
 }
@@ -118,7 +120,7 @@ function clear() { game.resetPiece(); }
 
 function update() {
   controls.update();
-  hoverBuilder();
+  hover();
   game.update();
   stats.update();
 }

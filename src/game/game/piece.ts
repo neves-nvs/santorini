@@ -19,7 +19,7 @@ import {Selectable, SelectableType} from "./selectable";
 
 export class Piece extends Object3D implements Selectable{
   mesh: Mesh;
-  sel_type = SelectableType.Block;
+  sel_type: SelectableType = SelectableType.Block;
   x: number;
   y: number;
 
