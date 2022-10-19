@@ -13,13 +13,10 @@ export default class GameScene extends Scene {
   hoveredPiece: Selectable | undefined;
   selectedPiece: Selectable | undefined;
 
+  movingBuilder: Selectable | undefined;
   // move
-  selectedBuilder: Selectable | undefined;
-  movableSpaces: Selectable[] = [];
+  validSpaces: Selectable[] = [];
   // build
-  movedBuilder: Selectable | undefined;
-
-  selectablePieces: Selectable[] = [];
 
   constructor() {
     super();
@@ -48,121 +45,105 @@ export default class GameScene extends Scene {
     this.board.play(new Move(MoveType.Build, 2, 0));
 
     this.board.play(new Move(MoveType.Build, 0, 1));
-
-    this.selectablePieces = this.board.getBuilders();
   }
 
 
 
   getSelectablePieces(): Selectable[] {
-    // TODO only return this.selectablePieces;
-    return this.selectablePieces;
     if (gameState == "place"){
+      return this.validSpaces;
 
     } else if (gameState == "move"){
       const builders: Selectable[] = this.board.getBuilders();
-      return builders.concat(this.movableSpaces);
+      return builders.concat(this.validSpaces);
 
     } else if (gameState == "build"){
-
+      return this.validSpaces
     }
-    return this.selectablePieces;
+    return this.board.builders; // not reachable under normal circunstances
   }
 
   hover(hovered: Selectable | undefined) {
     this.hoveredPiece = hovered;
-    //this.board.hover(hovered);
   }
 
   resetPiece(){
-    // spaces
-    // builders
-    //this.selectedBuilder?.normal();
-    // both
     this.hoveredPiece?.normal();
-    this.selectedBuilder?.normal();
-    //this.selectedPiece?.normal();
   }
 
   update(){
-    //this.selectablePieces.forEach(p => p.normal());
     this.hoveredPiece?.highlight();
-    this.selectedBuilder?.highlight();
-    //this.board.update();
-    console.log(gameState);
+    this.board.update();
   }
 
   onClick(){
-    // get now clicked piece
 
+    // get now clicked piece
     this.selectedPiece = this.hoveredPiece;
 
-
     if (gameState == "place") {
-      this.selectablePieces = this.board.getBuilders();
       gameState = "move";
+      // get all pieces, flatten, filter per available
 
     } else if (gameState == "move"){
       // TODO
-      this.selectablePieces = this.board.getBuilders();
       if (this.selectedPiece?.sel_type == SelectableType.Builder) {
-        // save selected builder for space choice
-        this.selectedBuilder = this.selectedPiece;
+        this.movingBuilder?.normal();
+        this.movingBuilder = this.selectedPiece;
 
-        // clear previous
-        this.movableSpaces.forEach(s => s.reset());
-
-        // highlight it
         this.selectedPiece.highlight();
 
-        // get coordinates
+        this.validSpaces.forEach(s => s.reset());
+
         let [x, y] = [this.selectedPiece.x, this.selectedPiece.y];
-        this.selectablePieces = this.selectablePieces
-            .concat(this.board.getAdjacentSpaces(this.selectedBuilder.x, this.selectedBuilder.y));
-
-
-        this.movableSpaces = this.board
+        this.validSpaces = this.board
             .getAdjacentSpaces(x, y)
             .filter(s => s.available());
-        this.movableSpaces.forEach(s => s.normal());
+
+        this.validSpaces.forEach(s => s.normal());
+
 
       } else if (this.selectedPiece?.sel_type == SelectableType.Space){
-        this.selectedPiece.reset();
-        // erase adjacent spaces from before builder was moved
-        this.movableSpaces.forEach(s => s.reset());
-        this.movableSpaces = [];
+        let [x_src, y_src] = [this.movingBuilder.x, this.movingBuilder.y];
+        let [x_dest, y_dest] = [this.selectedPiece.x, this.selectedPiece.y];
+        this.board.getSpace( x_dest, y_dest)
+            .movePiece(this.board.getSpace(x_src, y_src));
 
-        // move builder and save it for build phase
-        this.movedBuilder = this.selectedBuilder;
-        this.board.getSpace(this.selectedPiece.x, this.selectedPiece.y)
-            .movePiece(this.board.getSpace(this.movedBuilder.x, this.movedBuilder.y));
-
-        // @ts-ignore TODO FIX
-        this.selectablePieces = this.board
-            .getAdjacentSpaces(this.movedBuilder.x, this.movedBuilder.y)
+        this.validSpaces.forEach(s => s.reset());
+        this.validSpaces = this.board
+            .getAdjacentSpaces(x_dest, y_dest)
             .filter(s => s.available());
-        this.selectablePieces.forEach(s => s.normal());
-        this.movedBuilder = undefined;
+
+        this.validSpaces.forEach(s => s.normal());
+
+        this.movingBuilder?.normal();
+
+        this.movingBuilder = undefined;
+
+        this.hoveredPiece = undefined; // stop piece moved into from being set to normal opacity by loop
 
         // change game state
         gameState = "build";
       }
 
     } else if (gameState == "build"){
-      console.log(this.selectedPiece?.sel_type);
-      if (this.selectedPiece?.sel_type == SelectableType.Space){
-        // clear
-        this.selectedBuilder = undefined;
-        this.movedBuilder?.normal();
-        this.movedBuilder = undefined;
 
-        //
+      if (this.selectedPiece?.sel_type == SelectableType.Space){
+
         let [x, y] = [this.selectedPiece.x,  this.selectedPiece.y];
         this.board.build(x, y);
 
+        this.validSpaces.forEach(s => s.reset());
+        this.validSpaces = [];
+
+        this.selectedPiece.reset();
+        this.selectedPiece = undefined;
+        this.movingBuilder = undefined;
+
+        this.hoveredPiece = undefined; // stop piece moved into from being set to normal opacity by loop
+
         // change game state
         gameState = "move";
-        this.selectablePieces = this.board.getBuilders();
       }
     }
   }

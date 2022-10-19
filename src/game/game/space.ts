@@ -32,14 +32,6 @@ export class Space extends Group implements Selectable{
     this.y = y
   }
 
-  update(){
-
-  }
-
-  /**
-   * Receives PieceType, creates piece of that type and places it correctly
-   * @param type: PieceType
-   */
   addPiece(type: PieceType): Piece {
     const piece = new Piece(type, this.x, this.y);
     this.pieces.push(piece);
@@ -83,8 +75,8 @@ export class Space extends Group implements Selectable{
   }
 
   build() {
-    const height = this.pieces.length;
-    switch(height){
+    const piece = this.pieces.length;
+    switch(piece){
       case 0:
         this.addPiece( PieceType.Base );
         break;
@@ -99,8 +91,8 @@ export class Space extends Group implements Selectable{
         break;
       default:
         console.log("space.ts | build() | Building too high");
-        return;
     }
+    this.mesh.position.setY(this.height);
   }
 
   available(): boolean{
@@ -115,7 +107,6 @@ export class Space extends Group implements Selectable{
   }
 
   normal(){
-    this.mesh.position.setY(this.height);
     (this.mesh.material as Material).opacity = 0.2;
   }
 
@@ -123,12 +114,6 @@ export class Space extends Group implements Selectable{
     (this.mesh.material as Material).opacity = 0;
   }
 
-  onClick(): Selectable | undefined { return undefined }
-
-  /**
-   *
-   * @private
-   */
   private addFloorTile(type: SpaceType){
     const size: number = 0.969;
     const square = new BoxGeometry(size, 0, size);

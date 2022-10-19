@@ -2,10 +2,7 @@ import {
   Mesh,
   MeshStandardMaterial,
   Object3D,
-  Vector2
 } from "three";
-
-import { Selectable } from "./selectable";
 
 import { Space, SpaceType } from "./space";
 
@@ -19,10 +16,6 @@ export class Board extends Object3D {
   builders: Piece[];
 
   mesh: Mesh | undefined;
-
-  adjacent: Space[] | undefined;
-  hoveredPiece: Selectable | undefined;
-  selectedPiece: Selectable | undefined;
 
   constructor() {
     super();
@@ -98,30 +91,27 @@ export class Board extends Object3D {
    * PIECE MOVEMENT
    */
   getAdjacentSpaces(x: number, y: number): Space[] {
-    // TODO translate space
     let adjacentSpaces: Array<Space> = new Array<Space>();
-    let position = new Vector2(x, y);
 
-    // TODO FIX THIS USE ARRAY<ARRAY<SPACE>>
     // top left boundary
-    if (position.x > 0 && position.y > 0) adjacentSpaces.push(this.getSpace(position.x-1, position.y-1));
+    if (x > 0 && y > 0) adjacentSpaces.push(this.getSpace(x-1, y-1));
     // left boundary
-    if (position.x > 0) adjacentSpaces.push(this.getSpace(position.x-1, position.y));
+    if (x > 0) adjacentSpaces.push(this.getSpace(x-1, y));
     // left bottom boundary
-    if (position.x > 0 && position.y < 4) adjacentSpaces.push(this.getSpace(position.x-1, position.y+1)) ;
+    if (x > 0 && y < 4) adjacentSpaces.push(this.getSpace(x-1, y+1)) ;
 
     // bottom boundary
-    if (position.y < 4) adjacentSpaces.push(this.getSpace(position.x, position.y+1));
+    if (y < 4) adjacentSpaces.push(this.getSpace(x, y+1));
     // bottom right boundary
-    if(position.x < 4 && position.y < 4) adjacentSpaces.push(this.getSpace(position.x+1, position.y+1));
+    if(x < 4 && y < 4) adjacentSpaces.push(this.getSpace(x+1, y+1));
 
     // right boundary
-    if (position.x < 4) adjacentSpaces.push(this.getSpace(position.x+1, position.y));
+    if (x < 4) adjacentSpaces.push(this.getSpace(x+1, y));
     // right top boundary
-    if (position.x < 4 && position.y > 0) adjacentSpaces.push(this.getSpace(position.x+1, position.y-1));
+    if (x < 4 && y > 0) adjacentSpaces.push(this.getSpace(x+1, y-1));
 
     // top boundary
-    if (position.y > 0) adjacentSpaces.push(this.getSpace(position.x, position.y-1));
+    if (y > 0) adjacentSpaces.push(this.getSpace(x, y-1));
 
     return adjacentSpaces;
   }
@@ -129,10 +119,6 @@ export class Board extends Object3D {
   placeBuilder(x: number, y: number) {
     const piece: Piece = this.getSpace(x, y).addPiece(PieceType.Builder);
     this.builders.push(piece);
-  }
-
-  move(x_source: number, y_source: number, x_dest: number, y_dest:number) {
-
   }
 
   build(x: number, y: number) {
@@ -147,27 +133,13 @@ export class Board extends Object3D {
 
   getBuilders(): Piece[] { return this.builders; }
 
-  getMovablePieces(): Selectable[]{
-    return this.builders;
-  }
 
-  getBuildableBlocks() {}
-  /**
-   *
-   */
   update(){
-    // dim hovered and selected pieces
-    //this.hoveredPiece?.highlight();
-    //this.selectedPiece?.highlight();
-    //
+    console.log(this.getSpace(3, 4).mesh.material.opacity);
   }
 
-  /**
-   * Draw Coordinates
-   */
-  private drawCoordinates(){
 
-  }
+  private drawCoordinates(){}
 }
 
 export class Move {
