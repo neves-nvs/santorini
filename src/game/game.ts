@@ -4,12 +4,14 @@ import {Board} from "./game/board";
 import {Selectable, SelectableType} from "./game/selectable";
 
 let gameState = "place";
-export default class GameScene extends Scene {
+export class Game extends Scene implements Context{
   board: Board;
   axesHelper: AxesHelper;
   gridHelper: GridHelper;
   ambientLight: AmbientLight;
   directionalLight: DirectionalLight;
+
+  state: State; // TODO
 
   hoveredPiece: Selectable | undefined;
   selectedPiece: Selectable | undefined;
@@ -34,9 +36,18 @@ export default class GameScene extends Scene {
     this.add(this.ambientLight);
     this.add(this.directionalLight);
 
+
     this.validSpaces = this.board.spaces.flat().filter(s => s.available());
     this.validSpaces.forEach(s => s.normal());
+    this.state = new Not_Started(this);
   }
+
+  transitionTo(state: State): void {
+        this.state = state;
+    }
+    play(): void {
+        throw new Error("Method not implemented.");
+    }
 
   getSelectablePieces(): Selectable[] {
     if (gameState == "place"){
@@ -49,7 +60,7 @@ export default class GameScene extends Scene {
     } else if (gameState == "build"){
       return this.validSpaces;
     }
-    return []; // not reachable under normal circunstances
+    return []; // not reachable under normal circumstances
   }
 
   hover(hovered: Selectable | undefined) {
@@ -61,7 +72,6 @@ export default class GameScene extends Scene {
   }
 
   update(){
-    //this.validSpaces.forEach(s => s.normal());
     this.hoveredPiece?.highlight();
     this.board.update();
   }
@@ -101,7 +111,7 @@ export default class GameScene extends Scene {
             .filter(s => s.available());
 
       } else if (this.selectedPiece?.sel_type == SelectableType.Space){
-
+        if(!this.movingBuilder) return;
         let [x_src, y_src] = [this.movingBuilder.x, this.movingBuilder.y];
         let [x_dest, y_dest] = [this.selectedPiece.x, this.selectedPiece.y];
         this.board.getSpace( x_dest, y_dest)
@@ -138,3 +148,79 @@ export default class GameScene extends Scene {
   }
 }
 
+class Context {
+  state: State;
+
+  constructor() {
+    this.state = new Not_Started(this);
+  }
+
+  transitionTo(state: State){
+    this.state = state;
+    this.state.setContext(this);
+  }
+
+  play(): void {
+    this.state.apply();
+  }
+}
+
+
+abstract class State {
+  context: Context;
+
+  protected constructor(context: Context) {
+    this.context = context;
+  }
+  public setContext(context: Context){
+    this.context = context;
+  }
+
+  public abstract apply(): void;
+}
+
+
+
+class Not_Started extends State{
+
+  constructor(context: Context) {
+    super(context);
+  }
+
+  apply(){
+  }
+}
+//
+// class Start extends State{
+//
+//   constructor(context: Context) {
+//     super(context);
+//   }
+//   apply(){
+//
+//   }
+// }
+//
+// class GameOver extends State{
+//   apply(){
+//
+//   }
+// }
+//
+// class Place extends State {
+//   apply(){
+//
+//   }
+// }
+//
+// class Move extends State {
+//   apply(){
+//
+//   }
+// }
+//
+// class Build extends State {
+//   apply(){
+//
+//   }
+// }

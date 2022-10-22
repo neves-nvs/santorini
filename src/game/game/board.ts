@@ -1,4 +1,5 @@
 import {
+  BufferGeometry,
   Mesh,
   MeshStandardMaterial,
   Object3D,
@@ -8,7 +9,10 @@ import { Space, SpaceType } from "./space";
 
 import { Piece, PieceType } from "./piece";
 
-import { boardGeometry } from "../assets_loader/stlloader";
+import {
+  locations,
+  stlloader
+} from "../assets_loader/stlloader";
 
 
 export class Board extends Object3D {
@@ -55,7 +59,11 @@ export class Board extends Object3D {
   }
 
   addMesh(){
-    const geometry = boardGeometry;
+    const location = locations["board"];
+
+    let geometry: BufferGeometry = new BufferGeometry();
+    stlloader.load(location, g => geometry = g);
+
     geometry.center();
     let material = new MeshStandardMaterial({color: "white"});
     this.mesh = new Mesh(geometry, material);
@@ -135,7 +143,6 @@ export class Board extends Object3D {
 
 
   update(){
-    console.log(this.getSpace(3, 4).mesh.material.opacity);
   }
 
 

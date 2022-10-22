@@ -1,6 +1,6 @@
 import "./style.css";
 
-import GameScene from "./game/game";
+import { Game } from "./game/game";
 
 import {
   PerspectiveCamera,
@@ -20,6 +20,7 @@ import { GUI } from 'dat.gui'
 
 import {Selectable} from "./game/game/selectable";
 
+
 let camera: PerspectiveCamera;
 let renderer: WebGLRenderer;
 
@@ -34,7 +35,7 @@ let button = { restart: function(){ init() }};
 const gui: GUI = new GUI;
 gui.add(button,'restart');
 
-let game: GameScene;
+let game: Game;
 
 //-----------------------------------------------------------------------------
 function onResize() {
@@ -60,7 +61,7 @@ function onPointerMove(event: MouseEvent) {
 
 //-----------------------------------------------------------------------------
 function init(){
-  game = new GameScene();
+  game = new Game();
   camera = new PerspectiveCamera(
     45,
     window.innerWidth / window.innerHeight,
