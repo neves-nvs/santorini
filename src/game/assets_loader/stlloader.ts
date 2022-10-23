@@ -15,6 +15,10 @@ interface Dictionary<Type> {
     [index: string]: Type;
 }
 
+export const loc: Map<string, string> = new Map();
+loc.set('builder', 'assets/Builder.stl');
+console.log(loc.get('builder'));
+
 export const locations = {
     builder: 'assets/Builder.stl',
     base: 'assets/Base.stl',

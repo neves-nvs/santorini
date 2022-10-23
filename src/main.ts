@@ -37,6 +37,10 @@ gui.add(button,'restart');
 
 let game: Game;
 
+const delta: number = 5;
+let startX: number;
+let startY: number;
+
 //-----------------------------------------------------------------------------
 function onResize() {
   let width: number = window.innerWidth;
@@ -49,9 +53,23 @@ function onResize() {
   camera.updateProjectionMatrix();
 }
 
-function onClick() { game.onClick(); }
+function onMouseDown(event: MouseEvent) {
+  startX = event.pageX;
+  startY = event.pageY;
+
+}
+
+function onMouseUp(event: MouseEvent) {
+  const diffX = Math.abs(event.pageX - startX);
+  const diffY = Math.abs(event.pageY - startY);
+
+  if (diffX < delta && diffY < delta) {
+    game.onClick();
+  }
+}
 
 function onPointerMove(event: MouseEvent) {
+
   // calculate pointer position in normalized device coordinates
   // (-1 to +1) for both game
   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -97,7 +115,8 @@ function init(){
 
   window.addEventListener("resize", onResize);
   window.addEventListener("pointermove", onPointerMove);
-  window.addEventListener("click", onClick);
+  window.addEventListener("mousedown", onMouseDown);
+  window.addEventListener("mouseup", onMouseUp);
 }
 
 
