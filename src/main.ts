@@ -1,85 +1,79 @@
 import "./style.css";
 
-import { Game } from "./game/game";
-
 import {
-  PerspectiveCamera,
-  WebGLRenderer,
-  Vector2,
-  Raycaster,
+  Clock,
   Intersection,
-  ACESFilmicToneMapping,
   Mesh,
+  PerspectiveCamera,
+  Raycaster,
+  Scene,
+  Vector2,
+  WebGLRenderer,
 } from "three";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
-import Stats from 'three/examples/jsm/libs/stats.module';
+import Game from "./app/game";
+import { Selectable } from "./app/view/game/selectable";
 
-import { GUI } from 'dat.gui'
-
-import {Selectable} from "./game/game/selectable";
-
-
+let scene: Scene;
 let camera: PerspectiveCamera;
 let renderer: WebGLRenderer;
 
-let controls: OrbitControls;
-
-let pointer: Vector2;
-let raycaster: Raycaster;
-
-let stats: Stats;
-
-let button = { restart: function(){ init() }};
-const gui: GUI = new GUI;
-gui.add(button,'restart');
-
 let game: Game;
 
-const delta: number = 5;
+let controls: OrbitControls;
+let pointer: Vector2;
+let raycaster: Raycaster;
+const MOUSE_DELTA: number = 5;
 let startX: number;
 let startY: number;
 
-//-----------------------------------------------------------------------------
+let clock: Clock;
+let delta: number;
+
 function onResize() {
   let width: number = window.innerWidth;
   let height: number = window.innerHeight;
-
   renderer.setSize(window.innerWidth, window.innerHeight);
-
   camera.aspect = width / height;
-
   camera.updateProjectionMatrix();
 }
 
 function onMouseDown(event: MouseEvent) {
   startX = event.pageX;
   startY = event.pageY;
-
 }
 
 function onMouseUp(event: MouseEvent) {
   const diffX = Math.abs(event.pageX - startX);
   const diffY = Math.abs(event.pageY - startY);
 
-  if (diffX < delta && diffY < delta) {
-    game.onClick();
+  if (diffX < MOUSE_DELTA && diffY < MOUSE_DELTA) {
+    select();
   }
 }
 
 function onPointerMove(event: MouseEvent) {
-
   // calculate pointer position in normalized device coordinates
-  // (-1 to +1) for both game
+  // (-1 to +1) for both model
   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 }
 
-
 //-----------------------------------------------------------------------------
-function init(){
-  game = new Game();
+function init() {
+  scene = new Scene();
+  const canvas = document.querySelector("canvas#webgl");
+  renderer = new WebGLRenderer({
+    canvas: canvas as HTMLElement,
+    antialias: true,
+    alpha: true,
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setClearColor(0x87ceeb, 1);
+
   camera = new PerspectiveCamera(
     45,
     window.innerWidth / window.innerHeight,
@@ -90,17 +84,8 @@ function init(){
   camera.position.setX(5);
   camera.position.setY(5);
 
-  const canvas = document.querySelector("canvas#webgl");
-  renderer = new WebGLRenderer({
-    canvas: canvas as HTMLElement,
-    antialias: true,
-    alpha: true
-  });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.toneMapping = ACESFilmicToneMapping;
-  //renderer.outputEncoding = sRGBEncoding;
-  renderer.setClearColor(0x87CEEB, 1);
+  clock = new Clock();
+  game = new Game(scene);
 
   pointer = new Vector2();
 
@@ -110,58 +95,56 @@ function init(){
   controls.target.set(2, 0, 2);
   controls.maxPolarAngle = Math.PI / 2;
 
-  stats = Stats();
-  document.body.appendChild(stats.dom);
-
   window.addEventListener("resize", onResize);
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("mousedown", onMouseDown);
   window.addEventListener("mouseup", onMouseUp);
 }
 
-
 //-----------------------------------------------------------------------------
-function hover(): Selectable {
+
+function interceptPiece(): Selectable {
   //TODO Stop Pieces from knowing their positions
   //TODO getSelectablePieces should return dict<Piece, Position>
-  raycaster.setFromCamera(pointer, camera);
 
-  const selectable: Mesh[] = game.getSelectablePieces().map(s => s.mesh);
+  raycaster.setFromCamera(pointer, camera);
+  const selectable: Mesh[] = game.getSelectablePieces().map((s) => s.mesh);
   const intersects: Intersection[] = raycaster.intersectObjects(selectable);
-  const distance: number = Math.min(...intersects.map( ({distance}) => distance));
-  const closest: Intersection = intersects.filter(intersection => intersection.distance == distance)[0];
-  const hovered: Selectable | undefined = closest?.object.parent as unknown as Selectable;
-  game.hover(hovered);
-  return hovered;
+  const distance: number = Math.min(...intersects.map(({ distance }) => distance));
+  const closest: Intersection = intersects.filter((intersection) => intersection.distance == distance)[0];
+  return closest?.object.parent as unknown as Selectable;
+}
+
+function hover() {
+  game.hover(interceptPiece());
+}
+
+function select() {
+  game.onClick(interceptPiece());
 }
 
 //-----------------------------------------------------------------------------
-function clear() { game.resetPiece(); }
-
-function update() {
+function update(delta: number) {
   controls.update();
+  game.resetPiece();
   hover();
-  game.update();
-  stats.update();
+  game.update(delta);
 }
 
 function render() {
-  renderer.render(game, camera);
+  renderer.render(scene, camera);
 }
 
-//-----------------------------------------------------------------------------
 function animate() {
-  clear();
-  update();
-  render();
   requestAnimationFrame(animate);
+  delta = Math.min(clock.getDelta(), 0.1);
+  update(delta);
+  render();
 }
 
-//-----------------------------------------------------------------------------
 function main() {
   init();
   animate();
 }
 
-//-----------------------------------------------------------------------------
 main();

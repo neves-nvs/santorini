@@ -9,12 +9,14 @@ import {
 import {
   STLImportConfig,
   locations,
-  stlloader
-} from "../assets_loader/stlloader";
+  stlloader,
+} from "../assets/stlloader";
 
-import {Selectable, SelectableType} from "./selectable";
+import { Selectable, SelectableType } from "./selectable";
 
-export class Piece extends Object3D implements Selectable{
+let counter: number = 0;
+
+export class Piece3D extends Object3D implements Selectable {
   mesh: Mesh;
   sel_type: SelectableType = SelectableType.Block;
   x: number;
@@ -23,7 +25,7 @@ export class Piece extends Object3D implements Selectable{
   Type: number;
   height: number = 0;
 
-  constructor(type: PieceType, x:number, y:number) {
+  constructor(type: PieceType, x: number, y: number) {
     super();
 
     this.mesh = new Mesh(); // TODO fix
@@ -32,30 +34,31 @@ export class Piece extends Object3D implements Selectable{
     this.y = y;
 
     let config: STLImportConfig = new STLImportConfig(0, 0, 0.03);
-    let color: number = 0xCCCCCC;
+    let color: number = 0xcccccc;
     let location: string = "";
 
     switch (type) {
       case PieceType.Builder:
         this.sel_type = SelectableType.Builder;
-        location = locations['builder'];
+        location = locations["builder"];
         config = new STLImportConfig(0.47, -Math.PI / 2, 0.03);
-        color = 0x3260a8;
+        color = counter % 2 == 0 ? 0x3260a8 : 0xf56642;
+        counter++;
         break;
       case PieceType.Base:
-        location = locations['base'];
+        location = locations["base"];
         config = new STLImportConfig(0.231, -Math.PI / 2, 0.028);
         break;
       case PieceType.Mid:
-        location = locations['mid'];
+        location = locations["mid"];
         config = new STLImportConfig(0.275, -Math.PI / 2, 0.028);
         break;
       case PieceType.Top:
-        location = locations['top'];
+        location = locations["top"];
         config = new STLImportConfig(0.165, Math.PI / 2, 0.028);
         break;
       case PieceType.Dome:
-        location = locations['dome'];
+        location = locations["dome"];
         config = new STLImportConfig(0.1, -Math.PI / 2, 0.0165);
         break;
       default:
@@ -63,39 +66,44 @@ export class Piece extends Object3D implements Selectable{
     }
     this.height = 2 * config.y_offset;
 
-
     let geometry: BufferGeometry;
     stlloader.load(
-        location,
-        (g) => {
-          geometry = g;
-          const material = new MeshStandardMaterial({color: color, transparent: true});
-          geometry.center();
-          this.mesh = new Mesh(geometry, material);
-          this.mesh.position.setY(config.y_offset);
-          this.mesh.scale.set(config.scale, config.scale, config.scale);
-          this.mesh.rotateX(config.x_rotation);
+      location,
+      (g) => {
+        geometry = g;
+        const material = new MeshStandardMaterial({
+          color: color,
+          transparent: true,
+        });
+        geometry.center();
+        this.mesh = new Mesh(geometry, material);
+        this.mesh.position.setY(config.y_offset);
+        this.mesh.scale.set(config.scale, config.scale, config.scale);
+        this.mesh.rotateX(config.x_rotation);
 
-          this.add(this.mesh);
-        },
-        (event: ProgressEvent) => {console.debug(event.loaded/event.total * 100)},
-        () => console.error("STL LOAD ERROR"));
+        this.add(this.mesh);
+      },
+      (event: ProgressEvent) => {
+        console.debug((event.loaded / event.total) * 100);
+      },
+      () => console.error("STL LOAD ERROR")
+    );
   }
 
-  highlight(){
+  highlight() {
     (this.mesh.material as Material).opacity = 0.5;
   }
 
-  normal(){
+  normal() {
     (this.mesh.material as Material).opacity = 1;
   }
 
-  reset(){
+  reset() {
     (this.mesh.material as Material).opacity = 1;
   }
 
   onClick(): Selectable | undefined {
-    return (this as Selectable);
+    return this as Selectable;
   }
 }
 
