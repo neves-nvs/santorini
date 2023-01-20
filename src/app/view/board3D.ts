@@ -4,7 +4,7 @@ import { Space3D, SpaceType } from "./space3D";
 
 import { Piece3D, PieceType } from "./piece3D";
 
-import { locations, stlloader } from "../assets/stlloader";
+import { locations, stlloader } from "./stlloader";
 
 export class Board3D extends Object3D {
   spaces: Space3D[][];
@@ -33,19 +33,6 @@ export class Board3D extends Object3D {
         this.add(space);
       }
     }
-    console.log(
-      " ___________________ \n" +
-        "|   |   |   |   |   |\n" +
-        "|0_0|___|___|___|4_0|\n" +
-        "|   |   |   |   |   |\n" +
-        "|___|___|___|___|___|\n" +
-        "|   |   |   |   |   |\n" +
-        "|___|___|2_2|___|___|\n" +
-        "|   |   |   |   |   |\n" +
-        "|___|___|___|___|___|\n" +
-        "|   |   |   |   |   |\n" +
-        "|0_4|___|___|___|4_4|\n"
-    );
 
     this.addMesh();
   }
@@ -54,19 +41,20 @@ export class Board3D extends Object3D {
     const location = locations["board"];
 
     let geometry: BufferGeometry = new BufferGeometry();
-    stlloader.load(location, (g) => (geometry = g));
+    stlloader.load(location, g => {
+      geometry = g;
+      const material = new MeshStandardMaterial({ color: "white" });
+      geometry.center();
+      this.mesh = new Mesh(geometry, material);
 
-    geometry.center();
-    let material = new MeshStandardMaterial({ color: "white" });
-    this.mesh = new Mesh(geometry, material);
+      let scale = 0.031747;
+      this.mesh.scale.set(scale, scale, scale);
+      this.add(this.mesh);
 
-    let scale = 0.031747;
-    this.mesh.scale.set(scale, scale, scale);
-    this.add(this.mesh);
+      this.mesh.rotateX(-Math.PI / 2);
 
-    this.mesh.rotateX(-Math.PI / 2);
-
-    this.mesh.position.set(2, -0.067, 2);
+      this.mesh.position.set(2, -0.067, 2);
+    });
   }
 
   getSpace(x: number, y: number): Space3D {

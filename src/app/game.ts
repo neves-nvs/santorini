@@ -6,8 +6,8 @@ import {
   Scene,
 } from "three";
 
-import { Board3D } from "./view/game/board3D";
-import { Selectable, SelectableType } from "./view/game/selectable";
+import { Board3D } from "./view/board3D";
+import Selectable, { SelectableType } from "./view/selectable";
 
 import GameManager from "./model/gameManager";
 import OfflineGameManager from "./model/offlineGameManager";
@@ -88,10 +88,10 @@ export default class Game {
     // get now clicked piece
     this.selectedPiece = selectable;
 
-    if (this.selectedPiece){
-      let plays = this.gameManager.getPlays();
-      console.log(plays);
-    }
+    //if (this.selectedPiece){
+    //  let plays = this.gameManager.getPlays();
+    //  console.log(plays);
+    //}
 
     if (gameState == "place") {
       if (this.selectedPiece?.sel_type == SelectableType.Space) {

@@ -1,4 +1,4 @@
-import { GameManager, Play }  from "./gameManager";
+import GameManager, { Play } from "./gameManager";
 import { Clickable, GameModel, Position } from "./gameModel";
 import Player from "./player";
 
@@ -8,10 +8,9 @@ type TurnPhase = 'PLACE' | 'MOVE' | 'BUILD';
 
 export default class OfflineGameManager implements GameManager {
     gameModel: GameModel;
-
     numberOfPlayers: number;
-    players: Player[] = [];
-    state: State = 'NOT_STARTED';
+    players: Player[];
+    state: State;
 
     /*
     [
@@ -21,8 +20,7 @@ export default class OfflineGameManager implements GameManager {
     n: [ [x, y], ..., [x, y] ]
     ]
      */
-    builderPerPlayer = new Array<Array<Position>>();
-
+    builderPerPlayer: Position[][];
     selectedBuilderPosition: Position | undefined;
     currentPlayer: number = 0;
     turnPhase: TurnPhase | undefined;
@@ -30,9 +28,15 @@ export default class OfflineGameManager implements GameManager {
     constructor(numberOfPlayers = 2) {
         this.gameModel = new GameModel();
         this.numberOfPlayers = numberOfPlayers;
+        this.players = [];
+        this.state = 'NOT_STARTED';
+        this.builderPerPlayer = new Array<Position[]>();
+        this.selectedBuilderPosition = undefined;
+        this.currentPlayer = 0;
+        this.turnPhase = undefined;
     }
 
-    start(){
+    start() {
         let notEnoughPlayers = this.players.length != this.numberOfPlayers;
         if (notEnoughPlayers) throw new Error('[start] Not enough players');
 
@@ -42,7 +46,7 @@ export default class OfflineGameManager implements GameManager {
         this.turnPhase = 'PLACE';
     }
 
-    addPlayer(player: Player){
+    addPlayer(player: Player) {
         let gameAlreadyStarted = this.state != 'NOT_STARTED';
         if (gameAlreadyStarted) throw new Error('[addPlayer] Game Already Started');
 
@@ -55,16 +59,16 @@ export default class OfflineGameManager implements GameManager {
         this.players.push(player);
     }
 
-    private nextPlayer(){
+    private nextPlayer() {
         this.currentPlayer += 1;
-        this.currentPlayer %=  this.numberOfPlayers;
+        this.currentPlayer %= this.numberOfPlayers;
     }
 
-    getPlays(): Play[]{
-        let gameIsRunning = this.turnPhase == undefined;
-        if (gameIsRunning) throw new Error('[getMove] Game not started yed.');
+    getPlays(): Play[] {
+        let gameIsNotRunning = this.turnPhase == undefined;
+        if (gameIsNotRunning) throw new Error('[getMove] Game not started yed.');
 
-        switch (this.turnPhase){
+        switch (this.turnPhase) {
             case 'PLACE':
                 return this.placeGetHandler();
 
@@ -93,16 +97,15 @@ export default class OfflineGameManager implements GameManager {
         //    }
         //}
 
-        this.gameModel.board.squares.forEach(
-            (space_list, x) => {
-                space_list.forEach( (_, y) => {
-                    let position = new Position(x, y);
-                    let availableSpace = this.gameModel.board.available(position);
-                    if (availableSpace){
-                        plays.push( new Play(Clickable.SPACE, position) );
-                    }
-                });
+        this.gameModel.board.squares.forEach((_, x) => {
+            _.forEach((_, y) => {
+                let position = new Position(x, y);
+                let availableSpace = this.gameModel.board.available(position);
+                if (availableSpace) {
+                    plays.push(new Play(Clickable.SPACE, position));
+                }
             });
+        });
         return plays;
     }
 
@@ -114,15 +117,15 @@ export default class OfflineGameManager implements GameManager {
             // create a play for each position the selected builder can go
             let position: Position = this.selectedBuilderPosition;
             let adjacentPositions = this.gameModel.board.adjacent(position);
-            adjacentPositions.forEach( position => {
-                plays.push( new Play(Clickable.SPACE, position));
+            adjacentPositions.forEach(position => {
+                plays.push(new Play(Clickable.SPACE, position));
             });
         }
 
         // create a play to select each builder
         let currentPlayerBuilders = this.builderPerPlayer[this.currentPlayer];
-        currentPlayerBuilders.forEach(position =>{
-            plays.push( new Play(Clickable.SPACE, position))
+        currentPlayerBuilders.forEach(position => {
+            plays.push(new Play(Clickable.SPACE, position))
         });
 
         return plays;
@@ -132,20 +135,20 @@ export default class OfflineGameManager implements GameManager {
         let plays: Play[] = new Array<Play>();
 
         // No builder selected
-        if (! this.selectedBuilderPosition) throw Error('[getPlays:MOVE] no builder selected');
+        if (!this.selectedBuilderPosition) throw Error('[getPlays:MOVE] no builder selected');
 
         let position: Position = this.selectedBuilderPosition;
         let adjacentPositions = this.gameModel.board.adjacent(position);
 
         // filter spaces with builders
-        adjacentPositions = adjacentPositions.filter( position => this.gameModel.board.available(position));
+        adjacentPositions = adjacentPositions.filter(position => this.gameModel.board.available(position));
 
         // filter spaces too high
         let currentHeight: number = this.gameModel.board.height(position) - 1;
-        adjacentPositions = adjacentPositions.filter( position => this.gameModel.board.height(position) < currentHeight + 2 );
+        adjacentPositions = adjacentPositions.filter(position => this.gameModel.board.height(position) < currentHeight + 2);
 
-        adjacentPositions.forEach( position => {
-            plays.push( new Play(Clickable.SPACE, position));
+        adjacentPositions.forEach(position => {
+            plays.push(new Play(Clickable.SPACE, position));
         });
 
         return plays;
@@ -155,7 +158,7 @@ export default class OfflineGameManager implements GameManager {
         let gameIsRunning = this.turnPhase == undefined;
         if (gameIsRunning) throw new Error('[play] Game not started yed.');
 
-        switch (this.turnPhase){
+        switch (this.turnPhase) {
             case 'PLACE':
                 return this.placePlayHandler(play);
 
@@ -170,7 +173,7 @@ export default class OfflineGameManager implements GameManager {
 
     private placePlayHandler(play: Play) {
         let clickedSpace = play.click == Clickable.SPACE;
-        if (clickedSpace){
+        if (clickedSpace) {
             // apply action
 
             // keep state
@@ -188,7 +191,7 @@ export default class OfflineGameManager implements GameManager {
         }
     }
     private movePlayHandler(play: Play) {
-        switch (play.click){
+        switch (play.click) {
             case Clickable.BUILDER:
                 this.selectedBuilderPosition = play.position;
                 break;
@@ -203,8 +206,8 @@ export default class OfflineGameManager implements GameManager {
                 this.gameModel.board.move(fromPosition, toPosition);
 
                 // update builder location state tracker
-                this.builderPerPlayer[this.currentPlayer].forEach( pos => {
-                    if (pos.x == fromPosition.x  && pos.y == fromPosition.y){
+                this.builderPerPlayer[this.currentPlayer].forEach(pos => {
+                    if (pos.x == fromPosition.x && pos.y == fromPosition.y) {
                         [pos.x, pos.y] = [toPosition.x, toPosition.y];
                     }
                 });
@@ -213,7 +216,7 @@ export default class OfflineGameManager implements GameManager {
     }
 
     private buildPlayHandler(play: Play) {
-        switch (play.click){
+        switch (play.click) {
 
             case Clickable.SPACE:
                 this.gameModel.board.build(play.position);

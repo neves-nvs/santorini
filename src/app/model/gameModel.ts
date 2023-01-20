@@ -1,4 +1,4 @@
-import {SelectableType} from "../view/game/selectable";
+import { SelectableType } from "../view/selectable";
 
 export class Position {
   x: number;
@@ -6,15 +6,15 @@ export class Position {
 
   constructor(x: number, y: number) { [this.x, this.y] = [x, y]; }
 
-  destructure(){ return [this.x, this.y]; }
+  destructure() { return [this.x, this.y]; }
 }
 
-export enum Clickable { SPACE,  BUILDER }
+export enum Clickable { SPACE, BUILDER }
 
 export class GameModel {
   board = new Board();
 
-  place(position: Position){
+  place(position: Position) {
     this.board.place(position);
   }
 }
@@ -24,7 +24,7 @@ class Board {
   SIZE = 5;
 
   constructor() {
-    this.squares = new Array<Array<Space>>(5);
+    this.squares = new Array<Space[]>(5);
     for (let x = 0; x < this.SIZE; x++) {
       this.squares[x] = new Array<Space>(5);
       for (let y = 0; y < this.SIZE; y++) {
@@ -36,7 +36,7 @@ class Board {
   adjacent(position: Position): Position[] {
     let [x, y] = position.destructure();
 
-    let adjacent: Array<Position> = [];
+    let adjacent: Position[] = [];
 
     // top left boundary
     if (x > 0 && y > 0) adjacent.push(new Position(x - 1, y - 1));
@@ -61,17 +61,17 @@ class Board {
     return adjacent;
   }
 
-  available(position: Position){
+  available(position: Position) {
     let [x, y] = position.destructure();
     return !(SelectableType.Builder in this.squares[x][y]);
   }
 
-  height(position: Position): number{
+  height(position: Position): number {
     let [x, y] = position.destructure();
     return this.squares[x][y].height();
   }
 
-  place(position: Position){
+  place(position: Position) {
     let [x, y] = position.destructure();
     let square: Space = this.squares[x][y];
 
@@ -81,7 +81,7 @@ class Board {
     square.place();
   }
 
-  move(builderPosition: Position, position: Position){
+  move(builderPosition: Position, position: Position) {
     let [old_x, old_y] = builderPosition.destructure();
     let fromSquare = this.squares[old_x][old_y];
     fromSquare.remove();
@@ -91,7 +91,7 @@ class Board {
     toSquare.place()
   }
 
-  build(position: Position){
+  build(position: Position) {
     let [x, y] = position.destructure();
     let square: Space = this.squares[x][y];
 
@@ -100,7 +100,7 @@ class Board {
 }
 
 class Space {
-  elements = new Array<SelectableType>();
+  elements: SelectableType[] = [];
 
   height() {
     return this.elements.length;
@@ -110,19 +110,19 @@ class Space {
     this.elements.push(SelectableType.Builder)
   }
 
-  remove(){
+  remove() {
     let optPiece = this.elements.pop();
-    if (!optPiece){
+    if (optPiece == undefined) {
       throw Error('[remove] no pieces in square')
     }
-    let piece: SelectableType = optPiece.valueOf();
-    if (piece != SelectableType.Builder){
+    let piece: SelectableType = optPiece;
+    if (piece != SelectableType.Builder) {
       this.elements.push(piece);
       throw Error('[remove] removing piece that inst a builder');
     }
   }
 
-  build(){
+  build() {
     this.elements.push(SelectableType.Block)
   }
 }

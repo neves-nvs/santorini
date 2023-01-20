@@ -14,7 +14,7 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import Game from "./app/game";
-import { Selectable } from "./app/view/game/selectable";
+import Selectable from "./app/view/selectable";
 
 let scene: Scene;
 let camera: PerspectiveCamera;

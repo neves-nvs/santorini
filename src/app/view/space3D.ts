@@ -2,7 +2,7 @@ import { BoxGeometry, Group, Material, Mesh, MeshBasicMaterial } from "three";
 
 import { Piece3D, PieceType } from "./piece3D";
 
-import { Selectable, SelectableType } from "./selectable";
+import Selectable, { SelectableType } from "./selectable";
 
 export enum SpaceType {
   Light = 0x51a832,
@@ -119,8 +119,8 @@ export class Space3D extends Group implements Selectable {
     (this.mesh.material as Material).opacity = 0;
   }
 
-  update(delta: number){
-    if (delta == 0){
+  update(delta: number) {
+    if (delta == 0) {
       // just avoiding linting
     }
   }

@@ -1,6 +1,6 @@
-import { GameManager, Play } from "./gameManager";
+import GameManager, { Play } from "./gameManager";
 
-export default class OnlineGameManager implements GameManager{
+export default class OnlineGameManager implements GameManager {
 
     start(): void {
     }
@@ -12,5 +12,4 @@ export default class OnlineGameManager implements GameManager{
     play(play: Play): void {
         console.log(play);
     }
-
 }

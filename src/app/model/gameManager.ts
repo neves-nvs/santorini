@@ -1,6 +1,6 @@
-import {Clickable, Position} from "./gameModel";
+import { Clickable, Position } from "./gameModel";
 
-export interface GameManager {
+export default interface GameManager {
     start(): void;
 
     getPlays(): Play[];
@@ -8,7 +8,7 @@ export interface GameManager {
     play(play: Play): void;
 }
 
-export class Play{
+export class Play {
     click: Clickable;
     position: Position;
 

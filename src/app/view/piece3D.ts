@@ -10,9 +10,9 @@ import {
   STLImportConfig,
   locations,
   stlloader,
-} from "../assets/stlloader";
+} from "./stlloader";
 
-import { Selectable, SelectableType } from "./selectable";
+import Selectable, { SelectableType } from "./selectable";
 
 let counter: number = 0;
 
@@ -68,8 +68,7 @@ export class Piece3D extends Object3D implements Selectable {
 
     let geometry: BufferGeometry;
     stlloader.load(
-      location,
-      (g) => {
+      location, g => {
         geometry = g;
         const material = new MeshStandardMaterial({
           color: color,
@@ -82,11 +81,7 @@ export class Piece3D extends Object3D implements Selectable {
         this.mesh.rotateX(config.x_rotation);
 
         this.add(this.mesh);
-      },
-      (event: ProgressEvent) => {
-        console.debug((event.loaded / event.total) * 100);
-      },
-      () => console.error("STL LOAD ERROR")
+      }
     );
   }
 
