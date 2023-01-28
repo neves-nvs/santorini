@@ -14,7 +14,7 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 import Game from "./app/game";
-import Selectable from "./app/view/selectable";
+import Button from "./app/view/button";
 
 let scene: Scene;
 let camera: PerspectiveCamera;
@@ -50,7 +50,7 @@ function onMouseUp(event: MouseEvent) {
   const diffY = Math.abs(event.pageY - startY);
 
   if (diffX < MOUSE_DELTA && diffY < MOUSE_DELTA) {
-    select();
+    onValidClick();
   }
 }
 
@@ -103,32 +103,34 @@ function init() {
 
 //-----------------------------------------------------------------------------
 
-function interceptPiece(): Selectable {
-  //TODO Stop Pieces from knowing their positions
-  //TODO getSelectablePieces should return dict<Piece, Position>
-
+function interceptPiece(): Button | undefined {
   raycaster.setFromCamera(pointer, camera);
   const selectable: Mesh[] = game.getSelectablePieces().map((s) => s.mesh);
+  if (selectable.length == 0) return;
   const intersects: Intersection[] = raycaster.intersectObjects(selectable);
   const distance: number = Math.min(...intersects.map(({ distance }) => distance));
   const closest: Intersection = intersects.filter((intersection) => intersection.distance == distance)[0];
-  return closest?.object.parent as unknown as Selectable;
+  return closest?.object.parent as unknown as Button;
 }
 
 function hover() {
-  game.hover(interceptPiece());
+  let button = interceptPiece();
+  if (button == undefined) return;
+  button.hover();
 }
 
-function select() {
-  game.onClick(interceptPiece());
+function onValidClick() {
+  let button = interceptPiece();
+  if (button == undefined) return;
+  button.click();
+  game.onClick(button);
 }
 
 //-----------------------------------------------------------------------------
 function update(delta: number) {
   controls.update();
-  game.resetPiece();
-  hover();
   game.update(delta);
+  hover();
 }
 
 function render() {

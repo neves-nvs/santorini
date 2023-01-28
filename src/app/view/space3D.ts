@@ -2,23 +2,22 @@ import { BoxGeometry, Group, Material, Mesh, MeshBasicMaterial } from "three";
 
 import { Piece3D, PieceType } from "./piece3D";
 
-import Selectable, { SelectableType } from "./selectable";
+import Button from "./button";
+import { Play } from "../model/gameManager";
 
 export enum SpaceType {
   Light = 0x51a832,
   Dark = 0x265c13,
 }
 
-export class Space3D extends Group implements Selectable {
+export class Space3D extends Group implements Button {
   mesh: Mesh;
-  sel_type = SelectableType.Space;
-  x: number;
-  y: number;
-
+  play?: Play;
+  visible: boolean;
   height: number = 0;
   pieces: Piece3D[] = [];
 
-  constructor(type: SpaceType, x: number, y: number) {
+  constructor(type: SpaceType) {
     super();
     this.addFloorTile(type);
 
@@ -33,12 +32,11 @@ export class Space3D extends Group implements Selectable {
     this.mesh = mesh;
     this.add(mesh);
 
-    this.x = x;
-    this.y = y;
+    this.visible = true;
   }
 
   addPiece(type: PieceType): Piece3D {
-    const piece = new Piece3D(type, this.x, this.y);
+    const piece = new Piece3D(type, true);
     this.pieces.push(piece);
     this.add(piece);
 
@@ -47,6 +45,10 @@ export class Space3D extends Group implements Selectable {
     this.height += piece.height;
 
     return piece;
+  }
+
+  setPlay(play: Play){
+    this.play = play;
   }
 
   movePiece(space: Space3D) {
@@ -71,10 +73,6 @@ export class Space3D extends Group implements Selectable {
         // logic array
         space.pieces = space.pieces.filter((p) => p != piece);
         this.pieces.push(piece);
-
-        // piece's new coordinates
-        piece.x = this.x;
-        piece.y = this.y;
       }
     }
   }
@@ -107,22 +105,25 @@ export class Space3D extends Group implements Selectable {
     return true;
   }
 
-  highlight() {
-    (this.mesh.material as Material).opacity = 0.8;
-  }
-
-  normal() {
-    (this.mesh.material as Material).opacity = 0.2;
+  hover(): void {
+    if (this.visible){
+      (this.mesh.material as Material).opacity = 0.8;
+    }
   }
 
   reset() {
-    (this.mesh.material as Material).opacity = 0;
+    if (this.visible) (this.mesh.material as Material).opacity = 0.2;
+    else (this.mesh.material as Material).opacity = 0;
+  }
+
+  click(): Play | undefined {
+    return this.play;
   }
 
   update(delta: number) {
-    if (delta == 0) {
-      // just avoiding linting
-    }
+    this.reset();
+    this.pieces.forEach(p => p.reset());
+    if (delta == 0) return // just avoiding linting
   }
 
   private addFloorTile(type: SpaceType) {

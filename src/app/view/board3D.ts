@@ -5,6 +5,7 @@ import { Space3D, SpaceType } from "./space3D";
 import { Piece3D, PieceType } from "./piece3D";
 
 import { locations, stlloader } from "./stlloader";
+import { Position } from "../model/model";
 
 export class Board3D extends Object3D {
   spaces: Space3D[][];
@@ -27,7 +28,7 @@ export class Board3D extends Object3D {
         } else {
           shade = x % 2 == 0 ? SpaceType.Dark : SpaceType.Light;
         }
-        space = new Space3D(shade, x, z);
+        space = new Space3D(shade);
         space.position.set(x, 0, z);
         this.spaces[x][z] = space;
         this.add(space);
@@ -57,39 +58,18 @@ export class Board3D extends Object3D {
     });
   }
 
-  getSpace(x: number, y: number): Space3D {
+  getSpace(position: Position): Space3D {
+    let [x, y] = position.destructure();
     return this.spaces[x][y];
   }
 
-  getAdjacentSpaces(x: number, y: number): Space3D[] {
-    let adjacentSpaces: Array<Space3D> = new Array<Space3D>();
-    // top left boundary
-    if (x > 0 && y > 0) adjacentSpaces.push(this.getSpace(x - 1, y - 1));
-    // left boundary
-    if (x > 0) adjacentSpaces.push(this.getSpace(x - 1, y));
-    // left bottom boundary
-    if (x > 0 && y < 4) adjacentSpaces.push(this.getSpace(x - 1, y + 1));
-    // bottom boundary
-    if (y < 4) adjacentSpaces.push(this.getSpace(x, y + 1));
-    // bottom right boundary
-    if (x < 4 && y < 4) adjacentSpaces.push(this.getSpace(x + 1, y + 1));
-    // right boundary
-    if (x < 4) adjacentSpaces.push(this.getSpace(x + 1, y));
-    // right top boundary
-    if (x < 4 && y > 0) adjacentSpaces.push(this.getSpace(x + 1, y - 1));
-    // top boundary
-    if (y > 0) adjacentSpaces.push(this.getSpace(x, y - 1));
-
-    return adjacentSpaces;
-  }
-
-  placeBuilder(x: number, y: number) {
-    const piece: Piece3D = this.getSpace(x, y).addPiece(PieceType.Builder);
+  placeBuilder(position: Position) {
+    const piece: Piece3D = this.getSpace(position).addPiece(PieceType.Builder);
     this.builders.push(piece);
   }
 
-  build(x: number, y: number) {
-    const space: Space3D = this.getSpace(x, y);
+  build(position: Position) {
+    const space: Space3D = this.getSpace(position);
     if (!space.available()) {
       console.log("Building on occupied space");
       return;

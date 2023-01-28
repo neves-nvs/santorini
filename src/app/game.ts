@@ -1,36 +1,26 @@
-import {
-  AmbientLight,
-  AxesHelper,
-  DirectionalLight,
-  GridHelper,
-  Scene,
-} from "three";
+import { AmbientLight, AxesHelper, DirectionalLight, GridHelper, Scene, } from "three";
 
 import { Board3D } from "./view/board3D";
-import Selectable, { SelectableType } from "./view/selectable";
 
-import GameManager from "./model/gameManager";
+import GameManager, { Play } from "./model/gameManager";
 import OfflineGameManager from "./model/offlineGameManager";
-
-let gameState = "place";
+import { Clickable } from "./model/model";
+import Player from "./model/player";
+import Button from "./view/button";
 
 export default class Game {
   scene: Scene;
 
   board: Board3D;
 
-  axesHelper: AxesHelper;
-  gridHelper: GridHelper;
-  ambientLight: AmbientLight;
-  directionalLight: DirectionalLight;
+  axesHelper = new AxesHelper(5);
+  gridHelper = new GridHelper(11, 11);
+  ambientLight = new AmbientLight(0x404040);
+  directionalLight = new DirectionalLight(0xffffff, 0.5);
 
   gameManager: GameManager;
 
-  hoveredPiece: Selectable | undefined;
-  selectedPiece: Selectable | undefined;
-  movingBuilder: Selectable | undefined;
-
-  validSpaces: Selectable[] = [];
+  clickable: Button[] = [];
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -38,121 +28,97 @@ export default class Game {
     this.board = new Board3D();
     this.scene.add(this.board);
 
-    this.gameManager = new OfflineGameManager();
-
-    this.gridHelper = new GridHelper(11, 11);
     this.scene.add(this.gridHelper);
-    this.ambientLight = new AmbientLight(0x404040);
     this.scene.add(this.ambientLight);
-    this.directionalLight = new DirectionalLight(0xffffff, 0.5);
     this.scene.add(this.directionalLight);
-
-    this.axesHelper = new AxesHelper(5);
     this.scene.add(this.axesHelper);
 
-    this.validSpaces = this.board.spaces.flat().filter((s) => s.available());
-    this.validSpaces.forEach((s) => s.normal());
+    this.gameManager = new OfflineGameManager();
+    this.gameManager.addPlayer(new Player("Miguel"));
+    this.gameManager.addPlayer(new Player("Afonso"));
+    this.gameManager.start();
+
+    let plays = this.gameManager.getPlays();
+    plays.forEach(p => this.showPlay(p));
   }
 
-  getSelectablePieces(): Selectable[] {
-    switch (gameState) {
-      case "place":
-        return this.validSpaces;
-      case "move":
-        const builders: Selectable[] = this.board.getBuilders();
-        return builders.concat(this.validSpaces);
-      case "build":
-        return this.validSpaces;
-      default:
-        console.log("Invalid game state");
-        return [] // not reachable under normal circumstances
-    }
-  }
-
-  hover(hovered: Selectable | undefined) {
-    this.hoveredPiece = hovered;
-  }
-
-  resetPiece() {
-    this.hoveredPiece?.normal();
+  getSelectablePieces(): Button[] {
+    return this.clickable;
   }
 
   update(delta: number) {
-    this.hoveredPiece?.highlight();
     this.board.update(delta);
   }
 
-  onClick(selectable: Selectable) {
+  onClick(pressed: Button){
+    // get play stored on button
+    let optPlay = pressed.click();
+    console.log(optPlay == undefined);
+    if (optPlay == undefined) return;
+    let play = optPlay;
+    console.log(play);
 
-    this.validSpaces.forEach((s) => s.reset());
-    // get now clicked piece
-    this.selectedPiece = selectable;
+    // play on 3D Model and send to game manager
+    this.play(play);
+    this.gameManager.play(play);
+    this.clickable.forEach(c => c.clear());
+    this.clickable = [];
 
-    //if (this.selectedPiece){
-    //  let plays = this.gameManager.getPlays();
-    //  console.log(plays);
-    //}
+    // get next play
+    let plays = this.gameManager.getPlays();
+    plays.forEach(p => this.showPlay(p));
 
-    if (gameState == "place") {
-      if (this.selectedPiece?.sel_type == SelectableType.Space) {
-        let [x, y] = [this.selectedPiece.x, this.selectedPiece.y];
-        this.board.placeBuilder(x, y);
-        this.validSpaces = this.board.spaces
-          .flat()
-          .filter((s) => s.available());
-      }
+    console.log(this.gameManager);
+    console.log(this.board);
+  }
 
-      if (this.board.builders.length == 4) {
-        this.validSpaces.forEach((s) => s.reset());
-        this.validSpaces = [];
-
-        gameState = "move";
-      }
-    } else if (gameState == "move") {
-      if (this.selectedPiece?.sel_type == SelectableType.Builder) {
-        this.movingBuilder?.normal();
-        this.movingBuilder = this.selectedPiece;
-
-        this.selectedPiece.highlight();
-
-        let [x, y] = [this.selectedPiece.x, this.selectedPiece.y];
-        this.validSpaces = this.board
-          .getAdjacentSpaces(x, y)
-          .filter((s) => s.available())
-          .filter(
-            (s) => s.pieces.length < this.board.getSpace(x, y).pieces.length + 1
-          );
-      } else if (this.selectedPiece?.sel_type == SelectableType.Space) {
-        if (!this.movingBuilder) return;
-        let [x_src, y_src] = [this.movingBuilder.x, this.movingBuilder.y];
-        let [x_dest, y_dest] = [this.selectedPiece.x, this.selectedPiece.y];
-        this.board
-          .getSpace(x_dest, y_dest)
-          .movePiece(this.board.getSpace(x_src, y_src));
-
-        this.validSpaces = this.board
-          .getAdjacentSpaces(x_dest, y_dest)
-          .filter((s) => s.available());
-
-        this.movingBuilder = undefined;
-
-        gameState = "build";
-      }
-    } else if (gameState == "build") {
-      if (this.selectedPiece?.sel_type == SelectableType.Space) {
-        let [x, y] = [this.selectedPiece.x, this.selectedPiece.y];
-        this.board.build(x, y);
-
-        this.validSpaces = [];
-
-        this.selectedPiece = undefined;
-        this.movingBuilder = undefined;
-
-        gameState = "move";
-      }
+  showPlay(play: Play){
+    switch (play.click){
+      case Clickable.SPACE:
+        this.spaceShowPlayHandler(play);
+        break;
+      case Clickable.BUILDER:
+        this.builderShowPlayHandler(play);
+        break;
     }
+  }
 
-    this.validSpaces.forEach((s) => s.normal());
-    this.hoveredPiece = undefined;
+  spaceShowPlayHandler(play: Play){
+    let space = this.board.getSpace(play.position);
+    space.setPlay(play);
+    this.clickable.push(space);
+  }
+
+  builderShowPlayHandler(play: Play){
+    let space = this.board.getSpace(play.position);
+    console.log(space)
+  }
+
+  play(play: Play){
+    switch(play.click) {
+      case Clickable.SPACE:
+        this.spacePlayHandler(play);
+        break;
+      case Clickable.BUILDER:
+        this.builderPlayHandler(play);
+        break;
+
+    }
+  }
+
+  spacePlayHandler(play: Play){
+    let turnPhase = this.gameManager.getTurnPhase();
+    switch (turnPhase){
+      case "PLACE":
+        this.board.placeBuilder(play.position);
+        break;
+      case "BUILD":
+        this.board.build(play.position);
+        break;
+    }
+  }
+
+  builderPlayHandler(play: Play){
+    console.log(play);
   }
 }
