@@ -1,6 +1,9 @@
-import {Clickable, Position} from "./model";
 import Player from "./player";
-import { TurnPhase } from "./offlineGameManager";
+import Play from "../view/messages";
+
+export type GamePhase = 'PLACE' | 'MOVE' | 'BUILD'
+
+export type TurnPhase = 'NOT_STARTED' | GamePhase | 'FINISHED';
 
 export default interface GameManager {
     turnPhase: TurnPhase;
@@ -12,16 +15,4 @@ export default interface GameManager {
     getPlays(): Play[];
 
     play(play: Play): void;
-
-    getTurnPhase(): TurnPhase;
-}
-
-export class Play {
-    click: Clickable;
-    position: Position;
-
-    constructor(click: Clickable, position: Position) {
-        this.click = click;
-        this.position = position;
-    }
 }

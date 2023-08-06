@@ -1,9 +1,10 @@
 import { BoxGeometry, Group, Material, Mesh, MeshBasicMaterial } from "three";
 
-import { Piece3D, PieceType } from "./piece3D";
+import { Piece3D } from "./piece3D";
 
 import Button from "./button";
-import { Play } from "../model/gameManager";
+import Play from "./messages";
+import {PieceType} from "../common/objects";
 
 export enum SpaceType {
   Light = 0x51a832,
@@ -13,7 +14,6 @@ export enum SpaceType {
 export class Space3D extends Group implements Button {
   mesh: Mesh;
   play?: Play;
-  visible: boolean;
   height: number = 0;
   pieces: Piece3D[] = [];
 
@@ -31,12 +31,26 @@ export class Space3D extends Group implements Button {
     const mesh = new Mesh(geometry, material);
     this.mesh = mesh;
     this.add(mesh);
+  }
 
-    this.visible = true;
+  private addFloorTile(type: SpaceType) {
+    const size: number = 0.969;
+    const square = new BoxGeometry(size, 0, size);
+    const color = new MeshBasicMaterial({ color: type });
+    let mesh = new Mesh(square, color);
+    mesh.position.setY(-0.05);
+    this.add(mesh);
+  }
+
+
+  update(delta: number) {
+    this.reset();
+    this.pieces.forEach(p => p.update());
+    if (delta == 0) return // just avoiding linting
   }
 
   addPiece(type: PieceType): Piece3D {
-    const piece = new Piece3D(type, true);
+    const piece = new Piece3D(type);
     this.pieces.push(piece);
     this.add(piece);
 
@@ -47,8 +61,8 @@ export class Space3D extends Group implements Button {
     return piece;
   }
 
-  setPlay(play: Play){
-    this.play = play;
+  place(piece: Piece3D){
+    console.log(piece);
   }
 
   movePiece(space: Space3D) {
@@ -60,7 +74,7 @@ export class Space3D extends Group implements Button {
 
     if (len > 0) {
       let piece: Piece3D = space.pieces[len - 1];
-      if (piece.Type == PieceType.Builder) {
+      if (piece.Type == 'BUILDER') {
         piece.position.setY(this.height);
         // three js
         space.remove(piece);
@@ -81,16 +95,16 @@ export class Space3D extends Group implements Button {
     const piece = this.pieces.length;
     switch (piece) {
       case 0:
-        this.addPiece(PieceType.Base);
+        this.addPiece('BASE');
         break;
       case 1:
-        this.addPiece(PieceType.Mid);
+        this.addPiece('MID');
         break;
       case 2:
-        this.addPiece(PieceType.Top);
+        this.addPiece('TOP');
         break;
       case 3:
-        this.addPiece(PieceType.Dome);
+        this.addPiece('BUILDER');
         break;
       default:
         console.log("space3D.ts | build() | Building too high");
@@ -98,40 +112,29 @@ export class Space3D extends Group implements Button {
     this.mesh.position.setY(this.height);
   }
 
-  available(): boolean {
-    if (this.pieces.length > 3) return false;
-    if (this.pieces.length > 0)
-      return !(this.pieces[this.pieces.length - 1].Type == PieceType.Builder);
-    return true;
+  getBuilder(): Piece3D | undefined {
+    return this.pieces.find(p => p.Type == 'BUILDER');
   }
 
+  getSelectableButtons(): Button[] {
+    return this.pieces.filter(b => b.play != undefined);
+  }
+
+  // ===========================================================================
+  // BUTTON INTERFACE
+  // ===========================================================================
   hover(): void {
-    if (this.visible){
+    if (this.play != undefined){
       (this.mesh.material as Material).opacity = 0.8;
     }
   }
 
   reset() {
-    if (this.visible) (this.mesh.material as Material).opacity = 0.2;
-    else (this.mesh.material as Material).opacity = 0;
+    if (this.play == undefined) (this.mesh.material as Material).opacity = 0;
+    else (this.mesh.material as Material).opacity = 0.2;
   }
 
-  click(): Play | undefined {
-    return this.play;
-  }
+  setPlay(play: Play) { this.play = play; }
 
-  update(delta: number) {
-    this.reset();
-    this.pieces.forEach(p => p.reset());
-    if (delta == 0) return // just avoiding linting
-  }
-
-  private addFloorTile(type: SpaceType) {
-    const size: number = 0.969;
-    const square = new BoxGeometry(size, 0, size);
-    const color = new MeshBasicMaterial({ color: type });
-    let mesh = new Mesh(square, color);
-    mesh.position.setY(-0.05);
-    this.add(mesh);
-  }
+  clearPlay() { this.play = undefined; }
 }

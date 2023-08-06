@@ -1,15 +1,5 @@
-import { PieceType } from "../view/piece3D";
-
-export class Position {
-  x: number;
-  y: number;
-
-  constructor(x: number, y: number) { [this.x, this.y] = [x, y]; }
-
-  destructure() { return [this.x, this.y]; }
-}
-
-export enum Clickable { SPACE, BUILDER }
+import Position from "../common/position";
+import {BlockType, PieceType} from "../common/objects";
 
 export class Board {
   squares: Space[][];
@@ -66,31 +56,34 @@ export class Board {
     let squareIsNotEmpty = (square.size() !== 0);
     if (squareIsNotEmpty) throw new Error('[place] Square is not empty');
 
-    square.place();
+    let builder: PieceType = 'BUILDER';
+    square.add(builder);
   }
 
   move(builderPosition: Position, position: Position) {
     let [old_x, old_y] = builderPosition.destructure();
     let fromSquare = this.squares[old_x][old_y];
-    fromSquare.remove();
+    let builder = fromSquare.remove();
 
     let [new_x, new_y] = position.destructure();
     let toSquare = this.squares[new_x][new_y];
-    toSquare.place()
+
+    toSquare.add(builder);
   }
 
   build(position: Position) {
     let [x, y] = position.destructure();
     let square: Space = this.squares[x][y];
 
-    square.build();
+    let block: BlockType = 'BLOCK';
+    square.add(block);
   }
 
   available(position: Position) {
     let [x, y] = position.destructure();
     let square: Space = this.squares[x][y];
 
-    return !(Clickable.BUILDER in square.elements);
+    return !('BUILDER' in square.elements);
   }
 }
 
@@ -101,25 +94,22 @@ class Space {
     return this.elements.length;
   }
 
-  place() {
-    this.elements.push(PieceType.Builder);
-    console.log(this.elements);
+  add(piece: PieceType) {
+    this.elements.push(piece);
   }
 
-  remove() {
+  remove(): PieceType {
     let optPiece = this.elements.pop();
     if (optPiece == undefined) {
       throw Error('[remove] no pieces in square')
     }
     let piece: PieceType = optPiece;
-    if (piece != PieceType.Builder) {
+    if (piece != 'BUILDER') {
       this.elements.push(piece);
       throw Error('[remove] removing piece that inst a builder');
     }
-  }
 
-  build() {
-    this.elements.push(PieceType.Block)
+    return piece
   }
 }
 

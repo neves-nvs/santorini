@@ -1,8 +1,9 @@
-import GameManager, { Play } from "./gameManager";
-import { Clickable, Board, Position } from "./model";
+import GameManager, {TurnPhase} from "./gameManager";
+import {Board} from "./model";
 import Player from "./player";
 
-export type TurnPhase = 'NOT_STARTED' | 'PLACE' | 'MOVE' | 'BUILD' | 'FINISHED';
+import Play from "../view/messages";
+import Position from "../common/position";
 
 export default class OfflineGameManager implements GameManager {
     board: Board;
@@ -18,8 +19,9 @@ export default class OfflineGameManager implements GameManager {
     n: [ [x, y], ..., [x, y] ]
     ]
      */
-    builderPerPlayer: Position[][];
     selectedBuilderPosition: Position | undefined;
+    builderPerPlayer: Position[][];
+    movedBuilderPosition: Position | undefined;
     currentPlayer: number = 0;
 
     constructor(numberOfPlayers = 2) {
@@ -28,12 +30,8 @@ export default class OfflineGameManager implements GameManager {
         this.players = [];
         this.turnPhase = 'NOT_STARTED';
         this.builderPerPlayer = new Array<Position[]>();
-        this.selectedBuilderPosition = undefined;
+        //this.selectedBuilderPosition = undefined;
         this.currentPlayer = 0;
-    }
-
-    getTurnPhase(): TurnPhase{
-        return this.turnPhase;
     }
 
     start() {
@@ -59,8 +57,6 @@ export default class OfflineGameManager implements GameManager {
     }
 
     private nextPlayer() {
-        this.selectedBuilderPosition = undefined;
-
         this.currentPlayer += 1;
         this.currentPlayer %= this.numberOfPlayers;
     }
@@ -85,7 +81,6 @@ export default class OfflineGameManager implements GameManager {
         return [];
     }
 
-
     private placeGetHandler(): Play[] {
         // get new player actions
         let plays: Play[] = new Array<Play>();
@@ -96,7 +91,7 @@ export default class OfflineGameManager implements GameManager {
                 let position = new Position(x, y);
                 let availableSpace = this.board.available(position);
                 if (availableSpace) {
-                    plays.push(new Play(Clickable.SPACE, position));
+                    plays.push(new Play("PLACE", position));
                 }
             });
         });
@@ -106,20 +101,17 @@ export default class OfflineGameManager implements GameManager {
     private moveGetHandler(): Play[] {
         let plays: Play[] = new Array<Play>();
 
-        // There is a builder selected
-        if (this.selectedBuilderPosition) {
-            // create a play for each position the selected builder can go
+        if (this.selectedBuilderPosition){
             let position: Position = this.selectedBuilderPosition;
             let adjacentPositions = this.board.adjacent(position);
             adjacentPositions.forEach(position => {
-                plays.push(new Play(Clickable.SPACE, position));
+                plays.push(new Play("MOVE", position));
             });
         }
 
-        // create a play to select each builder
         let currentPlayerBuilders = this.builderPerPlayer[this.currentPlayer];
         currentPlayerBuilders.forEach(position => {
-            plays.push(new Play(Clickable.SPACE, position))
+            plays.push(new Play("MOVE", position))
         });
 
         return plays;
@@ -142,79 +134,69 @@ export default class OfflineGameManager implements GameManager {
         adjacentPositions = adjacentPositions.filter(position => this.board.size(position) < currentHeight + 2);
 
         adjacentPositions.forEach(position => {
-            plays.push(new Play(Clickable.SPACE, position));
+            plays.push(new Play("BUILD", position));
         });
 
         return plays;
     }
 
-    play(play: Play) {
+    play(play: Play){
         let gameIsRunning = this.turnPhase == undefined;
         if (gameIsRunning) throw new Error('[play] Game not started yed.');
 
         switch (this.turnPhase) {
             case 'PLACE':
-                this.placePlayHandler(play);
-                break;
+                return this.placePlayHandler(play.source);
             case 'MOVE':
-                this.movePlayHandler(play);
-                break;
+                if (play.destiny == undefined) return; // TODO handle
+                return this.movePlayHandler(play.source, play.destiny);
             case 'BUILD':
-                this.buildPlayHandler(play);
-                break;
+                if (play.destiny == undefined) return; // TODO handle
+                return this.buildPlayHandler(play.source, play.destiny);
         }
+
+        throw Error("Unreachable code by design");
     }
 
-    private placePlayHandler(play: Play) {
-        let clickedSpace = play.click == Clickable.SPACE;
-        if (clickedSpace) {
-            // modify model
-            this.board.place(play.position);
+    private placePlayHandler(source: Position){
+        // modify model
+        this.board.place(source);
 
-            // keep state
-            let builders = this.builderPerPlayer[this.currentPlayer];
-            builders.push(play.position);
+        // keep state
+        let builders = this.builderPerPlayer[this.currentPlayer];
+        builders.push(source);
 
-            // next player
+        // next player
+        this.nextPlayer();
+
+        // check if every player has already placed two builder to move into next phase
+        let allPlayersPlacedAllBuilders = this.builderPerPlayer.every(builders => builders.length >= 2);
+        if (allPlayersPlacedAllBuilders) this.turnPhase = 'MOVE';
+    }
+
+    private movePlayHandler(source: Position, destiny: Position){
+        // save selected builder
+        this.movedBuilderPosition = source;
+
+        // move builder
+        let fromPosition: Position = source;
+
+        let toPosition: Position = destiny;
+        this.board.move(fromPosition, toPosition);
+
+        // update builder location state tracker
+        this.builderPerPlayer[this.currentPlayer].forEach(pos => {
+            if (pos.x == fromPosition.x && pos.y == fromPosition.y) {
+                [pos.x, pos.y] = [toPosition.x, toPosition.y];
+            }
+        });
+    }
+
+    private buildPlayHandler(source: Position, destiny: Position){
+        // TODO check if moved builder position is the one in the play.source
+        if (source != this.movedBuilderPosition) throw Error('Error');
+
+        this.board.build(destiny);
             this.nextPlayer();
-
-            // check if every player has already placed two builder to move into next phase
-            let allPlayersPlacedAllBuilders = this.builderPerPlayer.every(builders => builders.length != 2);
-            if (allPlayersPlacedAllBuilders) this.turnPhase = 'MOVE';
         }
-    }
-
-    private movePlayHandler(play: Play) {
-        switch (play.click) {
-            case Clickable.BUILDER:
-                // select builder
-                this.selectedBuilderPosition = play.position;
-                break;
-
-            case Clickable.SPACE:
-                // check if there is a builder selected
-                if (!this.selectedBuilderPosition) throw Error('');
-
-                // move builder
-                let fromPosition: Position = this.selectedBuilderPosition;
-                let toPosition: Position = play.position;
-                this.board.move(fromPosition, toPosition);
-
-                // update builder location state tracker
-                this.builderPerPlayer[this.currentPlayer].forEach(pos => {
-                    if (pos.x == fromPosition.x && pos.y == fromPosition.y) {
-                        [pos.x, pos.y] = [toPosition.x, toPosition.y];
-                    }
-                });
-                break;
-        }
-    }
-
-    private buildPlayHandler(play: Play) {
-        switch (play.click) {
-            case Clickable.SPACE:
-                this.board.build(play.position);
-                this.nextPlayer();
-        }
-    }
 }

@@ -2,11 +2,13 @@ import { AmbientLight, AxesHelper, DirectionalLight, GridHelper, Scene, } from "
 
 import { Board3D } from "./view/board3D";
 
-import GameManager, { Play } from "./model/gameManager";
+import GameManager from "./model/gameManager";
 import OfflineGameManager from "./model/offlineGameManager";
-import { Clickable } from "./model/model";
 import Player from "./model/player";
+
 import Button from "./view/button";
+import Play, { PlayType } from "./view/messages";
+import Position from "./common/position";
 
 export default class Game {
   scene: Scene;
@@ -19,8 +21,6 @@ export default class Game {
   directionalLight = new DirectionalLight(0xffffff, 0.5);
 
   gameManager: GameManager;
-
-  clickable: Button[] = [];
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -42,83 +42,90 @@ export default class Game {
     plays.forEach(p => this.showPlay(p));
   }
 
-  getSelectablePieces(): Button[] {
-    return this.clickable;
+  getSelectableButtons(): Button[] {
+    let selectable: Button[] = [];
+    this.board.spaces.flat() // list of all spaces
+      .map(space => space.getSelectableButtons()) // map each space into the list of its selectable pisces
+      .flat().forEach(b => selectable.push(b)); // add to return
+    this.board.spaces.flat() // all spaces
+      .filter(b => b.play != undefined) // filter to only spaces with plays
+      .forEach(space => selectable.push(space)); // add to return
+    return selectable;
   }
 
   update(delta: number) {
     this.board.update(delta);
   }
 
-  onClick(pressed: Button){
-    // get play stored on button
-    let optPlay = pressed.click();
-    console.log(optPlay == undefined);
-    if (optPlay == undefined) return;
-    let play = optPlay;
-    console.log(play);
+  onClickDisplay() {
+    console.log("display plays")
+  }
 
-    // play on 3D Model and send to game manager
-    this.play(play);
-    this.gameManager.play(play);
-    this.clickable.forEach(c => c.clear());
-    this.clickable = [];
+  onClick(button: Button) {
+    let play: Play | undefined = button.play;
+    if (play == undefined) throw Error('Error');
+    console.log(`${play.type} from ${play.source.destructure()} to ${play.destiny?.destructure()}`);
+
+    try {
+      // play on game manager
+      this.gameManager.play(play);
+    } catch (e) {
+      throw Error('Error');
+    }
+
+    // apply to 3D Model
+    this.apply(play.type, play.source, play.destiny);
+    // clear remaining plays
+    this.board.spaces.flat().forEach(b => b.clearPlay());
 
     // get next play
     let plays = this.gameManager.getPlays();
     plays.forEach(p => this.showPlay(p));
-
-    console.log(this.gameManager);
-    console.log(this.board);
+    console.log(plays);
   }
 
-  showPlay(play: Play){
-    switch (play.click){
-      case Clickable.SPACE:
-        this.spaceShowPlayHandler(play);
-        break;
-      case Clickable.BUILDER:
-        this.builderShowPlayHandler(play);
-        break;
-    }
-  }
-
-  spaceShowPlayHandler(play: Play){
-    let space = this.board.getSpace(play.position);
-    space.setPlay(play);
-    this.clickable.push(space);
-  }
-
-  builderShowPlayHandler(play: Play){
-    let space = this.board.getSpace(play.position);
-    console.log(space)
-  }
-
-  play(play: Play){
-    switch(play.click) {
-      case Clickable.SPACE:
-        this.spacePlayHandler(play);
-        break;
-      case Clickable.BUILDER:
-        this.builderPlayHandler(play);
-        break;
-
-    }
-  }
-
-  spacePlayHandler(play: Play){
-    let turnPhase = this.gameManager.getTurnPhase();
-    switch (turnPhase){
+  showPlay(play: Play) {
+    switch (play.type) {
       case "PLACE":
-        this.board.placeBuilder(play.position);
+        this.spaceShowPlay(play);
+        break;
+      case "MOVE":
+        this.builderShowPlay(play);
         break;
       case "BUILD":
-        this.board.build(play.position);
         break;
     }
   }
 
-  builderPlayHandler(play: Play){
-    console.log(play);
+  spaceShowPlay(play: Play) {
+    let space = this.board.getSpace(play.source);
+    space.setPlay(play);
   }
+
+  builderShowPlay(play: Play) {
+    let space = this.board.getSpace(play.source);
+    let builder = space.getBuilder();
+
+    if (builder === undefined) {
+      return;
+    }
+
+    builder.addPlay(play);
+  }
+
+  apply(type: PlayType, source: Position, destiny?: Position) {
+    switch (type) {
+      case "PLACE":
+        this.board.placeBuilder(source);
+        break;
+      case "MOVE":
+        if (destiny == undefined) throw Error('Error');
+        this.board.move(source, destiny); //TODO
+        break;
+      case "BUILD":
+        this.board.build(source);
+        break;
+    }
+  }
+
 }

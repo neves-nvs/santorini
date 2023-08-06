@@ -1,21 +1,17 @@
 import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D } from "three";
 
 import { Space3D, SpaceType } from "./space3D";
-
-import { Piece3D, PieceType } from "./piece3D";
-
+import { Piece3D } from "./piece3D";
 import { locations, stlloader } from "./stlloader";
-import { Position } from "../model/model";
+
+import Position from "../common/position";
 
 export class Board3D extends Object3D {
   spaces: Space3D[][];
   builders: Piece3D[] = [];
 
-  mesh: Mesh | undefined;
-
   constructor() {
     super();
-    this.drawCoordinates();
 
     this.spaces = new Array(5);
     let space;
@@ -35,26 +31,28 @@ export class Board3D extends Object3D {
       }
     }
 
+    this.drawCoordinates();
     this.addMesh();
   }
 
-  addMesh() {
+  private addMesh() {
     const location = locations["board"];
 
     let geometry: BufferGeometry = new BufferGeometry();
     stlloader.load(location, g => {
       geometry = g;
+
       const material = new MeshStandardMaterial({ color: "white" });
       geometry.center();
-      this.mesh = new Mesh(geometry, material);
 
-      let scale = 0.031747;
-      this.mesh.scale.set(scale, scale, scale);
-      this.add(this.mesh);
+      const mesh = new Mesh(geometry, material);
 
-      this.mesh.rotateX(-Math.PI / 2);
+      const scale = 0.031747;
+      mesh.scale.set(scale, scale, scale);
+      mesh.rotateX(-Math.PI / 2);
+      mesh.position.set(2, -0.067, 2);
 
-      this.mesh.position.set(2, -0.067, 2);
+      this.add(mesh);
     });
   }
 
@@ -63,29 +61,35 @@ export class Board3D extends Object3D {
     return this.spaces[x][y];
   }
 
+  update(delta: number) {
+    this.spaces.flat().forEach(s => s.update(delta));
+  }
+
   placeBuilder(position: Position) {
-    const piece: Piece3D = this.getSpace(position).addPiece(PieceType.Builder);
+    const piece: Piece3D = this.getSpace(position).addPiece('BUILDER');
     this.builders.push(piece);
   }
 
   build(position: Position) {
-    const space: Space3D = this.getSpace(position);
-    if (!space.available()) {
-      console.log("Building on occupied space");
-      return;
-    }
+    const space = this.getSpace(position);
     space.build();
   }
 
-  getBuilders(): Piece3D[] {
-    return this.builders;
+  place() {
+    console.log("PLACE")
   }
 
-  update(delta: number) {
-    this.spaces.flat().forEach(s => s.update(delta));
+  move(source: Position, destiny: Position) {
+    const sourceSpace = this.getSpace(source);
+    const builder = sourceSpace.getBuilder();
+
+    const destSpace = this.getSpace(destiny);
+    if (builder == undefined) return; //TODO handle better
+    destSpace.place(builder);
   }
 
   private drawCoordinates() {
 
   }
+
 }

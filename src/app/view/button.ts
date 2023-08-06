@@ -1,18 +1,15 @@
 import { Mesh } from "three";
 
-import { Clickable } from "../model/model";
-import { Play } from "../model/gameManager";
+import Play from "./messages";
+import { ButtonType } from "../common/objects";
 
 export default interface Button {
   mesh: Mesh;
-  play?: Play;
-  sel_type?: Clickable;
-  visible: boolean;
+  type: ButtonType;
 
-  clear(): void;
+  clearPlay(): void;
   setPlay(play: Play): void;
 
-  click(): Play | undefined;
   hover(): void;
   reset(): void;
 }

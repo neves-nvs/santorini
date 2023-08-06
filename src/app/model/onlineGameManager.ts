@@ -1,6 +1,6 @@
-import GameManager, { Play } from "./gameManager";
+import GameManager, {TurnPhase} from "./gameManager";
 import Player from "./player";
-import {TurnPhase} from "./offlineGameManager";
+import Play from "../view/messages";
 
 export default class OnlineGameManager implements GameManager {
     turnPhase: TurnPhase;
@@ -21,12 +21,6 @@ export default class OnlineGameManager implements GameManager {
     }
 
     addPlayer(player: Player) {
-        console.log(player) // supressing error
+        console.log(player) // suppressing error
     }
-
-    getTurnPhase(): TurnPhase {
-        return this.turnPhase;
-    }
-
-
 }

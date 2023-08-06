@@ -50,7 +50,7 @@ function onMouseUp(event: MouseEvent) {
   const diffY = Math.abs(event.pageY - startY);
 
   if (diffX < MOUSE_DELTA && diffY < MOUSE_DELTA) {
-    onValidClick();
+    clickButton();
   }
 }
 
@@ -61,7 +61,6 @@ function onPointerMove(event: MouseEvent) {
   pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 }
 
-//-----------------------------------------------------------------------------
 function init() {
   scene = new Scene();
   const canvas = document.querySelector("canvas#webgl");
@@ -101,11 +100,9 @@ function init() {
   window.addEventListener("mouseup", onMouseUp);
 }
 
-//-----------------------------------------------------------------------------
-
-function interceptPiece(): Button | undefined {
+function interceptButton(): Button | undefined {
   raycaster.setFromCamera(pointer, camera);
-  const selectable: Mesh[] = game.getSelectablePieces().map((s) => s.mesh);
+  const selectable: Mesh[] = game.getSelectableButtons().map((s) => s.mesh);
   if (selectable.length == 0) return;
   const intersects: Intersection[] = raycaster.intersectObjects(selectable);
   const distance: number = Math.min(...intersects.map(({ distance }) => distance));
@@ -113,24 +110,20 @@ function interceptPiece(): Button | undefined {
   return closest?.object.parent as unknown as Button;
 }
 
-function hover() {
-  let button = interceptPiece();
-  if (button == undefined) return;
-  button.hover();
+function hoverButton() {
+  interceptButton()?.hover();
 }
 
-function onValidClick() {
-  let button = interceptPiece();
+function clickButton() {
+  let button = interceptButton();
   if (button == undefined) return;
-  button.click();
   game.onClick(button);
 }
 
-//-----------------------------------------------------------------------------
 function update(delta: number) {
   controls.update();
   game.update(delta);
-  hover();
+  hoverButton();
 }
 
 function render() {

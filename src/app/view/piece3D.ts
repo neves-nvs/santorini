@@ -13,63 +13,60 @@ import {
 } from "./stlloader";
 
 import Button from "./button";
-import { Clickable } from "../model/model";
-import { Play } from "../model/gameManager";
+import Play from "./messages";
+import { ButtonType, PieceType } from "../common/objects";
 
 let counter: number = 0;
 
 export class Piece3D extends Object3D implements Button {
   mesh: Mesh;
-  sel_type?: Clickable;
   play?: Play;
-  visible: boolean;
+  clickable: boolean = false;
 
-  Type: number;
+  type: ButtonType;
   height: number = 0;
 
-  constructor(type: PieceType, visible: boolean) {
+  constructor(type: PieceType) {
     super();
 
     this.mesh = new Mesh();
-    this.visible = visible;
 
-    this.Type = type;
+    this.type = type;
 
     let config: STLImportConfig = new STLImportConfig(0, 0, 0.03);
     let color: number = 0xcccccc;
     let location: string = "";
 
     switch (type) {
-      case PieceType.Builder:
-        this.sel_type = Clickable.BUILDER;
+      case 'BUILDER':
         location = locations["builder"];
         config = new STLImportConfig(0.47, -Math.PI / 2, 0.03);
         color = counter % 2 == 0 ? 0x3260a8 : 0xf56642;
         counter++;
         break;
 
-      case PieceType.Base:
+      case 'BASE':
         location = locations["base"];
         config = new STLImportConfig(0.231, -Math.PI / 2, 0.028);
         break;
 
-      case PieceType.Mid:
+      case 'MID':
         location = locations["mid"];
         config = new STLImportConfig(0.275, -Math.PI / 2, 0.028);
         break;
 
-      case PieceType.Top:
+      case 'TOP':
         location = locations["top"];
         config = new STLImportConfig(0.165, Math.PI / 2, 0.028);
         break;
 
-      case PieceType.Dome:
+      case 'DOME': 
         location = locations["dome"];
         config = new STLImportConfig(0.1, -Math.PI / 2, 0.0165);
         break;
 
       default:
-        console.log("Invalid piece type");
+        console.error("Invalid piece type");
     }
     this.height = 2 * config.y_offset;
 
@@ -92,29 +89,32 @@ export class Piece3D extends Object3D implements Button {
     );
   }
 
+  update(){
+    this.reset();
+  }
+
   hover(){
-    if (this.visible){
+    if (this.play != undefined){
       (this.mesh.material as Material).opacity = 0.5;
     }
   }
 
   reset() {
-    if (this.visible) (this.mesh.material as Material).opacity = 1;
-    else (this.mesh.material as Material).opacity = 1;
-  }
-
-  click(): Play | undefined {
-    return this.play;
+    (this.mesh.material as Material).opacity = 1;
   }
 
   setPlay(play: Play) {
+    this.clickable = true;
     this.play = play;
   }
-}
 
-export enum PieceType {
-  Builder,
-  Base, Mid, Top,
-  Block,
-  Dome,
+  addPlay(play: Play) {
+    this.clickable = true;
+    this.play = play;
+  }
+
+  clearPlay() {
+    this.clickable = false;
+    this.play = undefined;
+  }
 }
