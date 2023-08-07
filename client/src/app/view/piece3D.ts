@@ -20,10 +20,9 @@ let counter: number = 0;
 
 export class Piece3D extends Object3D implements Button {
   mesh: Mesh;
-  play?: Play;
-  clickable: boolean = false;
-
   type: ButtonType;
+  active: boolean = false;
+
   height: number = 0;
 
   constructor(type: PieceType) {

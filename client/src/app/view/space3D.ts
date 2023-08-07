@@ -1,26 +1,27 @@
-import { BoxGeometry, Group, Material, Mesh, MeshBasicMaterial } from "three";
+import { BoxGeometry, Object3D, Material, Mesh, MeshBasicMaterial } from "three";
 
 import { Piece3D } from "./piece3D";
-
 import Button from "./button";
-import Play from "./messages";
-import {PieceType} from "../common/objects";
+import { ButtonType, PieceType } from "../common/objects";
 
-export enum SpaceType {
+export enum SpaceShade {
   Light = 0x51a832,
   Dark = 0x265c13,
 }
 
-export class Space3D extends Group implements Button {
+export class Space3D extends Object3D implements Button {
   mesh: Mesh;
-  play?: Play;
+  type: ButtonType;
+  active: boolean = false;
+
   height: number = 0;
   pieces: Piece3D[] = [];
 
-  constructor(type: SpaceType) {
-    super();
-    this.addFloorTile(type);
+  constructor(shade: SpaceShade, type: ButtonType) {
+    super()
+    this.addFloorTile(shade);
 
+    this.type = type;
     const material = new MeshBasicMaterial({
       color: "blue",
       transparent: true,
@@ -33,7 +34,7 @@ export class Space3D extends Group implements Button {
     this.add(mesh);
   }
 
-  private addFloorTile(type: SpaceType) {
+  private addFloorTile(type: SpaceShade) {
     const size: number = 0.969;
     const square = new BoxGeometry(size, 0, size);
     const color = new MeshBasicMaterial({ color: type });
@@ -74,7 +75,7 @@ export class Space3D extends Group implements Button {
 
     if (len > 0) {
       let piece: Piece3D = space.pieces[len - 1];
-      if (piece.Type == 'BUILDER') {
+      if (piece.type == 'BUILDER') {
         piece.position.setY(this.height);
         // three js
         space.remove(piece);
@@ -113,28 +114,21 @@ export class Space3D extends Group implements Button {
   }
 
   getBuilder(): Piece3D | undefined {
-    return this.pieces.find(p => p.Type == 'BUILDER');
+    return this.pieces.find(p => p.type == 'BUILDER');
   }
 
   getSelectableButtons(): Button[] {
-    return this.pieces.filter(b => b.play != undefined);
+    return this.pieces //.filter(b => b.play != undefined);
   }
 
-  // ===========================================================================
-  // BUTTON INTERFACE
-  // ===========================================================================
   hover(): void {
-    if (this.play != undefined){
-      (this.mesh.material as Material).opacity = 0.8;
-    }
+    (this.mesh.material as Material).opacity = 0.8;
   }
 
   reset() {
-    if (this.play == undefined) (this.mesh.material as Material).opacity = 0;
-    else (this.mesh.material as Material).opacity = 0.2;
+    //if (this.play == undefined) (this.mesh.material as Material).opacity = 0;
+    //else 
+    (this.mesh.material as Material).opacity = 0.2;
   }
 
-  setPlay(play: Play) { this.play = play; }
-
-  clearPlay() { this.play = undefined; }
 }
