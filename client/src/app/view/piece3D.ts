@@ -93,27 +93,13 @@ export class Piece3D extends Object3D implements Button {
   }
 
   hover(){
-    if (this.play != undefined){
-      (this.mesh.material as Material).opacity = 0.5;
-    }
+    //if (this.play != undefined){
+    (this.mesh.material as Material).opacity = 0.5;
+    //}
   }
 
   reset() {
     (this.mesh.material as Material).opacity = 1;
   }
 
-  setPlay(play: Play) {
-    this.clickable = true;
-    this.play = play;
-  }
-
-  addPlay(play: Play) {
-    this.clickable = true;
-    this.play = play;
-  }
-
-  clearPlay() {
-    this.clickable = false;
-    this.play = undefined;
-  }
 }

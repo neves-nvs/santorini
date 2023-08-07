@@ -17,11 +17,11 @@ export class Space3D extends Object3D implements Button {
   height: number = 0;
   pieces: Piece3D[] = [];
 
-  constructor(shade: SpaceShade, type: ButtonType) {
+  constructor(shade: SpaceShade)  {
     super()
     this.addFloorTile(shade);
 
-    this.type = type;
+    this.type = "SPACE";
     const material = new MeshBasicMaterial({
       color: "blue",
       transparent: true,

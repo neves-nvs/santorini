@@ -1,6 +1,6 @@
 import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D } from "three";
 
-import { Space3D, SpaceType } from "./space3D";
+import { Space3D, SpaceShade } from "./space3D";
 import { Piece3D } from "./piece3D";
 import { locations, stlloader } from "./stlloader";
 
@@ -18,11 +18,11 @@ export class Board3D extends Object3D {
     for (let x = 0; x < 5; x++) {
       this.spaces[x] = new Array(5);
       for (let z = 0; z < 5; z++) {
-        let shade: SpaceType;
+        let shade: SpaceShade;
         if (z % 2 == 0) {
-          shade = x % 2 == 0 ? SpaceType.Light : SpaceType.Dark;
+          shade = x % 2 == 0 ? SpaceShade.Light : SpaceShade.Dark;
         } else {
-          shade = x % 2 == 0 ? SpaceType.Dark : SpaceType.Light;
+          shade = x % 2 == 0 ? SpaceShade.Dark : SpaceShade.Light;
         }
         space = new Space3D(shade);
         space.position.set(x, 0, z);
