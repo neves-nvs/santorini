@@ -2,7 +2,7 @@ import GameManager, {TurnPhase} from "./gameManager";
 import {Board} from "./model";
 import Player from "./player";
 
-import Play from "../view/messages";
+import Play from "../common/messages";
 import Position from "../common/position";
 
 export default class OfflineGameManager implements GameManager {

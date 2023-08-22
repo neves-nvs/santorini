@@ -17,5 +17,9 @@
     "skipLibCheck": true,
     "composite": true,
   },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
+  },
   "include": ["src"]
 }

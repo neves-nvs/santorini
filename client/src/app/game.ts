@@ -7,7 +7,7 @@ import OfflineGameManager from "./model/offlineGameManager";
 import Player from "./model/player";
 
 import Button from "./view/button";
-import Play, { PlayType } from "./view/messages";
+import Play, { PlayType } from "./common/messages";
 import Position from "./common/position";
 
 export default class Game {
@@ -48,7 +48,7 @@ export default class Game {
       .map(space => space.getSelectableButtons()) // map each space into the list of its selectable pisces
       .flat().forEach(b => selectable.push(b)); // add to return
     this.board.spaces.flat() // all spaces
-      .filter(b => b.play != undefined) // filter to only spaces with plays
+      //.filter(b => b.play != undefined) // filter to only spaces with plays
       .forEach(space => selectable.push(space)); // add to return
     return selectable;
   }
@@ -61,22 +61,22 @@ export default class Game {
     console.log("display plays")
   }
 
-  onClick(button: Button) {
-    let play: Play | undefined = button.play;
-    if (play == undefined) throw Error('Error');
-    console.log(`${play.type} from ${play.source.destructure()} to ${play.destiny?.destructure()}`);
+  onClick() {
+    // let play: Play | undefined = button.play;
+    //if (play == undefined) throw Error('Error');
+    //console.log(`${play.type} from ${play.source.destructure()} to ${play.destiny?.destructure()}`);
 
     try {
       // play on game manager
-      this.gameManager.play(play);
+      //this.gameManager.play(play);
     } catch (e) {
       throw Error('Error');
     }
 
     // apply to 3D Model
-    this.apply(play.type, play.source, play.destiny);
+    //this.apply(play.type, play.source, play.destiny);
     // clear remaining plays
-    this.board.spaces.flat().forEach(b => b.clearPlay());
+    //this.board.spaces.flat().forEach(b => b.clearPlay());
 
     // get next play
     let plays = this.gameManager.getPlays();
@@ -99,7 +99,7 @@ export default class Game {
 
   spaceShowPlay(play: Play) {
     let space = this.board.getSpace(play.source);
-    space.setPlay(play);
+    //space.setPlay(play);
   }
 
   builderShowPlay(play: Play) {
@@ -110,7 +110,7 @@ export default class Game {
       return;
     }
 
-    builder.addPlay(play);
+    //builder.addPlay(play);
   }
 
   apply(type: PlayType, source: Position, destiny?: Position) {

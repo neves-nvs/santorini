@@ -1,5 +1,5 @@
 import Player from "./player";
-import Play from "../view/messages";
+import Play from "../common/messages";
 
 export type GamePhase = 'PLACE' | 'MOVE' | 'BUILD'
 

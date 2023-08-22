@@ -1,4 +1,4 @@
-import Position from "../common/position";
+import Position from "./position";
 
 export type PlayType = "PLACE" | "MOVE" | "BUILD"
 

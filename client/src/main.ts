@@ -1,5 +1,15 @@
 import "./style.css";
 
+
+import { io } from "socket.io-client";
+let serverAddress = "http://localhost:3000";
+
+const socket = io(serverAddress)
+
+socket.on("connection", () => { console.log("connected") })
+
+socket.on("hello", () => { console.log("hello") })
+
 import {
   Clock,
   Intersection,
@@ -117,7 +127,7 @@ function hoverButton() {
 function clickButton() {
   let button = interceptButton();
   if (button == undefined) return;
-  game.onClick(button);
+  //game.onClick(button);
 }
 
 function update(delta: number) {

@@ -13,7 +13,6 @@ import {
 } from "./stlloader";
 
 import Button from "./button";
-import Play from "./messages";
 import { ButtonType, PieceType } from "../common/objects";
 
 let counter: number = 0;

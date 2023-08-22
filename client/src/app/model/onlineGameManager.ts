@@ -1,6 +1,6 @@
 import GameManager, {TurnPhase} from "./gameManager";
 import Player from "./player";
-import Play from "../view/messages";
+import Play from "../common/messages";
 
 export default class OnlineGameManager implements GameManager {
     turnPhase: TurnPhase;
