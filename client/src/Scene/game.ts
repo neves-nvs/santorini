@@ -1,14 +1,14 @@
 import { AmbientLight, AxesHelper, DirectionalLight, GridHelper, Scene, } from "three";
 
-import { Board3D } from "./view/board3D";
+import { Board3D } from "./Components/board3D";
 
-import GameManager from "./model/gameManager";
-import OfflineGameManager from "./model/offlineGameManager";
-import Player from "./model/player";
+import GameManager from "../model/gameManager";
+import OfflineGameManager from "../model/offlineGameManager";
+import Player from "../model/player";
 
-import Button from "./view/button";
-import Play, { PlayType } from "./common/messages";
-import Position from "./common/position";
+import Button from "./button";
+import Play, { PlayType } from "../common/messages";
+import Position from "../common/position";
 
 export default class Game {
   scene: Scene;
@@ -17,8 +17,6 @@ export default class Game {
 
   axesHelper = new AxesHelper(5);
   gridHelper = new GridHelper(11, 11);
-  ambientLight = new AmbientLight(0x404040);
-  directionalLight = new DirectionalLight(0xffffff, 0.5);
 
   gameManager: GameManager;
 
@@ -29,8 +27,7 @@ export default class Game {
     this.scene.add(this.board);
 
     this.scene.add(this.gridHelper);
-    this.scene.add(this.ambientLight);
-    this.scene.add(this.directionalLight);
+
     this.scene.add(this.axesHelper);
 
     this.gameManager = new OfflineGameManager();

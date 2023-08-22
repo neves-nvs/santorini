@@ -1,8 +1,8 @@
 import { BoxGeometry, Object3D, Material, Mesh, MeshBasicMaterial } from "three";
 
 import { Piece3D } from "./piece3D";
-import Button from "./button";
-import { ButtonType, PieceType } from "../common/objects";
+import Button from "../button";
+import { ButtonType, PieceType } from "../../common/objects";
 
 export enum SpaceShade {
   Light = 0x51a832,

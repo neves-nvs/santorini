@@ -10,10 +10,10 @@ import {
   STLImportConfig,
   locations,
   stlloader,
-} from "./stlloader";
+} from "../STLLoader";
 
-import Button from "./button";
-import { ButtonType, PieceType } from "../common/objects";
+import Button from "../button";
+import { ButtonType, PieceType } from "../../common/objects";
 
 let counter: number = 0;
 

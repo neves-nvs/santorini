@@ -2,9 +2,9 @@ import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D } from "three";
 
 import { Space3D, SpaceShade } from "./space3D";
 import { Piece3D } from "./piece3D";
-import { locations, stlloader } from "./stlloader";
+import { locations, stlloader } from "../STLLoader";
 
-import Position from "../common/position";
+import Position from "../../common/position";
 
 export class Board3D extends Object3D {
   spaces: Space3D[][];
