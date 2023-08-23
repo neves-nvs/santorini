@@ -10,8 +10,8 @@ import {
     Vector2, WebGLRenderer
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import Game from "./scene/game";
-import Button from "./scene/button";
+import Game from "./components/game";
+import Button from "./button";
 
 const MOUSE_DELTA: number = 5;
 

@@ -1,6 +1,6 @@
 import { Mesh } from "three";
 
-import { ButtonType } from "../common/objects";
+import { ButtonType } from "./common/objects";
 
 export default interface Button {
   mesh: Mesh;

@@ -13,7 +13,7 @@ import {
 } from "../STLLoader";
 
 import Button from "../button";
-import { ButtonType, PieceType } from "../../common/objects";
+import { ButtonType, PieceType } from "../common/objects";
 
 let counter: number = 0;
 
@@ -68,6 +68,7 @@ export class Piece3D extends Object3D implements Button {
     }
     this.height = 2 * config.y_offset;
 
+    // ? This should not be here
     let geometry: BufferGeometry;
     stlloader.load(
       location, g => {

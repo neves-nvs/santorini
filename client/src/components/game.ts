@@ -1,12 +1,12 @@
-import { AmbientLight, AxesHelper, DirectionalLight, GridHelper, Scene, } from "three";
+import { AxesHelper, GridHelper, Scene, } from "three";
 
-import { Board3D } from "./components/Board3D";
+import { Board3D } from "./Board3D";
 
 import GameManager from "../model/gameManager";
 import OfflineGameManager from "../model/offlineGameManager";
 import Player from "../model/player";
 
-import Button from "./button";
+import Button from "../button";
 import Play, { PlayType } from "../common/messages";
 import Position from "../common/position";
 
