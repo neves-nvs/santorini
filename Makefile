@@ -11,8 +11,8 @@ server:
 	@echo "Installing npm dependencies for the server project..."
 	cd $(SERVER_DIR) && npm install
 
-.PHONY: install
-install: client server
+.PHONY: install i
+install i: client server
 	@echo "All dependencies have been installed."
 
 .PHONY: clean
