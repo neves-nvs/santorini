@@ -15,7 +15,7 @@ import Button from "./button";
 
 const MOUSE_DELTA: number = 5;
 
-export class SceneManager {
+export default class SceneManager {
     private scene: Scene;
     private renderer: WebGLRenderer;
     private camera: PerspectiveCamera;

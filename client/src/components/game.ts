@@ -1,6 +1,6 @@
 import { AxesHelper, GridHelper, Scene, } from "three";
 
-import { Board3D } from "./Board3D";
+import Board3D from "./Board3D";
 
 import GameManager from "../model/gameManager";
 import OfflineGameManager from "../model/offlineGameManager";
@@ -35,14 +35,14 @@ export default class Game {
     this.gameManager.addPlayer(new Player("Afonso"));
     this.gameManager.start();
 
-    let plays = this.gameManager.getPlays();
+    let plays: Play[] = this.gameManager.getPlays();
     plays.forEach(p => this.showPlay(p));
   }
 
   getSelectableButtons(): Button[] {
     let selectable: Button[] = [];
     this.board.spaces.flat() // list of all spaces
-      .map(space => space.getSelectableButtons()) // map each space into the list of its selectable pisces
+      .map(space => space.getActiveButtons()) // map each space into the list of its selectable pisces
       .flat().forEach(b => selectable.push(b)); // add to return
     this.board.spaces.flat() // all spaces
       //.filter(b => b.play != undefined) // filter to only spaces with plays
@@ -52,10 +52,6 @@ export default class Game {
 
   update(delta: number) {
     this.board.update(delta);
-  }
-
-  onClickDisplay() {
-    console.log("display plays")
   }
 
   onClick() {
@@ -77,7 +73,7 @@ export default class Game {
 
     // get next play
     let plays = this.gameManager.getPlays();
-    plays.forEach(p => this.showPlay(p));
+    // plays.forEach(p => this.showPlay(p));
     console.log(plays);
   }
 
@@ -87,7 +83,7 @@ export default class Game {
         this.spaceShowPlay(play);
         break;
       case "MOVE":
-        this.builderShowPlay(play);
+        // this.builderShowPlay(play);
         break;
       case "BUILD":
         break;
@@ -99,28 +95,17 @@ export default class Game {
     //space.setPlay(play);
   }
 
-  builderShowPlay(play: Play) {
-    let space = this.board.getSpace(play.source);
-    let builder = space.getBuilder();
-
-    if (builder === undefined) {
-      return;
-    }
-
-    //builder.addPlay(play);
-  }
-
   apply(type: PlayType, source: Position, destiny?: Position) {
     switch (type) {
       case "PLACE":
-        this.board.placeBuilder(source);
+        // this.board.placeBuilder(source);
         break;
       case "MOVE":
         if (destiny == undefined) throw Error('Error');
-        this.board.move(source, destiny); //TODO
+        // this.board.move(source, destiny); //TODO
         break;
       case "BUILD":
-        this.board.build(source);
+        // this.board.build(source);
         break;
     }
   }

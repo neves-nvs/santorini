@@ -1,6 +1,6 @@
 import "./style.css";
 
-import { SceneManager } from "./SceneManager";
+import SceneManager from "./SceneManager";
 
 class Main {
   private sceneManager: SceneManager;

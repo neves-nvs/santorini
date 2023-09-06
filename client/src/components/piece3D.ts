@@ -17,7 +17,7 @@ import { ButtonType, PieceType } from "../common/objects";
 
 let counter: number = 0;
 
-export class Piece3D extends Object3D implements Button {
+export default class Piece3D extends Object3D implements Button {
   mesh: Mesh;
   type: ButtonType;
   active: boolean = false;

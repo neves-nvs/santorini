@@ -1,14 +1,13 @@
 import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D } from "three";
 
 import { Space3D, SpaceShade } from "./space3D";
-import { Piece3D } from "./piece3D";
+import Piece3D from "./piece3D";
 import { locations, stlloader } from "../STLLoader";
 
 import Position from "../common/position";
 
-export class Board3D extends Object3D {
+export default class Board3D extends Object3D {
   spaces: Space3D[][];
-  builders: Piece3D[] = [];
 
   constructor() {
     super();
@@ -31,7 +30,6 @@ export class Board3D extends Object3D {
       }
     }
 
-    this.drawCoordinates();
     this.addMesh();
   }
 
@@ -63,33 +61,6 @@ export class Board3D extends Object3D {
 
   update(delta: number) {
     this.spaces.flat().forEach(s => s.update(delta));
-  }
-
-  placeBuilder(position: Position) {
-    const piece: Piece3D = this.getSpace(position).addPiece('BUILDER');
-    this.builders.push(piece);
-  }
-
-  build(position: Position) {
-    const space = this.getSpace(position);
-    space.build();
-  }
-
-  place() {
-    console.log("PLACE")
-  }
-
-  move(source: Position, destiny: Position) {
-    const sourceSpace = this.getSpace(source);
-    const builder = sourceSpace.getBuilder();
-
-    const destSpace = this.getSpace(destiny);
-    if (builder == undefined) return; //TODO handle better
-    destSpace.place(builder);
-  }
-
-  private drawCoordinates() {
-
   }
 
 }
