@@ -1,18 +1,18 @@
-import Player from "./player";
+import Player from "./Player";
 import Play from "../common/messages";
 
-export type GamePhase = 'PLACE' | 'MOVE' | 'BUILD'
+export type GamePhase = "PLACE" | "MOVE" | "BUILD";
 
-export type TurnPhase = 'NOT_STARTED' | GamePhase | 'FINISHED';
+export type TurnPhase = "NOT_STARTED" | GamePhase | "FINISHED";
 
 export default interface GameManager {
-    turnPhase: TurnPhase;
+  turnPhase: TurnPhase;
 
-    start(): void;
+  start(): void;
 
-    addPlayer(player: Player): void;
+  addPlayer(player: Player): void;
 
-    getPlays(): Play[];
+  getPlays(): Play[];
 
-    play(play: Play): void;
+  play(play: Play): void;
 }

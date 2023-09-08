@@ -22,6 +22,14 @@ export const locations = {
   top: "assets/Top.stl",
   dome: "assets/Dome.stl",
   board: "assets/Board.stl",
-} as Dictionary<string>;
+};
+// export const locations = {
+//   builder: "assets/Builder.stl",
+//   base: "assets/Base.stl",
+//   mid: "assets/Mid.stl",
+//   top: "assets/Top.stl",
+//   dome: "assets/Dome.stl",
+//   board: "assets/Board.stl",
+// } as Dictionary<string>;
 
 export const stlloader = new STLLoader();

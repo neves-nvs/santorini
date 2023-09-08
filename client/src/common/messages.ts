@@ -1,16 +1,15 @@
 import Position from "./position";
 
-export type PlayType = "PLACE" | "MOVE" | "BUILD"
+export type PlayType = "PLACE" | "MOVE" | "BUILD";
 
 export default class Play {
-    type: PlayType;
-    source: Position;
-    destiny: Position | undefined;
+  type: PlayType;
+  source: Position;
+  destiny: Position | undefined;
 
-    constructor(type: PlayType, source: Position, destiny? : Position) {
-        this.type = type;
-        this.source = source;
-        this.destiny = destiny;
-    }
-
+  constructor(type: PlayType, source: Position, destiny?: Position) {
+    this.type = type;
+    this.source = source;
+    this.destiny = destiny;
+  }
 }

@@ -1,5 +1,5 @@
 import Position from "../common/position";
-import {BlockType, PieceType} from "../common/objects";
+import { BlockType, PieceType } from "../common/objects";
 
 export class Board {
   squares: Space[][];
@@ -53,10 +53,10 @@ export class Board {
     let [x, y] = position.destructure();
     let square = this.squares[x][y];
 
-    let squareIsNotEmpty = (square.size() !== 0);
-    if (squareIsNotEmpty) throw new Error('[place] Square is not empty');
+    let squareIsNotEmpty = square.size() !== 0;
+    if (squareIsNotEmpty) throw new Error("[place] Square is not empty");
 
-    let builder: PieceType = 'BUILDER';
+    let builder: PieceType = "BUILDER";
     square.add(builder);
   }
 
@@ -75,7 +75,7 @@ export class Board {
     let [x, y] = position.destructure();
     let square: Space = this.squares[x][y];
 
-    let block: BlockType = 'BLOCK';
+    let block: BlockType = "BLOCK";
     square.add(block);
   }
 
@@ -83,7 +83,7 @@ export class Board {
     let [x, y] = position.destructure();
     let square: Space = this.squares[x][y];
 
-    return !('BUILDER' in square.elements);
+    return !("BUILDER" in square.elements);
   }
 }
 
@@ -101,18 +101,14 @@ class Space {
   remove(): PieceType {
     let optPiece = this.elements.pop();
     if (optPiece == undefined) {
-      throw Error('[remove] no pieces in square')
+      throw Error("[remove] no pieces in square");
     }
     let piece: PieceType = optPiece;
-    if (piece != 'BUILDER') {
+    if (piece != "BUILDER") {
       this.elements.push(piece);
-      throw Error('[remove] removing piece that inst a builder');
+      throw Error("[remove] removing piece that inst a builder");
     }
 
-    return piece
+    return piece;
   }
 }
-
-
-
-

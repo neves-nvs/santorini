@@ -1,22 +1,21 @@
 import { Server } from "socket.io";
 
 const io = new Server({
-    cors: {
-        origin: 'http://localhost:5173',
-    }
-})
+  cors: {
+    origin: "http://localhost:5173",
+  },
+});
 
 const PORT = 3000;
 
 io.listen(PORT);
 
-io.on('connection', (socket) => {
-    console.log('connected');
+io.on("connection", (socket) => {
+  console.log("connected");
 
-    socket.emit("hello")
+  socket.emit("hello");
 
-    socket.on('disconnect', () => {
-        console.log('disconnected');
-    });
-
+  socket.on("disconnect", () => {
+    console.log("disconnected");
+  });
 });

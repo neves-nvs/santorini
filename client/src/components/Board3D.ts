@@ -1,7 +1,7 @@
 import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D } from "three";
 
 import { Space3D, SpaceShade } from "./space3D";
-import Piece3D from "./piece3D";
+import Piece3D from "./Piece3D";
 import { locations, stlloader } from "../STLLoader";
 
 import Position from "../common/position";
@@ -37,7 +37,7 @@ export default class Board3D extends Object3D {
     const location = locations["board"];
 
     let geometry: BufferGeometry = new BufferGeometry();
-    stlloader.load(location, g => {
+    stlloader.load(location, (g) => {
       geometry = g;
 
       const material = new MeshStandardMaterial({ color: "white" });
@@ -60,7 +60,6 @@ export default class Board3D extends Object3D {
   }
 
   update(delta: number) {
-    this.spaces.flat().forEach(s => s.update(delta));
+    this.spaces.flat().forEach((s) => s.update(delta));
   }
-
 }

@@ -1,12 +1,12 @@
-import { AxesHelper, GridHelper, Scene, } from "three";
+import { AxesHelper, GridHelper, Scene } from "three";
 
 import Board3D from "./Board3D";
 
-import GameManager from "../model/gameManager";
-import OfflineGameManager from "../model/offlineGameManager";
-import Player from "../model/player";
+import GameManager from "../model/GameManager";
+import OfflineGameManager from "../model/OfflineGameManager";
+import Player from "../model/Player";
 
-import Button from "../button";
+import Button from "../Button";
 import Play, { PlayType } from "../common/messages";
 import Position from "../common/position";
 
@@ -36,17 +36,20 @@ export default class Game {
     this.gameManager.start();
 
     let plays: Play[] = this.gameManager.getPlays();
-    plays.forEach(p => this.showPlay(p));
+    plays.forEach((p) => this.showPlay(p));
   }
 
   getSelectableButtons(): Button[] {
     let selectable: Button[] = [];
-    this.board.spaces.flat() // list of all spaces
-      .map(space => space.getActiveButtons()) // map each space into the list of its selectable pisces
-      .flat().forEach(b => selectable.push(b)); // add to return
-    this.board.spaces.flat() // all spaces
+    this.board.spaces
+      .flat() // list of all spaces
+      .map((space) => space.getActiveButtons()) // map each space into the list of its selectable pisces
+      .flat()
+      .forEach((b) => selectable.push(b)); // add to return
+    this.board.spaces
+      .flat() // all spaces
       //.filter(b => b.play != undefined) // filter to only spaces with plays
-      .forEach(space => selectable.push(space)); // add to return
+      .forEach((space) => selectable.push(space)); // add to return
     return selectable;
   }
 
@@ -63,7 +66,7 @@ export default class Game {
       // play on game manager
       //this.gameManager.play(play);
     } catch (e) {
-      throw Error('Error');
+      throw Error("Error");
     }
 
     // apply to 3D Model
@@ -101,7 +104,7 @@ export default class Game {
         // this.board.placeBuilder(source);
         break;
       case "MOVE":
-        if (destiny == undefined) throw Error('Error');
+        if (destiny == undefined) throw Error("Error");
         // this.board.move(source, destiny); //TODO
         break;
       case "BUILD":
@@ -109,5 +112,4 @@ export default class Game {
         break;
     }
   }
-
 }

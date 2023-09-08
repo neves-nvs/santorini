@@ -1,8 +1,14 @@
-import { BoxGeometry, Object3D, Material, Mesh, MeshBasicMaterial } from "three";
+import {
+  BoxGeometry,
+  Object3D,
+  Material,
+  Mesh,
+  MeshBasicMaterial,
+} from "three";
 
-import Piece3D from "./piece3D";
-import Button from "../button";
-import { ButtonType } from "../common/objects"
+import Piece3D from "./Piece3D";
+import Button from "../Button";
+import { ButtonType } from "../common/objects";
 
 export enum SpaceShade {
   Light = 0x51a832,
@@ -18,13 +24,13 @@ export class Space3D extends Object3D implements Button {
   height: number = 0;
   pieces: Piece3D[] = [];
 
-  constructor(shade: SpaceShade)  {
-    super()
+  constructor(shade: SpaceShade) {
+    super();
 
     this.addFloorTile(shade);
-  
+
     this.mesh = this.addButtonMesh();
-    this.add(this.mesh)
+    this.add(this.mesh);
 
     this.type = "SPACE";
   }
@@ -52,8 +58,8 @@ export class Space3D extends Object3D implements Button {
 
   update(delta: number) {
     this.reset();
-    this.pieces.forEach(p => p.update());
-    if (delta == 0) return // just avoiding linting
+    this.pieces.forEach((p) => p.update());
+    if (delta == 0) return; // just avoiding linting
   }
 
   addPiece(piece: Piece3D) {
@@ -70,11 +76,12 @@ export class Space3D extends Object3D implements Button {
     return piece;
   }
 
-  place(piece: Piece3D){
+  place(piece: Piece3D) {
     console.log(piece);
   }
 
-  getHeight(): number { // TODO rename height property
+  getHeight(): number {
+    // TODO rename height property
     return this.pieces.length;
   }
 
@@ -126,7 +133,7 @@ export class Space3D extends Object3D implements Button {
   // }
 
   getActiveButtons(): Button[] {
-    return this.pieces.filter(p => p.active === true) //.filter(b => b.play != undefined);
+    return this.pieces.filter((p) => p.active === true); //.filter(b => b.play != undefined);
   }
 
   hover(): void {
@@ -135,8 +142,7 @@ export class Space3D extends Object3D implements Button {
 
   reset() {
     //if (this.play == undefined) (this.mesh.material as Material).opacity = 0;
-    //else 
+    //else
     (this.mesh.material as Material).opacity = 0.2;
   }
-
 }

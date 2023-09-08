@@ -6,13 +6,9 @@ import {
   Object3D,
 } from "three";
 
-import {
-  STLImportConfig,
-  locations,
-  stlloader,
-} from "../STLLoader";
+import { STLImportConfig, locations, stlloader } from "../STLLoader";
 
-import Button from "../button";
+import Button from "../Button";
 import { ButtonType, PieceType } from "../common/objects";
 
 let counter: number = 0;
@@ -36,30 +32,30 @@ export default class Piece3D extends Object3D implements Button {
     let location: string = "";
 
     switch (type) {
-      case 'BUILDER':
-        location = locations["builder"];
+      case "BUILDER":
+        location = locations.builder;
         config = new STLImportConfig(0.47, -Math.PI / 2, 0.03);
         color = counter % 2 == 0 ? 0x3260a8 : 0xf56642;
         counter++;
         break;
 
-      case 'BASE':
-        location = locations["base"];
+      case "BASE":
+        location = locations.base;
         config = new STLImportConfig(0.231, -Math.PI / 2, 0.028);
         break;
 
-      case 'MID':
-        location = locations["mid"];
+      case "MID":
+        location = locations.mid;
         config = new STLImportConfig(0.275, -Math.PI / 2, 0.028);
         break;
 
-      case 'TOP':
-        location = locations["top"];
+      case "TOP":
+        location = locations.top;
         config = new STLImportConfig(0.165, Math.PI / 2, 0.028);
         break;
 
-      case 'DOME': 
-        location = locations["dome"];
+      case "DOME":
+        location = locations.dome;
         config = new STLImportConfig(0.1, -Math.PI / 2, 0.0165);
         break;
 
@@ -70,29 +66,27 @@ export default class Piece3D extends Object3D implements Button {
 
     // ? This should not be here
     let geometry: BufferGeometry;
-    stlloader.load(
-      location, g => {
-        geometry = g;
-        const material = new MeshStandardMaterial({
-          color: color,
-          transparent: true,
-        });
-        geometry.center();
-        this.mesh = new Mesh(geometry, material);
-        this.mesh.position.setY(config.y_offset);
-        this.mesh.scale.set(config.scale, config.scale, config.scale);
-        this.mesh.rotateX(config.x_rotation);
+    stlloader.load(location, (g) => {
+      geometry = g;
+      const material = new MeshStandardMaterial({
+        color: color,
+        transparent: true,
+      });
+      geometry.center();
+      this.mesh = new Mesh(geometry, material);
+      this.mesh.position.setY(config.y_offset);
+      this.mesh.scale.set(config.scale, config.scale, config.scale);
+      this.mesh.rotateX(config.x_rotation);
 
-        this.add(this.mesh);
-      }
-    );
+      this.add(this.mesh);
+    });
   }
 
-  update(){
+  update() {
     this.reset();
   }
 
-  hover(){
+  hover() {
     //if (this.play != undefined){
     (this.mesh.material as Material).opacity = 0.5;
     //}
@@ -101,5 +95,4 @@ export default class Piece3D extends Object3D implements Button {
   reset() {
     (this.mesh.material as Material).opacity = 1;
   }
-
 }

@@ -5,7 +5,7 @@ import { ButtonType } from "./common/objects";
 export default interface Button {
   mesh: Mesh;
   type: ButtonType;
-  active: boolean; 
+  active: boolean;
 
   hover(): void;
   reset(): void;

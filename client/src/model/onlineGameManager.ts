@@ -1,26 +1,25 @@
-import GameManager, {TurnPhase} from "./gameManager";
-import Player from "./player";
+import GameManager, { TurnPhase } from "./GameManager";
+import Player from "./Player";
 import Play from "../common/messages";
 
 export default class OnlineGameManager implements GameManager {
-    turnPhase: TurnPhase;
+  turnPhase: TurnPhase;
 
-    constructor() {
-        this.turnPhase = "NOT_STARTED";
-    }
+  constructor() {
+    this.turnPhase = "NOT_STARTED";
+  }
 
-    start(): void {
-    }
+  start(): void {}
 
-    getPlays(): Play[] {
-        return [];
-    }
+  getPlays(): Play[] {
+    return [];
+  }
 
-    play(play: Play) {
-        console.log(play);
-    }
+  play(play: Play) {
+    console.log(play);
+  }
 
-    addPlayer(player: Player) {
-        console.log(player) // suppressing error
-    }
+  addPlayer(player: Player) {
+    console.log(player); // suppressing error
+  }
 }

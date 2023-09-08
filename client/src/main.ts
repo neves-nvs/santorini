@@ -8,19 +8,18 @@ class Main {
   constructor() {
     const canvas = document.querySelector("canvas");
     if (canvas == null) throw new Error("Canvas not found");
-    
+
     this.sceneManager = new SceneManager(canvas as HTMLElement);
   }
 
-  public update(){
+  public update() {
     this.sceneManager.update();
   }
-
 }
 
-let main: Main = new Main(); 
+let main: Main = new Main();
 
-function start(){
+function start() {
   requestAnimationFrame(start);
   main.update();
 }
