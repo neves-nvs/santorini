@@ -33,6 +33,19 @@ dev-server:
 .PHONY: run
 dev: dev-client dev-server
 
+.PHONY: format-client
+format-client:
+	@echo "Formatting the client application..."
+	cd $(CLIENT_DIR) && npm run format
+
+.PHONY: format-server
+format-server:
+	@echo "Formatting the server application..."
+	cd $(SERVER_DIR) && npm run format
+
+.PHONY: format
+format: format-client format-server
+
 .PHONY: default
 default:
 	@echo "Available targets:"
