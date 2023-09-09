@@ -11,10 +11,6 @@ export class STLImportConfig {
   }
 }
 
-interface Dictionary<Type> {
-  [index: string]: Type;
-}
-
 export const locations = {
   builder: "assets/Builder.stl",
   base: "assets/Base.stl",
@@ -23,13 +19,5 @@ export const locations = {
   dome: "assets/Dome.stl",
   board: "assets/Board.stl",
 };
-// export const locations = {
-//   builder: "assets/Builder.stl",
-//   base: "assets/Base.stl",
-//   mid: "assets/Mid.stl",
-//   top: "assets/Top.stl",
-//   dome: "assets/Dome.stl",
-//   board: "assets/Board.stl",
-// } as Dictionary<string>;
 
 export const stlloader = new STLLoader();

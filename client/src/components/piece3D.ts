@@ -87,9 +87,7 @@ export default class Piece3D extends Object3D implements Button {
   }
 
   hover() {
-    //if (this.play != undefined){
     (this.mesh.material as Material).opacity = 0.5;
-    //}
   }
 
   reset() {
