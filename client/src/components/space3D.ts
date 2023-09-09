@@ -136,7 +136,7 @@ export class Space3D extends Object3D implements Button {
     return this.pieces.filter((p) => p.active === true); //.filter(b => b.play != undefined);
   }
 
-  hover(): void {
+  hover() {
     (this.mesh.material as Material).opacity = 0.8;
   }
 
