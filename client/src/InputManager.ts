@@ -17,7 +17,6 @@ export default class InputManager {
 
   constructor(sceneManager: SceneManager, controls: OrbitControls) {
     this.sceneManager = sceneManager;
-    // this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
     this.controls = controls;
     this.controls.target.set(2, 0, 2);
@@ -65,26 +64,22 @@ export default class InputManager {
     // (-1 to +1) for both model
     this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    console.log([this.pointer.x, this.pointer.y]);
   }
 
   private hoverButton() {
     this.interceptButton()?.hover();
-    console.log(this.interceptButton());
   }
 
   private clickButton() {
-    let button = this.interceptButton();
-    if (button == undefined) return;
-    //game.onClick(button);
+    this.interceptButton(); //?.click();
   }
 
   private interceptButton(): Button | undefined {
+    return; // TODO
     this.raycaster.setFromCamera(this.pointer, this.sceneManager.getCamera());
-    const selectable: Mesh[] = this.sceneManager
-      .getGame()
-      .getSelectableButtons()
-      .map((s) => s.mesh);
+    const selectable: Mesh[] = this.sceneManager;
+    //.getSelectableButtons()
+    //.map((s) => s.mesh);
     if (selectable.length == 0) return;
     const intersects: Intersection[] =
       this.raycaster.intersectObjects(selectable);

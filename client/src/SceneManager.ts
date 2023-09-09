@@ -1,18 +1,16 @@
 import {
   AmbientLight,
   DirectionalLight,
+  Object3D,
   PerspectiveCamera,
   Scene,
   WebGLRenderer,
 } from "three";
-import Game from "./components/Game";
 
 export default class SceneManager {
   private scene: Scene;
   private renderer: WebGLRenderer;
   private camera: PerspectiveCamera;
-
-  private game: Game;
 
   constructor(canvas: HTMLElement) {
     this.scene = new Scene();
@@ -40,8 +38,14 @@ export default class SceneManager {
     this.scene.add(ambientLight);
     let directionalLight = new DirectionalLight(0xffffff, 0.5);
     this.scene.add(directionalLight);
+  }
 
-    this.game = new Game(this.scene);
+  add(object: Object3D) {
+    this.scene.add(object);
+  }
+
+  remove(object: Object3D) {
+    this.scene.remove(object);
   }
 
   getCamera() {
@@ -52,13 +56,23 @@ export default class SceneManager {
     return this.renderer;
   }
 
-  getGame() {
-    return this.game;
-  }
-
-  public update(delta: number) {
+  render() {
     this.renderer.render(this.scene, this.camera);
-
-    this.game.update(delta);
   }
+
+  public update(delta: number) {}
+
+  // public getSelectableButtons(): Button[] {
+  //   let selectable: Button[] = [];
+  //   this.board.spaces
+  //     .flat() // list of all spaces
+  //     .map((space) => space.getActiveButtons()) // map each space into the list of its selectable pisces
+  //     .flat()
+  //     .forEach((b) => selectable.push(b)); // add to return
+  //   this.board.spaces
+  //     .flat() // all spaces
+  //     //.filter(b => b.play != undefined) // filter to only spaces with plays
+  //     .forEach((space) => selectable.push(space)); // add to return
+  //   return selectable;
+  // }
 }

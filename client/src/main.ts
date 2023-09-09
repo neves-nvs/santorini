@@ -3,24 +3,32 @@ import SceneManager from "./SceneManager";
 import InputManager from "./InputManager";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { Clock } from "three";
+import GameManager from "./GameManager";
+import BoardManager from "./BoardManager";
 
 class Main {
   private clock = new Clock();
   private delta: number;
 
   private sceneManager: SceneManager;
+  private boardManager: BoardManager;
+  private gameManager: GameManager;
   private inputManager: InputManager;
 
   constructor(canvas: HTMLElement) {
     this.sceneManager = new SceneManager(canvas as HTMLElement);
 
-    this.delta = Math.min(this.clock.getDelta(), 0.1);
+    this.boardManager = new BoardManager(this.sceneManager);
+
+    this.gameManager = new GameManager(this.boardManager);
 
     const controls = new OrbitControls(
       this.sceneManager.getCamera(),
       this.sceneManager.getRenderer().domElement,
     );
     this.inputManager = new InputManager(this.sceneManager, controls);
+
+    this.delta = Math.min(this.clock.getDelta(), 0.1);
   }
 
   public update() {
@@ -28,8 +36,11 @@ class Main {
     this.delta = Math.min(this.clock.getDelta(), 0.1); // TODO look into this
 
     this.sceneManager.update(this.delta);
-    // gameLogicManager.update();     // 2. Update the game logic, including turns
+    this.boardManager.update(this.delta);
+    this.gameManager.update(this.delta); // 1. Update the game manager, including turns
     this.inputManager.update();
+
+    this.sceneManager.render();
   }
 }
 

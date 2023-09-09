@@ -1,7 +1,6 @@
 import { BufferGeometry, Mesh, MeshStandardMaterial, Object3D } from "three";
 
-import { Space3D, SpaceShade } from "./space3D";
-import Piece3D from "./Piece3D";
+import { Space3D, SpaceShade } from "./Space3D";
 import { locations, stlloader } from "../STLLoader";
 
 import Position from "../common/position";

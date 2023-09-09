@@ -17,5 +17,5 @@
     "skipLibCheck": true,
     "composite": true,
   },
-  "include": ["src", "src/common/position.ts"]
+  "include": ["src", "src/common/position.ts", "../server/src/model"]
 }

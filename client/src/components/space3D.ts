@@ -76,9 +76,7 @@ export class Space3D extends Object3D implements Button {
     return piece;
   }
 
-  place(piece: Piece3D) {
-    console.log(piece);
-  }
+  place(piece: Piece3D) {}
 
   getHeight(): number {
     // TODO rename height property
