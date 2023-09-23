@@ -38,7 +38,7 @@ class Main {
 
     this.sceneManager.update(this.delta);
     this.boardManager.update(this.delta);
-    this.gameManager.update(this.delta); // 1. Update the game manager, including turns
+    this.gameManager.update(this.delta);
     this.inputManager.update();
 
     this.sceneManager.render();

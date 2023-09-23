@@ -79,4 +79,11 @@ export default class BoardManager {
       });
     });
   }
+
+  place(piece: Piece, x: number, y: number) {
+    this.sceneManager.add(piece);
+    piece.position.set(x, 0, y);
+    this.stacks[x][y].addPiece(piece);
+    this.pieces.push(piece);
+  }
 }

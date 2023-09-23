@@ -4,7 +4,6 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import SceneManager from "./SceneManager";
 
 const MOUSE_DELTA: number = 5;
-
 export default class InputManager {
   private sceneManager: SceneManager;
 
@@ -19,6 +18,8 @@ export default class InputManager {
     this.sceneManager = sceneManager;
 
     // todo maybe controls dont need dependency injection
+    controls.enableDamping = true;
+    controls.enableZoom = false;
     this.controls = controls;
     this.controls.target.set(2, 0, 2); // todo set constants
     this.controls.maxPolarAngle = Math.PI / 2;

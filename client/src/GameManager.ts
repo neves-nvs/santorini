@@ -1,4 +1,6 @@
+import Block from "./Block";
 import BoardManager from "./BoardManager";
+import Builder from "./Builder";
 
 const MAX_BASE_COUNT = 22;
 const MAX_MID_COUNT = 18;
@@ -10,12 +12,15 @@ export default class GameManager {
 
   constructor(boardManager: BoardManager) {
     this.boardManager = boardManager;
-    // TODO
+    this.boardManager.place(new Builder(), 0, 1);
+    this.boardManager.place(new Builder(), 0, 1);
+    this.boardManager.place(new Block("BASE"), 2, 2);
+    this.boardManager.place(new Block("MID"), 2, 2);
+    this.boardManager.place(new Block("TOP"), 2, 2);
+    this.boardManager.place(new Block("DOME"), 2, 2);
   }
 
   update(delta: number) {
-    // TODO
   }
-
   // Game Functionality
 }
