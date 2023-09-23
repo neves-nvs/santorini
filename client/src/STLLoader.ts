@@ -15,16 +15,12 @@ interface ModelLoader {
   load(model: PieceModel): Mesh;
 }
 export class STLImportConfig {
-  y_offset: number = 0;
-  x_rotation: number = 0;
-  scale: number = 0.03;
-  file: string = "";
-  constructor(
-    file: string,
-    y_offset: number,
-    x_rotation: number,
-    scale: number,
-  ) {
+  y_offset: number;
+  x_rotation: number;
+  scale: number;
+  file: string;
+  
+  constructor(file: string, y_offset: number, x_rotation: number, scale: number) {
     this.file = file;
     this.y_offset = y_offset;
     this.x_rotation = x_rotation;
@@ -61,38 +57,48 @@ function applyImportSettings(mesh: Mesh, config: STLImportConfig) {
 const material = new MeshStandardMaterial({ color: "white" });
 let mesh;
 
-const boardGeometry = await stlloader.loadAsync(configs.board.file);
+const [
+  boardGeometry,
+  builderGeometry,
+  baseGeometry,
+  midGeometry,
+  topGeometry,
+  domeGeometry
+] = await Promise.all([
+  stlloader.loadAsync(configs.board.file),
+  stlloader.loadAsync(configs.builder.file),
+  stlloader.loadAsync(configs.base.file),
+  stlloader.loadAsync(configs.mid.file),
+  stlloader.loadAsync(configs.top.file),
+  stlloader.loadAsync(configs.dome.file)
+]);
+
 boardGeometry.center();
 mesh = new Mesh(boardGeometry, material);
 applyImportSettings(mesh, configs.board);
 mesh.position.add(new Vector3(2, 0, 2));
 export let boardMesh = mesh;
 
-const builderGeometry = await stlloader.loadAsync(configs.builder.file);
 builderGeometry.center();
 mesh = new Mesh(builderGeometry, material);
 applyImportSettings(mesh, configs.builder);
 export let builderMesh = mesh;
 
-const baseGeometry = await stlloader.loadAsync(configs.base.file);
 baseGeometry.center();
 mesh = new Mesh(baseGeometry, material);
 applyImportSettings(mesh, configs.base);
 export let baseMesh = mesh;
 
-const midGeometry = await stlloader.loadAsync(configs.mid.file);
 midGeometry.center();
 mesh = new Mesh(midGeometry, material);
 applyImportSettings(mesh, configs.mid);
 export let midMesh = mesh;
 
-const topGeometry = await stlloader.loadAsync(configs.top.file);
 topGeometry.center();
 mesh = new Mesh(topGeometry, material);
 applyImportSettings(mesh, configs.top);
 export let topMesh = mesh;
 
-const domeGeometry = await stlloader.loadAsync(configs.dome.file);
 domeGeometry.center();
 mesh = new Mesh(domeGeometry, material);
 applyImportSettings(mesh, configs.dome);

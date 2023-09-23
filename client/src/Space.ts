@@ -6,10 +6,9 @@ import {
   Object3D,
 } from "three";
 
-import { SpaceShade } from "./BoardManager"; // TODO should not be ehre
+import { SpaceShade } from "./BoardManager"; // TODO should not be here
 
 export default class Space extends Object3D {
-  // TODO maybe replace with instance of a button where the mesh passed is this object's
   mesh: Mesh;
 
   height: number = 0;
