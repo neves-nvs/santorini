@@ -1,50 +1,44 @@
-import { BufferGeometry, Mesh, MeshStandardMaterial } from "three";
-import { STLImportConfig, configs, stlloader } from "./STLLoader";
+import {
+  STLImportConfig,
+  baseMesh,
+  configs,
+  domeMesh,
+  midMesh,
+  topMesh,
+} from "./STLLoader";
 
 import { BlockType } from "./BlockType";
+import { Mesh } from "three";
 import Piece from "./Piece";
 
 export default class Block extends Piece {
   type: BlockType;
 
   constructor(type: BlockType) {
-    let tmpConfig: STLImportConfig | undefined;
-    let color: number = 0xcccccc;
+    let config: STLImportConfig;
+    let mesh: Mesh;
     switch (type) {
       case "BASE":
-        tmpConfig = configs.base;
+        config = configs.base;
+        mesh = baseMesh;
         break;
       case "MID":
-        tmpConfig = configs.mid;
+        config = configs.mid;
+        mesh = midMesh;
         break;
       case "TOP":
-        tmpConfig = configs.top;
+        config = configs.top;
+        mesh = topMesh;
         break;
       case "DOME":
-        tmpConfig = configs.dome;
+        config = configs.dome;
+        mesh = domeMesh;
         break;
       default:
-        console.error("Invalid piece type");
+        throw new Error("Invalid piece type");
     }
-    if (tmpConfig == undefined) {
-      throw new Error("Config is undefined");
-    }
-    const config = tmpConfig; // TODO refactor just avoiding compiler error
-
-    let mesh;
-    stlloader.load(config.file, (geometry: BufferGeometry) => {
-      const material = new MeshStandardMaterial({
-        color: color,
-        transparent: true,
-      });
-      geometry.center();
-      mesh = new Mesh(geometry, material);
-      mesh.position.setY(config.y_offset);
-      mesh.scale.set(config.scale, config.scale, config.scale);
-      mesh.rotateX(config.x_rotation);
-    });
-    if (mesh == undefined) {
-      throw new Error("Mesh is undefined");
+    if (config == undefined || mesh == undefined) {
+      throw new Error("Config or mesh is undefined");
     }
 
     super(2 * config.y_offset, mesh);

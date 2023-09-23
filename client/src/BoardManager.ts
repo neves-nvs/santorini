@@ -1,5 +1,4 @@
-import { Mesh, MeshStandardMaterial, Object3D, Vector3 } from "three";
-
+import { Mesh } from "three";
 import Piece from "./Piece";
 import SceneManager from "./SceneManager";
 import Space from "./Space";
@@ -21,7 +20,6 @@ export default class BoardManager {
   constructor(sceneManager: SceneManager) {
     this.sceneManager = sceneManager;
 
-    // this.addMesh()
     this.sceneManager.add(this.board);
 
     this.stacks = new Array(5);

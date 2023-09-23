@@ -2,43 +2,18 @@ import { Mesh, MeshStandardMaterial, Vector3 } from "three";
 
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 
-type PieceModel = "BUILDER" | "BASE" | "MID" | "TOP" | "DOME" | "BOARD";
+enum PieceModel {
+  BUILDER,
+  BASE,
+  MID,
+  TOP,
+  DOME,
+  BOARD,
+}
 
 interface ModelLoader {
   load(model: PieceModel): Mesh;
 }
-
-// class STLFileLoader implements ModelLoader {
-//   constructor() {}
-//   load(model: PieceModel): Mesh {
-//     let config: STLImportConfig;
-//     switch (model) {
-//       case "BUILDER":
-//         config = configs.builder;
-//         break;
-
-//       case "BASE":
-//         config = configs.base;
-//         break;
-
-//       case "MID":
-//         config = configs.mid;
-//         break;
-
-//       case "TOP":
-//         config = configs.top;
-//         break;
-
-//       case "DOME":
-//         config = configs.dome;
-//         break;
-
-//       default:
-//         console.error("Invalid piece type");
-//     }
-//   }
-// }
-
 export class STLImportConfig {
   y_offset: number = 0;
   x_rotation: number = 0;
@@ -72,19 +47,53 @@ export const configs = {
   mid: new STLImportConfig(locations.mid, 0.275, -Math.PI / 2, 0.028),
   top: new STLImportConfig(locations.top, 0.165, Math.PI / 2, 0.028),
   dome: new STLImportConfig(locations.dome, 0.1, -Math.PI / 2, 0.0165),
-  board: new STLImportConfig(locations.board, 0, -Math.PI / 2, 0.031747), // todo fix
+  board: new STLImportConfig(locations.board, -0.067, -Math.PI / 2, 0.031747),
 };
 
 export const stlloader = new STLLoader();
 
-const boardGeometry = await stlloader.loadAsync(locations.board);
-boardGeometry.center();
-const material = new MeshStandardMaterial({ color: "white" });
-const mesh = new Mesh(boardGeometry, material);
+function applyImportSettings(mesh: Mesh, config: STLImportConfig) {
+  mesh.rotateX(config.x_rotation);
+  mesh.position.y += config.y_offset;
+  mesh.scale.set(config.scale, config.scale, config.scale);
+}
 
-const scale = 0.031747;
-mesh.scale.set(scale, scale, scale);
-mesh.rotateX(-Math.PI / 2);
-mesh.position.set(0, -0.067, 0);
+const material = new MeshStandardMaterial({ color: "white" });
+let mesh;
+
+const boardGeometry = await stlloader.loadAsync(configs.board.file);
+boardGeometry.center();
+mesh = new Mesh(boardGeometry, material);
+applyImportSettings(mesh, configs.board);
 mesh.position.add(new Vector3(2, 0, 2));
 export let boardMesh = mesh;
+
+const builderGeometry = await stlloader.loadAsync(configs.builder.file);
+builderGeometry.center();
+mesh = new Mesh(builderGeometry, material);
+applyImportSettings(mesh, configs.builder);
+export let builderMesh = mesh;
+
+const baseGeometry = await stlloader.loadAsync(configs.base.file);
+baseGeometry.center();
+mesh = new Mesh(baseGeometry, material);
+applyImportSettings(mesh, configs.base);
+export let baseMesh = mesh;
+
+const midGeometry = await stlloader.loadAsync(configs.mid.file);
+midGeometry.center();
+mesh = new Mesh(midGeometry, material);
+applyImportSettings(mesh, configs.mid);
+export let midMesh = mesh;
+
+const topGeometry = await stlloader.loadAsync(configs.top.file);
+topGeometry.center();
+mesh = new Mesh(topGeometry, material);
+applyImportSettings(mesh, configs.top);
+export let topMesh = mesh;
+
+const domeGeometry = await stlloader.loadAsync(configs.dome.file);
+domeGeometry.center();
+mesh = new Mesh(domeGeometry, material);
+applyImportSettings(mesh, configs.dome);
+export let domeMesh = mesh;
