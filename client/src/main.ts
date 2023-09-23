@@ -1,10 +1,11 @@
-import "./style.css";
-import SceneManager from "./SceneManager";
+import "./style.css"; // todo investigate more about css in js
+
+import BoardManager from "./BoardManager";
+import { Clock } from "three"; // todo investigate where clock should be placed
+import GameManager from "./GameManager";
 import InputManager from "./InputManager";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import { Clock } from "three";
-import GameManager from "./GameManager";
-import BoardManager from "./BoardManager";
+import SceneManager from "./SceneManager";
 
 class Main {
   private clock = new Clock();
@@ -26,7 +27,7 @@ class Main {
       this.sceneManager.getCamera(),
       this.sceneManager.getRenderer().domElement,
     );
-    this.inputManager = new InputManager(this.sceneManager, controls);
+    this.inputManager = new InputManager(this.sceneManager, controls); // todo input manager should interact with gameManager instead of InputManager because only it know the state of piecesw
 
     this.delta = Math.min(this.clock.getDelta(), 0.1);
   }
@@ -55,10 +56,3 @@ function start() {
 }
 
 start();
-
-// Nertwork Manager
-// import { io } from "socket.io-client";
-// let serverAddress = "http://localhost:3000";
-// const socket = io(serverAddress)
-// socket.on("connection", () => { console.log("connected") })
-// socket.on("hello", () => { console.log("hello") })

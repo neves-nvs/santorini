@@ -24,12 +24,8 @@ export default class SceneManager {
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setClearColor(0x87ceeb, 1);
 
-    this.camera = new PerspectiveCamera(
-      45,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000,
-    );
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    this.camera = new PerspectiveCamera(45, aspectRatio, 0.1, 1000);
     this.camera.position.setZ(5);
     this.camera.position.setX(5);
     this.camera.position.setY(5);
@@ -61,18 +57,4 @@ export default class SceneManager {
   }
 
   public update(delta: number) {}
-
-  // public getSelectableButtons(): Button[] {
-  //   let selectable: Button[] = [];
-  //   this.board.spaces
-  //     .flat() // list of all spaces
-  //     .map((space) => space.getActiveButtons()) // map each space into the list of its selectable pisces
-  //     .flat()
-  //     .forEach((b) => selectable.push(b)); // add to return
-  //   this.board.spaces
-  //     .flat() // all spaces
-  //     //.filter(b => b.play != undefined) // filter to only spaces with plays
-  //     .forEach((space) => selectable.push(space)); // add to return
-  //   return selectable;
-  // }
 }

@@ -1,7 +1,7 @@
+import { Intersection, Mesh, Raycaster, Vector2 } from "three";
+
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import SceneManager from "./SceneManager";
-import Button from "./Button";
-import { Intersection, Mesh, Raycaster, Vector2 } from "three";
 
 const MOUSE_DELTA: number = 5;
 
@@ -10,16 +10,17 @@ export default class InputManager {
 
   private controls: OrbitControls | undefined;
 
-  private pointer: Vector2 = new Vector2();
-  private raycaster: Raycaster = new Raycaster();
+  private pointer = new Vector2();
+  private raycaster = new Raycaster();
   private startX: number = 0; //? initialized to prevent undefined
   private startY: number = 0;
 
   constructor(sceneManager: SceneManager, controls: OrbitControls) {
     this.sceneManager = sceneManager;
 
+    // todo maybe controls dont need dependency injection
     this.controls = controls;
-    this.controls.target.set(2, 0, 2);
+    this.controls.target.set(2, 0, 2); // todo set constants
     this.controls.maxPolarAngle = Math.PI / 2;
 
     window.addEventListener("resize", this.onWindowResize.bind(this));
@@ -35,9 +36,11 @@ export default class InputManager {
   }
 
   public onWindowResize() {
+    // todo should call function from face of a manager
     let width: number = window.innerWidth;
     let height: number = window.innerHeight;
 
+    // this.sceneManager.resize(width, height)
     this.sceneManager
       .getRenderer()
       .setSize(window.innerWidth, window.innerHeight);
@@ -55,7 +58,7 @@ export default class InputManager {
     const diffY = Math.abs(event.pageY - this.startY);
 
     if (diffX < MOUSE_DELTA && diffY < MOUSE_DELTA) {
-      this.clickButton();
+      this.clickButton(); // todo should call function from facade of a manager
     }
   }
 
@@ -67,11 +70,11 @@ export default class InputManager {
   }
 
   private hoverButton() {
-    this.interceptButton()?.hover();
+    this.interceptButton()?.hover(); // todo should call from facade
   }
 
   private clickButton() {
-    this.interceptButton(); //?.click();
+    this.interceptButton(); //?.click(); // todo should call from facade
   }
 
   private interceptButton(): Button | undefined {
@@ -87,7 +90,7 @@ export default class InputManager {
       ...intersects.map(({ distance }) => distance),
     );
     const closest: Intersection = intersects.filter(
-      (intersection) => intersection.distance == distance,
+      intersection => intersection.distance == distance,
     )[0];
     return closest?.object.parent as unknown as Button;
   }
