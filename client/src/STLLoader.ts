@@ -15,17 +15,12 @@ interface ModelLoader {
   load(model: PieceModel): Mesh;
 }
 export class STLImportConfig {
-  y_offset: number;
-  x_rotation: number;
-  scale: number;
-  file: string;
-  
-  constructor(file: string, y_offset: number, x_rotation: number, scale: number) {
-    this.file = file;
-    this.y_offset = y_offset;
-    this.x_rotation = x_rotation;
-    this.scale = scale;
-  }
+  constructor(
+    public file: string,
+    public y_offset: number,
+    public x_rotation: number,
+    public scale: number,
+  ) {}
 }
 
 export const locations = {
@@ -63,14 +58,14 @@ const [
   baseGeometry,
   midGeometry,
   topGeometry,
-  domeGeometry
+  domeGeometry,
 ] = await Promise.all([
   stlloader.loadAsync(configs.board.file),
   stlloader.loadAsync(configs.builder.file),
   stlloader.loadAsync(configs.base.file),
   stlloader.loadAsync(configs.mid.file),
   stlloader.loadAsync(configs.top.file),
-  stlloader.loadAsync(configs.dome.file)
+  stlloader.loadAsync(configs.dome.file),
 ]);
 
 boardGeometry.center();

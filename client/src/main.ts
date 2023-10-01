@@ -4,7 +4,7 @@ import BoardManager from "./BoardManager";
 import { Clock } from "three"; // todo investigate where clock should be placed
 import GameManager from "./GameManager";
 import InputManager from "./InputManager";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import NetworkManager from "./NetworkManager";
 import SceneManager from "./SceneManager";
 
 class Main {
@@ -13,6 +13,7 @@ class Main {
 
   private sceneManager: SceneManager;
   private boardManager: BoardManager;
+  private networkManager: NetworkManager;
   private gameManager: GameManager;
   private inputManager: InputManager;
 
@@ -21,19 +22,16 @@ class Main {
 
     this.boardManager = new BoardManager(this.sceneManager);
 
-    this.gameManager = new GameManager(this.boardManager);
+    this.networkManager = new NetworkManager();
 
-    const controls = new OrbitControls(
-      this.sceneManager.getCamera(),
-      this.sceneManager.getRenderer().domElement,
-    );
-    this.inputManager = new InputManager(this.sceneManager, controls); // todo input manager should interact with gameManager instead of InputManager because only it know the state of piecesw
+    this.gameManager = new GameManager(this.boardManager, this.networkManager);
+
+    this.inputManager = new InputManager(this.sceneManager, this.gameManager);
 
     this.delta = Math.min(this.clock.getDelta(), 0.1);
   }
 
   public update() {
-    // TODO pass delta to update functions
     this.delta = Math.min(this.clock.getDelta(), 0.1); // TODO look into this
 
     this.sceneManager.update(this.delta);

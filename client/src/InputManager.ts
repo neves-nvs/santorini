@@ -1,28 +1,28 @@
-import { Intersection, Mesh, Raycaster, Vector2 } from "three";
+import { Raycaster, Vector2 } from "three";
 
+import GameManager from "./GameManager";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import Piece from "./components/Piece";
 import SceneManager from "./SceneManager";
 
 const MOUSE_DELTA: number = 5;
 export default class InputManager {
   private sceneManager: SceneManager;
+  private gameManager: GameManager;
 
   private controls: OrbitControls | undefined;
 
   private pointer = new Vector2();
   private raycaster = new Raycaster();
-  private startX: number = 0; //? initialized to prevent undefined
-  private startY: number = 0;
+  private startX?: number
+  private startY?: number;
 
-  constructor(sceneManager: SceneManager, controls: OrbitControls) {
+  constructor(sceneManager: SceneManager, gameManager: GameManager) {
     this.sceneManager = sceneManager;
 
-    // todo maybe controls dont need dependency injection
-    controls.enableDamping = true;
-    controls.enableZoom = false;
-    this.controls = controls;
-    this.controls.target.set(2, 0, 2); // todo set constants
-    this.controls.maxPolarAngle = Math.PI / 2;
+    this.controls = this.createOrbitControls()
+
+    this.gameManager = gameManager;
 
     window.addEventListener("resize", this.onWindowResize.bind(this));
     window.addEventListener("mousedown", this.onMouseDown.bind(this));
@@ -33,20 +33,37 @@ export default class InputManager {
   update() {
     this.controls?.update();
 
-    this.hoverButton();
+    const piece = this.interceptPiece();
+    if (piece != undefined) {
+      console.log(piece);
+    }
+    //this.hoverButton();
+  }
+
+  private createOrbitControls() {
+    const camera = this.sceneManager.getCamera();
+    const renderer = this.sceneManager.getRenderer();
+    const controls = new OrbitControls(camera, renderer.domElement);
+
+    controls.enableDamping = true;
+    controls.enableZoom = false;
+    controls.target.set(2, 0, 2); // todo set constants
+    controls.maxPolarAngle = Math.PI / 2;
+
+    this.controls = controls;
+    return controls
   }
 
   public onWindowResize() {
-    // todo should call function from face of a manager
-    let width: number = window.innerWidth;
-    let height: number = window.innerHeight;
+    const width: number = window.innerWidth;
+    const height: number = window.innerHeight;
 
-    // this.sceneManager.resize(width, height)
-    this.sceneManager
-      .getRenderer()
-      .setSize(window.innerWidth, window.innerHeight);
-    this.sceneManager.getCamera().aspect = width / height;
-    this.sceneManager.getCamera().updateProjectionMatrix();
+    const renderer = this.sceneManager.getRenderer();
+    const camera = this.sceneManager.getCamera();
+
+    renderer.setSize(width, height); // this.sceneManager.resize(width, height)
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
   }
 
   public onMouseDown(event: MouseEvent) {
@@ -55,11 +72,12 @@ export default class InputManager {
   }
 
   public onMouseUp(event: MouseEvent) {
+    if (this.startX == undefined || this.startY == undefined) return;
     const diffX = Math.abs(event.pageX - this.startX);
     const diffY = Math.abs(event.pageY - this.startY);
 
     if (diffX < MOUSE_DELTA && diffY < MOUSE_DELTA) {
-      this.clickButton(); // todo should call function from facade of a manager
+      //this.click(); // todo should call function from facade of a manager
     }
   }
 
@@ -74,24 +92,16 @@ export default class InputManager {
     // this.interceptButton()?.hover(); // todo should call from facade
   }
 
-  private clickButton() {
-    // this.interceptButton(); //?.click(); // todo should call from facade
-  }
+  private interceptPiece(): Piece | undefined {
+    this.raycaster.setFromCamera(this.pointer, this.sceneManager.getCamera());
+    const clickable: Piece[] = this.gameManager.getClickablePieces();
+    if (clickable.length == 0) return;
 
-  private interceptButton() {
-    // this.raycaster.setFromCamera(this.pointer, this.sceneManager.getCamera());
-    // const selectable: Mesh[] = this.sceneManager;
-    // //.getSelectableButtons()
-    // //.map((s) => s.mesh);
-    // if (selectable.length == 0) return;
-    // const intersects: Intersection[] =
-    //   this.raycaster.intersectObjects(selectable);
-    // const distance: number = Math.min(
-    //   ...intersects.map(({ distance }) => distance),
-    // );
-    // const closest: Intersection = intersects.filter(
-    //   intersection => intersection.distance == distance,
-    // )[0];
-    // return closest?.object.parent as unknown as Button;
+    const intersections = this.raycaster.intersectObjects(clickable);
+    if (intersections.length == 0) return;
+    const distance: number = Math.min(...intersections.map(({ distance }) => distance));
+
+    const closest = intersections.filter(intersection => intersection.distance == distance)[0];
+    return closest.object as Piece;
   }
 }

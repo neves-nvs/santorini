@@ -52,9 +52,13 @@ export default class BoardManager {
     }
   }
 
-  public getMesh() { return this.board; }
+  public getMesh() {
+    return this.board;
+  }
 
-  public getPieces() { return this.pieces; }
+  public getPieces() {
+    return this.pieces;
+  }
 
   public update(delta: number) {
     this.updateStacks();
