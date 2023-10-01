@@ -6,7 +6,7 @@ import {
   Object3D,
 } from "three";
 
-import { SpaceShade } from "./BoardManager"; // TODO should not be here
+import { SpaceShade } from "../BoardManager"; // TODO should not be here
 
 export default class Space extends Object3D {
   mesh: Mesh;

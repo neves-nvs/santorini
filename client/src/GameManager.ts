@@ -1,6 +1,6 @@
-import Block from "./Block";
+import Block from "./components/Block";
 import BoardManager from "./BoardManager";
-import Builder from "./Builder";
+import Builder from "./components/Builder";
 
 const MAX_BASE_COUNT = 22;
 const MAX_MID_COUNT = 18;

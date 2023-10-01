@@ -1,4 +1,4 @@
-import { builderMesh, configs } from "./STLLoader";
+import { builderMesh, configs } from "../STLLoader";
 
 import Piece from "./Piece";
 

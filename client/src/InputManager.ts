@@ -71,28 +71,27 @@ export default class InputManager {
   }
 
   private hoverButton() {
-    this.interceptButton()?.hover(); // todo should call from facade
+    // this.interceptButton()?.hover(); // todo should call from facade
   }
 
   private clickButton() {
-    this.interceptButton(); //?.click(); // todo should call from facade
+    // this.interceptButton(); //?.click(); // todo should call from facade
   }
 
-  private interceptButton(): Button | undefined {
-    return; // TODO
-    this.raycaster.setFromCamera(this.pointer, this.sceneManager.getCamera());
-    const selectable: Mesh[] = this.sceneManager;
-    //.getSelectableButtons()
-    //.map((s) => s.mesh);
-    if (selectable.length == 0) return;
-    const intersects: Intersection[] =
-      this.raycaster.intersectObjects(selectable);
-    const distance: number = Math.min(
-      ...intersects.map(({ distance }) => distance),
-    );
-    const closest: Intersection = intersects.filter(
-      intersection => intersection.distance == distance,
-    )[0];
-    return closest?.object.parent as unknown as Button;
+  private interceptButton() {
+    // this.raycaster.setFromCamera(this.pointer, this.sceneManager.getCamera());
+    // const selectable: Mesh[] = this.sceneManager;
+    // //.getSelectableButtons()
+    // //.map((s) => s.mesh);
+    // if (selectable.length == 0) return;
+    // const intersects: Intersection[] =
+    //   this.raycaster.intersectObjects(selectable);
+    // const distance: number = Math.min(
+    //   ...intersects.map(({ distance }) => distance),
+    // );
+    // const closest: Intersection = intersects.filter(
+    //   intersection => intersection.distance == distance,
+    // )[0];
+    // return closest?.object.parent as unknown as Button;
   }
 }

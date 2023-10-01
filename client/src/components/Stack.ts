@@ -1,7 +1,7 @@
 import { BoxGeometry, Mesh, MeshBasicMaterial, Object3D } from "three";
 
 import Piece from "./Piece";
-import { SpaceShade } from "./BoardManager";
+import { SpaceShade } from "../BoardManager";
 
 export default class Stack extends Object3D {
   private pieces: Piece[];

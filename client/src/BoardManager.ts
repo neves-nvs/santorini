@@ -1,8 +1,8 @@
 import { Mesh } from "three";
-import Piece from "./Piece";
+import Piece from "./components/Piece";
 import SceneManager from "./SceneManager";
-import Space from "./Space";
-import Stack from "./Stack";
+import Space from "./components/Space";
+import Stack from "./components/Stack";
 import { boardMesh } from "./STLLoader";
 
 export enum SpaceShade {
@@ -52,15 +52,11 @@ export default class BoardManager {
     }
   }
 
-  getMesh() {
-    return this.board;
-  }
+  public getMesh() { return this.board; }
 
-  getPieces() {
-    return this.pieces;
-  }
+  public getPieces() { return this.pieces; }
 
-  update(delta: number) {
+  public update(delta: number) {
     this.updateStacks();
   }
 
@@ -80,7 +76,7 @@ export default class BoardManager {
     });
   }
 
-  place(piece: Piece, x: number, y: number) {
+  public place(piece: Piece, x: number, y: number) {
     this.sceneManager.add(piece);
     piece.position.set(x, 0, y);
     this.stacks[x][y].addPiece(piece);

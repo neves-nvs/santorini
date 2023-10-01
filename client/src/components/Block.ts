@@ -5,7 +5,7 @@ import {
   domeMesh,
   midMesh,
   topMesh,
-} from "./STLLoader";
+} from "../STLLoader";
 
 import { BlockType } from "./BlockType";
 import { Mesh } from "three";
