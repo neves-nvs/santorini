@@ -1,5 +1,6 @@
 import {
   AmbientLight,
+  Color,
   DirectionalLight,
   Object3D,
   PerspectiveCamera,
@@ -16,7 +17,7 @@ export default class SceneManager {
     this.scene = new Scene();
 
     this.renderer = new WebGLRenderer({
-      canvas: canvas as HTMLElement,
+      canvas: canvas,
       antialias: true,
       alpha: true,
     });
@@ -30,9 +31,9 @@ export default class SceneManager {
     this.camera.position.setX(5);
     this.camera.position.setY(5);
 
-    let ambientLight = new AmbientLight(0x404040);
+    let ambientLight = new AmbientLight(new Color(0xffffff), 0.5);
     this.scene.add(ambientLight);
-    let directionalLight = new DirectionalLight(0xffffff, 0.5);
+    let directionalLight = new DirectionalLight(0xffffff, 0.7);
     this.scene.add(directionalLight);
   }
 

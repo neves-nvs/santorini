@@ -1,4 +1,4 @@
-import { Mesh, MeshStandardMaterial, Vector3 } from "three";
+import { Box3, Mesh, MeshStandardMaterial, Vector3 } from "three";
 
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 
@@ -33,9 +33,9 @@ export const locations = {
 };
 
 export const configs = {
-  builder: new STLImportConfig(locations.builder, 0.47, -Math.PI / 2, 0.03),
+  builder: new STLImportConfig(locations.builder, 0.28, -Math.PI / 2, 0.02),
   base: new STLImportConfig(locations.base, 0.231, -Math.PI / 2, 0.028),
-  mid: new STLImportConfig(locations.mid, 0.275, -Math.PI / 2, 0.028),
+  mid: new STLImportConfig(locations.mid, 0.236, -Math.PI / 2, 0.028),
   top: new STLImportConfig(locations.top, 0.165, Math.PI / 2, 0.028),
   dome: new STLImportConfig(locations.dome, 0.1, -Math.PI / 2, 0.0165),
   board: new STLImportConfig(locations.board, -0.067, -Math.PI / 2, 0.031747),
@@ -93,8 +93,12 @@ topGeometry.center();
 mesh = new Mesh(topGeometry, material);
 applyImportSettings(mesh, configs.top);
 export let topMesh = mesh;
+const boundingBox = new Box3().setFromObject(mesh);
+const height = boundingBox.max.y - boundingBox.min.y;
+console.log("Height of top piece: ", height);
 
 domeGeometry.center();
-mesh = new Mesh(domeGeometry, material);
+const blueMaterial = new MeshStandardMaterial({ color: "#4A90E2" });
+mesh = new Mesh(domeGeometry, blueMaterial);
 applyImportSettings(mesh, configs.dome);
 export let domeMesh = mesh;

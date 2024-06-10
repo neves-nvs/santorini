@@ -22,7 +22,7 @@ export default class GameManager {
     //   const action = { type: 'click', player: player.id };
     //   this.networkManager.sendMessage(action);
     // });
-    
+
     eventManager.on(eventManager.GAME_ACTION, (action: any) => {
       // Handle the game action here
       this.handleGameAction(action);
@@ -52,7 +52,7 @@ export default class GameManager {
       this.handleInvalidAction(action);
     }
   }
-  
+
   private async validateActionWithServer(action: any): Promise<boolean> {
     const isValid = await this.networkManager.validatePlayerAction(action);
     return isValid;

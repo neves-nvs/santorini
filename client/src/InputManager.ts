@@ -1,6 +1,7 @@
 import { Raycaster, Vector2 } from "three";
 
 import GameManager from "./GameManager";
+import { MathUtils } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Piece from "./components/Piece";
 import SceneManager from "./SceneManager";
@@ -14,13 +15,13 @@ export default class InputManager {
 
   private pointer = new Vector2();
   private raycaster = new Raycaster();
-  private startX?: number
+  private startX?: number;
   private startY?: number;
 
   constructor(sceneManager: SceneManager, gameManager: GameManager) {
     this.sceneManager = sceneManager;
 
-    this.controls = this.createOrbitControls()
+    this.controls = this.createOrbitControls();
 
     this.gameManager = gameManager;
 
@@ -35,7 +36,7 @@ export default class InputManager {
 
     const piece = this.interceptPiece();
     if (piece != undefined) {
-      console.log(piece);
+      console.log(`Hovering over piece: ${piece.id}`);
     }
     //this.hoverButton();
   }
@@ -51,7 +52,7 @@ export default class InputManager {
     controls.maxPolarAngle = Math.PI / 2;
 
     this.controls = controls;
-    return controls
+    return controls;
   }
 
   public onWindowResize() {
@@ -64,6 +65,18 @@ export default class InputManager {
     renderer.setSize(width, height); // this.sceneManager.resize(width, height)
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+
+    // TODO make this work a little better (working tho)
+    const aspect = width / height;
+    const boardWidth = 6;
+    const boardHeight = 6;
+    const fov = camera.fov * (Math.PI / 180); // Convert FOV to radians
+    const cameraHeight = Math.max(
+      boardHeight / (2 * Math.tan(fov / 2)),
+      boardWidth / (2 * aspect * Math.tan(fov / 2)),
+    );
+    camera.position.set(0, cameraHeight, cameraHeight);
+    camera.lookAt(0, 0, 0);
   }
 
   public onMouseDown(event: MouseEvent) {
@@ -99,9 +112,13 @@ export default class InputManager {
 
     const intersections = this.raycaster.intersectObjects(clickable);
     if (intersections.length == 0) return;
-    const distance: number = Math.min(...intersections.map(({ distance }) => distance));
+    const distance: number = Math.min(
+      ...intersections.map(({ distance }) => distance),
+    );
 
-    const closest = intersections.filter(intersection => intersection.distance == distance)[0];
+    const closest = intersections.filter(
+      intersection => intersection.distance == distance,
+    )[0];
     return closest.object as Piece;
   }
 }
