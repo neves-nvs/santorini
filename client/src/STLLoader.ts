@@ -49,7 +49,14 @@ function applyImportSettings(mesh: Mesh, config: STLImportConfig) {
   mesh.scale.set(config.scale, config.scale, config.scale);
 }
 
-const material = new MeshStandardMaterial({ color: "white" });
+const material = new MeshStandardMaterial({
+  color: "white",
+  transparent: true,
+});
+const blueMaterial = new MeshStandardMaterial({
+  color: "#4A90E2",
+  transparent: true,
+});
 let mesh;
 
 const [
@@ -98,7 +105,6 @@ const height = boundingBox.max.y - boundingBox.min.y;
 console.log("Height of top piece: ", height);
 
 domeGeometry.center();
-const blueMaterial = new MeshStandardMaterial({ color: "#4A90E2" });
 mesh = new Mesh(domeGeometry, blueMaterial);
 applyImportSettings(mesh, configs.dome);
 export let domeMesh = mesh;

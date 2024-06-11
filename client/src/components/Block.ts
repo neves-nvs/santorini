@@ -20,19 +20,19 @@ export default class Block extends Piece {
     switch (type) {
       case "BASE":
         config = configs.base;
-        mesh = baseMesh.clone();
+        mesh = baseMesh;
         break;
       case "MID":
         config = configs.mid;
-        mesh = midMesh.clone();
+        mesh = midMesh;
         break;
       case "TOP":
         config = configs.top;
-        mesh = topMesh.clone();
+        mesh = topMesh;
         break;
       case "DOME":
         config = configs.dome;
-        mesh = domeMesh.clone();
+        mesh = domeMesh;
         break;
       default:
         throw new Error("Invalid piece type");
