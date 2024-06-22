@@ -8,9 +8,9 @@ export class Board {
   }
 
   private initializeBoard(): Stack[][] {
-    return Array(5)
-      .fill([])
-      .map(() => Array(5).fill(new Stack()));
+    return Array.from({ length: 5 }, () =>
+      Array.from({ length: 5 }, () => new Stack()),
+    );
   }
 
   getEmptyPositions(): Position[] {

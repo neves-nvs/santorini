@@ -55,6 +55,14 @@ export class Game {
     this.currentPlayer = this.players[0];
   }
 
+  hasEnoughPlayers(): boolean {
+    return this.players.length === this.amountOfPlayers;
+  }
+
+  getPlayers() {
+    return this.players;
+  }
+
   getPlays(playerId: string) {
     if (this.currentPlayer?.getUsername() !== playerId) {
       return [];
