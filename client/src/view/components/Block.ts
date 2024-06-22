@@ -7,7 +7,7 @@ import {
   topMesh,
 } from "../STLLoader";
 
-import { BlockType } from "./BlockType";
+import { BlockType } from "../../model/BlockType";
 import { Mesh } from "three";
 import Piece from "./Piece";
 

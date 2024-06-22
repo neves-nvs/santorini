@@ -4,13 +4,11 @@ import Piece from "./Piece";
 import { SpaceShade } from "../BoardManager";
 
 export default class Stack extends Object3D {
-  private pieces: Piece[];
-  private height: number;
+  private pieces: Piece[] = [];
+  private height = 0;
 
   constructor(type: SpaceShade) {
     super();
-    this.pieces = [];
-    this.height = this.pieces.length; // TODO
     this.addFloorTile(type);
   }
 
@@ -27,13 +25,17 @@ export default class Stack extends Object3D {
   }
 
   addPiece(piece: Piece) {
-    //raises current "floor lever"
+    piece.position.setX(this.position.x);
+    piece.position.setZ(this.position.z);
+
     piece.position.setY(this.height);
+
     this.height += piece.getHeight();
+    this.pieces.push(piece);
   }
 
   removePiece(): Piece | undefined {
-    let piece: Piece | undefined = this.pieces.pop();
+    const piece = this.pieces.pop();
     return piece;
   }
 }

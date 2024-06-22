@@ -8,6 +8,8 @@ import {
   WebGLRenderer,
 } from "three";
 
+import Piece from "./components/Piece";
+
 export default class SceneManager {
   private scene: Scene;
   private renderer: WebGLRenderer;
@@ -58,4 +60,8 @@ export default class SceneManager {
   }
 
   public update(delta: number) {}
+
+  public hover(piece: Piece) {
+    // piece.setOpacity(0.5);
+  }
 }

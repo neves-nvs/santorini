@@ -1,0 +1,67 @@
+import Block from "./components/Block";
+import { BlockType } from "model/BlockType";
+import BoardManager from "./BoardManager";
+import Builder from "./components/Builder";
+import EventEmitter from "eventemitter3";
+import Piece from "./components/Piece";
+import { Position } from "position";
+
+export default class GameManager extends EventEmitter {
+  private boardManager: BoardManager;
+  private gameId?: string;
+  private username?: string;
+
+  constructor(boardManager: BoardManager) {
+    super();
+    this.boardManager = boardManager;
+
+    // this.boardManager.place(new Builder(), 0, 1);
+    // this.boardManager.place(new Builder(), 0, 0);
+
+    // this.boardManager.place(new Block("BASE"), 2, 2);
+    // this.boardManager.place(new Block("MID"), 2, 2);
+    // this.boardManager.place(new Block("TOP"), 2, 2);
+    // this.boardManager.place(new Block("DOME"), 2, 2);
+
+    // this.boardManager.place(new Block("BASE"), 3, 3);
+    // this.boardManager.place(new Block("MID"), 3, 3);
+    // this.boardManager.place(new Block("TOP"), 3, 3);
+    // this.boardManager.place(new Block("DOME"), 3, 3);
+  }
+
+  getUsername() {
+    return this.username;
+  }
+
+  setUsername(username: string) {
+    this.username = username;
+  }
+
+  getGameId() {
+    return this.gameId;
+  }
+
+  setGameId(gameId: string) {
+    this.gameId = gameId;
+  }
+
+  // update(delta: number) {}
+
+  placeWorker(x: number, y: number) {
+    this.boardManager.place(new Builder(), x, y);
+  }
+
+  moveWorker({ x, y }: Position, { x: newX, y: newY }: Position) {
+    this.boardManager.moveWorker(x, y, newX, newY);
+  }
+
+  buildBlock({ x, y }: Position, type: BlockType) {
+    this.boardManager.place(new Block(type), x, y);
+  }
+
+  // TODO feels out of place here
+  getClickablePieces(): Piece[] {
+    return this.boardManager.getPieces();
+    //.filter(piece => piece.isClickable());
+  }
+}

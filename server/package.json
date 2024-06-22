@@ -1,23 +1,30 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "",
-  "type": "module",
-  "main": "index.ts",
+  "main": "src/server.ts",
   "scripts": {
-    "dev": "node --loader ts-node/esm src/index.ts",
-    "format": "prettier --write \"src/**/*.ts\""
+    "dev": "ts-node-dev ./src/server.ts",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "description": "",
   "dependencies": {
-    "socket.io": "^4.7.2",
-    "typescript": "^5.1.6"
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "http": "^0.0.1-security",
+    "uuid": "^10.0.0",
+    "ws": "^8.17.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "prettier": "^3.0.3",
-    "ts-node": "^10.9.1"
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.12.12",
+    "@types/ws": "^8.5.10",
+    "ts-jest": "^29.1.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
   }
 }

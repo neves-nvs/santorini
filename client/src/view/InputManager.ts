@@ -1,12 +1,13 @@
-import { Raycaster, Vector2 } from "three";
+import { Object3D, Raycaster, Vector2 } from "three";
 
 import GameManager from "./GameManager";
-import { MathUtils } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Piece from "./components/Piece";
 import SceneManager from "./SceneManager";
 
 const MOUSE_DELTA: number = 5;
+
+// export default class InputManager extends EventEmitter {
 export default class InputManager {
   private sceneManager: SceneManager;
   private gameManager: GameManager;
@@ -17,6 +18,8 @@ export default class InputManager {
   private raycaster = new Raycaster();
   private startX?: number;
   private startY?: number;
+
+  private hoveredPiece: Piece | undefined;
 
   constructor(sceneManager: SceneManager, gameManager: GameManager) {
     this.sceneManager = sceneManager;
@@ -29,17 +32,25 @@ export default class InputManager {
     window.addEventListener("mousedown", this.onMouseDown.bind(this));
     window.addEventListener("mouseup", this.onMouseUp.bind(this));
     window.addEventListener("mousemove", this.onMouseMove.bind(this));
+
+    this.hoveredPiece = undefined;
   }
 
   update() {
     this.controls?.update();
 
-    const piece = this.interceptPiece();
-    if (piece != undefined) {
-      console.log(`Hovering over piece: ${piece.id}`);
-    }
-    //this.hoverButton();
+    // const piece = this.interceptPiece();
+    // if (this.hoveredPiece != undefined) {
+    //   console.log(`Hovering over piece: ${piece.id}`);
+    //   this.sceneManager.hover(piece);
+    // }
+
+    this.hoverPiece();
   }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   CAMERA                                   */
+  /* -------------------------------------------------------------------------- */
 
   private createOrbitControls() {
     const camera = this.sceneManager.getCamera();
@@ -55,7 +66,7 @@ export default class InputManager {
     return controls;
   }
 
-  public onWindowResize() {
+  private onWindowResize() {
     const width: number = window.innerWidth;
     const height: number = window.innerHeight;
 
@@ -70,7 +81,7 @@ export default class InputManager {
     const aspect = width / height;
     const boardWidth = 6;
     const boardHeight = 6;
-    const fov = camera.fov * (Math.PI / 180); // Convert FOV to radians
+    const fov = camera.fov * (Math.PI / 180);
     const cameraHeight = Math.max(
       boardHeight / (2 * Math.tan(fov / 2)),
       boardWidth / (2 * aspect * Math.tan(fov / 2)),
@@ -79,12 +90,16 @@ export default class InputManager {
     camera.lookAt(0, 0, 0);
   }
 
-  public onMouseDown(event: MouseEvent) {
+  /* -------------------------------------------------------------------------- */
+  /*                                    MOUSE                                   */
+  /* -------------------------------------------------------------------------- */
+
+  private onMouseDown(event: MouseEvent) {
     this.startX = event.pageX;
     this.startY = event.pageY;
   }
 
-  public onMouseUp(event: MouseEvent) {
+  private onMouseUp(event: MouseEvent) {
     if (this.startX == undefined || this.startY == undefined) return;
     const diffX = Math.abs(event.pageX - this.startX);
     const diffY = Math.abs(event.pageY - this.startY);
@@ -94,31 +109,56 @@ export default class InputManager {
     }
   }
 
-  public onMouseMove(event: MouseEvent) {
+  private onMouseMove(event: MouseEvent) {
     // calculate pointer position in normalized device coordinates
     // (-1 to +1) for both model
     this.pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
   }
 
-  private hoverButton() {
-    // this.interceptButton()?.hover(); // todo should call from facade
+  /* -------------------------------------------------------------------------- */
+  /*                                   VISUALS                                  */
+  /* -------------------------------------------------------------------------- */
+
+  private hoverPiece() {
+    const hoveredPiece: Piece | undefined = this.interceptPiece();
+    if (hoveredPiece === this.hoveredPiece) return;
+    // console.log(`Hovering: ${hoveredPiece?.constructor.name}`);
+
+    this.hoveredPiece?.unhover();
+
+    hoveredPiece?.hover();
+    this.hoveredPiece = hoveredPiece;
+    this.hoveredPiece?.hover();
+
+    hoveredPiece?.hover();
   }
 
   private interceptPiece(): Piece | undefined {
     this.raycaster.setFromCamera(this.pointer, this.sceneManager.getCamera());
     const clickable: Piece[] = this.gameManager.getClickablePieces();
-    if (clickable.length == 0) return;
+    if (clickable.length == 0) return undefined;
 
-    const intersections = this.raycaster.intersectObjects(clickable);
-    if (intersections.length == 0) return;
-    const distance: number = Math.min(
-      ...intersections.map(({ distance }) => distance),
-    );
+    const intersected = this.raycaster.intersectObjects(clickable);
+    if (intersected.length == 0) return undefined;
 
-    const closest = intersections.filter(
-      intersection => intersection.distance == distance,
-    )[0];
-    return closest.object as Piece;
+    const closest = intersected[0].object as Piece;
+    const piece = this.findParentPiece(closest);
+    if (piece == undefined) {
+      console.warn("Could not find parent piece");
+    }
+    return piece;
+  }
+
+  private findParentPiece(object: Object3D): Piece | undefined {
+    if (object instanceof Piece) {
+      return object;
+    }
+
+    if (object.parent) {
+      return this.findParentPiece(object.parent);
+    }
+
+    return undefined;
   }
 }

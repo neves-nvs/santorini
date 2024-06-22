@@ -100,9 +100,6 @@ topGeometry.center();
 mesh = new Mesh(topGeometry, material);
 applyImportSettings(mesh, configs.top);
 export let topMesh = mesh;
-const boundingBox = new Box3().setFromObject(mesh);
-const height = boundingBox.max.y - boundingBox.min.y;
-console.log("Height of top piece: ", height);
 
 domeGeometry.center();
 mesh = new Mesh(domeGeometry, blueMaterial);

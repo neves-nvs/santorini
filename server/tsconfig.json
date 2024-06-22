@@ -1,25 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ESNext", "DOM"],
-    "moduleResolution": "Node",
-    "strict": true,
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "noEmit": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "skipLibCheck": true,
-    "composite": true,
-  },
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node",
-  },
-  "include": ["src"]
+    "target": "Es6", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    "module": "ESNext", /* Specify what module code is generated. */
+    "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
+    "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
+    /* Type Checking */
+    "strict": true, /* Enable all strict type-checking options. */
+    /* Completeness */
+    // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */
+  }
 }

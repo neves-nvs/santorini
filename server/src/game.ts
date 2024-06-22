@@ -1,0 +1,126 @@
+import { Board, Player, Position } from "./board";
+
+import { Worker } from "./board";
+import { randomUUID } from "crypto";
+
+export type Play = {
+  playerId: string;
+  workerId: number;
+  position: Position;
+  extraPosition?: Position;
+};
+
+export type GamePhase = "NOT STARTED" | "SETUP" | "MOVE" | "BUILD" | "FINISHED";
+
+export class Game {
+  private id: string;
+  private amountOfPlayers: number = 2;
+
+  private board: Board;
+
+  private currentPlayer?: Player;
+  private players: Player[];
+  private gamePhase: string = "NOT STARTED";
+  private workersByPlayer: Map<string, Worker[]> = new Map();
+
+  private turnCount: number;
+
+  constructor() {
+    this.id = randomUUID();
+    this.board = new Board();
+    this.players = [];
+    this.currentPlayer = undefined;
+    this.turnCount = 0;
+  }
+
+  getId() {
+    return this.id;
+  }
+
+  addPlayer(username: string) {
+    const player = new Player(username);
+    this.players.push(player);
+
+    if (this.players.length === this.amountOfPlayers) {
+      this.currentPlayer = player;
+    }
+  }
+
+  start() {
+    if (this.players.length !== this.amountOfPlayers) {
+      return;
+    }
+
+    this.gamePhase = "SETUP";
+    this.currentPlayer = this.players[0];
+  }
+
+  getPlays(playerId: string) {
+    if (this.currentPlayer?.getUsername() !== playerId) {
+      return [];
+    }
+
+    const plays: Play[] = [];
+    if (this.gamePhase === "SETUP") {
+      const emptySpots = this.board.getEmptyPositions();
+      emptySpots.forEach(position => {
+        plays.push({
+          playerId: playerId,
+          workerId: 1,
+          position: position,
+        });
+      });
+    } else if (this.gamePhase === "MOVE") {
+      const player = this.currentPlayer;
+    }
+  }
+
+  applyPlay(play: Play) {
+    if (this.gamePhase === "SETUP") {
+      const worker = new Worker(play.workerId, play.position);
+      this.workersByPlayer.set(play.playerId, [worker]);
+      this.switchTurn();
+      if (
+        this.players.every(
+          player =>
+            this.workersByPlayer.get(player.getUsername())?.length === 2,
+        )
+      ) {
+        this.gamePhase = "MOVE";
+      }
+    } else if (this.gamePhase === "MOVE") {
+      const worker = this.workersByPlayer
+        .get(play.playerId)
+        ?.find(worker => worker.getId() === play.workerId);
+      if (!worker) {
+        return;
+      }
+
+      worker.setPosition(play.position);
+    } else if (this.gamePhase === "BUILD") {
+      this.switchTurn();
+    }
+  }
+
+  private switchTurn() {
+    if (!this.currentPlayer) {
+      return;
+    }
+    const currentPlayerIndex = this.players.indexOf(this.currentPlayer);
+    const nextPlayerIndex = (currentPlayerIndex + 1) % this.players.length;
+    this.currentPlayer = this.players[nextPlayerIndex];
+
+    if (nextPlayerIndex === 0) {
+      // IDK why for now
+      this.turnCount++;
+    }
+  }
+
+  playerLeft(username: string) {
+    if (this.gamePhase === "NOT STARTED") {
+      this.players = this.players.filter(
+        player => player.getUsername() !== username,
+      );
+    }
+  }
+}

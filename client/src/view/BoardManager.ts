@@ -86,4 +86,13 @@ export default class BoardManager {
     this.stacks[x][y].addPiece(piece);
     this.pieces.push(piece);
   }
+
+  public moveWorker(x: number, y: number, newX: number, newY: number) {
+    // console.log(this.stacks[x][y]);
+    const piece = this.stacks[x][y].removePiece();
+    if (!piece) {
+      throw new Error(`Builder not found at ${x}, ${y}`);
+    }
+    this.stacks[newX][newY].addPiece(piece);
+  }
 }

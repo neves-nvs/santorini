@@ -34,10 +34,7 @@ export default class Space extends Object3D {
     return new Mesh(geometry, material);
   }
 
-  update(delta: number) {
-    this.reset();
-    if (delta == 0) return; // just avoiding linting
-  }
+  update(delta: number) {}
 
   hover() {
     (this.mesh.material as Material).opacity = 0.8;
