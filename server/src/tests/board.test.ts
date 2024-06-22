@@ -24,12 +24,8 @@ describe("Board", () => {
     expect(emptyPositions).toEqual(expectedPositions);
   });
 
-  it("should return an empty position after pushing a piece", () => {
-    // This requires modifying the Stack class to be able to access a specific stack
-    // For testing purposes, we'll assume we can access a specific stack to push a piece
+  it("adding a piece should decrease the empty positions by 1", () => {
     ((board as any).board[2][2] as Stack).push(PieceType.BASE);
-    console.log(board.getEmptyPositions());
-    console.log((board as any).board);
 
     const emptyPositions = board.getEmptyPositions();
     expect(emptyPositions.length).toBe(24); // One less empty position
