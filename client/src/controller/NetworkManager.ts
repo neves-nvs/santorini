@@ -1,5 +1,6 @@
 import { BlockType } from "./../model/BlockType";
 import GameManager from "../view/GameManager";
+import { updatePlayersList } from "../UI/functions";
 
 export type Message = {
   type: string;
@@ -36,6 +37,10 @@ export default class NetworkManager implements GameController {
           this.handleJoinedGame(payload);
           break;
 
+        case "current_players":
+          this.listPlayers(payload);
+          break;
+
         default:
           console.log("Unknown message type:", message.type);
       }
@@ -59,6 +64,10 @@ export default class NetworkManager implements GameController {
     // Update the game state using gameManager
   }
 
+  private listPlayers(players: string[]) {
+    updatePlayersList({ players });
+  }
+
   /* -------------------------------------------------------------------------- */
   /*                                  Outgoing                                  */
   /* -------------------------------------------------------------------------- */
@@ -67,8 +76,8 @@ export default class NetworkManager implements GameController {
     this.sendMessage("create_game", { amountOfPlayers });
   }
 
-  joinGame(playerName: string, playerColor: string) {
-    this.sendMessage("join_game", { playerName, playerColor });
+  joinGame(playerName: string, gameId: string) {
+    this.sendMessage("join_game", { playerName, gameId });
   }
 
   placeWorker(x: number, y: number) {

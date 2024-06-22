@@ -1,4 +1,4 @@
-import { main } from "./Main";
+import { main } from "../Main";
 
 const gameManager = main.getGameManager();
 const networkManager = main.getNetworkManager();
