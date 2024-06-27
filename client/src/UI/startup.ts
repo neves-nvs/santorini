@@ -10,17 +10,42 @@ document.getElementById("join-button")?.addEventListener("click", () => {
   const playerName = (
     document.getElementById("player-name") as HTMLInputElement
   )?.value;
-  const playerColor = (
-    document.getElementById("player-color") as HTMLInputElement
+
+  if (!playerName) {
+    return;
+  }
+
+  try {
+    networkManager.createUser(playerName);
+  } catch (e: any) {
+    console.error(e);
+    alert(e.message);
+    return;
+  }
+
+  gameManager.setUsername(playerName);
+  console.log("Username set to:", gameManager.getUsername());
+});
+
+document.getElementById("login-button")?.addEventListener("click", () => {
+  const playerName = (
+    document.getElementById("player-name") as HTMLInputElement
   )?.value;
 
-  if (playerName && playerColor) {
-    // networkManager.joinGame(playerName, playerColor);
-    gameManager.setUsername(playerName);
-    console.log("Username set to:", gameManager.getUsername());
-  } else {
-    alert("Please enter your name and select a color.");
+  if (!playerName) {
+    return;
   }
+
+  try {
+    networkManager.login(playerName);
+  } catch (e: any) {
+    console.error(e);
+    alert(e.message);
+    return;
+  }
+
+  gameManager.setUsername(playerName);
+  console.log("Username set to:", gameManager.getUsername());
 });
 
 document

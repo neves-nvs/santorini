@@ -10,8 +10,8 @@ export type Message = {
 export default class NetworkManager implements GameController {
   private gameManager: GameManager;
   private socket: WebSocket;
-  private serverAddress = "ws://localhost:8080";
-  private httpBaseUrl = "http://localhost:8080";
+  private serverAddress = "ws://localhost:8081";
+  private httpBaseUrl = "http://localhost:8081";
 
   constructor(gameManager: GameManager) {
     this.gameManager = gameManager;
@@ -76,8 +76,8 @@ export default class NetworkManager implements GameController {
     this.sendMessage("create_game", { amountOfPlayers });
   }
 
-  joinGame(playerName: string, gameId: string) {
-    this.sendMessage("join_game", { playerName, gameId });
+  joinGame(username: string, gameId: string) {
+    this.sendMessage("join_game", { username, gameId });
   }
 
   placeWorker(x: number, y: number) {
@@ -102,6 +102,34 @@ export default class NetworkManager implements GameController {
       throw new Error("Failed to fetch games");
     }
     return response.json();
+  }
+
+  async createUser(username: string) {
+    const response = await fetch(`${this.httpBaseUrl}/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username }),
+    });
+
+    if (!response.ok) {
+      alert(response.body);
+    }
+  }
+
+  async login(username: string) {
+    const response = await fetch(`${this.httpBaseUrl}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username }),
+    });
+
+    if (!response.ok) {
+      alert("Failed to login");
+    }
   }
 
   // buildBlock(x: number, y: number) {

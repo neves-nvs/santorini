@@ -48,18 +48,13 @@
 
 <body>
   <canvas id="scene"></canvas>
-  <script type="module" src="/src/main.ts"></script>
-  <script type="module" src="/src/ui.ts"></script>
+  <script type="module" src="./src/UI/startup.ts"></script>
 
   <div id="top-left">
     <label for="player-name">Username:</label>
     <input type="text" id="player-name" required>
-    <label for="player-color">Color:</label>
-    <select id="player-color">
-      <option value="blue">Blue</option>
-      <option value="red">Red</option>
-    </select>
-    <button id="join-button">Set Username</button>
+    <button id="join-button">Create User</button>
+    <button id="login-button">Login</button>
   </div>
 
   <div id="top-right">
@@ -90,6 +85,10 @@
       <button id="refresh-games-button">Refresh Games</button>
       <ul id="games"></ul>
     </div>
+  </div>
+
+  <div id="bottom-right">
+    <ul id="players"></ul>
   </div>
 </body>
 

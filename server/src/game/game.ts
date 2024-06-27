@@ -1,6 +1,7 @@
-import { Board, Player, Position } from "./board";
+import { Board, Position } from "../board/board";
 
-import { Worker } from "./board";
+import { User } from "../users/user";
+import { Worker } from "../board/board";
 import { randomUUID } from "crypto";
 
 export type Play = {
@@ -18,8 +19,8 @@ export class Game {
 
   private board: Board;
 
-  private currentPlayer?: Player;
-  private players: Player[];
+  private currentPlayer?: User;
+  private players: User[];
   private gamePhase: string = "NOT STARTED";
   private workersByPlayer: Map<string, Worker[]> = new Map();
 
@@ -37,12 +38,11 @@ export class Game {
     return this.id;
   }
 
-  addPlayer(username: string) {
-    const player = new Player(username);
-    this.players.push(player);
+  addPlayer(user: User) {
+    this.players.push(user);
 
     if (this.players.length === this.amountOfPlayers) {
-      this.currentPlayer = player;
+      this.currentPlayer = user;
     }
   }
 
@@ -119,7 +119,6 @@ export class Game {
     this.currentPlayer = this.players[nextPlayerIndex];
 
     if (nextPlayerIndex === 0) {
-      // IDK why for now
       this.turnCount++;
     }
   }

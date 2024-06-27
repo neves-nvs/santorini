@@ -26,20 +26,6 @@ export class Board {
   }
 }
 
-export class Player {
-  private username: string;
-  private workers: Worker[];
-
-  constructor(username: string) {
-    this.username = username;
-    this.workers = [];
-  }
-
-  getUsername(): string {
-    return this.username;
-  }
-}
-
 export class Stack {
   // Rules
   // 1. No piece on top of worker

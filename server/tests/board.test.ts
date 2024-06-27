@@ -1,4 +1,4 @@
-import { Board, PieceType, Position, Stack } from "../board";
+import { Board, PieceType, Position, Stack } from "../src/board/board";
 
 describe("Board", () => {
   let board: Board;
