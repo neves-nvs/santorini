@@ -1,3 +1,5 @@
+import { WebSocket } from "ws";
+
 export class User {
   private username: string;
   private connections: WebSocket[] = [];

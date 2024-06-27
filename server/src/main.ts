@@ -37,6 +37,12 @@ app.post("/login", async (req, res) => {
   if (!username) {
     return res.status(400).send("Username required");
   }
+
+  const user = userRepository.getUser(username);
+  if (!user) {
+    return res.status(400).send("User not found");
+  }
+
   res.status(200).send("Login successful");
 });
 

@@ -1,3 +1,5 @@
+import { Game } from "./game/game";
+import { User } from "./users/user";
 import WebSocket from "ws";
 import { gameRepository } from "./game/gameRepository";
 import { userRepository } from "./users/userRespository";
@@ -19,6 +21,14 @@ function send(ws: WebSocket, type: string, payload: any) {
   ws.send(JSON.stringify({ type: type, payload: payload }));
 }
 
+function broadcastToGame(game: Game, type: string, payload: any) {
+  game.getPlayers().forEach((player: User) => {
+    player.getConnections().forEach(connection => {
+      send(connection, type, payload);
+    });
+  });
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                    MAIN                                    */
 /* -------------------------------------------------------------------------- */
@@ -30,7 +40,7 @@ export function handleMessage(ws: WebSocket, message: string) {
   console.log("received message", parsedMessage);
   switch (type) {
     case "create_game":
-      handleCreateGame(ws, payload.amountOfPlayers);
+      handleCreateGame(ws, payload.amountOfPlayers, payload.username);
       break;
 
     case "join_game":
@@ -50,7 +60,17 @@ export function handleMessage(ws: WebSocket, message: string) {
 /*                                  HANDLERS                                  */
 /* -------------------------------------------------------------------------- */
 
-function handleCreateGame(ws: WebSocket, amountOfPlayers: number | undefined) {
+function handleCreateGame(
+  ws: WebSocket,
+  amountOfPlayers: number | undefined,
+  username: string,
+) {
+  const owner = userRepository.getUser(username);
+  if (owner === undefined) {
+    send(ws, "error", "User not found");
+    return;
+  }
+
   let game;
   if (amountOfPlayers) {
     // game = createGameWithPlayers(amountOfPlayers);
@@ -74,10 +94,12 @@ function handleJoinGame(ws: WebSocket, gameID: string, username: string) {
     send(ws, "error", "User not found");
     return;
   }
+  user.addConnection(ws);
+
   game.addPlayer(user);
 
-  send(
-    ws,
+  broadcastToGame(
+    game,
     "current_players",
     game.getPlayers().map(player => player.getUsername()),
   );

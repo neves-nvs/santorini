@@ -72,8 +72,8 @@ export default class NetworkManager implements GameController {
   /*                                  Outgoing                                  */
   /* -------------------------------------------------------------------------- */
 
-  createGame(amountOfPlayers: number): void {
-    this.sendMessage("create_game", { amountOfPlayers });
+  createGame(amountOfPlayers: number, username: string): void {
+    this.sendMessage("create_game", { amountOfPlayers, username });
   }
 
   joinGame(username: string, gameId: string) {

@@ -80,8 +80,20 @@ document.getElementById("create-game-button")?.addEventListener("click", () => {
   const amountOfPlayers = (
     document.getElementById("amount-of-players") as HTMLInputElement
   ).value;
+  const username = gameManager.getUsername();
+  if (!username) {
+    console.error("Username not set.");
+    alert("Please enter your name and select a color.");
+    return;
+  }
 
-  networkManager.createGame(parseInt(amountOfPlayers));
+  try {
+    networkManager.createGame(parseInt(amountOfPlayers), username);
+  } catch (e: any) {
+    console.error(e);
+    alert(e.message);
+    return;
+  }
 });
 
 /* -------------------------------------------------------------------------- */
