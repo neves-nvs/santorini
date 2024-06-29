@@ -106,7 +106,7 @@ function handleJoinGame(ws: WebSocket, gameID: string, username: string) {
 
   if (game.hasEnoughPlayers()) {
     game.start();
-    send(ws, "game_started", { game });
+    broadcastToGame(game, "game_started", { game });
   }
 }
 
