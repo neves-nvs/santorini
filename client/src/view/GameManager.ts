@@ -8,14 +8,16 @@ import { Position } from "position";
 
 export default class GameManager extends EventEmitter {
   private boardManager: BoardManager;
-  private gameId?: string;
-  private username?: string;
+  private gameId: string | null;
+  private username: string | null;
 
   constructor(boardManager: BoardManager) {
     super();
     this.boardManager = boardManager;
+    this.gameId = localStorage.getItem("gameId");
+    this.username = localStorage.getItem("username");
 
-    // this.boardManager.place(new Builder(), 0, 1);
+    this.boardManager.place(new Builder(), 0, 1);
     // this.boardManager.place(new Builder(), 0, 0);
 
     // this.boardManager.place(new Block("BASE"), 2, 2);
@@ -35,6 +37,11 @@ export default class GameManager extends EventEmitter {
 
   setUsername(username: string) {
     this.username = username;
+    localStorage.setItem("username", username);
+  }
+
+  resetUsername() {
+    this.username = null;
   }
 
   getGameId() {
@@ -43,6 +50,11 @@ export default class GameManager extends EventEmitter {
 
   setGameId(gameId: string) {
     this.gameId = gameId;
+    localStorage.setItem("gameId", gameId);
+  }
+
+  resetGameId() {
+    this.gameId = null;
   }
 
   // update(delta: number) {}
