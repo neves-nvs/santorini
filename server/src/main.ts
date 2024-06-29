@@ -3,10 +3,21 @@ import cors from "cors";
 import express from "express";
 import { gameRepository } from "./game/gameRepository";
 import { handleMessage } from "./webSocketHandler";
+import logger from "./logger";
+import morgan from "morgan";
 import { userRepository } from "./users/userRespository";
 
+const PORT = 8081;
+
 const app = express();
-const port = 8081;
+
+app.use(
+  morgan("combined", {
+    stream: {
+      write: (message: string) => logger.info(message.trim()),
+    },
+  }),
+);
 
 app.use(express.json());
 app.use(cors({ origin: "http://localhost:5173" }));
@@ -46,8 +57,8 @@ app.post("/login", async (req, res) => {
   res.status(200).send("Login successful");
 });
 
-const server = app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+const server = app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 const wss = new WebSocket.Server({ server });
@@ -60,8 +71,6 @@ wss.on("listening", () => {
 /* -------------------------------------------------------------------------- */
 
 wss.on("connection", (ws: WebSocket) => {
-  console.log("WebSocket connected");
-
   ws.on("open", () => {
     console.log("opened");
   });
@@ -74,7 +83,5 @@ wss.on("connection", (ws: WebSocket) => {
     handleMessage(ws, message);
   });
 
-  ws.on("close", () => {
-    console.log("WebSocket disconnected");
-  });
+  ws.on("close", () => {});
 });
