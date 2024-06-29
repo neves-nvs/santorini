@@ -13,26 +13,30 @@
 
     #top-left {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 2%;
+      left: 2%;
+      max-width: 50%;
     }
 
     #top-right {
       position: absolute;
-      top: 0;
-      right: 0;
+      top: 2%;
+      right: 2%;
+      max-width: 50%;
     }
 
     #bottom-left {
       position: absolute;
-      bottom: 0;
-      left: 0;
+      bottom: 2%;
+      left: 2%;
+      max-width: 50%;
     }
 
     #bottom-right {
       position: absolute;
-      bottom: 0;
-      right: 0;
+      bottom: 2%;
+      right: 2%;
+      max-width: 50%;
     }
 
     #games-list {
@@ -43,6 +47,41 @@
       overflow-y: auto;
       max-height: 300px;
     }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 300px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 
@@ -50,15 +89,46 @@
   <canvas id="scene"></canvas>
   <script type="module" src="./src/UI/startup.ts"></script>
 
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+
+      <form id="create-user-form">
+        <div>
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" required>
+        </div>
+        <button type="submit">Create User</button>
+      </form>
+
+      <hr style="margin-top: 10px; outline: #000;">
+
+      <form id="loginForm">
+        <div>
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" required>
+        </div>
+        <div>
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password">
+        </div>
+        <button type="submit">Log In</button>
+      </form>
+    </div>
+  </div>
+
   <div id="top-left">
-    <label for="player-name">Username:</label>
-    <input type="text" id="player-name" required>
-    <button id="join-button">Create User</button>
-    <button id="login-button">Login</button>
+    <div>
+      <button id="loginButton">Log In</button>
+    </div>
+    <div>
+      <input type="text" id="player-name" name="player-name" readonly>
+      <button id="logout-button">Logout</button>
+    </div>
   </div>
 
   <div id="top-right">
-    <div>
+    <!-- <div>
       <label for="debug-place">Place Builder [X][Y]:</label>
       <input type="number" id="debug-x" required>
       <input type="number" id="debug-y" required>
@@ -72,17 +142,15 @@
       <input type="number" id="debug-to-x" required style="width: 50px;">
       <input type="number" id="debug-to-y" required style="width: 50px;">
       <button id="move-button">Move Builder</button>
-    </div>
+    </div> -->
 
   </div>
 
-  <div id="bottom-left">
-    <div>
-      <button id="create-game-button">Create Game</button>
-      <input type="number" id="amount-of-players" value="2" min="2" max="4">
-    </div>
+  <div id="top-right">
+    <button id="create-game-button">Create Game</button>
+    <input type="number" id="amount-of-players" value="2" min="2" max="4">
+    <button id="refresh-games-button">Refresh Games</button>
     <div id="games-list">
-      <button id="refresh-games-button">Refresh Games</button>
       <ul id="games"></ul>
     </div>
   </div>
