@@ -1,4 +1,3 @@
-import { BlockType } from "./../model/BlockType";
 import GameManager from "../view/GameManager";
 import { updatePlayersList } from "../UI/functions";
 
@@ -19,7 +18,7 @@ export default class NetworkManager implements GameController {
     this.socket = new WebSocket(this.serverAddress);
 
     this.socket.onopen = () => {
-      console.log("Connected to the server.");
+      console.log("Connected to WebSocket.");
     };
 
     this.socket.onmessage = event => {
@@ -104,7 +103,7 @@ export default class NetworkManager implements GameController {
     return response.json();
   }
 
-  async createUser(username: string) {
+  async createUser(username: string): Promise<boolean> {
     const response = await fetch(`${this.httpBaseUrl}/users`, {
       method: "POST",
       headers: {
@@ -114,8 +113,10 @@ export default class NetworkManager implements GameController {
     });
 
     if (!response.ok) {
-      alert(response.body);
+      return false;
     }
+
+    return true;
   }
 
   async login(username: string) {
@@ -124,12 +125,15 @@ export default class NetworkManager implements GameController {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ username: username }),
     });
 
+    // console.log(response);
     if (!response.ok) {
-      alert("Failed to login");
+      return false;
     }
+
+    return true;
   }
 
   // buildBlock(x: number, y: number) {

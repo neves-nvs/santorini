@@ -4,49 +4,101 @@ const gameManager = main.getGameManager();
 const networkManager = main.getNetworkManager();
 
 /* -------------------------------------------------------------------------- */
+/*                                    LOGIN                                   */
+/* -------------------------------------------------------------------------- */
+
+const loginModal = document.getElementById("loginModal");
+if (loginModal === null || loginModal === undefined) {
+  throw new Error("Login modal not found.");
+}
+const loginMenuButton = document.getElementById("loginButton");
+if (loginMenuButton === null || loginMenuButton === undefined) {
+  throw new Error("Login button not found.");
+}
+const span = document.getElementsByClassName("close")[0];
+if (span === null || span === undefined) {
+  throw new Error("Close button not found.");
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   STARTUP                                  */
+/* -------------------------------------------------------------------------- */
+
+const username = gameManager.getUsername();
+if (!username) {
+  loginModal.style.display = "block";
+  console.log("Username not set.");
+} else if (await networkManager.login(username)) {
+  loginModal.style.display = "none";
+  console.log("Session available for: ", gameManager.getUsername());
+} else {
+  gameManager.resetUsername();
+  loginModal.style.display = "block";
+  console.log("Failed to login.");
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 REACTIVITY                                 */
+/* -------------------------------------------------------------------------- */
+
+loginMenuButton.onclick = function () {
+  loginModal.style.display = "block";
+};
+
+(span as HTMLButtonElement).onclick = function () {
+  loginModal.style.display = "none";
+};
+
+window.onclick = function (event) {
+  if (event.target === loginModal) {
+    loginModal.style.display = "none";
+  }
+};
+
+(document.getElementById("loginForm") as HTMLFormElement).onsubmit =
+  async function (event: Event) {
+    event.preventDefault();
+    const formData = new FormData(this as HTMLFormElement);
+    const username = formData.get("username") as string;
+
+    const login = await networkManager.login(username);
+
+    if (login) {
+      loginModal.style.display = "none";
+      gameManager.setUsername(username);
+    } else {
+      alert("Failed to login");
+    }
+  };
+
+document
+  .getElementById("create-user-form")
+  ?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const formData = new FormData(
+      document.getElementById("create-user-form") as HTMLFormElement,
+    );
+    const username = formData.get("username") as string;
+    if (!username) {
+      return;
+    }
+
+    const success = await networkManager.createUser(username);
+    if (success) {
+      loginModal.style.display = "none";
+      gameManager.setUsername(username);
+    }
+    console.log("User Created and username set to:", gameManager.getUsername());
+  });
+
+document.getElementById("logout-button")?.addEventListener("click", () => {
+  gameManager.resetUsername();
+  loginModal.style.display = "block";
+});
+
+/* -------------------------------------------------------------------------- */
 /*                                    GAME                                    */
 /* -------------------------------------------------------------------------- */
-document.getElementById("join-button")?.addEventListener("click", () => {
-  const playerName = (
-    document.getElementById("player-name") as HTMLInputElement
-  )?.value;
-
-  if (!playerName) {
-    return;
-  }
-
-  try {
-    networkManager.createUser(playerName);
-  } catch (e: any) {
-    console.error(e);
-    alert(e.message);
-    return;
-  }
-
-  gameManager.setUsername(playerName);
-  console.log("Username set to:", gameManager.getUsername());
-});
-
-document.getElementById("login-button")?.addEventListener("click", () => {
-  const playerName = (
-    document.getElementById("player-name") as HTMLInputElement
-  )?.value;
-
-  if (!playerName) {
-    return;
-  }
-
-  try {
-    networkManager.login(playerName);
-  } catch (e: any) {
-    console.error(e);
-    alert(e.message);
-    return;
-  }
-
-  gameManager.setUsername(playerName);
-  console.log("Username set to:", gameManager.getUsername());
-});
 
 document
   .getElementById("refresh-games-button")
@@ -67,7 +119,7 @@ document
             alert("Please enter your name and select a color.");
             return;
           }
-          networkManager.joinGame(username, id); // Replace 'YourUsername' with the actual username
+          networkManager.joinGame(username, id);
         });
         gamesList.appendChild(listItem);
       });
@@ -96,10 +148,9 @@ document.getElementById("create-game-button")?.addEventListener("click", () => {
   }
 });
 
-/* -------------------------------------------------------------------------- */
+// #region UI---------------------------------------------------------------- */
 /*                                     UI                                     */
 /* -------------------------------------------------------------------------- */
-
 document.getElementById("place-button")?.addEventListener("click", () => {
   const x: string = (document.getElementById("debug-x") as HTMLInputElement)
     .value;
@@ -155,3 +206,5 @@ document.getElementById("build-block")?.addEventListener("click", () => {
     console.log(e);
   }
 });
+
+// #endregion
