@@ -1,3 +1,4 @@
+import { eventEmitter } from "../Events";
 import { main } from "../Main";
 
 const gameManager = main.getGameManager();
@@ -71,30 +72,37 @@ window.onclick = function (event) {
     }
   };
 
-document
-  .getElementById("create-user-form")
-  ?.addEventListener("submit", async e => {
-    e.preventDefault();
-    const formData = new FormData(
-      document.getElementById("create-user-form") as HTMLFormElement,
-    );
-    const username = formData.get("username") as string;
-    if (!username) {
-      return;
-    }
+const create_user_form = document.getElementById("create-user-form");
+create_user_form?.addEventListener("submit", async e => {
+  e.preventDefault();
+  const formData = new FormData(
+    document.getElementById("create-user-form") as HTMLFormElement,
+  );
+  const username = formData.get("username") as string;
+  if (!username) {
+    return;
+  }
 
-    const success = await networkManager.createUser(username);
-    if (success) {
-      loginModal.style.display = "none";
-      gameManager.setUsername(username);
-    }
-    console.log("User Created and username set to:", gameManager.getUsername());
-  });
+  const success = await networkManager.createUser(username);
+  if (success) {
+    loginModal.style.display = "none";
+    gameManager.setUsername(username);
+    create_user_form.dispatchEvent(new CustomEvent("username-update", { bubbles: true }));
+  }
+  console.log("User Created and username set to:", gameManager.getUsername());
+});
 
 document.getElementById("logout-button")?.addEventListener("click", () => {
   gameManager.resetUsername();
   loginModal.style.display = "block";
 });
+
+const usernameText = document.getElementById("username-show") as HTMLTextAreaElement;
+usernameText.textContent = gameManager.getUsername();
+eventEmitter.on("username-update", () => {
+  usernameText.textContent = gameManager.getUsername();
+});
+
 
 /* -------------------------------------------------------------------------- */
 /*                                    GAME                                    */

@@ -5,6 +5,7 @@ import Builder from "./components/Builder";
 import EventEmitter from "eventemitter3";
 import Piece from "./components/Piece";
 import { Position } from "position";
+import { eventEmitter } from "../Events";
 
 export default class GameManager extends EventEmitter {
   private boardManager: BoardManager;
@@ -38,6 +39,7 @@ export default class GameManager extends EventEmitter {
   setUsername(username: string) {
     this.username = username;
     localStorage.setItem("username", username);
+    eventEmitter.emit("username-update", username);
   }
 
   resetUsername() {
