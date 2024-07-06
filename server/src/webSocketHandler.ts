@@ -2,6 +2,7 @@ import { Game } from "./game/game";
 import { User } from "./users/user";
 import WebSocket from "ws";
 import { gameRepository } from "./game/gameRepository";
+import { get } from "http";
 import { userRepository } from "./users/userRespository";
 
 interface Message {
@@ -39,16 +40,12 @@ export function handleMessage(ws: WebSocket, message: string) {
 
   console.log("received message", parsedMessage);
   switch (type) {
-    case "create_game":
-      handleCreateGame(ws, payload.amountOfPlayers, payload.username);
-      break;
-
-    case "join_game":
-      handleJoinGame(ws, payload.gameId, payload.username);
-      break;
-
     case "get_games":
       handleGetGames(ws);
+      break;
+
+    case "subscribe_game":
+      handleSubscribeGame(ws, payload.gameId, payload.username);
       break;
 
     default:
@@ -60,43 +57,17 @@ export function handleMessage(ws: WebSocket, message: string) {
 /*                                  HANDLERS                                  */
 /* -------------------------------------------------------------------------- */
 
-function handleCreateGame(
-  ws: WebSocket,
-  amountOfPlayers: number | undefined,
-  username: string,
-) {
-  const owner = userRepository.getUser(username);
-  if (owner === undefined) {
-    send(ws, "error", "User not found");
+function handleSubscribeGame(ws: WebSocket, gameID: string, username: string) {
+  const game = getGameOrError(ws, gameID);
+  const user = getUserOrError(ws, username);
+  console.log("game", game);
+  console.log("user", username);
+  if (game === undefined || user === undefined) {
     return;
   }
 
-  let game;
-  if (amountOfPlayers) {
-    // game = createGameWithPlayers(amountOfPlayers);
-    game = gameRepository.createGame();
-  } else {
-    game = gameRepository.createGame();
-  }
-
-  send(ws, "success", { gameId: game.getId() });
-}
-
-function handleJoinGame(ws: WebSocket, gameID: string, username: string) {
-  const game = gameRepository.getGame(gameID);
-  if (game === undefined) {
-    send(ws, "error", "Game not found");
-    return;
-  }
-
-  const user = userRepository.getUser(username);
-  if (user === undefined) {
-    send(ws, "error", "User not found");
-    return;
-  }
   user.addConnection(ws);
-
-  game.addPlayer(user);
+  // TODO send whole game state
 
   broadcastToGame(
     game,
@@ -114,3 +85,23 @@ function handleGetGames(ws: WebSocket) {
   const games = gameRepository.getGamesIds();
   send(ws, "success", games);
 }
+
+function getGameOrError(ws: WebSocket, gameID: string) {
+  const game = gameRepository.getGame(gameID);
+  if (game === undefined) {
+    send(ws, "error", "Game not found");
+    return;
+  }
+  return game;
+}
+
+function getUserOrError(ws: WebSocket, username: string) {
+  const user = userRepository.getUser(username);
+  if (user === undefined) {
+    send(ws, "error", "User not found");
+    return;
+  }
+  return user;
+}
+
+

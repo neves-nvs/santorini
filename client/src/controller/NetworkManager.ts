@@ -27,11 +27,6 @@ export default class NetworkManager implements GameController {
       console.log(message);
 
       switch (type) {
-        case "hello":
-          console.log("Server says hello!");
-          this.sendMessage("message", "hello from client");
-          break;
-
         case "joined_game":
           this.handleJoinedGame(payload);
           break;
@@ -71,12 +66,8 @@ export default class NetworkManager implements GameController {
   /*                                  Outgoing                                  */
   /* -------------------------------------------------------------------------- */
 
-  createGame(amountOfPlayers: number, username: string): void {
-    this.sendMessage("create_game", { amountOfPlayers, username });
-  }
-
-  joinGame(username: string, gameId: string) {
-    this.sendMessage("join_game", { username, gameId });
+  subscribeToGame(gameId: string, username: string) {
+    this.sendMessage("subscribe_game", { gameId, username });
   }
 
   placeWorker(x: number, y: number) {
@@ -92,7 +83,7 @@ export default class NetworkManager implements GameController {
   }
 
   /* -------------------------------------------------------------------------- */
-  /*                                  Endpoints                                 */
+  /*                                   /games                                   */
   /* -------------------------------------------------------------------------- */
 
   async getGames(): Promise<string[]> {
@@ -102,6 +93,49 @@ export default class NetworkManager implements GameController {
     }
     return response.json();
   }
+
+  async getPlayersInGame(gameId: string): Promise<string[]> {
+    const response = await fetch(`${this.httpBaseUrl}/games/${gameId}/players`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch players in game");
+    }
+    return response.json();
+  }
+
+  async createGame(amountOfPlayers: number, username: string) {
+    const response = await fetch(`${this.httpBaseUrl}/games`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ amountOfPlayers, username }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create game");
+    }
+  }
+
+
+  async joinGame(username: string, gameID: string): Promise<boolean> {
+    const response = await fetch(`${this.httpBaseUrl}/games/join`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username, gameID }),
+    });
+
+    if (!response.ok) {
+      return false;
+    }
+    return true;
+  }
+
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Authentication                               */
+  /* -------------------------------------------------------------------------- */
 
   async createUser(username: string): Promise<boolean> {
     const response = await fetch(`${this.httpBaseUrl}/users`, {
@@ -136,7 +170,5 @@ export default class NetworkManager implements GameController {
     return true;
   }
 
-  // buildBlock(x: number, y: number) {
-  //   this.gameManager.buildBlock({ x, y });
-  // }
+
 }

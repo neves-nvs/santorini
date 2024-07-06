@@ -46,16 +46,16 @@ export default class GameManager extends EventEmitter {
     this.username = null;
   }
 
-  getGameId() {
+  getGameID() {
     return this.gameId;
   }
 
-  setGameId(gameId: string) {
+  setGameID(gameId: string) {
     this.gameId = gameId;
     localStorage.setItem("gameId", gameId);
   }
 
-  resetGameId() {
+  resetGameID() {
     this.gameId = null;
   }
 

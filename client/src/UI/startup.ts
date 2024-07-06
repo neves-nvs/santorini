@@ -35,8 +35,21 @@ if (!username) {
 } else {
   gameManager.resetUsername();
   loginModal.style.display = "block";
-  console.log("Failed to login.");
+  console.warn("Failed to login with username: ", username);
 }
+
+const gameID = gameManager.getGameID();
+if (!gameID) {
+  console.log("No saved Game ID.");
+} else if (username && await networkManager.joinGame(username, gameID)) {
+  console.log("Rejoining game with ID: ", gameID);
+  networkManager.subscribeToGame(gameID, username);
+} else {
+  gameManager.resetGameID();
+  console.warn("Failed to rejoin game with ID: ", gameID);
+
+}
+
 
 /* -------------------------------------------------------------------------- */
 /*                                 REACTIVITY                                 */
@@ -56,7 +69,10 @@ window.onclick = function (event) {
   }
 };
 
-(document.getElementById("loginForm") as HTMLFormElement).onsubmit =
+const loginForm = document.getElementById("loginForm");
+if (loginForm === null || loginForm === undefined) { throw new Error("Login form not found."); }
+
+loginForm.onsubmit =
   async function (event: Event) {
     event.preventDefault();
     const formData = new FormData(this as HTMLFormElement);
@@ -92,7 +108,9 @@ create_user_form?.addEventListener("submit", async e => {
   console.log("User Created and username set to:", gameManager.getUsername());
 });
 
-document.getElementById("logout-button")?.addEventListener("click", () => {
+const logoutButton = document.getElementById("logout-button");
+if (logoutButton === null || logoutButton === undefined) { throw new Error("Logout button not found."); }
+logoutButton.addEventListener("click", () => {
   gameManager.resetUsername();
   loginModal.style.display = "block";
 });
@@ -108,33 +126,44 @@ eventEmitter.on("username-update", () => {
 /*                                    GAME                                    */
 /* -------------------------------------------------------------------------- */
 
-document
-  .getElementById("refresh-games-button")
-  ?.addEventListener("click", async () => {
-    try {
-      const games = await networkManager.getGames();
-      const gamesList = document.getElementById("games") as HTMLUListElement;
-      gamesList.innerHTML = "";
-      console.log(games);
+const refreshGamesButton = document.getElementById("refresh-games-button");
+refreshGamesButton?.addEventListener("click", async () => {
+  try {
+    const games = await networkManager.getGames();
+    const gamesList = document.getElementById("games") as HTMLUListElement;
+    gamesList.innerHTML = "";
+    console.log(games);
 
-      games.forEach((id: string) => {
-        const listItem = document.createElement("li");
-        listItem.textContent = `Game ID: ${id}`;
-        listItem.addEventListener("click", () => {
-          const username = gameManager.getUsername();
-          if (!username) {
-            console.error("Username not set.");
-            alert("Please enter your name and select a color.");
-            return;
-          }
-          networkManager.joinGame(username, id);
-        });
-        gamesList.appendChild(listItem);
-      });
-    } catch (e) {
-      console.error("Failed to fetch games:", e);
-    }
-  });
+    games.forEach((id: string) => {
+      const listItem = document.createElement("li");
+      listItem.textContent = `Game ID: ${id}`;
+      listItem.onclick = () => joinGameOnClick(id);
+      gamesList.appendChild(listItem);
+    });
+  } catch (e) {
+    console.error("Failed to fetch games:", e);
+  }
+});
+
+async function joinGameOnClick(gameID: string) {
+  const username = gameManager.getUsername();
+  if (!username) {
+    console.error("Username not set.");
+    alert("Please enter your name and select a color.");
+    return;
+  }
+
+  const success = await networkManager.joinGame(username, gameID);
+  if (!success) {
+    console.error("Failed to join game.");
+    alert("Failed to join game.");
+    return;
+  }
+
+  console.log("Joined game with ID: ", gameID);
+  gameManager.setGameID(gameID);
+  networkManager.subscribeToGame(gameID, username);
+}
 
 document.getElementById("create-game-button")?.addEventListener("click", () => {
   const amountOfPlayers = (

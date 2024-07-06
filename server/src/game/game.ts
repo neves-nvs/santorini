@@ -15,7 +15,7 @@ export type GamePhase = "NOT STARTED" | "SETUP" | "MOVE" | "BUILD" | "FINISHED";
 
 export class Game {
   private id: string;
-  private amountOfPlayers: number = 2;
+  private amountOfPlayers: number;
 
   private board: Board;
 
@@ -26,8 +26,9 @@ export class Game {
 
   private turnCount: number;
 
-  constructor() {
+  constructor({ amountOfPlayers = 2 }) {
     this.id = randomUUID();
+    this.amountOfPlayers = amountOfPlayers;
     this.board = new Board();
     this.players = [];
     this.currentPlayer = undefined;
@@ -39,11 +40,21 @@ export class Game {
   }
 
   addPlayer(user: User) {
-    this.players.push(user);
+    if (this.players.length >= this.amountOfPlayers) {
+      throw new Error("Game is full");
+    } else if (this.players.some(player => player.getUsername() === user.getUsername())) {
+      // throw new Error("Player already in game");
+      console.log("Player already in game");
+    } else {
+      this.players.push(user);
+      console.log("Players now in game", this.players.map(player => player.getUsername()));
+    }
+
 
     if (this.players.length === this.amountOfPlayers) {
       this.currentPlayer = user;
     }
+
   }
 
   start() {
