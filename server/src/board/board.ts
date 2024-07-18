@@ -7,6 +7,10 @@ export class Board {
     this.workers = [];
   }
 
+  getSpaces(): Stack[][] {
+    return this.board;
+  }
+
   private initializeBoard(): Stack[][] {
     return Array.from({ length: 5 }, () =>
       Array.from({ length: 5 }, () => new Stack()),
