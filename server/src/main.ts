@@ -27,6 +27,7 @@ app.use(cors({ origin: "http://localhost:5173" }));
 /* -------------------------------------------------------------------------- */
 
 app.post("/users", async (req, res) => {
+  console.log("POST /users", req.body);
   const { username, email, password } = req.body;
   if (!username) {
     return res.status(400).send("All fields are required");
@@ -61,19 +62,22 @@ app.post("/login", async (req, res) => {
 
 app.get("/games", (req, res) => {
   console.log("GET /games");
+
   // TODO filter per public games
+
   res.send(gameRepository.getGamesIds());
 });
 
-app.get("/games/:gameID/players", (req, res) => {
-  const { gameID } = req.params;
-  // check if game is public or user in game
-  const game = gameRepository.getGame(gameID);
-  if (!game) {
-    return res.status(400).send("Game not found");
-  }
-  res.send(game.getPlayers());
-});
+// app.get("/games/:gameID/players", (req, res) => {
+//   console.log("GET /games/:gameID/players", req.params);
+//   const { gameID } = req.params;
+//   // check if game is public or user in game
+//   const game = gameRepository.getGame(gameID);
+//   if (!game) {
+//     return res.status(400).send("Game not found");
+//   }
+//   res.send(game.getPlayers());
+// });
 
 app.post("/games", (req, res) => {
   console.log("POST /games", req.body);
@@ -84,17 +88,24 @@ app.post("/games", (req, res) => {
   res.status(201).send({ gameId: game.getId() });
 });
 
+app.delete("/games/:gameId", (req, res) => {
+  // const { gameId } = req.params;
+  // check owner of game
+  // gameRepository.deleteGame(gameId);
+  // res.status(204).send();
+});
+
 // TODO right now only handling adding a player to a game should update other info on game or find better way
 // app.put("/games/", (req, res) => {
 // app.post("/games/:gameID/join", (req, res) => { // TODO FIX :gameID does not match UUID
 //   const gameID = req.params.gameID;
 app.post("/games/join", (req, res) => {
   console.log("POST /games/join", req.body);
+
   const { username, gameID } = req.body;
-  console.log("gameID", gameID);
-  console.log("username", username);
   if (!gameID) { return res.status(400).send("Game ID required"); }
   if (!username) { return res.status(400).send("Username required"); }
+
   // TODO proper input validation
   //  TODO check if token matches username
 
@@ -103,22 +114,56 @@ app.post("/games/join", (req, res) => {
   const user = userRepository.getUser(username);
   if (!user) { return res.status(400).send("User not found"); }
 
-
   try {
     game.addPlayer(user)
+    if (game.isReadyToStart()) {
+      game.start();
+      const currentPlayer = game.getCurrentPlayer();
+      if (!currentPlayer) { return res.status(400).send("No current player"); }
+      game.updatePlays(currentPlayer.getUsername());
+    }
   } catch (e: any) {
     return res.status(400).send(e.message);
   }
+
   res.status(201).send({ gameId: game.getId() });
 });
 
-app.delete("/games/:gameId", (req, res) => {
-  // const { gameId } = req.params;
-  // check owner of game
-  // gameRepository.deleteGame(gameId);
-  // res.status(204).send();
+app.get("/games/plays", (req, res) => {
+  console.log("GET /games/plays", req.body);
+  const { gameID, playerID } = req.body;
+  if (!gameID) { return res.status(400).send("Game ID required"); }
+  if (!playerID) { return res.status(400).send("Player ID required"); }
+  // check if player is in game
+  // check if player is allowed to see moves
+
+  const game = gameRepository.getGame(gameID);
+  if (!game) { return res.status(400).send("Game not found"); }
+  const player = userRepository.getUser(playerID);
+  if (!player) { return res.status(400).send("Player not found"); }
+
+  const moves = game.getPlays(player.getUsername());
+  res.send(moves);
 });
 
+app.post("/games/plays", (req, res) => {
+  console.log("POST /games/plays", req.body);
+  const { gameID, playerID, play } = req.body;
+  if (!gameID) { return res.status(400).send("Game ID required"); }
+  if (!playerID) { return res.status(400).send("Player ID required"); }
+  if (!play) { return res.status(400).send("Play required"); }
+  // check if player is in game
+  // check if player is allowed to make move
+  // check if move is valid
+
+  const game = gameRepository.getGame(gameID);
+  if (!game) { return res.status(400).send("Game not found"); }
+  const player = userRepository.getUser(playerID);
+  if (!player) { return res.status(400).send("Player not found"); }
+
+  // game.makePlay(player.getUsername(), play);
+  res.status(201).send();
+});
 
 /* -------------------------------------------------------------------------- */
 /*                                   Servers                                  */
