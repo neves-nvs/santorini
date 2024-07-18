@@ -185,8 +185,16 @@ document.getElementById("create-game-button")?.addEventListener("click", () => {
   }
 });
 
-// #region UI---------------------------------------------------------------- */
-/*                                     UI                                     */
+const gameIDText = document.getElementById("game-id") as HTMLLabelElement;
+eventEmitter.on("gameId-update", () => {
+  const gameID = gameManager.getGameID();
+  if (!gameID) {
+    gameIDText.textContent = "No game ID";
+    return;
+  }
+  gameIDText.textContent = gameID;
+});
+
 /* -------------------------------------------------------------------------- */
 document.getElementById("place-button")?.addEventListener("click", () => {
   const x: string = (document.getElementById("debug-x") as HTMLInputElement)

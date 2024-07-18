@@ -53,10 +53,12 @@ export default class GameManager extends EventEmitter {
   setGameID(gameId: string) {
     this.gameId = gameId;
     localStorage.setItem("gameId", gameId);
+    eventEmitter.emit("gameId-update", gameId);
   }
 
   resetGameID() {
     this.gameId = null;
+    localStorage.removeItem("gameId");
   }
 
   // update(delta: number) {}
