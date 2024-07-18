@@ -25,7 +25,7 @@ describe("Board", () => {
   });
 
   it("adding a piece should decrease the empty positions by 1", () => {
-    ((board as any).board[2][2] as Stack).push(PieceType.BASE);
+    board.getSpaces()[2][2].push(PieceType.BASE);
 
     const emptyPositions = board.getEmptyPositions();
     expect(emptyPositions.length).toBe(24); // One less empty position
