@@ -1,6 +1,7 @@
 import { Board, Position } from "../board/board";
 
 import { User } from "../users/user";
+import WebSocket from "ws";
 import { Worker } from "../board/board";
 import { randomUUID } from "crypto";
 
@@ -41,46 +42,57 @@ export class Game {
     return this.id;
   }
 
-  addPlayer(user: User) {
-    if (this.players.length >= this.amountOfPlayers) {
-      throw new Error("Game is full");
-    } else if (this.players.some(player => player.getUsername() === user.getUsername())) {
-      // throw new Error("Player already in game");
-      console.log("Player already in game");
-    } else {
-      this.players.push(user);
-      console.log("Players now in game", this.players.map(player => player.getUsername()));
-    }
 
-
-    if (this.players.length === this.amountOfPlayers) {
-      this.currentPlayer = user;
-    }
-
+  isReadyToStart(): boolean {
+    return this.players.length === this.amountOfPlayers &&
+      this.gamePhase === "NOT STARTED";
   }
 
   start() {
-    if (this.players.length !== this.amountOfPlayers) {
-      return;
-    }
-
-    this.gamePhase = "SETUP";
     this.currentPlayer = this.players[0];
+    this.gamePhase = "SETUP";
   }
 
-  hasEnoughPlayers(): boolean {
-    return this.players.length === this.amountOfPlayers;
-  }
+  /* -------------------------------------------------------------------------- */
+  /*                                   Players                                  */
+  /* -------------------------------------------------------------------------- */
 
   getPlayers() {
     return this.players;
   }
 
+  getCurrentPlayer() {
+    return this.currentPlayer;
+  }
+
+  addPlayer(user: User) {
+    if (this.players.length >= this.amountOfPlayers) {
+      throw new Error("Game is full");
+    } else if (this.players.some(player => player.getUsername() === user.getUsername())) {
+      // throw new Error("Player already in game");
+      console.warn("Player already in game");
+    } else {
+      console.log("Players now in game", this.players.map(player => player.getUsername()));
+      this.players.push(user);
+    }
+  }
+
+  removePlayer(username: string) {
+    if (this.gamePhase === "NOT STARTED") {
+      this.players = this.players.filter(
+        player => player.getUsername() !== username,
+      );
+    }
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Gameplay                                  */
+  /* -------------------------------------------------------------------------- */
+
   getPlays(playerId: string) {
     if (this.currentPlayer?.getUsername() !== playerId) {
       return [];
     }
-
     const plays: Play[] = [];
     if (this.gamePhase === "SETUP") {
       const emptySpots = this.board.getEmptyPositions();
@@ -134,6 +146,20 @@ export class Game {
     if (nextPlayerIndex === 0) {
       this.turnCount++;
     }
+  }
+
+  updatePlays(playerId: string) {
+    const plays = this.getPlays(playerId);
+    const connections = this.connectionByPlayer.get(playerId) || [];
+    console.log("Updating plays for", playerId, plays);
+    connections.forEach(connection => {
+      connection.send(
+        JSON.stringify({
+          type: "available_plays",
+          payload: plays,
+        }),
+      );
+    });
   }
 
   /* -------------------------------------------------------------------------- */
