@@ -41,6 +41,7 @@ app.post("/users", async (req, res) => {
 
 // TODO should be GET or POST to /session-token
 app.post("/login", async (req, res) => {
+  console.log("POST /login", req.body);
   const { username } = req.body;
   if (!username) {
     return res.status(400).send("Username required");
@@ -59,6 +60,7 @@ app.post("/login", async (req, res) => {
 /* -------------------------------------------------------------------------- */
 
 app.get("/games", (req, res) => {
+  console.log("GET /games");
   // TODO filter per public games
   res.send(gameRepository.getGamesIds());
 });
@@ -74,6 +76,7 @@ app.get("/games/:gameID/players", (req, res) => {
 });
 
 app.post("/games", (req, res) => {
+  console.log("POST /games", req.body);
   const { username, amountOfPlayers } = req.body as { username: string, amountOfPlayers: number | undefined };
   // TODO input validation
   // TODO add user as owner (created game and can therefore delete it)
@@ -86,6 +89,7 @@ app.post("/games", (req, res) => {
 // app.post("/games/:gameID/join", (req, res) => { // TODO FIX :gameID does not match UUID
 //   const gameID = req.params.gameID;
 app.post("/games/join", (req, res) => {
+  console.log("POST /games/join", req.body);
   const { username, gameID } = req.body;
   console.log("gameID", gameID);
   console.log("username", username);
