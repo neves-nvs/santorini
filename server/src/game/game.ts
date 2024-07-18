@@ -26,6 +26,8 @@ export class Game {
 
   private turnCount: number;
 
+  private connectionByPlayer: Map<string, WebSocket[]> = new Map();
+
   constructor({ amountOfPlayers = 2 }) {
     this.id = randomUUID();
     this.amountOfPlayers = amountOfPlayers;
@@ -134,11 +136,36 @@ export class Game {
     }
   }
 
-  playerLeft(username: string) {
-    if (this.gamePhase === "NOT STARTED") {
-      this.players = this.players.filter(
-        player => player.getUsername() !== username,
-      );
+  /* -------------------------------------------------------------------------- */
+  /*                                 Connections                                */
+  /* -------------------------------------------------------------------------- */
+
+  getConnections() {
+    const connections: WebSocket[] = [];
+    this.connectionByPlayer.forEach(playerConnections => {
+      connections.push(...playerConnections);
+    });
+    return connections;
+  }
+
+  getPlayerConnections(username: string) {
+    const player = this.players.find(player => player.getUsername() === username);
+    if (!player) {
+      return [];
     }
+  }
+
+  addConnection(username: string, ws: WebSocket) {
+    const connections = this.connectionByPlayer.get(username) || [];
+    connections.push(ws);
+    this.connectionByPlayer.set(username, connections);
+  }
+
+  removeConnection(username: string, ws: WebSocket) {
+    const connections = this.connectionByPlayer.get(username) || [];
+    this.connectionByPlayer.set(
+      username,
+      connections.filter(connection => connection !== ws),
+    );
   }
 }

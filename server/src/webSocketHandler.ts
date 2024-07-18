@@ -1,18 +1,12 @@
 import { Game } from "./game/game";
-import { User } from "./users/user";
-import WebSocket from "ws";
+import { WebSocket } from "ws";
 import { gameRepository } from "./game/gameRepository";
-import { get } from "http";
 import { userRepository } from "./users/userRespository";
 
 interface Message {
   type: string;
   payload: any;
 }
-
-/* -------------------------------------------------------------------------- */
-/*                                  ARGUMENTS                                 */
-/* -------------------------------------------------------------------------- */
 
 /* -------------------------------------------------------------------------- */
 /*                                    UTILS                                   */
@@ -23,10 +17,8 @@ function send(ws: WebSocket, type: string, payload: any) {
 }
 
 function broadcastToGame(game: Game, type: string, payload: any) {
-  game.getPlayers().forEach((player: User) => {
-    player.getConnections().forEach(connection => {
-      send(connection, type, payload);
-    });
+  game.getConnections().forEach((connection: WebSocket) => {
+    send(connection as WebSocket, type, payload);
   });
 }
 
@@ -37,13 +29,9 @@ function broadcastToGame(game: Game, type: string, payload: any) {
 export function handleMessage(ws: WebSocket, message: string) {
   const parsedMessage: Message = JSON.parse(message);
   const { type, payload } = parsedMessage;
+  console.log("\"" + type + "\"" + " " + payload);
 
-  console.log("received message", parsedMessage);
   switch (type) {
-    case "get_games":
-      handleGetGames(ws);
-      break;
-
     case "subscribe_game":
       handleSubscribeGame(ws, payload.gameId, payload.username);
       break;
@@ -60,30 +48,20 @@ export function handleMessage(ws: WebSocket, message: string) {
 function handleSubscribeGame(ws: WebSocket, gameID: string, username: string) {
   const game = getGameOrError(ws, gameID);
   const user = getUserOrError(ws, username);
-  console.log("game", game);
-  console.log("user", username);
   if (game === undefined || user === undefined) {
     return;
   }
 
-  user.addConnection(ws);
+  console.log("User", user.getUsername(), "subscribed to game", gameID);
+  game.addConnection(user.getUsername(), ws);
   // TODO send whole game state
 
+  // TODO push all info to user
   broadcastToGame(
     game,
     "current_players",
     game.getPlayers().map(player => player.getUsername()),
   );
-
-  if (game.hasEnoughPlayers()) {
-    game.start();
-    broadcastToGame(game, "game_started", { game });
-  }
-}
-
-function handleGetGames(ws: WebSocket) {
-  const games = gameRepository.getGamesIds();
-  send(ws, "success", games);
 }
 
 function getGameOrError(ws: WebSocket, gameID: string) {
@@ -104,4 +82,10 @@ function getUserOrError(ws: WebSocket, username: string) {
   return user;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                 PUSH EVENTS                                */
+/* -------------------------------------------------------------------------- */
 
+export function updatePlays(ws: WebSocket, plays: any) {
+  send(ws, "available_plays", plays);
+}
