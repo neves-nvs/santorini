@@ -5,9 +5,8 @@ const gameManager = main.getGameManager();
 const networkManager = main.getNetworkManager();
 
 /* -------------------------------------------------------------------------- */
-/*                                    LOGIN                                   */
+/*                               AUTHENTICATION                               */
 /* -------------------------------------------------------------------------- */
-
 const loginModal = document.getElementById("loginModal");
 if (loginModal === null || loginModal === undefined) {
   throw new Error("Login modal not found.");
@@ -20,40 +19,6 @@ const span = document.getElementsByClassName("close")[0];
 if (span === null || span === undefined) {
   throw new Error("Close button not found.");
 }
-
-/* -------------------------------------------------------------------------- */
-/*                                   STARTUP                                  */
-/* -------------------------------------------------------------------------- */
-
-const username = gameManager.getUsername();
-if (!username) {
-  loginModal.style.display = "block";
-  console.log("Username not set.");
-} else if (await networkManager.login(username)) {
-  loginModal.style.display = "none";
-  console.log("Session available for: ", gameManager.getUsername());
-} else {
-  gameManager.resetUsername();
-  loginModal.style.display = "block";
-  console.warn("Failed to login with username: ", username);
-}
-
-const gameID = gameManager.getGameID();
-if (!gameID) {
-  console.log("No saved Game ID.");
-} else if (username && await networkManager.joinGame(username, gameID)) {
-  console.log("Rejoining game with ID: ", gameID);
-  networkManager.subscribeToGame(gameID, username);
-} else {
-  gameManager.resetGameID();
-  console.warn("Failed to rejoin game with ID: ", gameID);
-
-}
-
-
-/* -------------------------------------------------------------------------- */
-/*                                 REACTIVITY                                 */
-/* -------------------------------------------------------------------------- */
 
 loginMenuButton.onclick = function () {
   loginModal.style.display = "block";
@@ -152,20 +117,19 @@ async function joinGameOnClick(gameID: string) {
     alert("Please enter your name and select a color.");
     return;
   }
-
   const success = await networkManager.joinGame(username, gameID);
   if (!success) {
     console.error("Failed to join game.");
     alert("Failed to join game.");
     return;
   }
-
   console.log("Joined game with ID: ", gameID);
   gameManager.setGameID(gameID);
   networkManager.subscribeToGame(gameID, username);
 }
 
-document.getElementById("create-game-button")?.addEventListener("click", () => {
+const createGameButton = document.getElementById("create-game-button");
+createGameButton?.addEventListener("click", () => {
   const amountOfPlayers = (
     document.getElementById("amount-of-players") as HTMLInputElement
   ).value;
@@ -175,7 +139,6 @@ document.getElementById("create-game-button")?.addEventListener("click", () => {
     alert("Please enter your name and select a color.");
     return;
   }
-
   try {
     networkManager.createGame(parseInt(amountOfPlayers), username);
   } catch (e: any) {
@@ -196,60 +159,30 @@ eventEmitter.on("gameId-update", () => {
 });
 
 /* -------------------------------------------------------------------------- */
-document.getElementById("place-button")?.addEventListener("click", () => {
-  const x: string = (document.getElementById("debug-x") as HTMLInputElement)
-    .value;
-  const y: string = (document.getElementById("debug-y") as HTMLInputElement)
-    .value;
+/*                                   STARTUP                                  */
+/* -------------------------------------------------------------------------- */
 
-  try {
-    networkManager.placeWorker(parseInt(x), parseInt(y));
-  } catch (e) {
-    console.warn("Invalid input. Please enter a number.");
-    console.error(e);
-  }
-});
+const username = gameManager.getUsername();
+if (!username) {
+  console.log("Username not set.");
+  loginModal.style.display = "block";
+} else if (await networkManager.login(username)) {
+  console.log("Session available for: ", gameManager.getUsername());
+  loginModal.style.display = "none";
+} else {
+  console.warn("Failed to login with username: ", username);
+  gameManager.resetUsername();
+  loginModal.style.display = "block";
+}
 
-document.getElementById("move-worker")?.addEventListener("click", () => {
-  const xFrom: string = (
-    document.getElementById("debug-from-x") as HTMLInputElement
-  ).value;
-  const yFrom: string = (
-    document.getElementById("debug-from-y") as HTMLInputElement
-  ).value;
-  const xTo: string = (
-    document.getElementById("debug-to-x") as HTMLInputElement
-  ).value;
-  const yTo: string = (
-    document.getElementById("debug-to-y") as HTMLInputElement
-  ).value;
-
-  try {
-    networkManager.moveWorker(
-      parseInt(xFrom),
-      parseInt(yFrom),
-      parseInt(xTo),
-      parseInt(yTo),
-    );
-  } catch (e) {
-    console.log(e);
-  }
-});
-
-document.getElementById("build-block")?.addEventListener("click", () => {
-  const x: string = (document.getElementById("debug-x") as HTMLInputElement)
-    .value;
-  const y: string = (document.getElementById("debug-y") as HTMLInputElement)
-    .value;
-  const type: string = (
-    document.getElementById("block-type") as HTMLSelectElement
-  ).value;
-
-  try {
-    networkManager.buildBlock(parseInt(x), parseInt(y), type);
-  } catch (e) {
-    console.log(e);
-  }
-});
-
-// #endregion
+const gameID = gameManager.getGameID();
+if (!gameID) {
+  console.log("No saved Game ID.");
+} else if (username && await networkManager.joinGame(username, gameID)) {
+  console.log("Rejoining game with ID: ", gameID);
+  networkManager.subscribeToGame(gameID, username);
+  eventEmitter.emit("gameId-update");
+} else {
+  console.warn("Failed to rejoin game with ID: ", gameID);
+  gameManager.resetGameID();
+}
