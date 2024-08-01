@@ -114,16 +114,20 @@ app.post("/games/join", (req, res) => {
   const user = userRepository.getUser(username);
   if (!user) { return res.status(400).send("User not found"); }
 
-  try {
-    game.addPlayer(user)
-    if (game.isReadyToStart()) {
-      game.start();
-      const currentPlayer = game.getCurrentPlayer();
-      if (!currentPlayer) { return res.status(400).send("No current player"); }
-      game.updatePlays(currentPlayer.getUsername());
+  const success = game.addPlayer(user)
+  if (!success) { return res.status(400).send("Game full"); }
+
+  // TODO should be triggered elsewhere or inside the addPlayer call
+  if (game.isReadyToStart()) {
+    game.start();
+    const currentPlayer = game.getCurrentPlayer();
+
+    console.assert(currentPlayer, "No current player");
+    if (!currentPlayer) { // Note: there should never be a state where the game starts without a current player
+      return res.status(500).send("No current player");
     }
-  } catch (e: any) {
-    return res.status(400).send(e.message);
+
+    game.updatePlays(currentPlayer.getUsername());
   }
 
   res.status(201).send({ gameId: game.getId() });

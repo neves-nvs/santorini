@@ -79,8 +79,8 @@ export default class InputManager {
 
     // TODO make this work a little better (working tho)
     const aspect = width / height;
-    const boardWidth = 6;
-    const boardHeight = 6;
+    const boardWidth = 5;
+    const boardHeight = 5;
     const fov = camera.fov * (Math.PI / 180);
     const cameraHeight = Math.max(
       boardHeight / (2 * Math.tan(fov / 2)),

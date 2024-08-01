@@ -65,16 +65,21 @@ export class Game {
     return this.currentPlayer;
   }
 
+  // TODO needs major refactor
   addPlayer(user: User) {
-    if (this.players.length >= this.amountOfPlayers) {
-      throw new Error("Game is full");
-    } else if (this.players.some(player => player.getUsername() === user.getUsername())) {
-      // throw new Error("Player already in game");
-      console.warn("Player already in game");
-    } else {
-      console.log("Players now in game", this.players.map(player => player.getUsername()));
-      this.players.push(user);
+    const playerAlreadyInGame = this.players.some(player => player.getUsername() === user.getUsername());
+    if (playerAlreadyInGame) {
+      return true;
     }
+
+    const gameAlreadyFull = this.players.length >= this.amountOfPlayers;
+    if (gameAlreadyFull) {
+      return false;
+    }
+
+    this.players.push(user);
+    return true;
+
   }
 
   removePlayer(username: string) {
@@ -91,10 +96,12 @@ export class Game {
 
   getPlays(playerId: string) {
     if (this.currentPlayer?.getUsername() !== playerId) {
+      console.warn("Not your turn");
       return [];
     }
     const plays: Play[] = [];
     if (this.gamePhase === "SETUP") {
+      console.log("SETUP");
       const emptySpots = this.board.getEmptyPositions();
       emptySpots.forEach(position => {
         plays.push({
@@ -103,9 +110,13 @@ export class Game {
           position: position,
         });
       });
+
     } else if (this.gamePhase === "MOVE") {
-      const player = this.currentPlayer;
+      // const player = this.currentPlayer;
+      ;
     }
+
+    return plays;
   }
 
   applyPlay(play: Play) {

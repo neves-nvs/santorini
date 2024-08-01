@@ -1,0 +1,30 @@
+{
+    "folders": [
+        {
+            "path": ".",
+            "name": "/",
+        },
+        {
+            "path": "./packages/client"
+        },
+        {
+            "path": "./packages/server"
+        },
+        {
+            "path": "./packages/santorini"
+        }
+    ],
+    "settings": {
+        "files.exclude": {
+            "packages": true,
+        },
+        "cSpell.words": [
+            "santorini"
+        ]
+    },
+    "extensions": {
+        "recommendations": [
+            "aaron-bond.better-comments",
+        ]
+    }
+}

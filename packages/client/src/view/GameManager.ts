@@ -18,7 +18,7 @@ export default class GameManager extends EventEmitter {
     this.gameId = localStorage.getItem("gameId");
     this.username = localStorage.getItem("username");
 
-    this.boardManager.place(new Builder(), 0, 1);
+    // this.boardManager.place(new Builder(), 0, 1);
     // this.boardManager.place(new Builder(), 0, 0);
 
     // this.boardManager.place(new Block("BASE"), 2, 2);

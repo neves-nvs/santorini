@@ -1,5 +1,6 @@
+import { updatePlayersList, updatePlaysList } from "../UI/functions";
+
 import GameManager from "../view/GameManager";
-import { updatePlayersList } from "../UI/functions";
 
 export type Message = {
   type: string;
@@ -35,8 +36,12 @@ export default class NetworkManager implements GameController {
           this.listPlayers(payload);
           break;
 
+        case "available_plays":
+          this.updateAvailablePlays(payload);
+          break;
+
         default:
-          console.log("Unknown message type:", message.type);
+          console.warn("Unknown message type:", message.type);
       }
     };
 
@@ -61,6 +66,12 @@ export default class NetworkManager implements GameController {
   private listPlayers(players: string[]) {
     updatePlayersList({ players });
   }
+
+  private updateAvailablePlays(plays: any) {
+    console.warn(plays)
+    updatePlaysList({ plays });
+  }
+
 
   /* -------------------------------------------------------------------------- */
   /*                                  Outgoing                                  */
