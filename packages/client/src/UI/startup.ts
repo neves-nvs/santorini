@@ -162,27 +162,52 @@ eventEmitter.on("gameId-update", () => {
 /*                                   STARTUP                                  */
 /* -------------------------------------------------------------------------- */
 
-const username = gameManager.getUsername();
-if (!username) {
-  console.log("Username not set.");
-  loginModal.style.display = "block";
-} else if (await networkManager.login(username)) {
-  console.log("Session available for: ", gameManager.getUsername());
-  loginModal.style.display = "none";
-} else {
-  console.warn("Failed to login with username: ", username);
-  gameManager.resetUsername();
-  loginModal.style.display = "block";
+async function loginOnStartup() {
+  if (loginModal === null || loginModal === undefined) {
+    throw new Error("Login modal not found.");
+  }
+
+  const username = gameManager.getUsername();
+  if (!username) {
+    console.log("Username not set.");
+    loginModal.style.display = "block";
+    return
+  }
+
+  const loginSucceeded = await networkManager.login(username);
+  if (loginSucceeded) {
+    console.log("Session available for: ", gameManager.getUsername());
+    loginModal.style.display = "none";
+  } else {
+    console.warn("Failed to login with username: ", username);
+    gameManager.resetUsername();
+    loginModal.style.display = "block";
+  }
 }
 
-const gameID = gameManager.getGameID();
-if (!gameID) {
-  console.log("No saved Game ID.");
-} else if (username && await networkManager.joinGame(username, gameID)) {
-  console.log("Rejoining game with ID: ", gameID);
-  networkManager.subscribeToGame(gameID, username);
-  eventEmitter.emit("gameId-update");
-} else {
-  console.warn("Failed to rejoin game with ID: ", gameID);
-  gameManager.resetGameID();
+async function rejoinGameOnStartup(username: string | null) {
+  const gameID = gameManager.getGameID();
+  if (!gameID) {
+    console.log("No saved Game ID.");
+  } else if (username && await networkManager.joinGame(username, gameID)) {
+    console.log("Rejoining game with ID: ", gameID);
+    networkManager.subscribeToGame(gameID, username);
+    eventEmitter.emit("gameId-update");
+  } else {
+    console.warn("Failed to rejoin game with ID: ", gameID);
+    gameManager.resetGameID();
+  }
 }
+
+async function Startup() {
+  try {
+    await loginOnStartup();
+
+    await rejoinGameOnStartup(gameManager.getUsername());
+
+  } catch (error) {
+    console.error("Startup failed:", error);
+  }
+}
+
+Startup();
