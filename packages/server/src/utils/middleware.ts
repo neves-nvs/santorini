@@ -8,3 +8,14 @@ export function deprecate(req: Request, res: Response, next: NextFunction) {
     next();
 }
 
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+export const validateUUID = (paramName: string) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        const value = req.params[paramName];
+        if (!UUID_REGEX.test(value)) {
+            return res.status(400).send("Invalid UUID");
+        }
+        next();
+    };
+};
