@@ -4,37 +4,35 @@ import express from "express";
 import { gameRepository } from "./game/gameRepository";
 import { handleMessage } from "./webSocketHandler";
 import logger from "./logger";
-import morgan from "morgan";
-import { userRepository } from "./users/userRespository";
+import { morganMiddleware } from "./morgan";
+import { userRepository } from "./users/userRepository";
 
-const PORT = 8081;
+const PORT = process.env.PORT || 8081;
 
 const app = express();
 
-// app.use(
-//   morgan("combined", {
-//     stream: {
-//       write: (message: string) => logger.info(message.trim()),
-//     },
-//   }),
-// );
+app.use(morganMiddleware);
 
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:5173" }));
+
+app.use(cors({
+  origin: "http://localhost:5173",
+}));
 
 /* -------------------------------------------------------------------------- */
 /*                               Authentication                               */
 /* -------------------------------------------------------------------------- */
 
 app.post("/users", async (req, res) => {
-  console.log("POST /users", req.body);
   const { username, email, password } = req.body;
   if (!username) {
+    logger.error("Username required");
     return res.status(400).send("All fields are required");
   }
   try {
     userRepository.createUser(username);
   } catch (e: any) {
+    logger.error(e.message);
     return res.status(400).send(e.message);
   }
   res.status(201).send("User created successfully");
@@ -42,14 +40,15 @@ app.post("/users", async (req, res) => {
 
 // TODO should be GET or POST to /session-token
 app.post("/login", async (req, res) => {
-  console.log("POST /login", req.body);
   const { username } = req.body;
   if (!username) {
+    logger.error("Username required");
     return res.status(400).send("Username required");
   }
 
   const user = userRepository.getUser(username);
   if (!user) {
+    logger.error("User not found");
     return res.status(400).send("User not found");
   }
 
@@ -61,15 +60,12 @@ app.post("/login", async (req, res) => {
 /* -------------------------------------------------------------------------- */
 
 app.get("/games", (req, res) => {
-  console.log("GET /games");
-
   // TODO filter per public games
-
   res.send(gameRepository.getGamesIds());
 });
 
 // app.get("/games/:gameID/players", (req, res) => {
-//   console.log("GET /games/:gameID/players", req.params);
+//   logger.info("GET /games/:gameID/players", req.params);
 //   const { gameID } = req.params;
 //   // check if game is public or user in game
 //   const game = gameRepository.getGame(gameID);
@@ -80,7 +76,6 @@ app.get("/games", (req, res) => {
 // });
 
 app.post("/games", (req, res) => {
-  console.log("POST /games", req.body);
   const { username, amountOfPlayers } = req.body as { username: string, amountOfPlayers: number | undefined };
   // TODO input validation
   // TODO add user as owner (created game and can therefore delete it)
@@ -100,7 +95,7 @@ app.delete("/games/:gameId", (req, res) => {
 // app.post("/games/:gameID/join", (req, res) => { // TODO FIX :gameID does not match UUID
 //   const gameID = req.params.gameID;
 app.post("/games/join", (req, res) => {
-  console.log("POST /games/join", req.body);
+  logger.info("POST /games/join", req.body);
 
   const { username, gameID } = req.body;
   if (!gameID) { return res.status(400).send("Game ID required"); }
@@ -134,7 +129,7 @@ app.post("/games/join", (req, res) => {
 });
 
 app.get("/games/plays", (req, res) => {
-  console.log("GET /games/plays", req.body);
+  logger.info("GET /games/plays", req.body);
   const { gameID, playerID } = req.body;
   if (!gameID) { return res.status(400).send("Game ID required"); }
   if (!playerID) { return res.status(400).send("Player ID required"); }
@@ -151,7 +146,7 @@ app.get("/games/plays", (req, res) => {
 });
 
 app.post("/games/plays", (req, res) => {
-  console.log("POST /games/plays", req.body);
+  logger.info("POST /games/plays", req.body);
   const { gameID, playerID, play } = req.body;
   if (!gameID) { return res.status(400).send("Game ID required"); }
   if (!playerID) { return res.status(400).send("Player ID required"); }
@@ -174,12 +169,12 @@ app.post("/games/plays", (req, res) => {
 /* -------------------------------------------------------------------------- */
 
 const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });
 
 const wss = new WebSocket.Server({ server });
 wss.on("listening", () => {
-  console.log("WebSocket server listening");
+  logger.info("WebSocket server listening");
 });
 
 /* -------------------------------------------------------------------------- */
@@ -187,17 +182,22 @@ wss.on("listening", () => {
 /* -------------------------------------------------------------------------- */
 
 wss.on("connection", (ws: WebSocket) => {
+  logger.info("WebSocket connection");
+
   ws.on("open", () => {
-    console.log("opened");
+    logger.info("WebSocket open");
   });
 
   ws.on("error", (error: Error) => {
-    console.error("WebSocket error", error);
+    logger.error("WebSocket error", error);
   });
 
   ws.on("message", (message: string) => {
+    logger.info("WebSocket message", message);
     handleMessage(ws, message);
   });
 
-  ws.on("close", () => { });
+  ws.on("close", (code, reason) => {
+    logger.info("WebSocket connection closed", code, reason);
+  });
 });
