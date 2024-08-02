@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { deprecate } from "../utils/middleware";
 import logger from "../logger";
 import { userRepository } from "../users/userRepository";
 
@@ -19,7 +20,7 @@ router.post("/", async (req, res) => {
     res.status(201).send("User created successfully");
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", deprecate, async (req, res) => {
     const { username } = req.body;
     if (!username) {
         logger.error("Username required");
