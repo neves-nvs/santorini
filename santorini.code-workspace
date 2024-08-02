@@ -1,3 +1,4 @@
+// https://code.visualstudio.com/docs/editor/workspaces
 {
     "folders": [
         {
@@ -11,7 +12,7 @@
             "path": "./packages/server"
         },
         {
-            "path": "./packages/santorini"
+            "path": "./packages/santorini-threejs"
         }
     ],
     "settings": {
@@ -19,7 +20,9 @@
             "packages": true,
         },
         "cSpell.words": [
-            "santorini"
+            "arrowParens", // prettier
+            "santorini",
+            "threejs"
         ]
     },
     "extensions": {
