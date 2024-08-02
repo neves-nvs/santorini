@@ -44,6 +44,8 @@ export default class GameManager extends EventEmitter {
 
   resetUsername() {
     this.username = null;
+    localStorage.removeItem("username");
+    eventEmitter.emit("username-update", null);
   }
 
   getGameID() {
