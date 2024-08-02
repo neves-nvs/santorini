@@ -1,7 +1,7 @@
 import { Game } from "./game/game";
 import { WebSocket } from "ws";
 import { gameRepository } from "./game/gameRepository";
-import { userRepository } from "./users/userRespository";
+import { userRepository } from "./users/userRepository";
 
 interface Message {
   type: string;
