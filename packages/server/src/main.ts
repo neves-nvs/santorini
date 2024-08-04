@@ -9,7 +9,7 @@ import userService from "./users/userService";
 
 const PORT = process.env.PORT || 8081;
 
-const app = express();
+export const app = express();
 
 app.use(morganMiddleware);
 app.use(express.json());
@@ -18,7 +18,7 @@ app.use(cors({ origin: "http://localhost:5173" }));
 app.use("/games", gameService);
 app.use("/users", userService);
 
-const server = app.listen(PORT, () => {
+export const server = app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
 });
 
