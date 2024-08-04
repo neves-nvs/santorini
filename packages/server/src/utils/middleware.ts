@@ -1,6 +1,7 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, Response } from 'express';
+import { param, validationResult } from 'express-validator';
 
-import logger from "../logger";
+import logger from '../logger';
 
 export function deprecate(req: Request, res: Response, next: NextFunction) {
     res.setHeader('Warning', '299 - "Deprecated API"');
@@ -8,14 +9,14 @@ export function deprecate(req: Request, res: Response, next: NextFunction) {
     next();
 }
 
-const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+export const checkValidation = (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+};
 
-export const validateUUID = (paramName: string) => {
-    return (req: Request, res: Response, next: NextFunction) => {
-        const value = req.params[paramName];
-        if (!UUID_REGEX.test(value)) {
-            return res.status(400).send("Invalid UUID");
-        }
-        next();
-    };
+export const validateUUIDParam = (paramName: string) => {
+    return param(paramName).isUUID().withMessage(`${paramName} must be a valid UUID`);
 };
