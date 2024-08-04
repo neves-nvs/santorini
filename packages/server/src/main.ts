@@ -1,28 +1,34 @@
+import { PORT } from "./config";
 import WebSocket from "ws";
+import authController from "./authentication/authController";
 import cors from "cors";
 import express from "express";
 import gameService from "./game/gameService";
-import { handleMessage } from "./webSocketHandler";
+import { handleMessage } from "./webSockets";
 import logger from "./logger";
 import { morganMiddleware } from "./morgan";
-import userService from "./users/userService";
+import passport from "passport";
+import userController from "./users/userController";
 
-const PORT = process.env.PORT || 8081;
-
-export const app = express();
+const app = express();
 
 app.use(morganMiddleware);
+
 app.use(express.json());
+app.use(passport.initialize());
+
 app.use(cors({ origin: "http://localhost:5173" }));
 
+app.use("/", authController);
 app.use("/games", gameService);
-app.use("/users", userService);
+app.use("/users", userController);
 
-export const server = app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
 });
 
 const wss = new WebSocket.Server({ server });
+
 wss.on("listening", () => {
   logger.info("WebSocket server listening");
 });
@@ -48,4 +54,4 @@ wss.on("connection", (ws: WebSocket) => {
   });
 });
 
-export default app;
+export { app, server };

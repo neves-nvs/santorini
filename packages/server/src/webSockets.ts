@@ -1,22 +1,22 @@
-import { Game } from "./game/game";
 import { WebSocket } from "ws";
+import { Game } from "./game/game";
 import { gameRepository } from "./game/gameRepository";
 import { userRepository } from "./users/userRepository";
 
 interface Message {
   type: string;
-  payload: any;
+  payload: unknown;
 }
 
 /* -------------------------------------------------------------------------- */
 /*                                    UTILS                                   */
 /* -------------------------------------------------------------------------- */
 
-function send(ws: WebSocket, type: string, payload: any) {
+function send(ws: WebSocket, type: string, payload: unknown) {
   ws.send(JSON.stringify({ type: type, payload: payload }));
 }
 
-function broadcastToGame(game: Game, type: string, payload: any) {
+function broadcastToGame(game: Game, type: string, payload: unknown) {
   game.getConnections().forEach((connection: WebSocket) => {
     send(connection as WebSocket, type, payload);
   });
@@ -28,8 +28,12 @@ function broadcastToGame(game: Game, type: string, payload: any) {
 
 export function handleMessage(ws: WebSocket, message: string) {
   const parsedMessage: Message = JSON.parse(message);
-  const { type, payload } = parsedMessage;
-  console.log("\"" + type + "\"" + " " + payload);
+  const { type } = parsedMessage;
+  const payload = parsedMessage.payload as {
+    gameId: string;
+    username: string;
+  };
+  console.log('"' + type + '"' + " " + payload);
 
   switch (type) {
     case "subscribe_game":
@@ -60,7 +64,7 @@ function handleSubscribeGame(ws: WebSocket, gameID: string, username: string) {
   broadcastToGame(
     game,
     "current_players",
-    game.getPlayers().map(player => player.getUsername()),
+    game.getPlayers().map((player) => player.getUsername()),
   );
 }
 
@@ -74,7 +78,7 @@ function getGameOrError(ws: WebSocket, gameID: string) {
 }
 
 function getUserOrError(ws: WebSocket, username: string) {
-  const user = userRepository.getUser(username);
+  const user = userRepository.findUserById(username);
   if (user === undefined) {
     send(ws, "error", "User not found");
     return;
@@ -86,6 +90,6 @@ function getUserOrError(ws: WebSocket, username: string) {
 /*                                 PUSH EVENTS                                */
 /* -------------------------------------------------------------------------- */
 
-export function updatePlays(ws: WebSocket, plays: any) {
+export function updatePlays(ws: WebSocket, plays: unknown) {
   send(ws, "available_plays", plays);
 }

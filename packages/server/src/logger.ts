@@ -1,11 +1,12 @@
-import { config, createLogger, format, transports } from "winston";
-const { combine, timestamp, colorize, printf } = format
+import { createLogger, format, transports } from "winston";
+
+const { combine, timestamp, colorize, printf } = format;
 
 // https://github.com/winstonjs/winston/issues/1345
-const uppercaseLevel = format(info => {
+const uppercaseLevel = format((info) => {
   info.level = info.level.toUpperCase();
   return info;
-})
+});
 
 const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
   let msg = `[${level}] ${timestamp} - ${message}`;
@@ -16,15 +17,17 @@ const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
 });
 
 const logger = createLogger({
-  level: process.env.LOG_LEVEL || 'http',
+  level: process.env.LOG_LEVEL || "info",
   format: combine(
     uppercaseLevel(),
     colorize(),
     timestamp({ format: "HH:mm:ss" }),
-    logFormat
+    logFormat,
   ),
   transports: [
-    new transports.Console()
+    new transports.Console({
+      silent: process.env.NODE_ENV === "test",
+    }),
   ],
 });
 

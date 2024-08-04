@@ -1,39 +1,19 @@
-import { Router } from "express";
-import { deprecate } from "../utils/middleware";
-import logger from "../logger";
-import { userRepository } from "../users/userRepository";
+import { userRepository } from "./userRepository";
 
-const router = Router();
+async function getUsers() {
+  return userRepository.getUsers();
+}
 
-router.post("/", async (req, res) => {
-    const { username, email, password } = req.body;
-    if (!username) {
-        logger.error("Username required");
-        return res.status(400).send("All fields are required");
-    }
-    try {
-        userRepository.createUser(username);
-    } catch (e: any) {
-        logger.error(e.message);
-        return res.status(400).send(e.message);
-    }
-    res.status(201).send("User created successfully");
-});
+function getUserById(username: string) {
+  return userRepository.findUserById(username);
+}
 
-router.post("/login", deprecate, async (req, res) => {
-    const { username } = req.body;
-    if (!username) {
-        logger.error("Username required");
-        return res.status(400).send("Username required");
-    }
+function createUser(username: string) {
+  return userRepository.createUser(username);
+}
 
-    const user = userRepository.getUser(username);
-    if (!user) {
-        logger.error("User not found");
-        return res.status(400).send("User not found");
-    }
-
-    res.status(200).send("Login successful");
-});
-
-export default router;
+export default {
+  getUsers,
+  getUserById,
+  createUser,
+};

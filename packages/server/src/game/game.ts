@@ -1,9 +1,7 @@
-import { Board, Position } from "../board/board";
-
-import { User } from "../users/user";
-import WebSocket from "ws";
-import { Worker } from "../board/board";
 import { randomUUID } from "crypto";
+import WebSocket from "ws";
+import { Board, Position, Worker } from "../board/board";
+import { User } from "../users/user";
 
 export type Play = {
   playerId: string;
@@ -42,10 +40,11 @@ export class Game {
     return this.id;
   }
 
-
   isReadyToStart(): boolean {
-    return this.players.length === this.amountOfPlayers &&
-      this.gamePhase === "NOT STARTED";
+    return (
+      this.players.length === this.amountOfPlayers &&
+      this.gamePhase === "NOT STARTED"
+    );
   }
 
   start() {
@@ -67,7 +66,9 @@ export class Game {
 
   // TODO needs major refactor
   addPlayer(user: User) {
-    const playerAlreadyInGame = this.players.some(player => player.getUsername() === user.getUsername());
+    const playerAlreadyInGame = this.players.some(
+      (player) => player.getUsername() === user.getUsername(),
+    );
     if (playerAlreadyInGame) {
       return true;
     }
@@ -79,13 +80,12 @@ export class Game {
 
     this.players.push(user);
     return true;
-
   }
 
   removePlayer(username: string) {
     if (this.gamePhase === "NOT STARTED") {
       this.players = this.players.filter(
-        player => player.getUsername() !== username,
+        (player) => player.getUsername() !== username,
       );
     }
   }
@@ -103,17 +103,15 @@ export class Game {
     if (this.gamePhase === "SETUP") {
       console.log("SETUP");
       const emptySpots = this.board.getEmptyPositions();
-      emptySpots.forEach(position => {
+      emptySpots.forEach((position) => {
         plays.push({
           playerId: playerId,
           workerId: 1,
           position: position,
         });
       });
-
     } else if (this.gamePhase === "MOVE") {
       // const player = this.currentPlayer;
-      ;
     }
 
     return plays;
@@ -126,7 +124,7 @@ export class Game {
       this.switchTurn();
       if (
         this.players.every(
-          player =>
+          (player) =>
             this.workersByPlayer.get(player.getUsername())?.length === 2,
         )
       ) {
@@ -135,7 +133,7 @@ export class Game {
     } else if (this.gamePhase === "MOVE") {
       const worker = this.workersByPlayer
         .get(play.playerId)
-        ?.find(worker => worker.getId() === play.workerId);
+        ?.find((worker) => worker.getId() === play.workerId);
       if (!worker) {
         return;
       }
@@ -163,7 +161,7 @@ export class Game {
     const plays = this.getPlays(playerId);
     const connections = this.connectionByPlayer.get(playerId) || [];
     console.log("Updating plays for", playerId, plays);
-    connections.forEach(connection => {
+    connections.forEach((connection) => {
       connection.send(
         JSON.stringify({
           type: "available_plays",
@@ -179,14 +177,16 @@ export class Game {
 
   getConnections() {
     const connections: WebSocket[] = [];
-    this.connectionByPlayer.forEach(playerConnections => {
+    this.connectionByPlayer.forEach((playerConnections) => {
       connections.push(...playerConnections);
     });
     return connections;
   }
 
   getPlayerConnections(username: string) {
-    const player = this.players.find(player => player.getUsername() === username);
+    const player = this.players.find(
+      (player) => player.getUsername() === username,
+    );
     if (!player) {
       return [];
     }
@@ -202,7 +202,7 @@ export class Game {
     const connections = this.connectionByPlayer.get(username) || [];
     this.connectionByPlayer.set(
       username,
-      connections.filter(connection => connection !== ws),
+      connections.filter((connection) => connection !== ws),
     );
   }
 }

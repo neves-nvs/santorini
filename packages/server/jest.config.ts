@@ -10,4 +10,11 @@ module.exports = {
       },
     ],
   },
+  setupFiles: ["<rootDir>/tests/setup.ts"],
 };
+
+// module.exports = {
+//   preset: 'ts-jest',
+//   testEnvironment: 'node',
+//   testMatch: ['**/tests/**/*.test.ts']
+// };

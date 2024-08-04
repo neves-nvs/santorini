@@ -5,7 +5,7 @@ export class userRepository {
 
   static createUser(username: string) {
     const existingUser = this.users.find(
-      user => user.getUsername() === username,
+      (user) => user.getUsername() === username,
     );
     if (existingUser) {
       throw new Error("User already exists");
@@ -15,11 +15,11 @@ export class userRepository {
     this.users.push(player);
   }
 
-  static getUser(username: string) {
-    return this.users.find(user => user.getUsername() === username);
+  static findUserById(id: string) {
+    return this.users.find((user) => user.getUsername() === id);
   }
 
   static getUsers() {
-    return userRepository;
+    return userRepository.users; //TODO map to DTO
   }
 }
