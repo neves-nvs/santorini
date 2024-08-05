@@ -1,26 +1,13 @@
-import { Box3, Mesh, MeshStandardMaterial, Vector3 } from "three";
-
+import { Mesh, MeshStandardMaterial, Vector3 } from "three";
 import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
 
-enum PieceModel {
-  BUILDER,
-  BASE,
-  MID,
-  TOP,
-  DOME,
-  BOARD,
-}
-
-interface ModelLoader {
-  load(model: PieceModel): Mesh;
-}
 export class STLImportConfig {
   constructor(
     public file: string,
     public y_offset: number,
     public x_rotation: number,
     public scale: number,
-  ) {}
+  ) { }
 }
 
 export const locations = {
@@ -41,67 +28,46 @@ export const configs = {
   board: new STLImportConfig(locations.board, -0.067, -Math.PI / 2, 0.031747),
 };
 
-export const stlloader = new STLLoader();
+const stlLoader = new STLLoader();
+const material = new MeshStandardMaterial({ color: "white", transparent: true });
+const blueMaterial = new MeshStandardMaterial({ color: "#4A90E2", transparent: true });
 
-function applyImportSettings(mesh: Mesh, config: STLImportConfig) {
+const geometries = {};
+
+async function loadSTLFiles() {
+  const promises = Object.keys(configs).map(async (key) => {
+    const geometry = await stlLoader.loadAsync(configs[key].file);
+    geometry.center();
+    geometries[key] = geometry;
+  });
+  await Promise.all(promises);
+}
+
+function applyImportSettings(mesh, config) {
   mesh.rotateX(config.x_rotation);
   mesh.position.y += config.y_offset;
   mesh.scale.set(config.scale, config.scale, config.scale);
 }
 
-const material = new MeshStandardMaterial({
-  color: "white",
-  transparent: true,
-});
-const blueMaterial = new MeshStandardMaterial({
-  color: "#4A90E2",
-  transparent: true,
-});
-let mesh;
+function createMesh(name, material) {
+  const geometry = geometries[name];
+  const mesh = new Mesh(geometry, material);
+  applyImportSettings(mesh, configs[name]);
+  return mesh;
+}
 
-const [
-  boardGeometry,
-  builderGeometry,
-  baseGeometry,
-  midGeometry,
-  topGeometry,
-  domeGeometry,
-] = await Promise.all([
-  stlloader.loadAsync(configs.board.file),
-  stlloader.loadAsync(configs.builder.file),
-  stlloader.loadAsync(configs.base.file),
-  stlloader.loadAsync(configs.mid.file),
-  stlloader.loadAsync(configs.top.file),
-  stlloader.loadAsync(configs.dome.file),
-]);
+let isInitialized = false;
 
-boardGeometry.center();
-mesh = new Mesh(boardGeometry, material);
-applyImportSettings(mesh, configs.board);
-mesh.position.add(new Vector3(2, 0, 2));
-export let boardMesh = mesh;
+export const initializeMeshes = async () => {
+  if (!isInitialized) {
+    await loadSTLFiles();
+    isInitialized = true;
+  }
+};
 
-builderGeometry.center();
-mesh = new Mesh(builderGeometry, material);
-applyImportSettings(mesh, configs.builder);
-export let builderMesh = mesh;
-
-baseGeometry.center();
-mesh = new Mesh(baseGeometry, material);
-applyImportSettings(mesh, configs.base);
-export let baseMesh = mesh;
-
-midGeometry.center();
-mesh = new Mesh(midGeometry, material);
-applyImportSettings(mesh, configs.mid);
-export let midMesh = mesh;
-
-topGeometry.center();
-mesh = new Mesh(topGeometry, material);
-applyImportSettings(mesh, configs.top);
-export let topMesh = mesh;
-
-domeGeometry.center();
-mesh = new Mesh(domeGeometry, blueMaterial);
-applyImportSettings(mesh, configs.dome);
-export let domeMesh = mesh;
+export const getBoardMesh = () => createMesh("board", material).clone();
+export const getBuilderMesh = () => createMesh("builder", material).clone();
+export const getBaseMesh = () => createMesh("base", material).clone();
+export const getMidMesh = () => createMesh("mid", material).clone();
+export const getTopMesh = () => createMesh("top", material).clone();
+export const getDomeMesh = () => createMesh("dome", blueMaterial).clone();
