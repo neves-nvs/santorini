@@ -1,11 +1,15 @@
-import { User } from "../models";
+import { User } from "../model";
 
 export class UserDTO {
-    username: string;
-    displayName: string | null;
+  displayName: string;
 
-    constructor(user: User) {
-        this.username = user.username;
-        this.displayName = user.displayName
+  constructor(user: User) {
+    if (user.username) {
+      this.displayName = user.username;
+    } else if (user.display_name) {
+      this.displayName = user.display_name;
+    } else {
+      this.displayName = "";
     }
+  }
 }

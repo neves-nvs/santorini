@@ -10,8 +10,8 @@ import { Router } from "express";
 import { body } from "express-validator";
 import logger from "../logger";
 import { checkValidation, deprecate } from "../utils/middleware";
-import { userRepository } from "./userRepository";
 import userService from "./userService";
+import { findUserByUsername } from "./userRepository";
 
 export const router = Router();
 
@@ -67,7 +67,7 @@ router.post(
   async (req, res) => {
     const { username } = req.body;
 
-    const user = userRepository.findUserById(username);
+    const user = findUserByUsername(username);
     if (!user) {
       logger.error("User not found");
       return res.status(400).send("User not found");
