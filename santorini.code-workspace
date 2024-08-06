@@ -3,7 +3,7 @@
     "folders": [
         {
             "path": ".",
-            "name": "/",
+            "name": "/"
         },
         {
             "path": "./packages/client"
@@ -11,19 +11,21 @@
         {
             "path": "./packages/server"
         },
-        {
-            "path": "./packages/santorini-threejs"
-        }
     ],
     "settings": {
         "files.exclude": {
             "packages": true,
         },
         "cSpell.words": [
-            "arrowParens", // prettier
+            "arrowParens",
+            "Insertable",
+            "Kysely",
+            "Raycaster",
             "santorini",
-            "threejs"
-        ]
+            "threejs",
+            "Updateable"
+        ],
+        "java.compile.nullAnalysis.mode": "automatic"
     },
     "extensions": {
         "recommendations": [
