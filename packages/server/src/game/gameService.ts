@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import logger from "../logger";
-import { userRepository } from "../users/userRepository";
 import {
   checkValidation,
   deprecate,
   validateUUIDParam,
 } from "../utils/middleware";
 import { gameRepository } from "./gameRepository";
+import { findUserByUsername } from "../users/userRepository";
 
 const router = Router();
 
@@ -31,19 +31,19 @@ router.post(
   },
 );
 
-router.delete("/:gameId", (req, res) => {
-  const { gameId } = req.params;
-  // if (!uuidRegex.test(gameId)) {
-  //     return res.status(400).send("Invalid game ID");
-  // }
+// router.delete("/:gameId", (req, res) => {
+//   const { gameId } = req.params;
+// if (!uuidRegex.test(gameId)) {
+//     return res.status(400).send("Invalid game ID");
+// }
 
-  // check owner of game
-  // gameRepository.deleteGame(gameId);
-  // res.status(204).send();
+// check owner of game
+// gameRepository.deleteGame(gameId);
+// res.status(204).send();
 
-  logger.warn("DELETE /games/:gameId not implemented");
-  return res.status(501).send("Delete game not implemented");
-});
+//   logger.warn("DELETE /games/:gameId not implemented");
+//   return res.status(501).send("Delete game not implemented");
+// });
 
 router.post(
   "/:gameId/players",
@@ -51,14 +51,14 @@ router.post(
   validateUUIDParam("gameId"),
   checkValidation,
   body("username").notEmpty().withMessage("Username is required"),
-  (req, res) => {
+  async (req, res) => {
     const { gameId } = req.params;
     const { username } = req.body as { username: string };
     const game = gameRepository.getGame(gameId);
     if (!game) {
       return res.status(400).send("Game not found");
     }
-    const user = userRepository.findUserById(username);
+    const user = await findUserByUsername(username);
     if (!user) {
       return res.status(400).send("User not found");
     }
@@ -88,7 +88,7 @@ router.post(
     if (!game) {
       return res.status(400).send("Game not found");
     }
-    const user = userRepository.findUserById(username);
+    const user = findUserByUsername(username);
     if (!user) {
       return res.status(400).send("User not found");
     }
@@ -116,18 +116,18 @@ router.get(
   "/:gameId/plays",
   validateUUIDParam("gameId"),
   checkValidation,
-  (req, res) => {
+  async (req, res) => {
     const { gameId } = req.params;
     // TODO should be available from the session
     const { playerId } = req.body;
     if (!playerId) {
       return res.status(400).send("Player ID required");
     }
-    const player = userRepository.findUserById(playerId);
+    const player = await findUserByUsername(playerId);
     if (!player) {
       return res.status(400).send("Player not found");
     }
-    const username = player.getUsername();
+    const username = player.username;
 
     const game = gameRepository.getGame(gameId);
     if (!game) {
@@ -144,19 +144,19 @@ router.get(
   body("gameID").isString().notEmpty().withMessage("Game ID required"),
   body("playerID").isString().notEmpty().withMessage("Player ID required"),
   checkValidation,
-  (req, res) => {
+  async (req, res) => {
     logger.info("GET /games/plays", req.body);
     const { gameID, playerID } = req.body;
     const game = gameRepository.getGame(gameID);
     if (!game) {
       return res.status(400).send("Game not found");
     }
-    const player = userRepository.findUserById(playerID);
+    const player = await findUserByUsername(playerID);
     if (!player) {
       return res.status(400).send("Player not found");
     }
 
-    const moves = game.getPlays(player.getUsername());
+    const moves = game.getPlays(player.username);
     res.send(moves);
   },
 );
@@ -166,12 +166,12 @@ router.post(
   validateUUIDParam("gameId"),
   body("playerID").isString().notEmpty().withMessage("Player ID required"),
   checkValidation,
-  (req, res) => {
+  async (req, res) => {
     const { gameId } = req.params;
 
     // TODO should be available from the session
     const { playerID, play } = req.body;
-    const player = userRepository.findUserById(playerID);
+    const player = await findUserByUsername(playerID);
     if (!player) {
       return res.status(400).send("Player not found");
     }
@@ -197,7 +197,7 @@ router.post(
   body("gameID").isString().notEmpty().withMessage("Game ID required"),
   body("playerID").isString().notEmpty().withMessage("Player ID required"),
   body("play").isString().notEmpty().withMessage("Play required"),
-  (req, res) => {
+  async (req, res) => {
     logger.info("POST /games/plays", req.body);
     const { gameID, playerID, play } = req.body;
 
@@ -205,7 +205,7 @@ router.post(
     if (!game) {
       return res.status(400).send("Game not found");
     }
-    const player = userRepository.findUserById(playerID);
+    const player = await findUserByUsername(playerID);
     if (!player) {
       return res.status(400).send("Player not found");
     }

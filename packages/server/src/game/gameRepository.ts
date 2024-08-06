@@ -1,29 +1,23 @@
 import { Game } from "./game";
 
-export class gameRepository {
-  private static games: Game[] = [];
+const games: Game[] = [];
 
-  static createGame({
-    amountOfPlayers,
-    username,
-  }: {
-    amountOfPlayers: number | undefined;
-    username: string;
-  }) {
-    const game = new Game({ amountOfPlayers });
-    this.games.push(game);
-    return game;
-  }
-
-  static getGame(gameId: string) {
-    return this.games.find((game) => game.getId() === gameId);
-  }
-
-  static getGamesIds() {
-    return this.games.map((game) => game.getId());
-  }
+export async function findGameById(gameId: string) {
+  return games.find((game) => game.getId() === gameId);
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                  GAMEPLAY                                  */
-/* -------------------------------------------------------------------------- */
+export async function createGame({
+  amountOfPlayers,
+  username,
+}: {
+  amountOfPlayers: number | undefined;
+  username: string;
+}) {
+  const game = new Game({ amountOfPlayers });
+  games.push(game);
+  return game;
+}
+
+export async function getAllGamesIds() {
+  return games.map((game) => game.getId());
+}

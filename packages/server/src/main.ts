@@ -1,6 +1,6 @@
+import dotenv from "dotenv";
 import { PORT } from "./config";
 import WebSocket from "ws";
-import authController from "./authentication/authController";
 import cors from "cors";
 import express from "express";
 import gameService from "./game/gameService";
@@ -9,6 +9,84 @@ import logger from "./logger";
 import { morganMiddleware } from "./morgan";
 import passport from "passport";
 import userController from "./users/userController";
+import {
+  Strategy as GoogleStrategy,
+  Profile,
+  VerifyCallback,
+} from "passport-google-oauth20";
+import {
+  createUserWithGoogleProfile,
+  findUserByGoogleId,
+  findUserByUsername,
+} from "./users/userRepository";
+import authController from "./authentication/authController";
+import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
+
+dotenv.config();
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  logger.error("Google OAuth environment variables not set");
+  process.exit(1);
+}
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      callbackURL: "/auth/google/callback",
+    },
+    async (
+      accessToken: string,
+      refreshToken: string,
+      profile: Profile,
+      done: VerifyCallback,
+    ) => {
+      try {
+        let user = await findUserByGoogleId(profile.id);
+
+        if (!user) {
+          user = await createUserWithGoogleProfile(profile);
+        }
+
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    },
+  ),
+);
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  logger.error("JWT secret not set");
+  process.exit(1);
+}
+
+passport.use(
+  new JwtStrategy(
+    {
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      secretOrKey: JWT_SECRET,
+    },
+    async (jwtPayload: any, done: VerifyCallback) => {
+      try {
+        const user = await findUserByUsername(jwtPayload.username);
+
+        if (!user) {
+          return done(null, false);
+        }
+
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    },
+  ),
+);
 
 const app = express();
 

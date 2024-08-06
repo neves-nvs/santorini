@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import WebSocket from "ws";
 import { Board, Position, Worker } from "../board/board";
-import { User } from "../users/user";
+import { User } from "../model";
 
 export type Play = {
   playerId: string;
