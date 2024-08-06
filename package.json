@@ -1,6 +1,6 @@
 {
   "name": "santorini-monorepo",
-  "version": "0.1.0",
+  "version": "independent",
   "description": "Welcome to the online version of the **Santorini Board Game** made with **Three.js**! This project aims to replicate the classic board game experience in a digital format, providing an interactive and immersive way to play Santorini online.",
   "main": "index.js",
   "workspaces": [
