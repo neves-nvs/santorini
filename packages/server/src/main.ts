@@ -3,7 +3,7 @@ import { PORT } from "./config";
 import WebSocket from "ws";
 import cors from "cors";
 import express from "express";
-import gameService from "./game/gameService";
+import gameService from "./game/gameController";
 import { handleMessage } from "./webSockets";
 import logger from "./logger";
 import { morganMiddleware } from "./morgan";
@@ -21,6 +21,7 @@ import {
 } from "./users/userRepository";
 import authController from "./authentication/authController";
 import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
+import { JwtPayload } from "jsonwebtoken";
 
 dotenv.config();
 
@@ -72,7 +73,7 @@ passport.use(
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: JWT_SECRET,
     },
-    async (jwtPayload: any, done: VerifyCallback) => {
+    async (jwtPayload: JwtPayload, done: VerifyCallback) => {
       try {
         const user = await findUserByUsername(jwtPayload.username);
 
