@@ -11,6 +11,7 @@ import { body, param } from "express-validator";
 import logger from "../logger";
 import { checkValidation, deprecate } from "../utils/middleware";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository";
+import { NewUser } from "../model";
 
 export const router = Router();
 
@@ -24,6 +25,36 @@ router.get("/", async (req, res) => {
     res.status(400).send(error.message);
   }
 });
+
+router.post(
+  "/",
+  body("username").isString().notEmpty().withMessage("Username is required"),
+  body("password").isString().notEmpty().withMessage("Password is required"),
+  checkValidation,
+  async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      const displayName = `${username}-${Date.now()}`;
+
+      const newUser = {
+        username,
+        password,
+        display_name: displayName,
+      } as NewUser;
+
+      const user = createUser(newUser);
+      res.status(201).json(user);
+    } catch (e: unknown) {
+      const error = e as Error;
+      logger.error(error.message);
+      res.status(400).send(error.message);
+    }
+  },
+);
+
+/* -------------------------------------------------------------------------- */
+/*                                  :username                                 */
+/* -------------------------------------------------------------------------- */
 
 router.get(
   "/:username",
@@ -42,41 +73,6 @@ router.get(
       logger.error(error.message);
       res.status(400).send(error.message);
     }
-  },
-);
-
-router.post(
-  "/:username",
-  param("username").isString().notEmpty().withMessage("Username is required"),
-  checkValidation,
-  async (req, res) => {
-    try {
-      const { username } = req.body;
-      const user = createUser(username);
-      res.status(201).json(user);
-    } catch (e: unknown) {
-      const error = e as Error;
-      logger.error(error.message);
-      res.status(400).send(error.message);
-    }
-  },
-);
-
-router.post(
-  "/login",
-  deprecate,
-  body("username").isString().notEmpty().withMessage("Username is required"),
-  checkValidation,
-  async (req, res) => {
-    const { username } = req.body;
-
-    const user = findUserByUsername(username);
-    if (!user) {
-      logger.error("User not found");
-      return res.status(400).send("User not found");
-    }
-
-    res.status(200).send("Login successful");
   },
 );
 
