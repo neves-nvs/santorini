@@ -47,7 +47,7 @@ router.get(
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
     });
-    res.redirect("/");
+    res.redirect("http://localhost:5173");
   },
 );
 

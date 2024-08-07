@@ -100,6 +100,7 @@ export async function createUserWithGoogleProfile(
       google_id: profile.id,
       username: profile.displayName,
       display_name: profile.displayName,
+      created_at: new Date().toISOString(),
     })
     .returningAll()
     .executeTakeFirstOrThrow();
