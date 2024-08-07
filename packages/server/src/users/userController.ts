@@ -7,18 +7,16 @@
 // the enum should have the enums
 
 import { Router } from "express";
-import { body } from "express-validator";
+import { body, param } from "express-validator";
 import logger from "../logger";
 import { checkValidation, deprecate } from "../utils/middleware";
-import userService from "./userService";
-import { findUserByUsername } from "./userRepository";
+import { createUser, findAllUsers, findUserByUsername } from "./userRepository";
 
 export const router = Router();
 
 router.get("/", async (req, res) => {
   try {
-    // const usersDto = userService.getUsers();
-    const users = userService.getUsers();
+    const users = findAllUsers();
     return res.status(200).json(users);
   } catch (e: unknown) {
     const error = e as Error;
@@ -27,29 +25,34 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = userService.getUserById(id);
-    if (user === null || user === undefined) {
-      return res.status(404).send("User not found");
+router.get(
+  "/:username",
+  param("username").isString().notEmpty().withMessage("Username is required"),
+  checkValidation,
+  async (req, res) => {
+    try {
+      const { username } = req.params;
+      const user = findUserByUsername(username);
+      if (user === null || user === undefined) {
+        return res.status(404).send("User not found");
+      }
+      res.json(user);
+    } catch (e: unknown) {
+      const error = e as Error;
+      logger.error(error.message);
+      res.status(400).send(error.message);
     }
-    res.json(user);
-  } catch (e: unknown) {
-    const error = e as Error;
-    logger.error(error.message);
-    res.status(400).send(error.message);
-  }
-});
+  },
+);
 
 router.post(
-  "/",
-  body("username").isString().notEmpty().withMessage("Username is required"),
+  "/:username",
+  param("username").isString().notEmpty().withMessage("Username is required"),
   checkValidation,
   async (req, res) => {
     try {
       const { username } = req.body;
-      const user = userService.createUser(username);
+      const user = createUser(username);
       res.status(201).json(user);
     } catch (e: unknown) {
       const error = e as Error;

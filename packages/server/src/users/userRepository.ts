@@ -40,6 +40,10 @@ export async function findUserByUsername(
     .executeTakeFirst();
 }
 
+export async function findAllUsers(): Promise<User[]> {
+  return await db.selectFrom("users").selectAll().execute();
+}
+
 export async function createUser(user: NewUser): Promise<User> {
   return await db
     .insertInto("users")
