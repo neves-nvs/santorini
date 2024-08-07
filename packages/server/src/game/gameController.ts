@@ -6,13 +6,13 @@ import {
   deprecate,
   validateUUIDParam,
 } from "../utils/middleware";
-import { gameRepository } from "./gameRepository";
 import { findUserByUsername } from "../users/userRepository";
+import { createGame, findGameById, getAllGamesIds } from "./gameRepository";
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  res.send(gameRepository.getGamesIds());
+router.get("/", async (req, res) => {
+  res.send(await getAllGamesIds());
 });
 
 router.post(
@@ -21,12 +21,12 @@ router.post(
   body("amountOfPlayers")
     .isInt({ min: 2, max: 4 })
     .withMessage("Amount of players must be between 2 and 4"),
-  (req, res) => {
+  async (req, res) => {
     const { username, amountOfPlayers } = req.body as {
       username: string;
       amountOfPlayers: number | undefined;
     };
-    const game = gameRepository.createGame({ username, amountOfPlayers });
+    const game = await createGame({ username, amountOfPlayers });
     res.status(201).send({ gameId: game.getId() });
   },
 );
@@ -54,7 +54,7 @@ router.post(
   async (req, res) => {
     const { gameId } = req.params;
     const { username } = req.body as { username: string };
-    const game = gameRepository.getGame(gameId);
+    const game = await findGameById(gameId);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -74,7 +74,7 @@ router.post(
   body("username").notEmpty().withMessage("Username is required"),
   body("gameID").isUUID().withMessage("Game ID must be a valid UUID"),
   checkValidation,
-  (req, res) => {
+  async (req, res) => {
     logger.info("POST /games/join", req.body);
     const { username, gameID } = req.body;
     if (!gameID) {
@@ -84,7 +84,7 @@ router.post(
       return res.status(400).send("Username required");
     }
 
-    const game = gameRepository.getGame(gameID);
+    const game = await findGameById(gameID);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -93,10 +93,10 @@ router.post(
       return res.status(400).send("User not found");
     }
 
-    const success = game.addPlayer(user);
-    if (!success) {
-      return res.status(400).send("Game full");
-    }
+    // const success = game.addPlayer(user);
+    // if (!success) {
+    //   return res.status(400).send("Game full");
+    // }
 
     if (game.isReadyToStart()) {
       game.start();
@@ -105,7 +105,7 @@ router.post(
       if (!currentPlayer) {
         return res.status(500).send("No current player");
       }
-      game.updatePlays(currentPlayer.getUsername());
+      game.updatePlays(currentPlayer.username);
     }
 
     res.status(201).send({ gameId: game.getId() });
@@ -129,7 +129,7 @@ router.get(
     }
     const username = player.username;
 
-    const game = gameRepository.getGame(gameId);
+    const game = await findGameById(gameId);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -147,7 +147,7 @@ router.get(
   async (req, res) => {
     logger.info("GET /games/plays", req.body);
     const { gameID, playerID } = req.body;
-    const game = gameRepository.getGame(gameID);
+    const game = await findGameById(gameID);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -180,7 +180,7 @@ router.post(
       return res.status(400).send("Play required");
     }
 
-    const game = gameRepository.getGame(gameId);
+    const game = await findGameById(gameId);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -199,9 +199,10 @@ router.post(
   body("play").isString().notEmpty().withMessage("Play required"),
   async (req, res) => {
     logger.info("POST /games/plays", req.body);
-    const { gameID, playerID, play } = req.body;
+    const { gameID, playerID } = req.body;
+    // const play = req.body.play;
 
-    const game = gameRepository.getGame(gameID);
+    const game = await findGameById(gameID);
     if (!game) {
       return res.status(400).send("Game not found");
     }

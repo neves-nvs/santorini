@@ -67,7 +67,7 @@ export class Game {
   // TODO needs major refactor
   addPlayer(user: User) {
     const playerAlreadyInGame = this.players.some(
-      (player) => player.getUsername() === user.getUsername(),
+      (player) => player.username === user.username,
     );
     if (playerAlreadyInGame) {
       return true;
@@ -85,7 +85,7 @@ export class Game {
   removePlayer(username: string) {
     if (this.gamePhase === "NOT STARTED") {
       this.players = this.players.filter(
-        (player) => player.getUsername() !== username,
+        (player) => player.username !== username,
       );
     }
   }
@@ -95,7 +95,7 @@ export class Game {
   /* -------------------------------------------------------------------------- */
 
   getPlays(playerId: string) {
-    if (this.currentPlayer?.getUsername() !== playerId) {
+    if (this.currentPlayer?.username !== playerId) {
       console.warn("Not your turn");
       return [];
     }
@@ -124,8 +124,7 @@ export class Game {
       this.switchTurn();
       if (
         this.players.every(
-          (player) =>
-            this.workersByPlayer.get(player.getUsername())?.length === 2,
+          (player) => this.workersByPlayer.get(player.username)?.length === 2,
         )
       ) {
         this.gamePhase = "MOVE";
@@ -184,9 +183,7 @@ export class Game {
   }
 
   getPlayerConnections(username: string) {
-    const player = this.players.find(
-      (player) => player.getUsername() === username,
-    );
+    const player = this.players.find((player) => player.username === username);
     if (!player) {
       return [];
     }

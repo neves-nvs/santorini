@@ -1,7 +1,7 @@
 import { WebSocket } from "ws";
 import { Game } from "./game/game";
-import { gameRepository } from "./game/gameRepository";
-import { userRepository } from "./users/userRepository";
+import { findGameById } from "./game/gameRepository";
+import { findUserByUsername } from "./users/userRepository";
 
 interface Message {
   type: string;
@@ -49,27 +49,31 @@ export function handleMessage(ws: WebSocket, message: string) {
 /*                                  HANDLERS                                  */
 /* -------------------------------------------------------------------------- */
 
-function handleSubscribeGame(ws: WebSocket, gameID: string, username: string) {
-  const game = getGameOrError(ws, gameID);
-  const user = getUserOrError(ws, username);
+async function handleSubscribeGame(
+  ws: WebSocket,
+  gameID: string,
+  username: string,
+) {
+  const game = await getGameOrError(ws, gameID);
+  const user = await getUserOrError(ws, username);
   if (game === undefined || user === undefined) {
     return;
   }
 
-  console.log("User", user.getUsername(), "subscribed to game", gameID);
-  game.addConnection(user.getUsername(), ws);
+  console.log("User", user.username, "subscribed to game", gameID);
+  game.addConnection(user.username, ws);
   // TODO send whole game state
 
   // TODO push all info to user
   broadcastToGame(
     game,
     "current_players",
-    game.getPlayers().map((player) => player.getUsername()),
+    game.getPlayers().map((player) => player.username),
   );
 }
 
 function getGameOrError(ws: WebSocket, gameID: string) {
-  const game = gameRepository.getGame(gameID);
+  const game = findGameById(gameID);
   if (game === undefined) {
     send(ws, "error", "Game not found");
     return;
@@ -78,7 +82,7 @@ function getGameOrError(ws: WebSocket, gameID: string) {
 }
 
 function getUserOrError(ws: WebSocket, username: string) {
-  const user = userRepository.findUserById(username);
+  const user = findUserByUsername(username);
   if (user === undefined) {
     send(ws, "error", "User not found");
     return;
