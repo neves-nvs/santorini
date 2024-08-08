@@ -16,8 +16,11 @@ const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
   return msg;
 });
 
+const DEFAULT_LOG_LEVEL = "http";
+const LOG_LEVEL = process.env.LOG_LEVEL || DEFAULT_LOG_LEVEL;
+
 const logger = createLogger({
-  level: process.env.LOG_LEVEL || "info",
+  level: LOG_LEVEL,
   format: combine(
     uppercaseLevel(),
     colorize(),
@@ -31,4 +34,9 @@ const logger = createLogger({
   ],
 });
 
+if (process.env.LOG_LEVEL) {
+  logger.info(`Log level set to '${LOG_LEVEL}'`);
+} else {
+  logger.info(`Log level using default: '${LOG_LEVEL}'`);
+}
 export default logger;
