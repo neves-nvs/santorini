@@ -6,7 +6,7 @@ import express from "express";
 import gameService from "./game/gameController";
 import { handleMessage } from "./webSockets";
 import logger from "./logger";
-import { morganMiddleware } from "./morgan";
+import { morganBodyMiddleware, morganMiddleware } from "./morgan";
 import passport from "passport";
 import userController from "./users/userController";
 import {
