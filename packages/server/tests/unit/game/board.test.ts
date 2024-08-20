@@ -1,4 +1,4 @@
-import { Board, PieceType, Position, Stack } from "../src/board/board";
+import { Board, PieceType, Position } from "@src/board/board";
 
 describe("Board", () => {
   let board: Board;
@@ -9,7 +9,7 @@ describe("Board", () => {
 
   it("should initialize a 5x5 board", () => {
     const emptyPositions = board.getEmptyPositions();
-    expect(emptyPositions.length).toBe(25); // 5x5 board, all positions should be empty
+    expect(emptyPositions.length).toBe(5 * 5);
   });
 
   it("should return all empty positions", () => {
@@ -28,7 +28,7 @@ describe("Board", () => {
     board.getSpaces()[2][2].push(PieceType.BASE);
 
     const emptyPositions = board.getEmptyPositions();
-    expect(emptyPositions.length).toBe(24); // One less empty position
+    expect(emptyPositions.length).toBe(5 * 5 - 1);
     expect(emptyPositions).not.toContainEqual({ x: 2, y: 2 });
   });
 });
