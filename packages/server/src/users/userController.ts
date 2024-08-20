@@ -1,17 +1,10 @@
-// TODO this should be the one with the routes
-// the service should have the actual logic
-// the repository should have the db logic
-// the model should have the schema
-// the dto should have the data transfer objects
-// the interface should have the types
-// the enum should have the enums
-
 import { Router } from "express";
 import { body, param } from "express-validator";
 import logger from "../logger";
-import { checkValidation, deprecate } from "../utils/middleware";
+import { checkValidation } from "../utils/middleware";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository";
 import { NewUser } from "../model";
+import { StatusCodes } from "http-status-codes";
 
 export const router = Router();
 
@@ -32,29 +25,46 @@ router.post(
   body("password").isString().notEmpty().withMessage("Password is required"),
   checkValidation,
   async (req, res) => {
+    const { username, password } = req.body;
+
     try {
-      const { username, password } = req.body;
-      const displayName = `${username}-${Date.now()}`;
+      const user = await findUserByUsername(username);
+
+      if (user) {
+        logger.error("User already exists");
+        return res.status(StatusCodes.CONFLICT).json({
+          message: "User already exists",
+        });
+      }
+
+      // TODO hash password
 
       const newUser = {
         username,
         password,
-        display_name: displayName,
+        display_name: `${username}-${Date.now()}`,
       } as NewUser;
 
-      const user = createUser(newUser);
-      res.status(201).json(user);
+      await createUser(newUser);
+      res.status(201).json("User created");
     } catch (e: unknown) {
-      const error = e as Error;
-      logger.error(error.message);
-      res.status(400).send(error.message);
+      if (e instanceof AggregateError) {
+        e.errors.forEach((error) => {
+          logger.warn(error.message);
+        });
+        res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send("Database connection error");
+      } else if (e instanceof Error) {
+        logger.error(e.message);
+        res.status(500).send(e.message);
+      } else {
+        logger.error("Unknown error", { error: e });
+        return res.status(500).json({ message: "Unknown error occurred" });
+      }
     }
   },
 );
-
-/* -------------------------------------------------------------------------- */
-/*                                  :username                                 */
-/* -------------------------------------------------------------------------- */
 
 router.get(
   "/:username",
@@ -69,9 +79,18 @@ router.get(
       }
       res.json(user);
     } catch (e: unknown) {
-      const error = e as Error;
-      logger.error(error.message);
-      res.status(400).send(error.message);
+      if (e instanceof AggregateError) {
+        e.errors.forEach((error) => {
+          logger.warn(error.message);
+        });
+        res.status(409).send("Database connection error");
+      } else if (e instanceof Error) {
+        logger.error(e.message);
+        res.status(500).send(e.message);
+      } else {
+        logger.error("Unknown error", { error: e });
+        return res.status(500).json({ message: "Unknown error occurred" });
+      }
     }
   },
 );

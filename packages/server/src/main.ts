@@ -3,10 +3,13 @@ import { PORT } from "./config";
 import WebSocket from "ws";
 import cors from "cors";
 import express from "express";
-import gameService from "./game/gameController";
 import { handleMessage } from "./webSockets";
 import logger from "./logger";
-import { morganBodyMiddleware, morganMiddleware } from "./morgan";
+import {
+  morganBodyMiddleware,
+  morganMiddleware,
+  morganResBodyMiddleware,
+} from "./morgan";
 import passport from "passport";
 import userController from "./users/userController";
 import {
@@ -22,6 +25,7 @@ import {
 import authController from "./authentication/authController";
 import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
 import { JwtPayload } from "jsonwebtoken";
+import gameController from "./game/gameController";
 
 dotenv.config();
 
@@ -67,14 +71,26 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
+function extractJwtFromCookies(req: express.Request): string | null {
+  const cookies = req.headers.cookie;
+  if (cookies) {
+    const match = cookies.match(/token=([^;]+)/);
+    if (match) {
+      return match[1];
+    }
+  }
+  return null;
+}
+
 passport.use(
   new JwtStrategy(
     {
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([extractJwtFromCookies]),
       secretOrKey: JWT_SECRET,
     },
     async (jwtPayload: JwtPayload, done: VerifyCallback) => {
       try {
+        logger.info("JWT payload", jwtPayload);
         const user = await findUserByUsername(jwtPayload.username);
 
         if (!user) {
@@ -92,14 +108,22 @@ passport.use(
 const app = express();
 
 app.use(morganMiddleware);
+// if (process.env.NODE_ENV === "development") {
+app.use(morganBodyMiddleware);
+app.use(morganResBodyMiddleware);
+// }
 
 app.use(express.json());
 app.use(passport.initialize());
 
-app.use(cors({ origin: "http://localhost:5173" }));
+const CORS_CONFIG = {
+  origin: "http://localhost:5173",
+  credentials: true,
+};
+app.use(cors(CORS_CONFIG));
 
 app.use("/", authController);
-app.use("/games", gameService);
+app.use("/games", gameController);
 app.use("/users", userController);
 
 const server = app.listen(PORT, () => {

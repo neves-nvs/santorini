@@ -5,35 +5,73 @@ import passport from "passport";
 import { User } from "../model";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { JWT_SECRET } from "../config";
+import { body } from "express-validator";
+import { checkValidation } from "../utils/middleware";
+
+const authenticate = passport.authenticate("jwt", { session: false });
 
 const router = Router();
 
-router.post("/login", async (req, res) => {
-  const { username } = req.body;
-  if (!username) {
-    logger.error("Username required");
-    return res.status(400).send("Username required");
-  }
+router.post(
+  "/session",
+  body("username").isString().notEmpty().withMessage("Username is required"),
+  body("password").isString().notEmpty().withMessage("Password is required"),
+  checkValidation,
+  async (req: Request, res: Response) => {
+    const { username, password } = req.body;
 
-  const user = findUserByUsername(username);
-  if (!user) {
-    logger.error("User not found");
-    return res.status(400).send("User not found");
-  }
+    try {
+      const user = await findUserByUsername(username);
+      logger.debug(`Checked if user exists: ${username}`);
+      if (!user) {
+        logger.error("User not found");
+        return res.status(400).send("User not found");
+      }
 
-  res.status(200).send("Login successful");
-});
+      // if (!isValidPassword(user, password)) {
+      //   logger.error("Invalid password");
+      //   return res.status(401).send("Invalid password");
+      // }
+      if (password !== "password") {
+        logger.error("Invalid password");
+        return res.status(401).send("Invalid password");
+      }
+
+      if (!JWT_SECRET) {
+        logger.error("JWT secret not set");
+        return res.status(500).send("JWT secret not set");
+      }
+
+      const token = jwt.sign({ username: user.username }, JWT_SECRET, {
+        expiresIn: "5h",
+      });
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        // sameSite: 'Strict',
+      });
+
+      res.status(200).send("Login successful");
+    } catch (err) {
+      logger.error("An error occurred during authentication", err);
+      res.status(500).send("Internal server error");
+    }
+  },
+);
 
 router.get(
   "/auth/google",
-  passport.authenticate("google", { scope: ["profile"] }),
+  passport.authenticate("google", {
+    session: false,
+    scope: ["profile", "email"],
+  }),
 );
 
 router.get(
   "/auth/google/callback",
   passport.authenticate("google", { session: false }),
   (req, res) => {
-    // Successful authentication, generate a JWT
     const user = req.user as User;
 
     if (!JWT_SECRET) {
@@ -41,7 +79,7 @@ router.get(
       return res.status(500).send("JWT secret not set");
     }
 
-    const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "5h" });
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -54,12 +92,12 @@ router.get(
 export function verifyJWT(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies.token;
   if (!token) {
-    return res.status(401).send("Unauthorized");
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
   if (!JWT_SECRET) {
     logger.error("JWT secret not set");
-    return res.status(500).send("JWT secret not set");
+    return res.status(500).json({ message: "JWT secret not set" });
   }
 
   jwt.verify(
@@ -74,5 +112,15 @@ export function verifyJWT(req: Request, res: Response, next: NextFunction) {
     },
   );
 }
+
+router.get("/test-auth", authenticate, async (req, res) => {
+  try {
+    logger.info("User authenticated", req.user);
+  } catch (e: unknown) {
+    const error = e as Error;
+    logger.error(error.message);
+    res.status(400).send(error.message);
+  }
+});
 
 export default router;
