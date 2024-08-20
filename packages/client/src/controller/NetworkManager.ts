@@ -7,11 +7,11 @@ export type Message = {
   payload: any;
 };
 
-export default class NetworkManager implements GameController {
+export default class NetworkManager {
   private gameManager: GameManager;
   private socket: WebSocket;
-  private serverAddress = "ws://localhost:8081";
-  private httpBaseUrl = "http://localhost:8081";
+  private serverAddress = "ws://localhost:3000";
+  private httpBaseUrl = "http://localhost:3000";
 
   constructor(gameManager: GameManager) {
     this.gameManager = gameManager;
@@ -22,7 +22,7 @@ export default class NetworkManager implements GameController {
       console.log("Connected to WebSocket.");
     };
 
-    this.socket.onmessage = event => {
+    this.socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
       const { type, payload } = message;
       console.log(message);
@@ -68,10 +68,9 @@ export default class NetworkManager implements GameController {
   }
 
   private updateAvailablePlays(plays: any) {
-    console.warn(plays)
+    console.warn(plays);
     updatePlaysList({ plays });
   }
-
 
   /* -------------------------------------------------------------------------- */
   /*                                  Outgoing                                  */
@@ -127,7 +126,6 @@ export default class NetworkManager implements GameController {
     }
   }
 
-
   async joinGame(username: string, gameID: string): Promise<boolean> {
     const response = await fetch(`${this.httpBaseUrl}/games/join`, {
       method: "POST",
@@ -142,44 +140,4 @@ export default class NetworkManager implements GameController {
     }
     return true;
   }
-
-
-  /* -------------------------------------------------------------------------- */
-  /*                               Authentication                               */
-  /* -------------------------------------------------------------------------- */
-
-  async createUser(username: string): Promise<boolean> {
-    const response = await fetch(`${this.httpBaseUrl}/users`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username }),
-    });
-
-    if (!response.ok) {
-      return false;
-    }
-
-    return true;
-  }
-
-  async login(username: string) {
-    const response = await fetch(`${this.httpBaseUrl}/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username: username }),
-    });
-
-    // console.log(response);
-    if (!response.ok) {
-      return false;
-    }
-
-    return true;
-  }
-
-
 }
