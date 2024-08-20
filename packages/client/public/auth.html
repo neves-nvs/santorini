@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication</title>
+    <link rel="stylesheet" href="src/styles/auth.css">
+</head>
+
+<body>
+    <div id="auth-container">
+        <form id="login-form">
+            <h2>Login</h2>
+            <label for="login-username">Username:</label>
+            <input type="text" id="login-username" required>
+            <label for="login-password">Password:</label>
+            <input type="password" id="login-password" required>
+            <button type="submit">Login</button>
+        </form>
+
+        <div class="form-divider">
+            <span>or</span>
+        </div>
+
+        <form id="register-form">
+            <h2>Register</h2>
+            <label for="register-username">Username:</label>
+            <input type="text" id="register-username" required>
+            <label for="register-password">Password:</label>
+            <input type="password" id="register-password" required>
+            <button type="submit">Register</button>
+        </form>
+        <div class="google-login-container">
+            <button id="google-login">Login with Google</button>
+        </div>
+    </div>
+    <script type="module" src="src/pages/auth/auth.js"></script>
+</body>
+
+</html>
