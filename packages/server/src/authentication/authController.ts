@@ -4,9 +4,9 @@ import { findUserByUsername } from "../users/userRepository";
 import passport from "passport";
 import { User } from "../model";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
-import { JWT_SECRET } from "../config";
 import { body } from "express-validator";
 import { checkValidation } from "../utils/middleware";
+import { JWT_SECRET } from "../config";
 
 const authenticate = passport.authenticate("jwt", { session: false });
 

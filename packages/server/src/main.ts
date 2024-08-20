@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-import { PORT } from "./config";
 import WebSocket from "ws";
 import cors from "cors";
 import express from "express";
@@ -26,6 +25,7 @@ import authController from "./authentication/authController";
 import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
 import { JwtPayload } from "jsonwebtoken";
 import gameController from "./game/gameController";
+import { PORT } from "./config";
 
 dotenv.config();
 
@@ -108,10 +108,8 @@ passport.use(
 const app = express();
 
 app.use(morganMiddleware);
-// if (process.env.NODE_ENV === "development") {
 app.use(morganBodyMiddleware);
 app.use(morganResBodyMiddleware);
-// }
 
 app.use(express.json());
 app.use(passport.initialize());

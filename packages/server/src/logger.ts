@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import { createLogger, format, transports } from "winston";
 
 const { combine, timestamp, colorize, printf } = format;
@@ -16,8 +17,10 @@ const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
   return msg;
 });
 
+dotenv.config();
+
 const DEFAULT_LOG_LEVEL = "http";
-const LOG_LEVEL = process.env.LOG_LEVEL || DEFAULT_LOG_LEVEL;
+const LOG_LEVEL = process.env.LOG_LEVEL ?? DEFAULT_LOG_LEVEL;
 
 const logger = createLogger({
   level: LOG_LEVEL,

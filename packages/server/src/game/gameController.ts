@@ -7,12 +7,12 @@ import {
   validateUUIDParam,
 } from "../utils/middleware";
 import { findUserByUsername } from "../users/userRepository";
-import { createGame, findGameById, getAllGamesIds } from "./gameRepository";
+import * as gameRepository from "./gameRepository";
 
 const router = Router();
 
 router.get("/", async (req, res) => {
-  res.send(await getAllGamesIds());
+  res.send(await gameRepository.getAllGameIds());
 });
 
 router.post(
@@ -26,24 +26,10 @@ router.post(
       username: string;
       amountOfPlayers: number | undefined;
     };
-    const game = await createGame({ username, amountOfPlayers });
+    const game = await gameRepository.createGame({ username, amountOfPlayers });
     res.status(201).send({ gameId: game.getId() });
   },
 );
-
-// router.delete("/:gameId", (req, res) => {
-//   const { gameId } = req.params;
-// if (!uuidRegex.test(gameId)) {
-//     return res.status(400).send("Invalid game ID");
-// }
-
-// check owner of game
-// gameRepository.deleteGame(gameId);
-// res.status(204).send();
-
-//   logger.warn("DELETE /games/:gameId not implemented");
-//   return res.status(501).send("Delete game not implemented");
-// });
 
 router.post(
   "/:gameId/players",
@@ -54,7 +40,7 @@ router.post(
   async (req, res) => {
     const { gameId } = req.params;
     const { username } = req.body as { username: string };
-    const game = await findGameById(gameId);
+    const game = await gameRepository.findGameById(gameId);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -84,7 +70,7 @@ router.post(
       return res.status(400).send("Username required");
     }
 
-    const game = await findGameById(gameID);
+    const game = await gameRepository.findGameById(gameID);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -129,7 +115,7 @@ router.get(
     }
     const username = player.username;
 
-    const game = await findGameById(gameId);
+    const game = await gameRepository.findGameById(gameId);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -147,7 +133,7 @@ router.get(
   async (req, res) => {
     logger.info("GET /games/plays", req.body);
     const { gameID, playerID } = req.body;
-    const game = await findGameById(gameID);
+    const game = await gameRepository.findGameById(gameID);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -180,7 +166,7 @@ router.post(
       return res.status(400).send("Play required");
     }
 
-    const game = await findGameById(gameId);
+    const game = await gameRepository.findGameById(gameId);
     if (!game) {
       return res.status(400).send("Game not found");
     }
@@ -202,7 +188,7 @@ router.post(
     const { gameID, playerID } = req.body;
     // const play = req.body.play;
 
-    const game = await findGameById(gameID);
+    const game = await gameRepository.findGameById(gameID);
     if (!game) {
       return res.status(400).send("Game not found");
     }

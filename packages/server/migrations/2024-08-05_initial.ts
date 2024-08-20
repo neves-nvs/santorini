@@ -1,7 +1,6 @@
 import { Kysely, sql } from "kysely";
 import { db } from "../src/database";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function up(db: Kysely<any>) {
   await db.schema
     .createTable("users")

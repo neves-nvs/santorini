@@ -52,25 +52,28 @@ export async function createUser(user: NewUser): Promise<User> {
     .executeTakeFirstOrThrow();
 }
 
-export async function updateUser(id: number, user: UserUpdate): Promise<User> {
+export async function updateUser(
+  id: number,
+  user: UserUpdate,
+): Promise<User | undefined> {
   return await db
     .updateTable("users")
     .set(user)
     .where("id", "=", id)
     .returningAll()
-    .executeTakeFirstOrThrow();
+    .executeTakeFirst();
 }
 
 export async function updateUserByUsername(
   username: string,
   user: UserUpdate,
-): Promise<User> {
+): Promise<User | undefined> {
   return await db
     .updateTable("users")
     .set(user)
     .where("username", "=", username)
     .returningAll()
-    .executeTakeFirstOrThrow();
+    .executeTakeFirst();
 }
 
 export async function deleteUser(id: number): Promise<void> {
@@ -94,6 +97,8 @@ export async function findUserByGoogleId(
 export async function createUserWithGoogleProfile(
   profile: Profile,
 ): Promise<User> {
+  // TODO generate username
+  // TODO while username exists, generate new username
   return await db
     .insertInto("users")
     .values({
