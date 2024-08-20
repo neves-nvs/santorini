@@ -18,6 +18,6 @@ export async function createGame({
   return game;
 }
 
-export async function getAllGamesIds() {
+export async function getAllGameIds() {
   return games.map((game) => game.getId());
 }
