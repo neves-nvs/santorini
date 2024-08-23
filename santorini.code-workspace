@@ -16,16 +16,6 @@
         "files.exclude": {
             "packages": true,
         },
-        "cSpell.words": [
-            "arrowParens",
-            "Insertable",
-            "Kysely",
-            "Raycaster",
-            "santorini",
-            "testcontainers",
-            "threejs",
-            "Updateable"
-        ],
         "java.compile.nullAnalysis.mode": "automatic"
     },
     "extensions": {
