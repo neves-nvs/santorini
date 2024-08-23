@@ -27,15 +27,18 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "*": [
-        "src/*"
-      ]
+      "@src/*": [
+        "src/pages/*"
+      ],
+      "@services/*": [
+        "src/services/*"
+      ],
     },
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "src"
   },
   "include": [
-    "src"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules"
