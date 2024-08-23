@@ -1,6 +1,6 @@
-const apiUrl = "http://localhost:3000";
+import { getToken } from "@services/authService";
+import { BASE_URL } from "../../constants";
 
-// Authentication
 const loginForm = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
 const googleLoginButton = document.getElementById("google-login");
@@ -8,19 +8,15 @@ const googleLoginButton = document.getElementById("google-login");
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const username = document.getElementById("login-username").value;
-    const password = document.getElementById("login-password").value;
+    const username = (document.getElementById("login-username") as HTMLInputElement).value;
+    const password = (document.getElementById("login-password") as HTMLInputElement).value;
 
-    const response = await fetch(`${apiUrl}/session`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: username, password: password }),
-    });
+    try {
+      await getToken(username, password); // todo handle error
 
-    if (response.ok) {
-      window.location.href = "game.html";
-    } else {
-      alert("Login failed");
+      window.location.href = "/game.html";
+    } catch (err) {
+      console.log(err);
     }
   });
 }
@@ -28,10 +24,10 @@ if (loginForm) {
 if (registerForm) {
   registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const username = document.getElementById("register-username").value;
-    const password = document.getElementById("register-password").value;
+    const username = (document.getElementById("register-username") as HTMLInputElement).value;
+    const password = (document.getElementById("register-password") as HTMLInputElement).value;
 
-    const response = await fetch(`${apiUrl}/users`, {
+    const response = await fetch(`${BASE_URL}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
@@ -49,6 +45,6 @@ if (registerForm) {
 
 if (googleLoginButton) {
   googleLoginButton.addEventListener("click", () => {
-    window.location.href = `${apiUrl}/auth/google`;
+    window.location.href = `${BASE_URL}/auth/google`;
   });
 }
