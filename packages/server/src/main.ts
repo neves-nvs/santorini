@@ -4,28 +4,17 @@ import cors from "cors";
 import express from "express";
 import { handleMessage } from "./webSockets";
 import logger from "./logger";
-import {
-  morganBodyMiddleware,
-  morganMiddleware,
-  morganResBodyMiddleware,
-} from "./morgan";
+import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./morgan";
 import passport from "passport";
 import userController from "./users/userController";
-import {
-  Strategy as GoogleStrategy,
-  Profile,
-  VerifyCallback,
-} from "passport-google-oauth20";
-import {
-  createUserWithGoogleProfile,
-  findUserByGoogleId,
-  findUserByUsername,
-} from "./users/userRepository";
-import authController from "./authentication/authController";
+import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
+import { createUserWithGoogleProfile, findUserByGoogleId, findUserByUsername } from "./users/userRepository";
+import authController from "./auth/authController";
 import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
 import { JwtPayload } from "jsonwebtoken";
 import gameController from "./game/gameController";
 import { PORT } from "./config";
+import { Server } from "http";
 
 dotenv.config();
 
@@ -44,12 +33,7 @@ passport.use(
       clientSecret: GOOGLE_CLIENT_SECRET,
       callbackURL: "/auth/google/callback",
     },
-    async (
-      accessToken: string,
-      refreshToken: string,
-      profile: Profile,
-      done: VerifyCallback,
-    ) => {
+    async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
       try {
         let user = await findUserByGoogleId(profile.id);
 
