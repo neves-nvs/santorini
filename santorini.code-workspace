@@ -22,6 +22,7 @@
             "Kysely",
             "Raycaster",
             "santorini",
+            "testcontainers",
             "threejs",
             "Updateable"
         ],
