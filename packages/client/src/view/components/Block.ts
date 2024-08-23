@@ -1,14 +1,6 @@
-import {
-  STLImportConfig,
-  baseMesh,
-  configs,
-  domeMesh,
-  midMesh,
-  topMesh,
-} from "../STLLoader";
-
+import { STLImportConfig, configs, getBaseMesh, getMidMesh, getTopMesh, getDomeMesh } from "../STLLoader";
 import { BlockType } from "../../model/BlockType";
-import { Mesh } from "three";
+import { Mesh, MeshBasicMaterial } from "three";
 import Piece from "./Piece";
 
 export default class Block extends Piece {
@@ -17,32 +9,46 @@ export default class Block extends Piece {
   constructor(type: BlockType) {
     let config: STLImportConfig;
     let mesh: Mesh;
+
     switch (type) {
       case "BASE":
         config = configs.base;
-        mesh = baseMesh;
+        mesh = getBaseMesh();
         break;
       case "MID":
         config = configs.mid;
-        mesh = midMesh;
+        mesh = getMidMesh();
         break;
       case "TOP":
         config = configs.top;
-        mesh = topMesh;
+        mesh = getTopMesh();
         break;
       case "DOME":
         config = configs.dome;
-        mesh = domeMesh;
+        mesh = getDomeMesh();
         break;
       default:
         throw new Error("Invalid piece type");
     }
-    if (config == undefined || mesh == undefined) {
-      throw new Error("Config or mesh is undefined");
+
+    if (!config) {
+      throw new Error("Config is undefined");
     }
 
-    super(2 * config.y_offset, mesh);
+    super(2 * config.y_offset, new Mesh());
+
     this.type = type;
+    if (mesh) {
+      this.loadMesh(mesh);
+    }
+  }
+
+  private async loadMesh(mesh: Mesh) {
+    const material = (mesh.material as MeshBasicMaterial).clone();
+    mesh.material = material;
+    this.remove(this.mesh);
+    this.mesh = mesh;
+    this.add(this.mesh);
   }
 
   getType() {

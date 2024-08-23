@@ -2,16 +2,12 @@ import { Mesh, MeshBasicMaterial, Object3D } from "three";
 
 export default abstract class Piece extends Object3D {
   private height: number;
-  private mesh: Mesh;
+  protected mesh: Mesh;
 
   constructor(height: number, mesh: Mesh) {
     super();
     this.height = height;
-
-    this.mesh = mesh.clone();
-    const material = (mesh.material as MeshBasicMaterial).clone();
-    this.mesh.material = material;
-
+    this.mesh = mesh;
     this.add(this.mesh);
   }
 
@@ -29,7 +25,7 @@ export default abstract class Piece extends Object3D {
     material.opacity = opacity;
   }
 
-  public unhover() {
+  public unHover() {
     const material = this.mesh.material as MeshBasicMaterial;
     material.opacity = 1.0;
   }
