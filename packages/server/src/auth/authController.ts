@@ -7,6 +7,8 @@ import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { body } from "express-validator";
 import { checkValidation } from "../utils/middleware";
 import { JWT_SECRET } from "../config";
+import bcrypt from "bcryptjs";
+import { FRONTEND_URL } from "../constants";
 
 const authenticate = passport.authenticate("jwt", { session: false });
 
@@ -28,11 +30,12 @@ router.post(
         return res.status(400).send("User not found");
       }
 
-      // if (!isValidPassword(user, password)) {
-      //   logger.error("Invalid password");
-      //   return res.status(401).send("Invalid password");
-      // }
-      if (password !== "password") {
+      if (!user.password_hash) {
+        logger.error("User has no password set");
+        return res.status(400).send("User has no password set");
+      }
+
+      if (!(await bcrypt.compare(password, user.password_hash))) {
         logger.error("Invalid password");
         return res.status(401).send("Invalid password");
       }
@@ -50,9 +53,9 @@ router.post(
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         // sameSite: 'Strict',
+        sameSite: "none",
       });
-
-      res.status(200).send("Login successful");
+      res.status(200).send("OK");
     } catch (err) {
       logger.error("An error occurred during authentication", err);
       res.status(500).send("Internal server error");
@@ -68,26 +71,22 @@ router.get(
   }),
 );
 
-router.get(
-  "/auth/google/callback",
-  passport.authenticate("google", { session: false }),
-  (req, res) => {
-    const user = req.user as User;
+router.get("/auth/google/callback", passport.authenticate("google", { session: false }), (req, res) => {
+  const user = req.user as User;
 
-    if (!JWT_SECRET) {
-      logger.error("JWT secret not set");
-      return res.status(500).send("JWT secret not set");
-    }
+  if (!JWT_SECRET) {
+    logger.error("JWT secret not set");
+    return res.status(500).send("JWT secret not set");
+  }
 
-    const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "5h" });
+  const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "5h" });
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-    });
-    res.redirect("http://localhost:5173");
-  },
-);
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+  });
+  res.redirect("http://localhost:5173");
+});
 
 export function verifyJWT(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies.token;
@@ -100,17 +99,13 @@ export function verifyJWT(req: Request, res: Response, next: NextFunction) {
     return res.status(500).json({ message: "JWT secret not set" });
   }
 
-  jwt.verify(
-    token,
-    JWT_SECRET,
-    (err: VerifyErrors | null, user: string | JwtPayload | undefined) => {
-      if (err) {
-        return res.status(403).send("Forbidden");
-      }
-      req.user = user;
-      next();
-    },
-  );
+  jwt.verify(token, JWT_SECRET, (err: VerifyErrors | null, user: string | JwtPayload | undefined) => {
+    if (err) {
+      return res.status(403).send("Forbidden");
+    }
+    req.user = user;
+    next();
+  });
 }
 
 router.get("/test-auth", authenticate, async (req, res) => {
