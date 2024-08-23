@@ -1,10 +1,8 @@
 import Block from "./components/Block";
-import { BlockType } from "model/BlockType";
 import BoardManager from "./BoardManager";
 import Builder from "./components/Builder";
 import EventEmitter from "eventemitter3";
 import Piece from "./components/Piece";
-import { Position } from "position";
 import { eventEmitter } from "../Events";
 
 export default class GameManager extends EventEmitter {
@@ -41,7 +39,6 @@ export default class GameManager extends EventEmitter {
     localStorage.setItem("username", username);
     eventEmitter.emit("username-update", username);
   }
-
   resetUsername() {
     this.username = null;
     localStorage.removeItem("username");

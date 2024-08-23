@@ -1,9 +1,9 @@
 import { Mesh } from "three";
-import Piece from "./components/Piece";
-import SceneManager from "./SceneManager";
 import Space from "./components/Space";
 import Stack from "./components/Stack";
-import { boardMesh } from "./STLLoader";
+import Piece from "./components/Piece";
+import SceneManager from "./SceneManager";
+import { getBoardMesh } from "./STLLoader";
 
 export enum SpaceShade {
   Light = 0x51a832,
@@ -12,15 +12,14 @@ export enum SpaceShade {
 
 export default class BoardManager {
   private sceneManager: SceneManager;
-  private board: Mesh = boardMesh;
+  private board?: Mesh;
   private stacks: Stack[][];
   private pieces: Piece[] = [];
   private spaces: Space[][];
 
   constructor(sceneManager: SceneManager) {
     this.sceneManager = sceneManager;
-
-    this.sceneManager.add(this.board);
+    this.initiateBoard();
 
     this.stacks = new Array(5);
     let stack;
@@ -44,12 +43,20 @@ export default class BoardManager {
     for (let x = 0; x < 5; x++) {
       this.spaces[x] = new Array(5);
       for (let y = 0; y < 5; y++) {
-        let space = new Space(SpaceShade.Light);
+        const space = new Space(SpaceShade.Light);
         space.position.set(x, 0, y);
         this.spaces[x][y] = space;
         this.sceneManager.add(space);
       }
     }
+  }
+
+  async initiateBoard() {
+    if (this.board) {
+      this.sceneManager.remove(this.board);
+    }
+    this.board = getBoardMesh();
+    this.sceneManager.add(this.board);
   }
 
   public getMesh() {
@@ -60,21 +67,21 @@ export default class BoardManager {
     return this.pieces;
   }
 
-  public update(delta: number) {
+  public update() {
     this.updateStacks();
   }
 
   private updateStackHeight(stack: Stack) {
     let height = 0;
-    stack.getPieces().forEach(piece => {
+    stack.getPieces().forEach((piece) => {
       piece.position.setY(height);
       height += piece.getHeight();
     });
   }
 
   private updateStacks() {
-    this.stacks.forEach(stacksList => {
-      stacksList.forEach(stack => {
+    this.stacks.forEach((stacksList) => {
+      stacksList.forEach((stack) => {
         this.updateStackHeight(stack);
       });
     });
@@ -88,7 +95,6 @@ export default class BoardManager {
   }
 
   public moveWorker(x: number, y: number, newX: number, newY: number) {
-    // console.log(this.stacks[x][y]);
     const piece = this.stacks[x][y].removePiece();
     if (!piece) {
       throw new Error(`Builder not found at ${x}, ${y}`);

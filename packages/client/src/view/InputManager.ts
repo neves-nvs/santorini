@@ -1,13 +1,12 @@
 import { Object3D, Raycaster, Vector2 } from "three";
 
 import GameManager from "./GameManager";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import Piece from "./components/Piece";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import SceneManager from "./SceneManager";
 
 const MOUSE_DELTA: number = 5;
 
-// export default class InputManager extends EventEmitter {
 export default class InputManager {
   private sceneManager: SceneManager;
   private gameManager: GameManager;
@@ -125,7 +124,7 @@ export default class InputManager {
     if (hoveredPiece === this.hoveredPiece) return;
     // console.log(`Hovering: ${hoveredPiece?.constructor.name}`);
 
-    this.hoveredPiece?.unhover();
+    this.hoveredPiece?.unHover();
 
     hoveredPiece?.hover();
     this.hoveredPiece = hoveredPiece;

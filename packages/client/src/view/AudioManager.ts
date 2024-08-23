@@ -1,4 +1,10 @@
-import { Audio, AudioListener, AudioLoader, PositionalAudio } from "three";
+import {
+  Audio,
+  AudioListener,
+  AudioLoader,
+  PositionalAudio,
+  Vector3,
+} from "three";
 
 import SceneManager from "./SceneManager";
 
@@ -23,7 +29,7 @@ export default class AudioManager {
 
   // Load and add a global audio source
   loadGlobalAudio(audioFile: string) {
-    this.audioLoader.load(audioFile, buffer => {
+    this.audioLoader.load(audioFile, (buffer) => {
       this.globalAudio.setBuffer(buffer);
     });
   }
@@ -34,9 +40,9 @@ export default class AudioManager {
   }
 
   // Create and add a spatial audio source
-  createSpatialAudio(audioFile: string, position: THREE.Vector3) {
+  createSpatialAudio(audioFile: string, position: Vector3) {
     const audioSource = new PositionalAudio(this.listener);
-    this.audioLoader.load(audioFile, buffer => {
+    this.audioLoader.load(audioFile, (buffer) => {
       audioSource.setBuffer(buffer);
       audioSource.setRefDistance(10); // Adjust the reference distance as needed
       audioSource.setRolloffFactor(2); // Adjust the rolloff factor as needed

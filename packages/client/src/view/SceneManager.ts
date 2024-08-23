@@ -8,8 +8,6 @@ import {
   WebGLRenderer,
 } from "three";
 
-import Piece from "./components/Piece";
-
 export default class SceneManager {
   private scene: Scene;
   private renderer: WebGLRenderer;
@@ -33,9 +31,9 @@ export default class SceneManager {
     this.camera.position.setX(5);
     this.camera.position.setY(5);
 
-    let ambientLight = new AmbientLight(new Color(0xffffff), 0.5);
+    const ambientLight = new AmbientLight(new Color(0xffffff), 0.5);
     this.scene.add(ambientLight);
-    let directionalLight = new DirectionalLight(0xffffff, 0.7);
+    const directionalLight = new DirectionalLight(0xffffff, 0.7);
     this.scene.add(directionalLight);
   }
 
@@ -59,9 +57,7 @@ export default class SceneManager {
     this.renderer.render(this.scene, this.camera);
   }
 
-  public update(delta: number) {}
+  public update() {}
 
-  public hover(piece: Piece) {
-    // piece.setOpacity(0.5);
-  }
+  public hover() {}
 }
