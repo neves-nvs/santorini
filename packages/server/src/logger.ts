@@ -24,12 +24,7 @@ const LOG_LEVEL = process.env.LOG_LEVEL ?? DEFAULT_LOG_LEVEL;
 
 const logger = createLogger({
   level: LOG_LEVEL,
-  format: combine(
-    uppercaseLevel(),
-    colorize(),
-    timestamp({ format: "HH:mm:ss" }),
-    logFormat,
-  ),
+  format: combine(uppercaseLevel(), colorize(), timestamp({ format: "HH:mm:ss" }), logFormat),
   transports: [
     new transports.Console({
       silent: process.env.NODE_ENV === "test",
