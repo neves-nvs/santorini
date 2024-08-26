@@ -13,4 +13,5 @@ module.exports = {
   moduleNameMapper: {
     "@src/(.*)": "<rootDir>/src/$1",
   },
+  projects: ["<rootDir>/jest.unit.config.js", "<rootDir>/jest.integration.config.js"],
 };
