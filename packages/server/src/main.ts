@@ -7,47 +7,14 @@ import logger from "./logger";
 import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./morgan";
 import passport from "passport";
 import userController from "./users/userController";
-import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
-import { createUserWithGoogleProfile, findUserByGoogleId, findUserByUsername } from "./users/userRepository";
 import authController from "./auth/authController";
 import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
-import { JwtPayload } from "jsonwebtoken";
+import { JsonWebTokenError, JwtPayload, NotBeforeError, TokenExpiredError, VerifyCallback } from "jsonwebtoken";
 import gameController from "./game/gameController";
 import { PORT } from "./config";
-import { Server } from "http";
+import { findUserByUsername } from "./users/userRepository";
 
 dotenv.config();
-
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-
-if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-  logger.error("Google OAuth environment variables not set");
-  process.exit(1);
-}
-
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback",
-    },
-    async (accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback) => {
-      try {
-        let user = await findUserByGoogleId(profile.id);
-
-        if (!user) {
-          user = await createUserWithGoogleProfile(profile);
-        }
-
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    },
-  ),
-);
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -58,7 +25,7 @@ if (!JWT_SECRET) {
 function extractJwtFromCookies(req: express.Request): string | null {
   const cookies = req.headers.cookie;
   if (cookies) {
-    const match = cookies.match(/token=([^;]+)/);
+    const match = RegExp(/token=([^;]+)/).exec(cookies);
     if (match) {
       return match[1];
     }
@@ -78,12 +45,24 @@ passport.use(
         const user = await findUserByUsername(jwtPayload.username);
 
         if (!user) {
-          return done(null, false);
+          return done(null, undefined);
         }
 
         return done(null, user);
-      } catch (err) {
-        return done(err);
+      } catch (error: unknown) {
+        if (
+          error instanceof JsonWebTokenError ||
+          error instanceof NotBeforeError ||
+          error instanceof TokenExpiredError
+        ) {
+          logger.error("Unexpected Error", error);
+          return done(error, undefined);
+        } else if (error instanceof Error) {
+          logger.error("Unexpected Error", error);
+          throw error;
+        } else {
+          throw new Error("Unexpected error");
+        }
       }
     },
   ),
