@@ -5,6 +5,8 @@ import { checkValidation } from "../utils/middleware";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository";
 import { NewUser } from "../model";
 import { StatusCodes } from "http-status-codes";
+import bcrypt from "bcryptjs";
+import { UserDTO } from "./userDTO";
 
 export const router = Router();
 
@@ -37,24 +39,27 @@ router.post(
         });
       }
 
-      // TODO hash password
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash(password, salt);
 
       const newUser = {
         username,
-        password,
+        password_hash: hash,
+        password_salt: salt,
         display_name: `${username}-${Date.now()}`,
       } as NewUser;
 
-      await createUser(newUser);
-      res.status(201).json("User created");
+      const createdUser = await createUser(newUser);
+
+      const userDTO = new UserDTO(createdUser);
+
+      res.status(StatusCodes.CREATED).json(userDTO);
     } catch (e: unknown) {
       if (e instanceof AggregateError) {
         e.errors.forEach((error) => {
           logger.warn(error.message);
         });
-        res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .send("Database connection error");
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Database connection error");
       } else if (e instanceof Error) {
         logger.error(e.message);
         res.status(500).send(e.message);
@@ -73,9 +78,9 @@ router.get(
   async (req, res) => {
     try {
       const { username } = req.params;
-      const user = findUserByUsername(username);
+      const user = await findUserByUsername(username);
       if (user === null || user === undefined) {
-        return res.status(404).send("User not found");
+        return res.status(404).json({ message: "User not found" });
       }
       res.json(user);
     } catch (e: unknown) {
