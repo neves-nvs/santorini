@@ -3,7 +3,6 @@ import { BASE_URL } from "../../constants";
 
 const loginForm = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
-const googleLoginButton = document.getElementById("google-login");
 
 if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
@@ -12,7 +11,7 @@ if (loginForm) {
     const password = (document.getElementById("login-password") as HTMLInputElement).value;
 
     try {
-      await getToken(username, password); // todo handle error
+      await getToken(username, password);
 
       window.location.href = "/game.html";
     } catch (err) {
@@ -40,11 +39,5 @@ if (registerForm) {
     } else {
       alert("Registration failed");
     }
-  });
-}
-
-if (googleLoginButton) {
-  googleLoginButton.addEventListener("click", () => {
-    window.location.href = `${BASE_URL}/auth/google`;
   });
 }
