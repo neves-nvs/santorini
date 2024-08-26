@@ -10,13 +10,13 @@
         },
         {
             "path": "./packages/server"
-        },
+        }
     ],
     "settings": {
         "files.exclude": {
             "packages": true,
         },
-        "java.compile.nullAnalysis.mode": "automatic"
+        "java.compile.nullAnalysis.mode": "automatic",
     },
     "extensions": {
         "recommendations": [
