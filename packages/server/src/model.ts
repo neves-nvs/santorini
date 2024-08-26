@@ -13,10 +13,12 @@ export interface Database {
 export interface UserTable {
   id: Generated<number>;
   username: string;
-  google_id: string | null;
   display_name: string;
-  // hashed_password: string;
-  // salt: string;
+  // google auth
+  google_id: string | null;
+  // password auth
+  password_hash: string | null;
+  password_salt: string | null;
   // e-mail: string;
   created_at: ColumnType<Date, string | undefined, never>;
 }
