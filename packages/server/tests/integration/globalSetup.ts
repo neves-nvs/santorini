@@ -54,6 +54,10 @@ export default async function globalSetup() {
   await db.destroy();
 
   process.env.DB_PORT = port.toString();
+  process.env.DB_HOST = host;
+  process.env.DB_DATABASE = database;
+  process.env.DB_USER = user;
+  process.env.DB_PASSWORD = password;
 
   globalThis.container = container;
 }
