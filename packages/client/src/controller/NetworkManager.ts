@@ -88,7 +88,7 @@ export default class NetworkManager {
     this.gameManager.moveWorker({ x: xFrom, y: yFrom }, { x: xTo, y: yTo });
   }
 
-  buildBlock(x: number, y: number, type: string) {
+  buildBlock(x: number, y: number) {
     this.gameManager.buildBlock({ x, y }, "BASE");
   }
 

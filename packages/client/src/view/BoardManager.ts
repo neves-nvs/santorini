@@ -43,7 +43,7 @@ export default class BoardManager {
     for (let x = 0; x < 5; x++) {
       this.spaces[x] = new Array(5);
       for (let y = 0; y < 5; y++) {
-        const space = new Space(SpaceShade.Light);
+        const space = new Space();
         space.position.set(x, 0, y);
         this.spaces[x][y] = space;
         this.sceneManager.add(space);
