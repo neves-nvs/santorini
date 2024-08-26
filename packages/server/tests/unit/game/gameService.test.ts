@@ -1,7 +1,8 @@
-import * as gameRepository from "@src/game/gameRepository";
+import * as gameRepository from "../../../src/game/gameRepository";
 import request from "supertest";
-import * as userRepository from "@src/users/userRepository";
-import { app, server } from "@src/main";
+import * as userRepository from "../../../src/users/userRepository";
+import { app, server } from "../../../src/main";
+import { db } from "../../../src/database";
 
 jest.mock("@src/game/gameRepository");
 jest.mock("@src/users/userRepository");
@@ -34,6 +35,7 @@ describe("Game Endpoints", () => {
 
   afterAll(() => {
     server.close();
+    db.destroy();
   });
 
   describe("GET /games", () => {
@@ -65,9 +67,7 @@ describe("Game Endpoints", () => {
   describe("POST /games/:gameId/players", () => {
     it("should add a player to the game", async () => {
       const player = { username: mockUsername };
-      const response = await request(app)
-        .post(`/games/${mockGameId}/players`)
-        .send(player);
+      const response = await request(app).post(`/games/${mockGameId}/players`).send(player);
       expect(response.status).toBe(201);
     });
   });

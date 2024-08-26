@@ -1,10 +1,15 @@
-import { Board, PieceType, Position } from "@src/board/board";
+import { Board, PieceType, Position } from "../../../src/board/board";
+import { server } from "../../../src/main";
 
 describe("Board", () => {
   let board: Board;
 
   beforeEach(() => {
     board = new Board();
+  });
+
+  afterAll(() => {
+    server.close();
   });
 
   it("should initialize a 5x5 board", () => {
