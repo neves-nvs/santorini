@@ -16,7 +16,7 @@ export default class Stack extends Object3D {
     const size: number = 0.969;
     const square = new BoxGeometry(size, 0, size);
     const color = new MeshBasicMaterial({ color: type });
-    let mesh = new Mesh(square, color);
+    const mesh = new Mesh(square, color);
     mesh.position.setY(-0.05);
     this.add(mesh);
   }
