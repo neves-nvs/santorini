@@ -1,13 +1,7 @@
 import request from "supertest";
-import { Kysely } from "kysely";
 import { app, server } from "../../../src/main";
-import { Database } from "../../../src/model";
 import { db } from "../../../src/database";
 import { findUserByUsername } from "../../../src/users/userRepository";
-
-declare global {
-  let db: Kysely<Database>;
-}
 
 const userData = {
   username: "johndoe",
