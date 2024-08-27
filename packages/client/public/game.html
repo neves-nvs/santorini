@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Santorini</title>
+  <style>
+    #ui {
+      position: absolute;
+    }
+
+    #top-left {
+      position: absolute;
+      top: 2%;
+      left: 2%;
+      max-width: 50%;
+      max-height: 50%;
+    }
+
+    #top-right {
+      position: absolute;
+      top: 2%;
+      right: 2%;
+      max-width: 50%;
+      max-height: 50%;
+      text-align: right;
+    }
+
+    #bottom-left {
+      position: absolute;
+      bottom: 2%;
+      left: 2%;
+      max-width: 50%;
+      max-height: 50%;
+    }
+
+    #bottom-right {
+      position: absolute;
+      bottom: 2%;
+      right: 2%;
+      max-width: 50%;
+      max-height: 50%;
+      text-align: right;
+    }
+
+    #games-list {
+      width: 200px;
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 1px solid #000;
+      padding: 10px;
+      overflow-y: auto;
+      max-height: 300px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 300px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .white-bg {
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 1px solid #000;
+      padding: 10px;
+      width: 200px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="scene"></canvas>
+  <script defer type="module" src="../src/UI/startup.ts"></script>
+
+  <div id="top-left">
+    <textarea id="username-show" cols="10" readonly></textarea>
+    <button id="logout-button">Logout</button>
+
+  </div>
+
+  <div id="bottom-left">
+    <!-- list of available plays -->
+    <div id="plays-list" class="white-bg">
+      <ul id="plays"></ul>
+    </div>
+  </div>
+
+  <div id="top-right">
+    <button id="create-game-button">Create Game</button>
+    <input type="number" id="amount-of-players" value="2" min="2" max="4">
+    <button id="refresh-games-button">Refresh Games</button>
+    <div id="games-list">
+      <ul id="games"></ul>
+    </div>
+  </div>
+
+  <div id="bottom-right">
+    <label id="game-label">Game ID:</label>
+    <label id="game-id"></label>
+    <ul id="players"></ul>
+  </div>
+
+</body>
+
+</html>

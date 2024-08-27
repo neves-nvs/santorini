@@ -1,0 +1,175 @@
+/* Reset some basic elements */
+body, h1, h2, form {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Arial', sans-serif;
+  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+/* Centering the content */
+#auth-container {
+  background-color: #fff;
+  border-radius: 20px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  padding: 20px 30px;  /* Adjusted padding for equal spacing */
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Title styling */
+h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Form titles */
+h2 {
+  font-size: 1.8rem;
+  color: #ff6b6b;
+  margin-bottom: 15px;
+}
+
+/* Label styling */
+label {
+  font-size: 1rem;
+  color: #555;
+  display: block;
+  margin: 10px 0 5px;
+  text-align: left;
+}
+
+/* Input field styling */
+input[type="text"],
+input[type="password"] {
+  width: calc(100% - 20px);  /* Adjusted width for better spacing */
+  padding: 8px;  /* Adjusted padding for better balance */
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+  outline: none;
+}
+
+/* Button styling */
+button[type="submit"] {
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  width: 100%;
+  margin-top: 10px;
+}
+
+button[type="submit"]:hover {
+  background-color: #ff4757;
+  transform: translateY(-2px);
+}
+
+button[type="submit"]:active {
+  transform: translateY(1px);
+}
+
+/* Google login button styling */
+.google-login-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+#google-login {
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  width: 100%;
+}
+
+#google-login:hover {
+  background-color: #357ae8;
+  transform: translateY(-2px);
+}
+
+#google-login:active {
+  transform: translateY(1px);
+}
+
+/* Adjust the layout for smaller screens */
+@media (max-width: 500px) {
+  body {
+      padding: 10px;
+  }
+
+  #auth-container {
+      padding: 20px;
+  }
+
+  h1 {
+      font-size: 2rem;
+  }
+
+  h2 {
+      font-size: 1.5rem;
+  }
+
+  button[type="submit"],
+  #google-login {
+      font-size: 1rem;
+      padding: 10px 15px;
+  }
+}
+
+.form-divider {
+  display: flex;
+  align-items: center;
+  margin: 30px 0;
+  text-align: center;
+  color: #999;
+  font-weight: bold;
+}
+
+.form-divider::before,
+.form-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.form-divider::before {
+  margin-right: 15px;
+}
+
+.form-divider::after {
+  margin-left: 15px;
+}
+
+.form-divider span {
+  background-color: #fff;
+  padding: 0 10px;
+  font-size: 1rem;
+}

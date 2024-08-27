@@ -1,0 +1,26 @@
+// https://code.visualstudio.com/docs/editor/workspaces
+{
+    "folders": [
+        {
+            "path": ".",
+            "name": "/"
+        },
+        {
+            "path": "./packages/client"
+        },
+        {
+            "path": "./packages/server"
+        }
+    ],
+    "settings": {
+        "files.exclude": {
+            "packages": true,
+        },
+        "java.compile.nullAnalysis.mode": "automatic",
+    },
+    "extensions": {
+        "recommendations": [
+            "aaron-bond.better-comments",
+        ]
+    }
+}
