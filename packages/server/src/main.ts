@@ -2,7 +2,7 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import WebSocket from "ws";
 import cors from "cors";
-import express, { Request } from "express";
+import express from "express";
 import { handleMessage } from "./webSockets";
 import logger from "./logger";
 import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./morgan";
