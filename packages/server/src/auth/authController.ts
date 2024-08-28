@@ -8,9 +8,24 @@ import { body } from "express-validator";
 import { checkValidation } from "../utils/middleware";
 import { JWT_SECRET } from "../config";
 import bcrypt from "bcryptjs";
-import { FRONTEND_URL } from "../constants";
+import { StatusCodes } from "http-status-codes";
 
-const authenticate = passport.authenticate("jwt", { session: false });
+// export const authenticate = passport.authenticate("jwt", { session: false });
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+  passport.authenticate("jwt", { session: false }, (err: Error, user: unknown, info: VerifyErrors) => {
+    if (info && info.message === "No auth token") {
+      return res.status(401).json({ message: "Unauthorized" });
+    } else if (info) {
+      return res.status(403).json({ message: "Forbidden" });
+    } else if (err) {
+      return res.status(401).json({ message: "Unauthorized" });
+    } else if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    req.user = user;
+    next();
+  })(req, res, next);
+};
 
 const router = Router();
 
@@ -24,20 +39,21 @@ router.post(
 
     try {
       const user = await findUserByUsername(username);
-      logger.debug(`Checked if user exists: ${username}`);
+      logger.debug(`Checked if user exists: ${JSON.stringify(user?.username)}`);
+      logger.warn(!user);
       if (!user) {
         logger.error("User not found");
-        return res.status(400).send("User not found");
+        return res.status(400).json({ message: "User not found" });
       }
 
       if (!user.password_hash) {
         logger.error("User has no password set");
-        return res.status(400).send("User has no password set");
+        return res.status(StatusCodes.UNAUTHORIZED).json({ message: "User has no password set" });
       }
 
       if (!(await bcrypt.compare(password, user.password_hash))) {
         logger.error("Invalid password");
-        return res.status(401).send("Invalid password");
+        return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid password" });
       }
 
       if (!JWT_SECRET) {
@@ -88,29 +104,10 @@ router.get("/auth/google/callback", passport.authenticate("google", { session: f
   res.redirect("http://localhost:5173");
 });
 
-export function verifyJWT(req: Request, res: Response, next: NextFunction) {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  if (!JWT_SECRET) {
-    logger.error("JWT secret not set");
-    return res.status(500).json({ message: "JWT secret not set" });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err: VerifyErrors | null, user: string | JwtPayload | undefined) => {
-    if (err) {
-      return res.status(403).send("Forbidden");
-    }
-    req.user = user;
-    next();
-  });
-}
-
 router.get("/test-auth", authenticate, async (req, res) => {
   try {
     logger.info("User authenticated", req.user);
+    res.status(200).send("OK");
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);

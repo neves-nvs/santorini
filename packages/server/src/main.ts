@@ -1,7 +1,8 @@
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import WebSocket from "ws";
 import cors from "cors";
-import express from "express";
+import express, { Request } from "express";
 import { handleMessage } from "./webSockets";
 import logger from "./logger";
 import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./morgan";
@@ -23,14 +24,8 @@ if (!JWT_SECRET) {
 }
 
 function extractJwtFromCookies(req: express.Request): string | null {
-  const cookies = req.headers.cookie;
-  if (cookies) {
-    const match = RegExp(/token=([^;]+)/).exec(cookies);
-    if (match) {
-      return match[1];
-    }
-  }
-  return null;
+  logger.info("Extracting JWT from cookies", req.cookies);
+  return req.cookies.token;
 }
 
 passport.use(
@@ -59,9 +54,11 @@ passport.use(
           return done(error, undefined);
         } else if (error instanceof Error) {
           logger.error("Unexpected Error", error);
-          throw error;
+          return done(null, undefined);
+          // throw error;
         } else {
-          throw new Error("Unexpected error");
+          return done(null, undefined);
+          // throw new Error("Unexpected error");
         }
       }
     },
@@ -75,6 +72,7 @@ app.use(morganBodyMiddleware);
 app.use(morganResBodyMiddleware);
 
 app.use(express.json());
+app.use(cookieParser());
 app.use(passport.initialize());
 
 const CORS_CONFIG = {
