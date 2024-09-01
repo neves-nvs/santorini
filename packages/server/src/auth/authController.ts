@@ -5,14 +5,14 @@ import passport from "passport";
 import { User } from "../model";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { body } from "express-validator";
-import { checkValidation } from "../utils/middleware";
-import { JWT_SECRET } from "../config";
+import { checkValidation } from "../middlewares/middleware";
+import { JWT_SECRET } from "../configs/config";
 import bcrypt from "bcryptjs";
 import { StatusCodes } from "http-status-codes";
+import { UserDTO } from "../users/userDTO";
 
-// export const authenticate = passport.authenticate("jwt", { session: false });
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate("jwt", { session: false }, (err: Error, user: unknown, info: VerifyErrors) => {
+  passport.authenticate("jwt", { session: false }, async (err: Error, user: unknown, info: VerifyErrors) => {
     if (info && info.message === "No auth token") {
       return res.status(401).json({ message: "Unauthorized" });
     } else if (info) {
@@ -22,8 +22,20 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
     } else if (!user) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    req.user = user;
-    next();
+
+    try {
+      const validUser = await findUserByUsername((user as JwtPayload).username);
+      logger.debug(`Checked if user exists: ${JSON.stringify(validUser)}`);
+      if (!validUser) {
+        return res.status(403).json({ message: "User not found or inactive" });
+      }
+
+      req.user = validUser;
+
+      next();
+    } catch (e: unknown) {
+      return res.status(500).json({ message: "Internal server error", error: e });
+    }
   })(req, res, next);
 };
 
@@ -106,8 +118,8 @@ router.get("/auth/google/callback", passport.authenticate("google", { session: f
 
 router.get("/test-auth", authenticate, async (req, res) => {
   try {
-    logger.info("User authenticated", req.user);
-    res.status(200).send("OK");
+    logger.info("User authenticated", new UserDTO(req.user as User));
+    res.status(200).send(req.user);
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);
