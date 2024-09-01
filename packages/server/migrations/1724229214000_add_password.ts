@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Kysely } from "kysely";
-import { db } from "../src/database";
 import bcrypt from "bcryptjs";
 
 export async function up(db: Kysely<any>) {
@@ -33,6 +33,6 @@ async function hashExistingPasswords(db: Kysely<any>) {
   }
 }
 
-export async function down() {
+export async function down(db: Kysely<any>) {
   await db.schema.alterTable("users").dropColumn("password_hash").dropColumn("password_salt").execute();
 }
