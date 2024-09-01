@@ -1,19 +1,20 @@
-import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
+import { AuthenticatedWebSocket, handleMessage } from "./websockets";
+import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
+import jwt, { JsonWebTokenError, JwtPayload, NotBeforeError, TokenExpiredError, VerifyCallback } from "jsonwebtoken";
+import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./middlewares/morganMiddleware";
+
+import { PORT } from "./configs/config";
 import WebSocket from "ws";
+import authController from "./auth/authController";
+import cookieParser from "cookie-parser";
 import cors from "cors";
+import dotenv from "dotenv";
 import express from "express";
-import { handleMessage } from "./webSockets";
+import { findUserByUsername } from "./users/userRepository";
+import gameController from "./game/gameController";
 import logger from "./logger";
-import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./morgan";
 import passport from "passport";
 import userController from "./users/userController";
-import authController from "./auth/authController";
-import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
-import { JsonWebTokenError, JwtPayload, NotBeforeError, TokenExpiredError, VerifyCallback } from "jsonwebtoken";
-import gameController from "./game/gameController";
-import { PORT } from "./config";
-import { findUserByUsername } from "./users/userRepository";
 
 dotenv.config();
 
@@ -55,10 +56,8 @@ passport.use(
         } else if (error instanceof Error) {
           logger.error("Unexpected Error", error);
           return done(null, undefined);
-          // throw error;
         } else {
           return done(null, undefined);
-          // throw new Error("Unexpected error");
         }
       }
     },
@@ -95,7 +94,7 @@ wss.on("listening", () => {
   logger.info("WebSocket server listening");
 });
 
-wss.on("connection", (ws: WebSocket) => {
+wss.on("connection", (ws) => {
   logger.info("WebSocket connection");
 
   ws.on("open", () => {
@@ -114,6 +113,32 @@ wss.on("connection", (ws: WebSocket) => {
   ws.on("close", (code, reason) => {
     logger.info("WebSocket connection closed", code, reason);
   });
+});
+
+server.on("upgrade", async (request, socket, head) => {
+  const token = request.headers["sec-websocket-protocol"];
+
+  if (!token) {
+    socket.destroy();
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const user = await findUserByUsername(decoded.username);
+    if (!user) {
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      const authWs = new AuthenticatedWebSocket(ws.url);
+      authWs.user = user;
+      wss.emit("connection", ws, request);
+    });
+  } catch (err) {
+    logger.error("Invalid WebSocket token", err);
+    socket.destroy();
+  }
 });
 
 export { app, server };

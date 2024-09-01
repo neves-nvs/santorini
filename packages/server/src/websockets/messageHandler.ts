@@ -1,8 +1,10 @@
-import { WebSocket } from "ws";
 import * as gameSession from "../game/gameSession";
-import logger from "../logger";
-import { findUserByUsername } from "../users/userRepository";
+
+import { WebSocket } from "ws";
 import { findGameById } from "../game/gameRepository";
+import { findUserByUsername } from "../users/userRepository";
+import logger from "../logger";
+
 interface Message {
   type: string;
   payload: unknown;

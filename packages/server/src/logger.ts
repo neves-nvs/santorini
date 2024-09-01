@@ -1,6 +1,7 @@
-import dotenv from "dotenv";
 import { createLogger, format, transports } from "winston";
+
 import { FORCE_LOGS } from "./configs/config";
+import dotenv from "dotenv";
 
 const { combine, timestamp, colorize, printf } = format;
 
