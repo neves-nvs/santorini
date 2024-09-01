@@ -1,8 +1,8 @@
 import { WebSocket } from "ws";
-import { Game } from "./game/game";
-import { findGameById } from "./game/gameRepository";
-import { findUserByUsername } from "./users/userRepository";
-
+import * as gameSession from "../game/gameSession";
+import logger from "../logger";
+import { findUserByUsername } from "../users/userRepository";
+import { findGameById } from "../game/gameRepository";
 interface Message {
   type: string;
   payload: unknown;
@@ -16,11 +16,11 @@ function send(ws: WebSocket, type: string, payload: unknown) {
   ws.send(JSON.stringify({ type: type, payload: payload }));
 }
 
-function broadcastToGame(game: Game, type: string, payload: unknown) {
-  game.getConnections().forEach((connection: WebSocket) => {
-    send(connection as WebSocket, type, payload);
-  });
-}
+// function broadcastToGame(game: Game, type: string, payload: unknown) {
+//   game.getConnections().forEach((connection: WebSocket) => {
+//     send(connection as WebSocket, type, payload);
+//   });
+// }
 
 /* -------------------------------------------------------------------------- */
 /*                                    MAIN                                    */
@@ -30,10 +30,12 @@ export function handleMessage(ws: WebSocket, message: string) {
   const parsedMessage: Message = JSON.parse(message);
   const { type } = parsedMessage;
   const payload = parsedMessage.payload as {
-    gameId: string;
+    gameId: number;
     username: string;
   };
-  console.log('"' + type + '"' + " " + payload);
+
+  logger.info(`Received message: ${type}`);
+  logger.debug(`Payload: ${JSON.stringify(payload)}`);
 
   switch (type) {
     case "subscribe_game":
@@ -49,30 +51,29 @@ export function handleMessage(ws: WebSocket, message: string) {
 /*                                  HANDLERS                                  */
 /* -------------------------------------------------------------------------- */
 
-async function handleSubscribeGame(
-  ws: WebSocket,
-  gameID: string,
-  username: string,
-) {
+async function handleSubscribeGame(ws: WebSocket, gameID: number, username: string) {
   const game = await getGameOrError(ws, gameID);
   const user = await getUserOrError(ws, username);
   if (game === undefined || user === undefined) {
     return;
   }
 
-  console.log("User", user.username, "subscribed to game", gameID);
-  game.addConnection(user.username, ws);
+  logger.info(`User ${user.username} joined game ${gameID}`);
+
+  gameSession.addClient(gameID, user.id, ws);
+
   // TODO send whole game state
 
   // TODO push all info to user
-  broadcastToGame(
-    game,
-    "current_players",
-    game.getPlayers().map((player) => player.username),
-  );
+
+  gameSession.broadcastUpdate(gameID, {
+    type: "current_players",
+    // TODO send usernames
+    // payload: game.getPlayers().map((player) => player.username),
+  });
 }
 
-function getGameOrError(ws: WebSocket, gameID: string) {
+function getGameOrError(ws: WebSocket, gameID: number) {
   const game = findGameById(gameID);
   if (game === undefined) {
     send(ws, "error", "Game not found");
