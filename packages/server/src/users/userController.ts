@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body, param } from "express-validator";
 import logger from "../logger";
-import { checkValidation } from "../utils/middleware";
+import { checkValidation } from "../middlewares/middleware";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository";
 import { NewUser } from "../model";
 import { StatusCodes } from "http-status-codes";
@@ -12,7 +12,7 @@ export const router = Router();
 
 router.get("/", async (req, res) => {
   try {
-    const users = findAllUsers();
+    const users = await findAllUsers();
     return res.status(200).json(users);
   } catch (e: unknown) {
     const error = e as Error;
@@ -44,9 +44,9 @@ router.post(
 
       const newUser = {
         username,
+        display_name: `${username}-${Date.now()}`,
         password_hash: hash,
         password_salt: salt,
-        display_name: `${username}-${Date.now()}`,
       } as NewUser;
 
       const createdUser = await createUser(newUser);
@@ -82,7 +82,8 @@ router.get(
       if (user === null || user === undefined) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.json(user);
+      const userDTO = new UserDTO(user);
+      res.json(userDTO);
     } catch (e: unknown) {
       if (e instanceof AggregateError) {
         e.errors.forEach((error) => {
