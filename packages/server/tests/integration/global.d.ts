@@ -4,4 +4,5 @@ import { StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 declare global {
   var container: StartedPostgreSqlContainer | undefined;
   var server: Server | undefined;
+  var database: Kysely<Database> | undefined;
 }

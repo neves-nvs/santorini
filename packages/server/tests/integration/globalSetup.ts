@@ -6,6 +6,7 @@ import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers
 import logger from "../../src/logger";
 
 let container: StartedPostgreSqlContainer;
+
 export default async function globalSetup() {
   container = await new PostgreSqlContainer().start();
 

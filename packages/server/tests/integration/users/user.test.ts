@@ -1,20 +1,15 @@
-import request from "supertest";
-import { Kysely } from "kysely";
 import { app, server } from "../../../src/main";
-import { Database } from "../../../src/model";
+
 import { db } from "../../../src/database";
 import { findUserByUsername } from "../../../src/users/userRepository";
-
-declare global {
-  let db: Kysely<Database>;
-}
+import request from "supertest";
 
 const userData = {
   username: "johndoe",
   password: "password",
 };
 
-describe("User API Integration Tests", () => {
+describe("Users API Integration Tests", () => {
   afterEach(async () => {
     await db.deleteFrom("users").execute();
   });

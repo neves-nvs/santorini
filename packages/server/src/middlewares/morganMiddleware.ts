@@ -1,5 +1,5 @@
 import morgan from "morgan";
-import logger from "./logger";
+import logger from "../logger";
 import { Request, Response } from "express";
 import dotenv from "dotenv";
 
