@@ -1,14 +1,16 @@
-import request from "supertest";
+import { NewUser, User } from "../../../src/model";
 import { app, server } from "../../../src/main";
-import { db } from "../../../src/database";
+
+import { JWT_SECRET } from "../../../src/configs/config";
 import bcrypt from "bcryptjs";
+import { db } from "../../../src/database";
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "../../../src/config";
-import { NewUser } from "../../../src/model";
+import request from "supertest";
 
 const password = "password";
 const userData = {
   username: "johndoe",
+  display_name: "John Doe",
   password_hash: bcrypt.hashSync("password", 10),
 } as NewUser;
 
@@ -80,6 +82,24 @@ describe("Auth Controller Integration Tests", () => {
   });
 
   describe("GET /test-auth", () => {
+    test("should return 200 and authenticate the user when a valid token is provided", async () => {
+      const validToken = jwt.sign({ username: userData.username }, JWT_SECRET!, { expiresIn: "5h" });
+
+      const response = await request(app).get("/test-auth").set("Cookie", `token=${validToken}`).expect(200);
+
+      expect(response.text).toBeDefined();
+      expect(response.body).toHaveProperty("username", userData.username);
+
+      const user = response.body as User;
+      expect(typeof user.id).toBe("number");
+      expect(typeof user.username).toBe("string");
+      expect(typeof user.display_name).toBe("string");
+      expect(user.created_at instanceof Date || typeof user.created_at === "string").toBe(true);
+      if (typeof user.created_at === "string") {
+        expect(new Date(user.created_at).toString()).not.toBe("Invalid Date");
+      }
+    });
+
     test("should return 401 if no token is provided", async () => {
       const response = await request(app).get("/test-auth").expect(401);
 
@@ -94,12 +114,12 @@ describe("Auth Controller Integration Tests", () => {
       expect(response.body).toHaveProperty("message", "Forbidden");
     });
 
-    test("should return 200 and authenticate the user when a valid token is provided", async () => {
-      const validToken = jwt.sign({ username: userData.username }, JWT_SECRET!, { expiresIn: "5h" });
+    test("should return 403 if a malformed token is provided", async () => {
+      const malformedToken = "malformed.token.here";
 
-      const response = await request(app).get("/test-auth").set("Cookie", `token=${validToken}`).expect(200);
+      const response = await request(app).get("/test-auth").set("Cookie", `token=${malformedToken}`).expect(403);
 
-      expect(response.text).toBeDefined();
+      expect(response.body).toHaveProperty("message", "Forbidden");
     });
   });
 });
