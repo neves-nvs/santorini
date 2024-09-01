@@ -1,15 +1,13 @@
 import { app, server } from "../../../src/main";
 
-import { NewUser } from "../../../src/model";
 import { db } from "../../../src/database";
 import { findUserByUsername } from "../../../src/users/userRepository";
 import request from "supertest";
 
 const userData = {
   username: "johndoe",
-  display_name: "John Doe",
   password: "password",
-} as NewUser;
+};
 
 describe("Users API Integration Tests", () => {
   afterEach(async () => {

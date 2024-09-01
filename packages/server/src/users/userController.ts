@@ -47,6 +47,7 @@ router.post(
         display_name: `${username}-${Date.now()}`,
         password_hash: hash,
         password_salt: salt,
+        created_at: new Date().toISOString(),
       } as NewUser;
 
       const createdUser = await createUser(newUser);
