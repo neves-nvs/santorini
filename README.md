@@ -11,9 +11,10 @@
 
 ![Santorini Online Demo](./assets/images/preview.gif)
 
-Unfortunately, due to a recent rework of the frontend and 3D rendering engine, the connection between the frontend and backend components is currently being redeveloped. As a result, there is no up-to-date video that showcases the current state of the project.
-
-The previous video shown below demonstrates an earlier version of the frontend, but please note that it no longer reflects the current implementation, as the frontend governance was removed to support planned future features like ranking and competition.
+> [!WARNING]
+> Unfortunately, due to a recent rework of the frontend and 3D rendering engine, the connection between the frontend and backend components is currently being redeveloped. As a result, there is no up-to-date video that showcases the current state of the project.
+>
+> The previous video shown below demonstrates an earlier version of the frontend, but please note that it no longer reflects the current implementation, as the frontend governance was removed to support planned future features like ranking and competition.
 
 ---
 
