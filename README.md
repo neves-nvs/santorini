@@ -10,7 +10,7 @@
 **Santorini Online** is a web-based version of the popular board game **Santorini**. This project brings the gameplay experience online, allowing users to compete against friends or AI, with full rule enforcement and game persistency. It’s designed to capture the strategy of the original board game while ensuring a seamless experience in the digital world.
 
 <video width="600" controls>
-  <source src="./assets/videos/demo-video.mp4" type="video/mp4">
+  <source src="./assets/videos/preview.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
