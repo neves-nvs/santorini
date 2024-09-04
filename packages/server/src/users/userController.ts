@@ -1,12 +1,13 @@
-import { Router } from "express";
 import { body, param } from "express-validator";
-import logger from "../logger";
-import { checkValidation } from "../middlewares/middleware";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository";
+
 import { NewUser } from "../model";
+import { Router } from "express";
 import { StatusCodes } from "http-status-codes";
-import bcrypt from "bcryptjs";
 import { UserDTO } from "./userDTO";
+import bcrypt from "bcryptjs";
+import { checkValidation } from "../middlewares/middleware";
+import logger from "../logger";
 
 export const router = Router();
 

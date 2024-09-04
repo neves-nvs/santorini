@@ -1,4 +1,5 @@
 import { NewUser, User, UserUpdate } from "../model";
+
 import { db } from "../database";
 
 export async function findUser(criteria: Partial<User>): Promise<User | undefined> {

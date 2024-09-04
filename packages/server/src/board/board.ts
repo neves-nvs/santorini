@@ -12,9 +12,7 @@ export class Board {
   }
 
   private initializeBoard(): Stack[][] {
-    return Array.from({ length: 5 }, () =>
-      Array.from({ length: 5 }, () => new Stack()),
-    );
+    return Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => new Stack()));
   }
 
   getEmptyPositions(): Position[] {
@@ -91,8 +89,3 @@ export enum PieceType {
   DOME = 3,
   BUILDER = 4,
 }
-
-const MAX_BASE_COUNT = 22;
-const MAX_MID_COUNT = 18;
-const MAX_TOP_COUNT = 14;
-const MAX_DOME_COUNT = 18;

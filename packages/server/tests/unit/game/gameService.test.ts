@@ -1,8 +1,10 @@
 import * as gameRepository from "../../../src/game/gameRepository";
-import request from "supertest";
 import * as userRepository from "../../../src/users/userRepository";
+
 import { app, server } from "../../../src/main";
+
 import { db } from "../../../src/database";
+import request from "supertest";
 
 jest.mock("@src/game/gameRepository");
 jest.mock("@src/users/userRepository");
