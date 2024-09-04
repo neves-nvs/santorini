@@ -18,28 +18,6 @@
 
 ---
 
-## 🎯 Features
-
-- **Multiplayer mode**: Play against friends or random opponents.
-- **AI opponents**: Test your skills against AI at different difficulty levels.
-- **Full rule enforcement**: No free movement—strict rules as per the original game.
-- **Game persistency**: Your game progress is saved and can be resumed anytime.
-- **Responsive 3D interface**: Enjoy a visually engaging 3D experience across devices.
-- **God powers**: All official god powers from the Santorini board game.
-
----
-
-## Introduction
-
-Santorini is a strategic board game that is both simple and deeply engaging. The game involves players taking turns to build structures and move their builders with the ultimate goal of reaching the third level of a building with one of their builders. This online version aims to capture the essence of the physical game, offering a similar experience through a web browser.
-
-## Features
-
-- **3D Game Environment:** Powered by Three.js to provide a visually appealing experience.
-- **Multiplayer Support:** Play with friends or other players online.
-- **Smooth Animations:** Enjoy a fluid and interactive gameplay experience.
-- **User-Friendly Interface:** Easy to navigate and play.
-
 ## 📅 Roadmap (MVP)
 
 - [x] User authentication and authorization
@@ -47,6 +25,95 @@ Santorini is a strategic board game that is both simple and deeply engaging. The
 - [ ] Define and implement frontend graphical interface
   - Translate game state changes to 3D graphics
 - [ ] Ensure full rule enforcement and game logic
+
+## 🤝 Contributing
+
+This is a personal portfolio project, and I'm the primary contributor. However, if you'd like to contribute, feel free to:
+
+1. **Open an Issue**: If you find a bug or have a suggestion, please open an issue to discuss it.
+2. **Submit a Pull Request**: Fork the repository, make your changes in a new branch, and submit a pull request for review.
+
+### Steps for Pull Requests
+
+1. Fork the repository.
+2. Create a new branch for your feature:
+3. Chommit your changes:
+
+   ```bash
+   git commit -m 'feat: add YourFeatureName'
+   ```
+
+4. Push to your branch:
+
+   ```bash
+   git push origin feature/YourFeatureName
+   ```
+
+5. Open a pull request and explain your changes.
+
+## 📖 How to Play
+
+In **Santorini**, the goal is to be the first player to move one of your workers onto the third level of a building. Players take turns moving one worker and building a block or dome.
+
+### Basic Rules
+
+1. **Move**: Move one of your workers to an adjacent space.
+2. **Build**: After moving, build a block or dome in an adjacent space.
+3. **Win**: If you can move one of your workers to the third level of a building, you win!
+
+For a more detailed explanation of the rules, check out the [official Santorini rules](https://roxley.com/santorini).
+
+## 📝 License
+
+This project is licensed under the **AGPL-3.0 License**. See the [LICENSE](./LICENSE) file for more details.
+
+## 📦 Installation
+
+```bash
+git clone https://github.com/neves-nvs/santorini.git
+```
+
+### Backend
+
+1. Navigate to the backend directory:
+
+   ```bash
+   cd packages/server
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Start the backend server:
+
+   ```bash
+   npm run dev
+   ```
+
+### Frontend
+
+1. Navigate to the frontend directory:
+
+   ```bash
+   cd packages/client
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Run the frontend:
+
+```bash
+npm run dev
+```
+
+4 Open your browser and go to <http://localhost:5173> to view the application.
 
 ## Acknowledgements
 
