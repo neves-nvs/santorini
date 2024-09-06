@@ -23,6 +23,12 @@ export async function addPlayerToGame(gameId: number, user: User): Promise<void>
     throw new Error("Game not found");
   }
 
+  // TODO move to DB constraint
+  const playersInGame = await gameRepository.findPlayersByGameId(gameId);
+  if (game.player_count >= playersInGame.length) {
+    throw new Error("Game is full");
+  }
+
   await gameRepository.addPlayerToGame(gameId, user.id);
 
   const playersCount = (await gameRepository.findPlayersByGameId(gameId)).length;
