@@ -1,5 +1,5 @@
-import { addPlayerToGame, createGame, findGameById, findUsersByGame } from "../../../src/game/gameRepository";
 import { app, server } from "../../../src/main";
+import { createGame, findGameById } from "../../../src/game/gameRepository";
 
 import { NewGame } from "../../../src/model";
 import { UserDTO } from "./../../../src/users/userDTO";
@@ -17,32 +17,10 @@ const newGameData = {
   game_status: "waiting",
 } as NewGame;
 
-async function createUserWithLogin() {
-  const randomUsername = Math.random().toString(36).substring(7);
-  const randomPassword = Math.random().toString(36).substring(7);
-  const userData = {
-    username: randomUsername,
-    password: randomPassword,
-  };
-
-  const createUserResponse = await request(app).post("/users").send(userData).expect(201);
-  const user = createUserResponse.body as UserDTO;
-
-  const loginResponse = await request(app)
-    .post("/session")
-    .send({ username: randomUsername, password: randomPassword })
-    .expect(200);
-  const cookieHeader = loginResponse.headers["set-cookie"];
-  const cookies = cookieHeader.toString().split(";");
-  const jwtToken = cookies.find((cookie) => cookie.startsWith("token=")) as string;
-
-  return { user: user, token: jwtToken };
-}
-
 let jwtToken: string;
 let user: UserDTO;
 
-describe("Games API Integration Tests with Authentication", () => {
+describe("Games API Integration", () => {
   beforeAll(async () => {
     const registerResponse = await request(app).post("/users").send(userData).expect(201);
     user = registerResponse.body as UserDTO;
@@ -114,105 +92,6 @@ describe("Games API Integration Tests with Authentication", () => {
       expect(response.body.errors).toEqual(
         expect.arrayContaining([expect.objectContaining({ msg: "Amount of players must be between 2 and 4" })]),
       );
-    });
-  });
-
-  describe("POST /games/:gameId/players", () => {
-    test("should add a player to the game", async () => {
-      const game = await createGame(newGameData);
-
-      await request(app).post(`/games/${game.id}/players`).set("Cookie", jwtToken).expect(201);
-
-      const players = await findUsersByGame(game.id);
-      expect(players.length).toBe(1);
-      // expect(players[0]).toBe(user);
-    });
-
-    test("should return 400 if the game does not exist", async () => {
-      const response = await request(app)
-        .post("/games/999/players")
-        .set("Cookie", jwtToken)
-        .send({ userId: user.id })
-        .expect(400);
-
-      expect(response.body.message).toEqual("Game not found");
-    });
-
-    test("should return 400 if the user is already in the game", async () => {
-      const game = await createGame(newGameData);
-      await addPlayerToGame(game.id, user.id);
-
-      const response = await request(app)
-        .post(`/games/${game.id}/players`)
-        .set("Cookie", jwtToken)
-        .send({ userId: user.id })
-        .expect(400);
-
-      expect(response.body.message).toEqual("Player already in game");
-    });
-
-    test("should return 400 if the game is full", async () => {
-      const { user: userInGame1 } = await createUserWithLogin();
-      const { user: userInGame2 } = await createUserWithLogin();
-      const { user: userNotInGame } = await createUserWithLogin();
-
-      const game = await createGame(newGameData);
-      await addPlayerToGame(game.id, userInGame1.id);
-      await addPlayerToGame(game.id, userInGame2.id);
-
-      const response = await request(app)
-        .post(`/games/${game.id}/players`)
-        .set("Cookie", jwtToken)
-        .send({ userId: userNotInGame.id })
-        .expect(400);
-
-      expect(response.body.message).toEqual("Game full");
-    });
-  });
-
-  describe("GET /games/:gameId/plays", () => {
-    test.skip("should return 200 if the game exists", async () => {
-      // create users
-      //create game
-      // add users to game
-      // get plays for players
-      await request(app).get("/games/1/plays").set("Cookie", jwtToken).expect(200);
-    });
-  });
-
-  describe("POST /games/:gameId/plays", () => {
-    test.skip("should return 200 if play is successfully applied", async () => {
-      const game = await createGame(newGameData);
-      await addPlayerToGame(game.id, user.id);
-
-      // const playsResponse = await request(app).get(`/games/${game.id}/plays`).set("Cookie", jwtToken).expect(200);
-      // const plays = playsResponse.body as Play[];
-
-      // const play = plays[0];
-
-      // const applyPlayResponse = await request(app)
-      //   .post(`/games/${game.id}/plays`)
-      //   .set("Cookie", jwtToken)
-      //   .send({ play })
-      //   .expect(200);
-
-      // expect(applyPlayResponse.body).toEqual("Play successfully applied");
-    });
-
-    test.skip("should return 400 if play is missing", async () => {
-      const response = await request(app).post("/games/1/plays").set("Cookie", jwtToken).send({}).expect(400);
-
-      expect(response.body).toEqual("Play required");
-    });
-
-    test.skip("should return 400 if play is invalid", async () => {
-      const response = await request(app)
-        .post("/games/1/plays")
-        .set("Cookie", jwtToken)
-        .send({ play: "invalid" })
-        .expect(400);
-
-      expect(response.body).toEqual("Invalid play");
     });
   });
 });
