@@ -1,25 +1,30 @@
 import { NextFunction, Request, Response, Router } from "express";
-import logger from "../logger";
-import { findUserByUsername } from "../users/userRepository";
-import passport from "passport";
-import { User } from "../model";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
+
+import { JWT_SECRET } from "../configs/config";
+import { StatusCodes } from "http-status-codes";
+import { User } from "../model";
+import { UserDTO } from "../users/userDTO";
+import bcrypt from "bcryptjs";
 import { body } from "express-validator";
 import { checkValidation } from "../middlewares/middleware";
-import { JWT_SECRET } from "../configs/config";
-import bcrypt from "bcryptjs";
-import { StatusCodes } from "http-status-codes";
-import { UserDTO } from "../users/userDTO";
+import { findUserByUsername } from "../users/userRepository";
+import logger from "../logger";
+import passport from "passport";
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate("jwt", { session: false }, async (err: Error, user: unknown, info: VerifyErrors) => {
     if (info && info.message === "No auth token") {
+      logger.error("No auth token");
       return res.status(401).json({ message: "Unauthorized" });
     } else if (info) {
+      logger.error("Forbidden", info);
       return res.status(403).json({ message: "Forbidden" });
     } else if (err) {
+      logger.error("Unauthorized", err);
       return res.status(401).json({ message: "Unauthorized" });
     } else if (!user) {
+      logger.error("Unauthorized");
       return res.status(401).json({ message: "Unauthorized" });
     }
 
