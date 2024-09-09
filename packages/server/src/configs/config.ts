@@ -5,10 +5,11 @@ dotenv.config();
 const DEFAULT_PORT = 8081;
 export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT;
 
-export const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
+const ENV_JWT_SECRET = process.env.JWT_SECRET;
+if (ENV_JWT_SECRET === undefined) {
   process.exit(1);
 }
+export const JWT_SECRET = ENV_JWT_SECRET;
 
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
