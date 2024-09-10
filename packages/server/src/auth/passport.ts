@@ -1,4 +1,4 @@
-import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
+import { ExtractJwt, Strategy as JwtStrategy, VerifiedCallback } from "passport-jwt";
 import { JsonWebTokenError, JwtPayload, NotBeforeError, TokenExpiredError } from "jsonwebtoken";
 
 import { JWT_SECRET } from "../configs/config";
@@ -18,7 +18,7 @@ passport.use(
       jwtFromRequest: ExtractJwt.fromExtractors([extractJwtFromCookies]),
       secretOrKey: JWT_SECRET,
     },
-    async (jwtPayload: JwtPayload, done) => {
+    async (jwtPayload: JwtPayload, done: VerifiedCallback) => {
       try {
         const user = await findUserByUsername(jwtPayload.username);
         if (!user) return done(null, false);

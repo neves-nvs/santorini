@@ -1,11 +1,12 @@
 import { NewUser, User } from "../../../src/model";
-import { app, server } from "../../../src/main";
 
 import { JWT_SECRET } from "../../../src/configs/config";
+import { app } from "../../../src/app";
 import bcrypt from "bcryptjs";
 import { db } from "../../../src/database";
 import jwt from "jsonwebtoken";
 import request from "supertest";
+import { server } from "../../../src/main";
 
 const password = "password";
 const userData = {
@@ -107,7 +108,7 @@ describe("Auth Controller Integration Tests", () => {
     });
 
     test("should return 403 if an invalid token is provided", async () => {
-      const invalidToken = jwt.sign({ username: userData.username }, "wrongsecret");
+      const invalidToken = jwt.sign({ username: userData.username }, "wrong");
 
       const response = await request(app).get("/test-auth").set("Cookie", `token=${invalidToken}`).expect(403);
 

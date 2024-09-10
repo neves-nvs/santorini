@@ -1,8 +1,8 @@
-import { app, server } from "../../../src/main";
-
+import { app } from "../../../src/app";
 import { db } from "../../../src/database";
 import { findUserByUsername } from "../../../src/users/userRepository";
 import request from "supertest";
+import { server } from "../../../src/main";
 
 const userData = {
   username: "johndoe",
@@ -80,7 +80,7 @@ describe("Users API Integration Tests", () => {
     });
 
     test("should return 404 Not Found if the user does not exist", async () => {
-      const getResponse = await request(app).get(`/users/nonexistentuser`).expect(404);
+      const getResponse = await request(app).get(`/users/999`).expect(404);
 
       expect(getResponse.body).toHaveProperty("message", "User not found");
     });
