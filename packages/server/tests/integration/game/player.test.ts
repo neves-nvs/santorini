@@ -35,7 +35,8 @@ describe("Players in Game API", () => {
 
     const cookieHeader = loginResponse.headers["set-cookie"];
     const cookies = cookieHeader.toString().split(";");
-    jwtToken = cookies.find((cookie) => cookie.startsWith("token=")) as string;
+    const tokenHeader = cookies.find((cookie) => cookie.startsWith("token=")) as string;
+    jwtToken = tokenHeader.replace("token=", "");
   });
 
   afterEach(async () => {
@@ -52,7 +53,7 @@ describe("Players in Game API", () => {
     test("201 when adding a player to the game", async () => {
       const game = await createGame(newGameData);
 
-      await request(app).post(`/games/${game.id}/players`).set("Cookie", jwtToken).expect(201);
+      await request(app).post(`/games/${game.id}/players`).set("Cookie", `token=${jwtToken}`).expect(201);
 
       const playersIds = await findPlayersByGameId(game.id);
       expect(playersIds.length).toBe(1);
@@ -62,7 +63,7 @@ describe("Players in Game API", () => {
     test("400 if adding a player to a game that does not exist", async () => {
       const response = await request(app)
         .post("/games/999/players")
-        .set("Cookie", jwtToken)
+        .set("Cookie", `token=${jwtToken}`)
         .send({ userId: user.id })
         .expect(400);
 
@@ -75,7 +76,7 @@ describe("Players in Game API", () => {
 
       const response = await request(app)
         .post(`/games/${game.id}/players`)
-        .set("Cookie", jwtToken)
+        .set("Cookie", `token=${jwtToken}`)
         .send({ userId: user.id })
         .expect(400);
 
@@ -93,7 +94,7 @@ describe("Players in Game API", () => {
 
       const response = await request(app)
         .post(`/games/${game.id}/players`)
-        .set("Cookie", jwtToken)
+        .set("Cookie", `token=${jwtToken}`)
         .send({ userId: userNotInGame.id })
         .expect(400);
 
@@ -105,8 +106,8 @@ describe("Players in Game API", () => {
       const { token: user2Token } = await createUserWithLogin();
 
       const game = await createGame(newGameData);
-      await request(app).post(`/games/${game.id}/players`).set("Cookie", user1Token).send();
-      await request(app).post(`/games/${game.id}/players`).set("Cookie", user2Token).send();
+      await request(app).post(`/games/${game.id}/players`).set("Cookie", `token=${user1Token}`).send();
+      await request(app).post(`/games/${game.id}/players`).set("Cookie", `token=${user2Token}`).send();
 
       const players = await findPlayersByGameId(game.id);
       expect(players.length).toBe(2);
@@ -114,7 +115,7 @@ describe("Players in Game API", () => {
 
     test("should not allow adding more than the allowed number of players over multiple iterations", async () => {
       async function postPlayerToGame(gameId: number, userToken: string) {
-        return request(app).post(`/games/${gameId}/players`).set("Cookie", userToken).send();
+        return request(app).post(`/games/${gameId}/players`).set("Cookie", `token=${userToken}`).send();
       }
 
       const { token: user1Token } = await createUserWithLogin();
