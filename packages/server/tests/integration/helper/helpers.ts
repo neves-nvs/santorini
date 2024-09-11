@@ -23,9 +23,11 @@ export async function createUserWithLogin() {
     .post("/session")
     .send({ username: userData.username, password: userData.password })
     .expect(200);
-  const cookieHeader = loginResponse.headers["set-cookie"];
-  const cookies = cookieHeader.toString().split(";");
-  const jwtToken = cookies.find((cookie) => cookie.startsWith("token=")) as string;
 
-  return { user: user, token: jwtToken };
+  const cookieHeaders = loginResponse.headers["set-cookie"];
+  const cookies = cookieHeaders.toString().split(";");
+  const tokenHeader = cookies.find((cookie) => cookie.startsWith("token=")) as string;
+  const token = tokenHeader.replace("token=", "");
+
+  return { user: user, token: token };
 }
