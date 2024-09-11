@@ -1,15 +1,11 @@
-import { app, server } from "../../../src/main";
 import { createGame, findGameById } from "../../../src/game/gameRepository";
 
 import { NewGame } from "../../../src/model";
-import { UserDTO } from "./../../../src/users/userDTO";
+import { app } from "../../../src/app";
+import { createUserWithLogin } from "../helper/helpers";
 import { db } from "../../../src/database";
 import request from "supertest";
-
-const userData = {
-  username: "testuser",
-  password: "password123",
-};
+import { server } from "../../../src/main";
 
 const newGameData = {
   player_count: 2,
@@ -18,22 +14,10 @@ const newGameData = {
 } as NewGame;
 
 let jwtToken: string;
-let user: UserDTO;
 
 describe("Games API Integration", () => {
   beforeAll(async () => {
-    const registerResponse = await request(app).post("/users").send(userData).expect(201);
-    user = registerResponse.body as UserDTO;
-
-    const loginResponse = await request(app)
-      .post("/session")
-      .send({ username: userData.username, password: userData.password })
-      .expect(200);
-
-    const cookieHeader = loginResponse.headers["set-cookie"];
-    console.log(cookieHeader);
-    const cookies = cookieHeader.toString().split(";");
-    jwtToken = cookies.find((cookie) => cookie.startsWith("token=")) as string;
+    jwtToken = (await createUserWithLogin()).token;
   });
 
   afterEach(async () => {
@@ -41,14 +25,15 @@ describe("Games API Integration", () => {
     await db.deleteFrom("players").execute();
   });
 
-  afterAll(() => {
+  afterAll(async () => {
+    await db.deleteFrom("users").execute();
     server.close();
     db.destroy();
   });
 
   describe("GET /games", () => {
     test("should return an empty array if there are no games", async () => {
-      const response = await request(app).get("/games").set("Cookie", jwtToken).expect(200);
+      const response = await request(app).get("/games").set("Cookie", `token=${jwtToken}`).expect(200);
 
       expect(response.body).toEqual([]);
     });
@@ -56,7 +41,7 @@ describe("Games API Integration", () => {
     test("should return a list of games if they exist", async () => {
       await createGame(newGameData);
 
-      const response = await request(app).get("/games").set("Cookie", jwtToken).expect(200);
+      const response = await request(app).get("/games").set("cookie", `token=${jwtToken}`).expect(200);
 
       expect(response.body.length).toBe(1);
       expect(response.body[0]).toHaveProperty("id");
@@ -66,7 +51,11 @@ describe("Games API Integration", () => {
 
   describe("POST /games", () => {
     test("should create a new game and return its ID", async () => {
-      const response = await request(app).post("/games").set("Cookie", jwtToken).send(newGameData).expect(201);
+      const response = await request(app)
+        .post("/games")
+        .set("Cookie", `token=${jwtToken}`)
+        .send(newGameData)
+        .expect(201);
 
       expect(response.body).toHaveProperty("gameId");
       const game = await findGameById(response.body.gameId);
@@ -75,7 +64,7 @@ describe("Games API Integration", () => {
     });
 
     test("should return 400 if amount_of_players is missing", async () => {
-      const response = await request(app).post("/games").set("Cookie", jwtToken).send({}).expect(400);
+      const response = await request(app).post("/games").set("Cookie", `token=${jwtToken}`).send({}).expect(400);
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([expect.objectContaining({ msg: "Amount of players must be between 2 and 4" })]),
@@ -85,13 +74,32 @@ describe("Games API Integration", () => {
     test("should return 400 if amount_of_players is out of range", async () => {
       const response = await request(app)
         .post("/games")
-        .set("Cookie", jwtToken)
-        .send({ amountOfPlayers: 5 })
+        .set("Cookie", `token=${jwtToken}`)
+        .send({ player_count: 5 })
         .expect(400);
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([expect.objectContaining({ msg: "Amount of players must be between 2 and 4" })]),
       );
+    });
+
+    test("when all players are added to the game, the game should start", async () => {
+      const response = await request(app)
+        .post("/games")
+        .set("Cookie", `token=${jwtToken}`)
+        .send({ player_count: 2 })
+        .expect(201);
+      const gameId = response.body.gameId;
+
+      await request(app).post(`/games/${gameId}/players`).set("Cookie", `token=${jwtToken}`).expect(201);
+
+      const { token: user2Token } = await createUserWithLogin();
+      const response2 = await request(app)
+        .post(`/games/${gameId}/players`)
+        .set("Cookie", `token=${user2Token}`)
+        .expect(201);
+
+      expect(response2.body.message).toEqual("Ready to Start");
     });
   });
 });

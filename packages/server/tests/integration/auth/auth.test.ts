@@ -39,7 +39,11 @@ describe("Auth Controller Integration Tests", () => {
       expect(response.text).toBe("OK");
       expect(response.headers["set-cookie"]).toBeDefined();
 
-      const token = response.headers["set-cookie"][0].split(";")[0].split("=")[1];
+      const cookieHeaders = response.headers["set-cookie"];
+      const cookies = cookieHeaders.toString().split(";");
+      const tokenHeader = cookies.find((cookie) => cookie.startsWith("token=")) as string;
+      const token = tokenHeader.split("=")[1];
+
       const decodedToken = jwt.verify(token, JWT_SECRET!);
 
       expect(decodedToken).toHaveProperty("username", userData.username);
