@@ -57,7 +57,11 @@ router.post(
 
     try {
       await gameService.addPlayerToGame(gameId, user);
-      res.status(201).send();
+
+      res.status(201);
+
+      const readyToStart = await gameService.isReadyToStart(gameId);
+      return readyToStart ? res.send({ message: "Ready to Start" }) : res.send();
     } catch (err) {
       if (!(err instanceof Error)) {
         next(err);
@@ -77,7 +81,6 @@ router.post(
 
       logger.error("Failed to add player to game", error);
       return res.status(400).json({ message: "Failed to add player to game" });
-      // TODO implement remaining error handling
     }
   },
 );

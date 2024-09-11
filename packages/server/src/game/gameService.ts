@@ -43,3 +43,13 @@ export async function addPlayerToGame(gameId: number, user: User): Promise<void>
       }
     });
 }
+
+export async function isReadyToStart(gameId: number): Promise<boolean> {
+  const game = await gameRepository.findGameById(gameId);
+  if (!game) {
+    throw new Error("Game not found");
+  }
+
+  const playersInGame = await gameRepository.findPlayersByGameId(gameId);
+  return playersInGame.length === game.player_count;
+}
