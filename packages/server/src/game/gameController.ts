@@ -7,6 +7,7 @@ import { checkValidation, validateUUIDParam } from "../middlewares/middleware";
 import { Router } from "express";
 import { User } from "../model";
 import { authenticate } from "../auth/authController";
+import { broadcastUpdate } from "./gameSession";
 import logger from "../logger";
 
 const router = Router();
@@ -57,6 +58,9 @@ router.post(
 
     try {
       await gameService.addPlayerToGame(gameId, user);
+
+      const playersInGame = await gameRepository.findPlayersByGameId(gameId);
+      broadcastUpdate(gameId, { type: "players_in_game", payload: playersInGame });
 
       res.status(201);
 

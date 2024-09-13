@@ -1,7 +1,9 @@
 import * as gameSession from "../game/gameSession";
 
+import { findGameById, findPlayersByGameId } from "../game/gameRepository";
+
+import { UserDTO } from "../users/userDTO";
 import { WebSocket } from "ws";
-import { findGameById } from "../game/gameRepository";
 import { findUserByUsername } from "../users/userRepository";
 import logger from "../logger";
 
@@ -17,12 +19,6 @@ interface Message {
 function send(ws: WebSocket, type: string, payload: unknown) {
   ws.send(JSON.stringify({ type: type, payload: payload }));
 }
-
-// function broadcastToGame(game: Game, type: string, payload: unknown) {
-//   game.getConnections().forEach((connection: WebSocket) => {
-//     send(connection as WebSocket, type, payload);
-//   });
-// }
 
 /* -------------------------------------------------------------------------- */
 /*                                    MAIN                                    */
@@ -45,7 +41,7 @@ export function handleMessage(ws: WebSocket, message: string) {
       break;
 
     default:
-      console.log("Unknown message type:", type);
+      logger.error("Unknown message type:", type);
   }
 }
 
@@ -53,25 +49,25 @@ export function handleMessage(ws: WebSocket, message: string) {
 /*                                  HANDLERS                                  */
 /* -------------------------------------------------------------------------- */
 
-async function handleSubscribeGame(ws: WebSocket, gameID: number, username: string) {
-  const game = await getGameOrError(ws, gameID);
+async function handleSubscribeGame(ws: WebSocket, gameId: number, username: string) {
+  logger.info(`User ${username} is trying to join game ${gameId}`);
+  const game = await getGameOrError(ws, gameId);
   const user = await getUserOrError(ws, username);
   if (game === undefined || user === undefined) {
     return;
   }
 
-  logger.info(`User ${user.username} joined game ${gameID}`);
+  logger.info(`User ${user.username} joined game ${gameId}`);
 
-  gameSession.addClient(gameID, user.id, ws);
+  gameSession.addClient(gameId, user.id, ws);
 
   // TODO send whole game state
-
   // TODO push all info to user
 
-  gameSession.broadcastUpdate(gameID, {
-    type: "current_players",
-    // TODO send usernames
-    // payload: game.getPlayers().map((player) => player.username),
+  const playersInGame = await findPlayersByGameId(gameId);
+  gameSession.broadcastUpdate(gameId, {
+    type: "players_in_game",
+    payload: playersInGame,
   });
 }
 
@@ -96,6 +92,13 @@ function getUserOrError(ws: WebSocket, username: string) {
 /* -------------------------------------------------------------------------- */
 /*                                 PUSH EVENTS                                */
 /* -------------------------------------------------------------------------- */
+
+export function updatePlayersInGame(gameId: number, players: UserDTO[]) {
+  gameSession.broadcastUpdate(gameId, {
+    type: "players_in_game",
+    payload: players.map((player) => player.username),
+  });
+}
 
 export function updatePlays(ws: WebSocket, plays: unknown) {
   send(ws, "available_plays", plays);

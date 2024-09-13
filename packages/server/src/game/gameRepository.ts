@@ -1,13 +1,24 @@
-import { Game, GameUpdate, NewGame, NewPlayer, User } from "../model";
+import { Database, Game, GameUpdate, NewGame, NewPlayer, User } from "../model";
+import { Kysely, Transaction } from "kysely";
 
 import { db } from "../database";
 
-export async function findGameById(gameId: number): Promise<Game | undefined> {
-  return db.selectFrom("games").where("id", "=", gameId).selectAll().executeTakeFirst();
+export async function findGameById(
+  gameId: number,
+  database: Transaction<Database> | Kysely<Database> = db,
+  forUpdate = false,
+): Promise<Game | undefined> {
+  let query = database.selectFrom("games").where("id", "=", gameId);
+
+  if (forUpdate) {
+    query = query.forUpdate();
+  }
+
+  return query.selectAll().executeTakeFirst();
 }
 
-export async function getAllGames(): Promise<Game[]> {
-  return db.selectFrom("games").selectAll().execute();
+export async function getAllGames(database: Transaction<Database> | Kysely<Database> = db): Promise<Game[]> {
+  return database.selectFrom("games").selectAll().execute();
 }
 
 export async function createGame(game: NewGame): Promise<Game> {
@@ -26,17 +37,29 @@ export async function deleteGame(id: number): Promise<void> {
 /*                                   PLAYERS                                  */
 /* -------------------------------------------------------------------------- */
 
-export async function findPlayersByGameId(gameId: number): Promise<number[]> {
-  return db
-    .selectFrom("players")
-    .where("game_id", "=", gameId)
+export async function findPlayersByGameId(
+  gameId: number,
+  database: Transaction<Database> | Kysely<Database> = db,
+  forUpdate = false,
+): Promise<number[]> {
+  let query = database.selectFrom("players").where("game_id", "=", gameId);
+
+  if (forUpdate) {
+    query = query.forUpdate();
+  }
+
+  return query
     .selectAll()
     .execute()
     .then((players) => players.map((player) => player.user_id));
 }
 
-export async function addPlayerToGame(gameId: number, userId: number): Promise<void> {
-  await db
+export async function addPlayerToGame(
+  gameId: number,
+  userId: number,
+  database: Transaction<Database> | Kysely<Database> = db,
+): Promise<void> {
+  await database
     .insertInto("players")
     .values({ game_id: gameId, user_id: userId } as NewPlayer)
     .execute();
@@ -50,8 +73,11 @@ export async function removePlayerFromGame(gameId: number, userId: number): Prom
 /*                                    Users                                   */
 /* -------------------------------------------------------------------------- */
 
-export async function findUsersByGame(gameId: number): Promise<User[]> {
-  return db
+export async function findUsersByGame(
+  gameId: number,
+  database: Transaction<Database> | Kysely<Database> = db,
+): Promise<User[]> {
+  return database
     .selectFrom("users")
     .innerJoin("players", "users.id", "players.user_id")
     .innerJoin("games", "players.game_id", "games.id")
