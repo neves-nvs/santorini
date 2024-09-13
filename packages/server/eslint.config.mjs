@@ -9,5 +9,8 @@ export default [
     languageOptions: {
       globals: globals.node,
     },
+    rules: {
+      "sort-imports": "error",
+    },
   },
 ];
