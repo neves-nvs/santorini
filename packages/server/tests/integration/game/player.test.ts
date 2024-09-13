@@ -3,7 +3,7 @@ import { addPlayerToGame, createGame, findPlayersByGameId } from "../../../src/g
 import { NewGame } from "../../../src/model";
 import { UserDTO } from "./../../../src/users/userDTO";
 import { app } from "../../../src/app";
-import { createUserWithLogin } from "../helper/helpers";
+import { createTestUserWithLogin } from "../helper/helpers";
 import { db } from "../../../src/database";
 import logger from "../../../src/logger";
 import request from "supertest";
@@ -14,9 +14,8 @@ const userData = {
   password: "password123",
 };
 
-const newGameData = {
+let newGameData = {
   player_count: 2,
-  user_creator_id: 1,
   game_status: "waiting",
 } as NewGame;
 
@@ -24,7 +23,7 @@ let jwtToken: string;
 let user: UserDTO;
 
 describe("Players in Game API", () => {
-  beforeAll(async () => {
+  beforeEach(async () => {
     const registerResponse = await request(app).post("/users").send(userData).expect(201);
     user = registerResponse.body as UserDTO;
 
@@ -37,16 +36,22 @@ describe("Players in Game API", () => {
     const cookies = cookieHeader.toString().split(";");
     const tokenHeader = cookies.find((cookie) => cookie.startsWith("token=")) as string;
     jwtToken = tokenHeader.replace("token=", "");
+
+    newGameData = {
+      ...newGameData,
+      user_creator_id: user.id,
+    };
   });
 
   afterEach(async () => {
+    // await db.deleteFrom("players").execute();
     await db.deleteFrom("games").execute();
-    await db.deleteFrom("players").execute();
+    await db.deleteFrom("users").execute();
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     server.close();
-    db.destroy();
+    await db.destroy();
   });
 
   describe("POST /games/:gameId/players", () => {
@@ -84,9 +89,9 @@ describe("Players in Game API", () => {
     });
 
     test("400 if adding a user to a full game", async () => {
-      const { user: userInGame1 } = await createUserWithLogin();
-      const { user: userInGame2 } = await createUserWithLogin();
-      const { user: userNotInGame } = await createUserWithLogin();
+      const { user: userInGame1 } = await createTestUserWithLogin();
+      const { user: userInGame2 } = await createTestUserWithLogin();
+      const { user: userNotInGame } = await createTestUserWithLogin();
 
       const game = await createGame(newGameData);
       await addPlayerToGame(game.id, userInGame1.id);
@@ -102,8 +107,8 @@ describe("Players in Game API", () => {
     });
 
     test("concurrent addition of 3 players to a 2 player game should maintain players per game <= player_count", async () => {
-      const { token: user1Token } = await createUserWithLogin();
-      const { token: user2Token } = await createUserWithLogin();
+      const { token: user1Token } = await createTestUserWithLogin();
+      const { token: user2Token } = await createTestUserWithLogin();
 
       const game = await createGame(newGameData);
       await request(app).post(`/games/${game.id}/players`).set("Cookie", `token=${user1Token}`).send();
@@ -118,9 +123,9 @@ describe("Players in Game API", () => {
         return request(app).post(`/games/${gameId}/players`).set("Cookie", `token=${userToken}`).send();
       }
 
-      const { token: user1Token } = await createUserWithLogin();
-      const { token: user2Token } = await createUserWithLogin();
-      const { token: user3Token } = await createUserWithLogin();
+      const { token: user1Token } = await createTestUserWithLogin();
+      const { token: user2Token } = await createTestUserWithLogin();
+      const { token: user3Token } = await createTestUserWithLogin();
 
       for (let i = 0; i < 20; i++) {
         const game = await createGame(newGameData);

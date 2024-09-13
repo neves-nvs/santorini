@@ -1,34 +1,45 @@
 import { createGame, findGameById } from "../../../src/game/gameRepository";
 
 import { NewGame } from "../../../src/model";
+import { UserDTO } from "../../../src/users/userDTO";
 import { app } from "../../../src/app";
-import { createUserWithLogin } from "../helper/helpers";
+import { createTestUserWithLogin } from "../helper/helpers";
 import { db } from "../../../src/database";
 import request from "supertest";
 import { server } from "../../../src/main";
 
-const newGameData = {
-  player_count: 2,
-  user_creator_id: 1,
-  game_status: "waiting",
-} as NewGame;
-
+let newGameDTO: { player_count: number };
+let newGameData: NewGame;
+let user: UserDTO;
 let jwtToken: string;
 
 describe("Games API Integration", () => {
-  beforeAll(async () => {
-    jwtToken = (await createUserWithLogin()).token;
+  beforeEach(async () => {
+    const createUserResponse = await createTestUserWithLogin();
+    user = createUserResponse.user;
+    jwtToken = createUserResponse.token;
+
+    newGameDTO = {
+      player_count: 2,
+    };
+
+    newGameData = {
+      created_at: new Date().toISOString(),
+      player_count: newGameDTO.player_count,
+      user_creator_id: user.id,
+      game_status: "waiting",
+    };
   });
 
   afterEach(async () => {
-    await db.deleteFrom("games").execute();
     await db.deleteFrom("players").execute();
+    await db.deleteFrom("games").execute();
+    await db.deleteFrom("users").execute();
   });
 
   afterAll(async () => {
-    await db.deleteFrom("users").execute();
     server.close();
-    db.destroy();
+    await db.destroy();
   });
 
   describe("GET /games", () => {
@@ -93,7 +104,7 @@ describe("Games API Integration", () => {
 
       await request(app).post(`/games/${gameId}/players`).set("Cookie", `token=${jwtToken}`).expect(201);
 
-      const { token: user2Token } = await createUserWithLogin();
+      const { token: user2Token } = await createTestUserWithLogin();
       const response2 = await request(app)
         .post(`/games/${gameId}/players`)
         .set("Cookie", `token=${user2Token}`)

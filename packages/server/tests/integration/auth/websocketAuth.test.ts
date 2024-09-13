@@ -2,7 +2,7 @@ import { server, wss } from "../../../src/main";
 
 import { PORT } from "../../../src/configs/config";
 import WebSocket from "ws";
-import { createUserWithLogin } from "../helper/helpers";
+import { createTestUserWithLogin } from "../helper/helpers";
 import { db } from "../../../src/database";
 import logger from "../../../src/logger";
 
@@ -10,32 +10,33 @@ let jwtToken: string;
 
 describe("WebSocket Authentication Integration Tests", () => {
   beforeEach(async () => {
-    jwtToken = (await createUserWithLogin()).token;
-    logger.info(`JWT token: ${jwtToken}`);
-    logger.info(`"${jwtToken.replace("token=", "")}"`);
+    jwtToken = (await createTestUserWithLogin()).token;
   });
 
   afterEach(async () => {
+    await db.deleteFrom("players").execute();
+    await db.deleteFrom("games").execute();
     await db.deleteFrom("users").execute();
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     wss.close();
     server.close();
-    db.destroy();
+    await db.destroy();
   });
 
   describe("WebSocket Authentication", () => {
     test("should authenticate WebSocket connection with valid JWT", (done) => {
       const ws = new WebSocket(`ws://localhost:${PORT}`, {
         headers: {
-          Authorization: `Bearer ${jwtToken.replace("token=", "")}`,
+          Authorization: `Bearer ${jwtToken}`,
         },
         perMessageDeflate: false,
       });
 
       ws.on("open", () => {
         expect(ws.readyState).toBe(WebSocket.OPEN);
+        ws.close();
         done();
       });
 
@@ -55,6 +56,7 @@ describe("WebSocket Authentication Integration Tests", () => {
       ws.on("error", (err) => {
         expect(err).toBeTruthy();
         expect(ws.readyState).toBe(WebSocket.CLOSING);
+        ws.close();
         done();
       });
 
@@ -69,6 +71,7 @@ describe("WebSocket Authentication Integration Tests", () => {
       ws.once("error", (err) => {
         expect(err).toBeTruthy();
         expect(ws.readyState).toBe(WebSocket.CLOSING);
+        ws.close();
         done();
       });
 

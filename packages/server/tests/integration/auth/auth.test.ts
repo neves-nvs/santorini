@@ -21,12 +21,14 @@ describe("Auth Controller Integration Tests", () => {
   });
 
   afterEach(async () => {
+    await db.deleteFrom("players").execute();
+    await db.deleteFrom("games").execute();
     await db.deleteFrom("users").execute();
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     server.close();
-    db.destroy();
+    await db.destroy();
   });
 
   describe("POST /session", () => {
