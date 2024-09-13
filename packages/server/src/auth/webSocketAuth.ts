@@ -11,7 +11,7 @@ import { wss } from "../main";
 export async function webSocketAuthUpgrade(request: IncomingMessage, socket: internal.Duplex, head: Buffer) {
   const authHeader = request.headers["authorization"];
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!authHeader?.startsWith("Bearer ")) {
     logger.error("No or malformed Authorization header");
     socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
     socket.destroy();
@@ -21,9 +21,7 @@ export async function webSocketAuthUpgrade(request: IncomingMessage, socket: int
   const token = authHeader.split(" ")[1];
 
   try {
-    logger.info("WebSocket token | " + token);
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    logger.info("WebSocket token decoded | " + JSON.stringify(decoded));
 
     const user = await findUserByUsername(decoded.username);
     if (!user) {

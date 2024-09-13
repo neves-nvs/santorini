@@ -57,7 +57,7 @@ router.post(
     try {
       const user = await findUserByUsername(username);
       logger.debug(`Checked if user exists: ${JSON.stringify(user?.username)}`);
-      logger.warn(!user);
+      logger.warn(JSON.stringify(user));
       if (!user) {
         logger.error("User not found");
         return res.status(400).json({ message: "User not found" });
