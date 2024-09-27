@@ -27,7 +27,7 @@ wss.on("connection", (ws) => {
   });
 
   ws.on("message", (message: string) => {
-    logger.info("WebSocket message", message);
+    logger.silly("WebSocket message", message);
     handleMessage(ws, message);
   });
 

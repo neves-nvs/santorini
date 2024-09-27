@@ -49,7 +49,6 @@ export type NewGame = Insertable<GameTable>;
 export type Game = Selectable<GameTable>;
 
 export interface PlayerTable {
-  id: Generated<number>;
   game_id: number;
   user_id: number;
 }

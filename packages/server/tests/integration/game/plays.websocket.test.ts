@@ -6,7 +6,6 @@ import { PORT } from "../../../src/configs/config";
 import { UserDTO } from "../../../src/users/userDTO";
 import WebSocket from "ws";
 import { db } from "../../../src/database";
-import logger from "../../../src/logger";
 
 let user: UserDTO;
 let jwtToken: string;
@@ -27,7 +26,6 @@ describe("WebSocket Message Reception Tests", () => {
     });
 
     gameId = await helpers.createTestGame(jwtToken);
-    logger.info("gameId", gameId);
   });
 
   afterEach(async () => {
@@ -66,14 +64,9 @@ describe("WebSocket Message Reception Tests", () => {
       });
 
       const wsMessagePromise = new Promise<void>((resolve, reject) => {
-        logger.info("Waiting for messageiii");
-
         function onMessage(data: WebSocket.RawData) {
-          logger.verbose("Received message", data);
           const rawMessage = typeof data === "string" ? data : data.toString();
-          logger.verbose("Received message", rawMessage);
           const message = JSON.parse(rawMessage);
-          logger.info("Parsed message", message);
 
           if (message.type === "game_start") {
             ws.close();

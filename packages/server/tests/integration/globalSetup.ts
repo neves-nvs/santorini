@@ -6,8 +6,6 @@ import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers
 import { Pool } from "pg";
 import { promises as fs } from "fs";
 
-import logger from "../../src/logger";
-
 let container: StartedPostgreSqlContainer;
 
 export default async function globalSetup() {
@@ -18,7 +16,7 @@ export default async function globalSetup() {
   const database = container.getDatabase();
   const user = container.getUsername();
   const password = container.getPassword();
-  logger.info("Postgres container started", { port, host, database, user, password });
+  console.log("Postgres container started", { port, host, database, user, password });
 
   const pool = new Pool({
     host,
@@ -27,14 +25,14 @@ export default async function globalSetup() {
     user,
     password,
   });
-  logger.info("Pool created");
+  console.log("Pool created");
 
   const db = new Kysely({
     dialect: new PostgresDialect({
       pool,
     }),
   });
-  logger.info("Database created");
+  console.log("Database created");
 
   const migrator = new Migrator({
     db,
@@ -44,16 +42,16 @@ export default async function globalSetup() {
       migrationFolder: path.resolve(__dirname, "../../migrations"),
     }),
   });
-  logger.info("Migrator created");
+  console.log("Migrator created");
 
   const { error, results } = await migrator.migrateToLatest();
 
   if (error) {
-    logger.error("Migration failed", { error });
-    throw error;
+    console.error("Migration failed", { error });
+    throw new Error("Migration failed");
   }
 
-  logger.info("Migrations applied", { results });
+  console.log("Migrations applied", { results });
 
   await db.destroy();
 
@@ -64,4 +62,6 @@ export default async function globalSetup() {
   process.env.DB_PASSWORD = password;
 
   globalThis.container = container;
+
+  console.log("Global setup complete");
 }

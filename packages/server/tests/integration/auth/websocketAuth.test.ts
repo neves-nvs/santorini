@@ -4,7 +4,6 @@ import { PORT } from "../../../src/configs/config";
 import WebSocket from "ws";
 import { createTestUserWithLogin } from "../helper/helpers";
 import { db } from "../../../src/database";
-import logger from "../../../src/logger";
 
 let jwtToken: string;
 
@@ -41,7 +40,6 @@ describe("WebSocket Authentication Integration Tests", () => {
       });
 
       ws.on("error", (err) => {
-        logger.error("WebSocket error: ", err);
         done(new Error(`WebSocket connection failed: ${err}`));
       });
     });

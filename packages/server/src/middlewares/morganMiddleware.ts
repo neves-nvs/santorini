@@ -1,12 +1,9 @@
 import { Request, Response } from "express";
 
-import dotenv from "dotenv";
+import { HTTP_LOG_FORMAT } from "../configs/config";
 import logger from "../logger";
 import morgan from "morgan";
 
-dotenv.config();
-
-const HTTP_LOG_FORMAT = process.env.LOG_FORMAT ?? "dev";
 if (process.env.HTTP_LOG_FORMAT) {
   logger.info(`HTTP log format set to ${HTTP_LOG_FORMAT}`);
 } else {
