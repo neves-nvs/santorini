@@ -31,7 +31,7 @@ describe("Users API Integration Tests", () => {
       expect(dbUser?.username).toBe(userData.username);
     });
 
-    test("should return 409 Conflict if the user already exists", async () => {
+    test("409 Conflict if the user already exists", async () => {
       await request(app).post("/users").send(userData).expect(201);
 
       const response = await request(app).post("/users").send(userData).expect(409);
@@ -39,7 +39,7 @@ describe("Users API Integration Tests", () => {
       expect(response.body).toHaveProperty("message", "User already exists");
     });
 
-    test("should return 400 Bad Request if username is missing", async () => {
+    test("400 Bad Request if username is missing", async () => {
       const response = await request(app).post("/users").send({ password: "password" }).expect(400);
 
       expect(response.body).toHaveProperty("errors");
@@ -48,7 +48,7 @@ describe("Users API Integration Tests", () => {
       );
     });
 
-    test("should return 400 Bad Request if password is missing", async () => {
+    test("400 Bad Request if password is missing", async () => {
       const response = await request(app).post("/users").send({ username: "johndoe" }).expect(400);
 
       expect(response.body).toHaveProperty("errors");
@@ -57,7 +57,7 @@ describe("Users API Integration Tests", () => {
       );
     });
 
-    test("should handle concurrent user creation attempts gracefully", async () => {
+    test("concurrent user creation attempts gracefully", async () => {
       await Promise.all([
         request(app).post("/users").send(userData).expect([201, 409]),
         request(app).post("/users").send(userData).expect([201, 409]),
@@ -69,7 +69,7 @@ describe("Users API Integration Tests", () => {
   });
 
   describe("GET /users/:username", () => {
-    test("should return the user when a valid username is provided", async () => {
+    test("201 and the user when a valid username is provided", async () => {
       await request(app).post("/users").send(userData).expect(201);
 
       const getResponse = await request(app).get(`/users/${userData.username}`).expect(200);
@@ -79,7 +79,7 @@ describe("Users API Integration Tests", () => {
       expect(getResponse.body).not.toHaveProperty("password");
     });
 
-    test("should return 404 Not Found if the user does not exist", async () => {
+    test("404 Not Found if the user does not exist", async () => {
       const getResponse = await request(app).get(`/users/999`).expect(404);
 
       expect(getResponse.body).toHaveProperty("message", "User not found");

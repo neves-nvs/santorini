@@ -67,10 +67,11 @@ describe("WebSocket Message Reception Tests", () => {
 
       const wsMessagePromise = new Promise<void>((resolve, reject) => {
         logger.info("Waiting for messageiii");
-        ws.on("message", (data) => {
-          logger.info("Received message", data);
+
+        function onMessage(data: WebSocket.RawData) {
+          logger.verbose("Received message", data);
           const rawMessage = typeof data === "string" ? data : data.toString();
-          logger.info("Received message", rawMessage);
+          logger.verbose("Received message", rawMessage);
           const message = JSON.parse(rawMessage);
           logger.info("Parsed message", message);
 
@@ -81,19 +82,20 @@ describe("WebSocket Message Reception Tests", () => {
 
           if (message.type === "players_in_game") {
             // expect(message.message).toContainEqual(expect.objectContaining({ username: user.username }));
-            // expect(message.message).toContainEqual(expect.objectContaining({ username: user2.username }));
-
+            // expect(message.message).toContainEqual(expect.objectContaining({ username: "user2" }));
             ws.close();
             resolve();
           }
-        });
+        }
+
+        ws.on("message", onMessage);
 
         ws.on("error", (err) => {
           reject(new Error(`WebSocket error: ${err}`));
         });
       });
 
-      const { user: user2, token: user2Token } = await helpers.createTestUserWithLogin();
+      const { token: user2Token } = await helpers.createTestUserWithLogin();
       await helpers.addTestPlayerToGame(gameId, user2Token);
 
       await wsMessagePromise;

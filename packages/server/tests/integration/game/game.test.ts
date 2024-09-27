@@ -43,13 +43,13 @@ describe("Games API Integration", () => {
   });
 
   describe("GET /games", () => {
-    test("should return an empty array if there are no games", async () => {
+    test("return an empty array if there are no games", async () => {
       const response = await request(app).get("/games").set("Cookie", `token=${jwtToken}`).expect(200);
 
       expect(response.body).toEqual([]);
     });
 
-    test("should return a list of games if they exist", async () => {
+    test("return a list of games if they exist", async () => {
       await createGame(newGameData);
 
       const response = await request(app).get("/games").set("cookie", `token=${jwtToken}`).expect(200);
@@ -61,7 +61,7 @@ describe("Games API Integration", () => {
   });
 
   describe("POST /games", () => {
-    test("should create a new game and return its ID", async () => {
+    test("create a new game and return its ID", async () => {
       const response = await request(app)
         .post("/games")
         .set("Cookie", `token=${jwtToken}`)
@@ -74,7 +74,7 @@ describe("Games API Integration", () => {
       expect(game?.player_count).toBe(newGameData.player_count);
     });
 
-    test("should return 400 if amount_of_players is missing", async () => {
+    test("return 400 if amount_of_players is missing", async () => {
       const response = await request(app).post("/games").set("Cookie", `token=${jwtToken}`).send({}).expect(400);
 
       expect(response.body.errors).toEqual(
@@ -82,7 +82,7 @@ describe("Games API Integration", () => {
       );
     });
 
-    test("should return 400 if amount_of_players is out of range", async () => {
+    test("400 if amount_of_players is out of range", async () => {
       const response = await request(app)
         .post("/games")
         .set("Cookie", `token=${jwtToken}`)

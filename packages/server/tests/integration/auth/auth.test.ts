@@ -46,7 +46,7 @@ describe("Auth Controller Integration Tests", () => {
       const tokenHeader = cookies.find((cookie) => cookie.startsWith("token=")) as string;
       const token = tokenHeader.split("=")[1];
 
-      const decodedToken = jwt.verify(token, JWT_SECRET!);
+      const decodedToken = jwt.verify(token, JWT_SECRET);
 
       expect(decodedToken).toHaveProperty("username", userData.username);
     });

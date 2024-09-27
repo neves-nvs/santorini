@@ -26,7 +26,7 @@ describe("WebSocket Authentication Integration Tests", () => {
   });
 
   describe("WebSocket Authentication", () => {
-    test("should authenticate WebSocket connection with valid JWT", (done) => {
+    test("authenticate WebSocket connection with valid JWT", (done) => {
       const ws = new WebSocket(`ws://localhost:${PORT}`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
@@ -46,7 +46,7 @@ describe("WebSocket Authentication Integration Tests", () => {
       });
     });
 
-    test("should reject WebSocket connection with invalid JWT", (done) => {
+    test("reject WebSocket connection with invalid JWT", (done) => {
       const ws = new WebSocket(`ws://localhost:${PORT}`, {
         headers: {
           Authorization: `Bearer invalidToken`,
@@ -65,7 +65,7 @@ describe("WebSocket Authentication Integration Tests", () => {
       });
     });
 
-    test("should reject the WebSocket connection when no JWT token is provided", (done) => {
+    test("reject the WebSocket connection when no JWT token is provided", (done) => {
       const ws = new WebSocket(`ws://localhost:${PORT}`);
 
       ws.once("error", (err) => {

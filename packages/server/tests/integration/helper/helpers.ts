@@ -1,7 +1,7 @@
+import { NewGame } from "../../../src/model";
 import { UserDTO } from "../../../src/users/userDTO";
 import { app } from "../../../src/app";
 import request from "supertest";
-import { NewGame } from "../../../src/model";
 
 export async function generateTestUser() {
   const randomUsername = Math.random().toString(36).substring(7);
