@@ -13,12 +13,7 @@
     "lint": "eslint --fix",
     "migrate": "ts-node runMigrations.ts",
     "test:unit": "jest --selectProjects unit",
-    "test:integration": "jest --runInBand --selectProjects integration",
-    "test:changed": "jest --onlyChanged",
-    "build:docker": "docker build -t my-node-app .",
-    "run:docker": "docker run -p 3000:3000 my-node-app",
-    "docker:dev": "docker run -v $(pwd):/app -v /app/node_modules -p 3000:3000 --rm my-node-app",
-    "docker:clean": "docker system prune -f"
+    "test:integration": "jest --runInBand --selectProjects integration"
   },
   "keywords": [],
   "author": "",
@@ -29,7 +24,7 @@
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "express": "^4.21",
     "express-validator": "^7.1.0",
     "http": "^0.0.1-security",
     "http-status-codes": "^2.3.0",
