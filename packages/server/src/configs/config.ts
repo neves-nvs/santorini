@@ -32,16 +32,24 @@ const DEFAULT_DB_USER = "postgres";
 const DEFAULT_DB_DATABASE = "postgres";
 
 export const DB_DATABASE = process.env.DB_DATABASE ?? DEFAULT_DB_DATABASE;
-console.log("DB_DATABASE", DB_DATABASE);
+if (!DB_DATABASE) {
+  console.log("DB_DATABASE is not set");
+}
 
 export const DB_HOST = process.env.DB_HOST ?? DEFAULT_DB_HOST;
-console.log("DB_HOST", DB_HOST);
+if (!DB_HOST) {
+  console.log("DB_HOST is not set");
+}
 
 export const DB_PORT = process.env.DB_PORT ? parseInt(process.env.DB_PORT) : DEFAULT_DB_PORT;
-console.log("DB_PORT", DB_PORT);
+if (!DB_PORT) {
+  console.log("DB_PORT is not set");
+}
 
 export const DB_USER = process.env.DB_USER ?? DEFAULT_DB_USER;
-console.log("DB_USER", DB_USER);
+if (!DB_USER) {
+  console.log("DB_USER is not set");
+}
 
 export const DB_PASSWORD = process.env.DB_PASSWORD;
 if (!DB_PASSWORD) {
