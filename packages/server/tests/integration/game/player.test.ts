@@ -55,7 +55,7 @@ describe("Players in Game API", () => {
   });
 
   describe("POST /games/:gameId/players", () => {
-    test("201 when adding a player to the game", async () => {
+    test("201 Created when player is added to game", async () => {
       const game = await createGame(newGameData);
 
       await request(app).post(`/games/${game.id}/players`).set("Cookie", `token=${jwtToken}`).expect(201);
@@ -65,7 +65,7 @@ describe("Players in Game API", () => {
       expect(playersIds[0]).toBe(user.id);
     });
 
-    test("400 if adding a player to a game that does not exist", async () => {
+    test("400 Bad Request if game does not exist", async () => {
       const response = await request(app)
         .post("/games/999/players")
         .set("Cookie", `token=${jwtToken}`)
@@ -75,7 +75,7 @@ describe("Players in Game API", () => {
       expect(response.body.message).toEqual("Game not found");
     });
 
-    test("400 if adding a player to a game twice", async () => {
+    test("400 Bad Request if player is added twice", async () => {
       const game = await createGame(newGameData);
       await addPlayerToGame(game.id, user.id);
 
@@ -88,7 +88,7 @@ describe("Players in Game API", () => {
       expect(response.body.message).toEqual("Player already in game");
     });
 
-    test("400 if adding a user to a full game", async () => {
+    test("400 Bad Request if game is full", async () => {
       const { user: userInGame1 } = await createTestUserWithLogin();
       const { user: userInGame2 } = await createTestUserWithLogin();
       const { user: userNotInGame } = await createTestUserWithLogin();
@@ -106,7 +106,7 @@ describe("Players in Game API", () => {
       expect(response.body.message).toEqual("Game full");
     });
 
-    test("concurrent addition of 3 players to a 2 player game should maintain players per game <= player_count", async () => {
+    test("limits players to max allowed during concurrent additions", async () => {
       const { token: user1Token } = await createTestUserWithLogin();
       const { token: user2Token } = await createTestUserWithLogin();
 
@@ -118,7 +118,7 @@ describe("Players in Game API", () => {
       expect(players.length).toBe(2);
     });
 
-    test("should not allow adding more than the allowed number of players over multiple iterations", async () => {
+    test("prevents adding players beyond allowed limit across iterations", async () => {
       async function postPlayerToGame(gameId: number, userToken: string) {
         return request(app).post(`/games/${gameId}/players`).set("Cookie", `token=${userToken}`).send();
       }

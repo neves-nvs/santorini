@@ -32,7 +32,7 @@ describe("Auth Controller Integration Tests", () => {
   });
 
   describe("POST /session", () => {
-    test("should return 200 and set a cookie when valid credentials are provided", async () => {
+    test("200 OK and set a cookie for valid credentials", async () => {
       const response = await request(app)
         .post("/session")
         .send({ username: userData.username, password: password })
@@ -51,7 +51,7 @@ describe("Auth Controller Integration Tests", () => {
       expect(decodedToken).toHaveProperty("username", userData.username);
     });
 
-    test("should return 400 when the user does not exist", async () => {
+    test("400 Bad Request when user does not exist", async () => {
       const response = await request(app)
         .post("/session")
         .send({ username: "nonexistent", password: "password" })
@@ -60,7 +60,7 @@ describe("Auth Controller Integration Tests", () => {
       expect(response.body).toHaveProperty("message", "User not found");
     });
 
-    test("should return 401 when an incorrect password is provided", async () => {
+    test("401 Unauthorized for incorrect password", async () => {
       const response = await request(app)
         .post("/session")
         .send({ username: userData.username, password: "wrongpassword" })
@@ -69,7 +69,7 @@ describe("Auth Controller Integration Tests", () => {
       expect(response.body).toHaveProperty("message", "Invalid password");
     });
 
-    test("should return 400 if username is missing", async () => {
+    test("400 Bad Request if username is missing", async () => {
       const response = await request(app).post("/session").send({ password: password }).expect(400);
 
       expect(response.body).toHaveProperty("errors");
@@ -78,7 +78,7 @@ describe("Auth Controller Integration Tests", () => {
       );
     });
 
-    test("should return 400 if password is missing", async () => {
+    test("400 Bad Request if password is missing", async () => {
       const response = await request(app).post("/session").send({ username: userData.username }).expect(400);
 
       expect(response.body).toHaveProperty("errors");
@@ -89,7 +89,7 @@ describe("Auth Controller Integration Tests", () => {
   });
 
   describe("GET /test-auth", () => {
-    test("should return 200 and authenticate the user when a valid token is provided", async () => {
+    test("200 OK with valid token authentication", async () => {
       const validToken = jwt.sign({ username: userData.username }, JWT_SECRET!, { expiresIn: "5h" });
 
       const response = await request(app).get("/test-auth").set("Cookie", `token=${validToken}`).expect(200);
@@ -107,13 +107,13 @@ describe("Auth Controller Integration Tests", () => {
       }
     });
 
-    test("should return 401 if no token is provided", async () => {
+    test("401 Unauthorized if token is missing", async () => {
       const response = await request(app).get("/test-auth").expect(401);
 
       expect(response.body).toHaveProperty("message", "Unauthorized");
     });
 
-    test("should return 403 if an invalid token is provided", async () => {
+    test("403 Forbidden if token is invalid", async () => {
       const invalidToken = jwt.sign({ username: userData.username }, "wrong");
 
       const response = await request(app).get("/test-auth").set("Cookie", `token=${invalidToken}`).expect(403);
@@ -121,7 +121,7 @@ describe("Auth Controller Integration Tests", () => {
       expect(response.body).toHaveProperty("message", "Forbidden");
     });
 
-    test("should return 403 if a malformed token is provided", async () => {
+    test("403 Forbidden for malformed token", async () => {
       const malformedToken = "malformed.token.here";
 
       const response = await request(app).get("/test-auth").set("Cookie", `token=${malformedToken}`).expect(403);

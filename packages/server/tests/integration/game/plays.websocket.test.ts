@@ -42,7 +42,7 @@ describe("WebSocket Message Reception Tests", () => {
   });
 
   describe("WebSocket Messaging", () => {
-    test("should receive message listing players in game after each one joins", async () => {
+    test("receives updated player list as players join game", async () => {
       const subscribe_game_message = {
         type: "subscribe_game",
         payload: { gameId: gameId, username: user.username },

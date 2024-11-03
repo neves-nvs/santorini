@@ -43,13 +43,13 @@ describe("Games API Integration", () => {
   });
 
   describe("GET /games", () => {
-    test("return an empty array if there are no games", async () => {
+    test("returns empty array when no games exist", async () => {
       const response = await request(app).get("/games").set("Cookie", `token=${jwtToken}`).expect(200);
 
       expect(response.body).toEqual([]);
     });
 
-    test("return a list of games if they exist", async () => {
+    test("returns list of games if they exist", async () => {
       await createGame(newGameData);
 
       const response = await request(app).get("/games").set("cookie", `token=${jwtToken}`).expect(200);
@@ -61,7 +61,7 @@ describe("Games API Integration", () => {
   });
 
   describe("POST /games", () => {
-    test("create a new game and return its ID", async () => {
+    test("creates new game and returns game ID", async () => {
       const response = await request(app)
         .post("/games")
         .set("Cookie", `token=${jwtToken}`)
@@ -74,7 +74,7 @@ describe("Games API Integration", () => {
       expect(game?.player_count).toBe(newGameData.player_count);
     });
 
-    test("return 400 if amount_of_players is missing", async () => {
+    test("400 Bad Request if player count is missing", async () => {
       const response = await request(app).post("/games").set("Cookie", `token=${jwtToken}`).send({}).expect(400);
 
       expect(response.body.errors).toEqual(
@@ -82,7 +82,7 @@ describe("Games API Integration", () => {
       );
     });
 
-    test("400 if amount_of_players is out of range", async () => {
+    test("400 Bad Request if player count is out of range", async () => {
       const response = await request(app)
         .post("/games")
         .set("Cookie", `token=${jwtToken}`)
@@ -94,7 +94,7 @@ describe("Games API Integration", () => {
       );
     });
 
-    test("when all players are added to the game, the game should start", async () => {
+    test("starts game when all players are added", async () => {
       const response = await request(app)
         .post("/games")
         .set("Cookie", `token=${jwtToken}`)
