@@ -1,5 +1,6 @@
 export default async function globalTeardown() {
-  if (globalThis.container) {
-    await globalThis.container.stop();
+  if (global.container) {
+    console.log("Stopping container");
+    await global.container.stop();
   }
 }
