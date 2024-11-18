@@ -60,8 +60,9 @@ jobs:
           echo "DB_USER=user" >> .env
           echo "DB_PASSWORD=password" >> .env
           echo "DB_DATABASE=postgres" >> .env
+          echo "FORCE_LOGS=true" >> .env
         working-directory: packages/server
 
       - name: Run tests for the server package
-        run: npm run test:integration --verbose
+        run: npm run test:integration --verbose -- --detectOpenHandles
         working-directory: packages/server
