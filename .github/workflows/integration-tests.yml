@@ -1,4 +1,4 @@
-name: Run Tests Before Merging
+name: Integration tests
 
 on:
   push:
@@ -25,15 +25,27 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: packages/server
+
       - name: Setup environment variables
         run: |
-          pwd
-          # echo "FORCE_LOGS=true" >> .env
           echo "JWT_SECRET=secret" >> .env
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_USER=user" >> .env
+          echo "DB_PASSWORD=password" >> .env
+          echo "DB_NAME=testdb" >> .env
         working-directory: packages/server
 
       - name: Run tests for the server package
-        run: |
-          npm install
-          npm run test:integration
+        run: npm run test:integration --verbose
         working-directory: packages/server
