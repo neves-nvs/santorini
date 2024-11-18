@@ -1,0 +1,39 @@
+name: Run Tests Before Merging
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup environment variables
+        run: |
+          pwd
+          # echo "FORCE_LOGS=true" >> .env
+          echo "JWT_SECRET=secret" >> .env
+        working-directory: packages/server
+
+      - name: Run tests for the server package
+        run: |
+          npm install
+          npm run test:integration
+        working-directory: packages/server
