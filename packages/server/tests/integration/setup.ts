@@ -44,11 +44,7 @@ async function setup() {
   try {
     await client.connect();
 
-    // console.log("Creating new database", { newDbName });
     let result = await client.query(`CREATE DATABASE ${newDbName};`);
-    // if (result.command !== "CREATE") {
-    //   throw new Error("Database creation failed");
-    // }
     console.log("Database created", { newDbName });
     process.env.DB_DATABASE = newDbName;
 
@@ -99,7 +95,6 @@ async function setup() {
       throw new Error("Migration failed");
     }
 
-    // console.log("Migrations applied", { results });
   } catch (e) {
     console.log(e);
     throw e;
@@ -107,8 +102,6 @@ async function setup() {
     await db.destroy();
   }
 
-  await client.end();
-  await client.end();
 
   process.env.PORT = (3000 + Number(process.env.JEST_WORKER_ID)).toString();
 }

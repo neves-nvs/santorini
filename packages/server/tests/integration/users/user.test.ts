@@ -11,7 +11,7 @@ const userData = {
 
 describe("Users API Integration Tests", () => {
   afterEach(async () => {
-    // await db.deleteFrom("users").execute();
+    await db.deleteFrom("users").execute();
   });
 
   afterAll(() => {
