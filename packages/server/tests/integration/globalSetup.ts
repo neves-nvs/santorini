@@ -15,9 +15,9 @@ type ConnectionInfo = {
 let container: StartedPostgreSqlContainer;
 
 const defaultConnectionInfo: ConnectionInfo = {
-  host: "postgres",
+  host: "127.0.0.1",
   port: 5432,
-  database: "testedb",
+  database: "postgres",
   user: "user",
   password: "password",
 };

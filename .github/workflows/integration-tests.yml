@@ -55,11 +55,11 @@ jobs:
       - name: Setup environment variables
         run: |
           echo "JWT_SECRET=secret" >> .env
-          echo "DB_HOST=postgres" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
           echo "DB_PORT=5432" >> .env
           echo "DB_USER=user" >> .env
           echo "DB_PASSWORD=password" >> .env
-          echo "DB_NAME=testdb" >> .env
+          echo "DB_DATABASE=postgres" >> .env
         working-directory: packages/server
 
       - name: Run tests for the server package
