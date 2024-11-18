@@ -11,13 +11,24 @@ async function loadContainerInfoFromFile(): Promise<{host: string, port: number,
   return JSON.parse(await fs.readFile(tempFilePath, "utf-8"));
 }
 
+async function loadContainerInfoFromEnv(): Promise<{host: string, port: number, database: string, user: string, password: string}> {
+  return {
+    host: process.env.DB_HOST!,
+    port: parseInt(process.env.DB_PORT!),
+    database: process.env.DB_NAME!,
+    user: process.env.DB_USER!,
+    password: process.env.DB_PASSWORD!,
+  };
+}
+
 const newDbName = `test_db_${randomUUID().replace(/-/g, "_")}`;
 process.env.DB_DATABASE = newDbName;
 
 async function setup() {
   // console.log(`JEST_WORKER_ID: ${process.env.JEST_WORKER_ID}`);
 
-  const containerInfo = await loadContainerInfoFromFile();
+  // const containerInfo = await loadContainerInfoFromFile();
+  const containerInfo = await loadContainerInfoFromEnv();
   const { port, host, database, user, password } = containerInfo;
 
   // const client = new Client(containerInfo);

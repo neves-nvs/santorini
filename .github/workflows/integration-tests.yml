@@ -16,6 +16,21 @@ jobs:
       matrix:
         node-version: [18]
 
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -41,6 +56,7 @@ jobs:
         run: |
           echo "JWT_SECRET=secret" >> .env
           echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=5432" >> .env
           echo "DB_USER=user" >> .env
           echo "DB_PASSWORD=password" >> .env
           echo "DB_NAME=testdb" >> .env
