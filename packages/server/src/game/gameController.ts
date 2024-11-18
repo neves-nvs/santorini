@@ -1,12 +1,14 @@
 import * as gameRepository from "./gameRepository";
 import * as gameService from "./gameService";
 
+import { body, param } from "express-validator";
 import { checkValidation, validateUUIDParam } from "../middlewares/middleware";
 
 import { Router } from "express";
 import { User } from "../model";
 import { authenticate } from "../auth/authController";
-import { body } from "express-validator";
+import { broadcastUpdate } from "./gameSession";
+import logger from "../logger";
 
 const router = Router();
 
@@ -21,7 +23,7 @@ router.get("/", authenticate, async (req, res) => {
 router.post(
   "/",
   authenticate,
-  body("amountOfPlayers").isInt({ min: 2, max: 4 }).withMessage("Amount of players must be between 2 and 4"),
+  body("player_count").isInt({ min: 2, max: 4 }).withMessage("Amount of players must be between 2 and 4"),
   checkValidation,
   async (req, res, next) => {
     const { amountOfPlayers } = req.body as { amountOfPlayers: number | undefined };
@@ -32,8 +34,10 @@ router.post(
       res.status(201).send(result);
     } catch (error) {
       if (error instanceof Error && error.message === "Failed to create game") {
+        logger.error("Failed to create game", error);
         return res.status(400).send({ message: "Failed to create game" });
       }
+      logger.error("Failed to create game", error);
       next(error);
     }
   },
@@ -43,20 +47,47 @@ router.post(
 /*                              /:gameId/players                              */
 /* -------------------------------------------------------------------------- */
 
-router.post("/:gameId/players", authenticate, validateUUIDParam("gameId"), checkValidation, async (req, res, next) => {
-  const gameId = parseInt(req.params.gameId);
-  const user = req.user as User;
+router.post(
+  "/:gameId/players",
+  authenticate,
+  param("gameId").isInt().withMessage("Game ID must be an integer"),
+  checkValidation,
+  async (req, res, next) => {
+    const gameId = parseInt(req.params.gameId);
+    const user = req.user as User;
 
-  try {
-    await gameService.addPlayerToGame(gameId, user);
-    res.status(201).send();
-  } catch (error) {
-    if (error instanceof Error && error.message === "Game not found") {
-      return res.status(400).send("Game not found");
+    try {
+      await gameService.addPlayerToGame(gameId, user);
+
+      const playersInGame = await gameRepository.findPlayersByGameId(gameId);
+      broadcastUpdate(gameId, { type: "players_in_game", payload: playersInGame });
+
+      res.status(201);
+
+      const readyToStart = await gameService.isReadyToStart(gameId);
+      return readyToStart ? res.send({ message: "Ready to Start" }) : res.send();
+    } catch (err) {
+      if (!(err instanceof Error)) {
+        next(err);
+      }
+
+      const error = err as Error;
+      if (error.message === "Game not found") {
+        logger.error("Game not found", error);
+        return res.status(400).json({ message: "Game not found" });
+      } else if (error.message.includes("duplicate key value violates unique constraint")) {
+        logger.error("Player already in game", error);
+        return res.status(400).json({ message: "Player already in game" });
+      } else if (error.message === "Game is full") {
+        logger.error("Game is full", error);
+        return res.status(400).json({ message: "Game full" });
+      }
+
+      logger.error("Failed to add player to game", error);
+      return res.status(400).json({ message: "Failed to add player to game" });
     }
-    next(error);
-  }
-});
+  },
+);
 
 /* -------------------------------------------------------------------------- */
 /*                               /:gameId/plays                               */

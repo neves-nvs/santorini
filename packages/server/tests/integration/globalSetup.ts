@@ -1,67 +1,83 @@
-import * as path from "path";
-
-import { FileMigrationProvider, Kysely, Migrator, PostgresDialect } from "kysely";
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
-import { Pool } from "pg";
+import { Client } from "pg";
 import { promises as fs } from "fs";
+import path from "path";
 
-import logger from "../../src/logger";
+type ConnectionInfo = {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+};
 
 let container: StartedPostgreSqlContainer;
 
-export default async function globalSetup() {
-  container = await new PostgreSqlContainer().start();
+const defaultConnectionInfo: ConnectionInfo = {
+  host: "127.0.0.1",
+  port: 5432,
+  database: "postgres",
+  user: "user",
+  password: "password",
+};
 
-  const port = container.getMappedPort(5432);
-  const host = container.getHost();
-  const database = container.getDatabase();
-  const user = container.getUsername();
-  const password = container.getPassword();
-  logger.info("Postgres container started", { port, host, database, user, password });
+function saveContainerInfoToFile(containerInfo: {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+}) {
+  const tempFilePath = path.join(__dirname, "container-info.json");
+  return fs.writeFile(tempFilePath, JSON.stringify(containerInfo, null, 2));
+}
 
-  const pool = new Pool({
-    host,
-    port,
-    database,
-    user,
-    password,
-  });
-  logger.info("Pool created");
 
-  const db = new Kysely({
-    dialect: new PostgresDialect({
-      pool,
-    }),
-  });
-  logger.info("Database created");
+async function isPostgresAvailable(connectionInfo: ConnectionInfo) {
+  const client = new Client(connectionInfo);
 
-  const migrator = new Migrator({
-    db,
-    provider: new FileMigrationProvider({
-      fs,
-      path,
-      migrationFolder: path.resolve(__dirname, "../../migrations"),
-    }),
-  });
-  logger.info("Migrator created");
-
-  const { error, results } = await migrator.migrateToLatest();
-
-  if (error) {
-    logger.error("Migration failed", { error });
-    throw error;
+  try {
+    await client.connect();
+    await client.end();
+    return true;
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("Postgres connection error", error.message);
+    return false;
   }
+}
 
-  logger.info("Migrations applied", { results });
-
-  await db.destroy();
-
+async function exportPostgresInfoToEnv(containerInfo: ConnectionInfo) {
+  const { port, host, user, password } = containerInfo;
   process.env.DB_PORT = port.toString();
   process.env.DB_HOST = host;
-  process.env.DB_DATABASE = database;
   process.env.DB_USER = user;
   process.env.DB_PASSWORD = password;
+  process.env.DB_NAME = containerInfo.database;
+}
 
-  globalThis.container = container;
+export default async function globalSetup() {
+  let containerInfo;
+
+  if (await isPostgresAvailable(defaultConnectionInfo)) {
+    console.log("Postgres connection is available, skipping container setup");
+    containerInfo = defaultConnectionInfo;
+  } else {
+    container = await new PostgreSqlContainer().start();
+    containerInfo = {
+      port: container.getMappedPort(5432),
+      host: container.getHost(),
+      database: container.getDatabase(),
+      user: container.getUsername(),
+      password: container.getPassword(),
+    };
+    console.log("Postgres container started", containerInfo);
+    global.container=container;
+  }
+
+  // await saveContainerInfoToFile(containerInfo);
+  await exportPostgresInfoToEnv(containerInfo);
+
+  console.log("Global setup complete");
 }

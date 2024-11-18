@@ -1,7 +1,5 @@
+import { FORCE_LOGS, LOG_LEVEL } from "./configs/config";
 import { createLogger, format, transports } from "winston";
-
-import { FORCE_LOGS } from "./configs/config";
-import dotenv from "dotenv";
 
 const { combine, timestamp, colorize, printf } = format;
 
@@ -14,15 +12,10 @@ const uppercaseLevel = format((info) => {
 const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
   let msg = `${timestamp} [${level}]  ${message}`;
   if (metadata && Object.keys(metadata).length) {
-    msg += ` | ${JSON.stringify(metadata)}`;
+    msg += ` | ${JSON.stringify(metadata, null, 2)}`;
   }
   return msg;
 });
-
-dotenv.config();
-
-const DEFAULT_LOG_LEVEL = "http";
-const LOG_LEVEL = process.env.LOG_LEVEL ?? DEFAULT_LOG_LEVEL;
 
 let silence = process.env.NODE_ENV === "test";
 if (FORCE_LOGS === true) {

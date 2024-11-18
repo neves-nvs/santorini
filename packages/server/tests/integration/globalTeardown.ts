@@ -1,9 +1,6 @@
-import logger from "../../src/logger";
-
 export default async function globalTeardown() {
-  if (globalThis.container) {
-    logger.info("Stopping container");
-    await globalThis.container.stop();
+  if (global.container) {
+    console.log("Stopping container");
+    await global.container.stop();
   }
-  logger.info("Global teardown complete");
 }

@@ -5,7 +5,7 @@ module.exports = {
   testMatch: ["**/tests/integration/**/*.test.ts"],
   globalSetup: "<rootDir>/tests/integration/globalSetup.ts",
   globalTeardown: "<rootDir>/tests/integration/globalTeardown.ts",
-  // verbose: true,
+  setupFiles: ["<rootDir>/tests/integration/setup.ts"],
   moduleNameMapper: {
     "@src/(.*)": "<rootDir>/src/$1",
   },

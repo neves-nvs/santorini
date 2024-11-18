@@ -1,4 +1,5 @@
-import { NewUser, User, UserUpdate } from "../model";
+import { Database, NewUser, User, UserUpdate } from "../model";
+import { Kysely, Transaction } from "kysely";
 
 import { db } from "../database";
 
@@ -24,8 +25,11 @@ export async function findUser(criteria: Partial<User>): Promise<User | undefine
   return await query.selectAll().executeTakeFirst();
 }
 
-export async function findUserByUsername(username: string): Promise<User | undefined> {
-  return await db.selectFrom("users").where("username", "=", username).selectAll().executeTakeFirst();
+export async function findUserByUsername(
+  username: string,
+  trx: Transaction<Database> | Kysely<Database> = db,
+): Promise<User | undefined> {
+  return await trx.selectFrom("users").where("username", "=", username).selectAll().executeTakeFirst();
 }
 
 export async function findAllUsers(): Promise<User[]> {
