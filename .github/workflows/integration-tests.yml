@@ -55,7 +55,7 @@ jobs:
       - name: Setup environment variables
         run: |
           echo "JWT_SECRET=secret" >> .env
-          echo "DB_HOST=localhost" >> .env
+          echo "DB_HOST=postgres" >> .env
           echo "DB_PORT=5432" >> .env
           echo "DB_USER=user" >> .env
           echo "DB_PASSWORD=password" >> .env
