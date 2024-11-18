@@ -44,7 +44,7 @@ describe("Players in Game API", () => {
   });
 
   afterEach(async () => {
-    // await db.deleteFrom("players").execute();
+    await db.deleteFrom("players").execute();
     await db.deleteFrom("games").execute();
     await db.deleteFrom("users").execute();
   });
