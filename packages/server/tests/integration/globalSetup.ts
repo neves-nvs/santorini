@@ -58,7 +58,6 @@ async function exportPostgresInfoToEnv(containerInfo: ConnectionInfo) {
 }
 
 export default async function globalSetup() {
-  jest.setTimeout(15000);
   let containerInfo;
 
   if (await isPostgresAvailable(defaultConnectionInfo)) {
