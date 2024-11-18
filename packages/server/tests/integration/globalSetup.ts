@@ -4,7 +4,23 @@ import { Client } from "pg";
 import { promises as fs } from "fs";
 import path from "path";
 
+type ConnectionInfo = {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+};
+
 let container: StartedPostgreSqlContainer;
+
+const defaultConnectionInfo: ConnectionInfo = {
+  host: "postgres",
+  port: 5432,
+  database: "testedb",
+  user: "user",
+  password: "password",
+};
 
 function saveContainerInfoToFile(containerInfo: {
   host: string;
@@ -17,23 +33,9 @@ function saveContainerInfoToFile(containerInfo: {
   return fs.writeFile(tempFilePath, JSON.stringify(containerInfo, null, 2));
 }
 
-async function isPostgresAvailable() {
-  if (
-    !process.env.DB_HOST ||
-    !process.env.DB_PORT ||
-    !process.env.DB_USER ||
-    !process.env.DB_PASSWORD ||
-    !process.env.DB_NAME
-  ) {
-    return false;
-  }
-  const client = new Client({
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-  });
+
+async function isPostgresAvailable(connectionInfo: ConnectionInfo) {
+  const client = new Client(connectionInfo);
 
   try {
     await client.connect();
@@ -46,13 +48,7 @@ async function isPostgresAvailable() {
   }
 }
 
-async function exportPostgresInfoToEnv(containerInfo: {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-}) {
+async function exportPostgresInfoToEnv(containerInfo: ConnectionInfo) {
   const { port, host, user, password } = containerInfo;
   process.env.DB_PORT = port.toString();
   process.env.DB_HOST = host;
@@ -64,15 +60,9 @@ async function exportPostgresInfoToEnv(containerInfo: {
 export default async function globalSetup() {
   let containerInfo;
 
-  if (await isPostgresAvailable()) {
+  if (await isPostgresAvailable(defaultConnectionInfo)) {
     console.log("Postgres connection is available, skipping container setup");
-    containerInfo = {
-      port: 5432,
-      host: process.env.DB_HOST || "postgres",
-      database: process.env.DB_NAME || "testedb",
-      user: process.env.DB_USER || "user",
-      password: process.env.DB_PASSWORD || "password",
-    };
+    containerInfo = defaultConnectionInfo;
   } else {
     container = await new PostgreSqlContainer().start();
     containerInfo = {
@@ -83,14 +73,11 @@ export default async function globalSetup() {
       password: container.getPassword(),
     };
     console.log("Postgres container started", containerInfo);
+    global.container=container;
   }
 
-  await saveContainerInfoToFile(containerInfo);
+  // await saveContainerInfoToFile(containerInfo);
   await exportPostgresInfoToEnv(containerInfo);
-
-  if (container) {
-    global.container = container;
-  }
 
   console.log("Global setup complete");
 }
