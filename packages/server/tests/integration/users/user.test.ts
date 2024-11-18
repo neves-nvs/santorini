@@ -11,7 +11,7 @@ const userData = {
 
 describe("Users API Integration Tests", () => {
   afterEach(async () => {
-    await db.deleteFrom("users").execute();
+    // await db.deleteFrom("users").execute();
   });
 
   afterAll(() => {
@@ -57,16 +57,16 @@ describe("Users API Integration Tests", () => {
       );
     });
 
-  //   test("handles concurrent user creation attempts gracefully", async () => {
-  //     await Promise.all([
-  //       request(app).post("/users").send(userData).expect([201, 409]),
-  //       request(app).post("/users").send(userData).expect([201, 409]),
-  //     ]);
+    // test("handles concurrent user creation attempts gracefully", async () => {
+    //   await Promise.all([
+    //     request(app).post("/users").send(userData).expect([201, 409]),
+    //     request(app).post("/users").send(userData).expect([201, 409]),
+    //   ]);
 
-  //     const users = await db.selectFrom("users").where("username", "=", userData.username).execute();
-  //     expect(users.length).toBe(1);
-  //   });
-  // });
+    //   const users = await db.selectFrom("users").where("username", "=", userData.username).execute();
+    //   expect(users.length).toBe(1);
+    // });
+  });
 
   describe("GET /users/:username", () => {
     test("201 Created and returns user data for valid username", async () => {
