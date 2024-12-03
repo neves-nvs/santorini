@@ -3,8 +3,6 @@
 > [!IMPORTANT]
 > After taking a **Graphical Computation** course and developing a growing interest in board games, I came across an online version of the game **Santorini**. However, I found that the website didn’t enforce the game’s rules—pieces were free to move anywhere on the board, which detracted from the strategy and experience. This frustration, combined with an inevitable childhood desire to develop games, sparked an idea: I decided it would be a fun and fulfilling challenge to create my own online version of **Santorini**, one that fully enforces the game rules and provides an enjoyable and seamless experience for players.
 
----
-
 ## 🚀 About the Project
 
 **Santorini Online** is a web-based version of the popular board game **Santorini**. This project brings the gameplay experience online, allowing users to compete against friends or AI, with full rule enforcement and game persistency. It’s designed to capture the strategy of the original board game while ensuring a seamless experience in the digital world.
@@ -16,8 +14,6 @@
 >
 > The previous video shown above demonstrates an earlier version of the frontend, as the frontend governance was removed to support planned future features like ranking and competition.
 
----
-
 ## 📅 Roadmap (MVP)
 
 - [x] User authentication and authorization
@@ -25,6 +21,31 @@
 - [ ] Define and implement frontend graphical interface
   - Translate game state changes to 3D graphics
 - [ ] Ensure full rule enforcement and game logic
+
+## 🛠️ Technologies Used
+
+Here are the key technologies and libraries used in this project:
+
+<p align="center">
+  <a href="https://nodejs.org/" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white&style=for-the-badge" alt="Node.js" height="40"/>
+  </a>
+  <a href="https://expressjs.com/" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=white&style=for-the-badge" alt="Express.js" height="40"/>
+  </a>
+  <a href="https://kysely.dev/" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/Kysely-3178C6?logo=kysely&logoColor=white&style=for-the-badge" alt="Kysely" height="40"/>
+  </a>
+  <a href="http://www.passportjs.org/" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/Passport.js-34E27A?logo=passport&logoColor=white&style=for-the-badge" alt="Passport.js" height="40"/>
+  </a>
+  <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/Three.js-000000?logo=threedotjs&logoColor=white&style=for-the-badge" alt="Three.js" height="40"/>
+  </a>
+  <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&style=for-the-badge" alt="TypeScript" height="40"/>
+  </a>
+</p>
 
 ## 🤝 Contributing
 

@@ -1,15 +1,15 @@
 import "./style.css"; // todo investigate more about css in js
 
 import BoardManager from "./view/BoardManager";
-import { Clock } from "three";
+// import { Clock } from "three";
 import GameManager from "./view/GameManager";
 import InputManager from "./view/InputManager";
 import NetworkManager from "./controller/NetworkManager";
 import SceneManager from "./view/SceneManager";
 
 class Main {
-  private clock = new Clock();
-  private delta: number;
+  // private clock = new Clock();
+  // private delta: number;
 
   // view
   private sceneManager: SceneManager;
@@ -29,15 +29,15 @@ class Main {
     this.networkManager = new NetworkManager(this.gameManager);
 
     // this.delta = Math.min(this.clock.getDelta(), 0.1);
-    this.delta = this.clock.getDelta();
+    // this.delta = this.clock.getDelta();
   }
 
   public update() {
     // this.delta = Math.min(this.clock.getDelta(), 0.1);
-    this.delta = this.clock.getDelta();
+    // this.delta = this.clock.getDelta();
 
-    this.sceneManager.update(this.delta);
-    this.boardManager.update(this.delta);
+    this.sceneManager.update();
+    this.boardManager.update();
     // this.gameManager.update(this.delta);
 
     this.inputManager.update();
