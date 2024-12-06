@@ -1,17 +1,34 @@
 import * as path from "path";
 
 import { Client, ClientConfig, Pool } from "pg";
-import { FileMigrationProvider, Kysely, Migrator, PostgresDialect } from "kysely";
+import {
+  FileMigrationProvider,
+  Kysely,
+  Migrator,
+  PostgresDialect,
+} from "kysely";
 
 import { promises as fs } from "fs";
 import { randomUUID } from "crypto";
 
-async function loadContainerInfoFromFile(): Promise<{host: string, port: number, database: string, user: string, password: string}> {
+async function loadContainerInfoFromFile(): Promise<{
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+}> {
   const tempFilePath = path.join(__dirname, "container-info.json");
   return JSON.parse(await fs.readFile(tempFilePath, "utf-8"));
 }
 
-async function loadContainerInfoFromEnv(): Promise<{host: string, port: number, database: string, user: string, password: string}> {
+async function loadContainerInfoFromEnv(): Promise<{
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+}> {
   return {
     host: process.env.DB_HOST!,
     port: parseInt(process.env.DB_PORT!),
@@ -40,15 +57,14 @@ async function setup() {
     password,
   } as ClientConfig);
 
-
   try {
     await client.connect();
 
-    let result = await client.query(`CREATE DATABASE ${newDbName};`);
+    await client.query(`CREATE DATABASE ${newDbName};`);
     console.log("Database created", { newDbName });
     process.env.DB_DATABASE = newDbName;
 
-    result = await client.query(
+    const result = await client.query(
       "SELECT has_database_privilege(current_user, current_database(), 'CREATE') AS can_create_db;",
     );
     if (!result.rows[0].can_create_db) {
@@ -94,14 +110,12 @@ async function setup() {
       console.error("Migration failed", { error });
       throw new Error("Migration failed");
     }
-
   } catch (e) {
     console.log(e);
     throw e;
   } finally {
     await db.destroy();
   }
-
 
   process.env.PORT = (3000 + Number(process.env.JEST_WORKER_ID)).toString();
 }
