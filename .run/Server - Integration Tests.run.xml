@@ -1,0 +1,20 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Server - Integration Tests" type="JavaScriptTestRunnerJest">
+    <config-file value="$PROJECT_DIR$/packages/server/jest.integration.config.js" />
+    <node-interpreter value="project" />
+    <jest-package value="$PROJECT_DIR$/packages/server/node_modules/jest" />
+    <working-dir value="$PROJECT_DIR$/packages/server" />
+    <envs />
+    <scope-kind value="ALL" />
+    <method v="2" />
+  </configuration>
+  <configuration default="false" name="Server - Integration Tests" type="JavaScriptTestRunnerJest">
+    <config-file value="$PROJECT_DIR$/packages/server/jest.unit.config.js" />
+    <node-interpreter value="project" />
+    <jest-package value="$PROJECT_DIR$/packages/server/node_modules/jest" />
+    <working-dir value="$PROJECT_DIR$" />
+    <envs />
+    <scope-kind value="ALL" />
+    <method v="2" />
+  </configuration>
+</component>
