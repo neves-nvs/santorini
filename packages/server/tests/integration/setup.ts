@@ -45,11 +45,11 @@ async function setup() {
   try {
     await client.connect();
 
-    let result = await client.query(`CREATE DATABASE ${newDbName};`);
+    await client.query(`CREATE DATABASE ${newDbName};`);
     console.log("Database created", { newDbName });
     process.env.DB_DATABASE = newDbName;
 
-    result = await client.query(
+    const result = await client.query(
       "SELECT has_database_privilege(current_user, current_database(), 'CREATE') AS can_create_db;",
     );
     if (!result.rows[0].can_create_db) {
