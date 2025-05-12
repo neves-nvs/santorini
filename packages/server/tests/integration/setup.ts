@@ -8,27 +8,12 @@ import {
   PostgresDialect,
 } from "kysely";
 
+import { ConnectionInfo } from "./globalSetup";
 import { promises as fs } from "fs";
 import { randomUUID } from "crypto";
 
-async function loadContainerInfoFromFile(): Promise<{
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-}> {
-  const tempFilePath = path.join(__dirname, "container-info.json");
-  return JSON.parse(await fs.readFile(tempFilePath, "utf-8"));
-}
 
-async function loadContainerInfoFromEnv(): Promise<{
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-}> {
+async function loadContainerInfoFromEnv(): Promise<ConnectionInfo> {
   return {
     host: process.env.DB_HOST!,
     port: parseInt(process.env.DB_PORT!),
