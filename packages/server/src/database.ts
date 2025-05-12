@@ -1,7 +1,7 @@
 import { Kysely, PostgresDialect } from "kysely";
 
 import { DB_PORT } from "./configs/config";
-import { Database } from "../src/model";
+import { Database } from "./model";
 import { Pool } from "pg";
 import logger from "./logger";
 

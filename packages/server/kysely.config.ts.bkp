@@ -1,0 +1,6 @@
+import { KyselyConfig } from "kysely";
+import { dialect } from "./src/database";
+
+export const config: KyselyConfig = {
+  dialect: dialect,
+};
