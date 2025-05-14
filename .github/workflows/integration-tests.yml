@@ -42,6 +42,11 @@ jobs:
 
       - name: Cache node modules
         uses: actions/cache@v3
+        with:
+          path: packages/server/node_modules
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('packages/server/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ matrix.node-version }}-
 
       - name: Install dependencies
         run: npm ci
