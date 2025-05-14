@@ -41,7 +41,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Cache node modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
+        id: node-modules-cache
         with:
           path: packages/server/node_modules
           key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('packages/server/package-lock.json') }}
@@ -49,6 +50,7 @@ jobs:
             ${{ runner.os }}-node-${{ matrix.node-version }}-
 
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
         working-directory: packages/server
 
