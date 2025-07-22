@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Games</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/htmx.org@1.9.0"></script>
+</head>
+
+<body>
+    <h1>Available Games</h1>
+    <div id="game-list" hx-get="/api/games" hx-target="#game-list" hx-swap="innerHTML">
+        <!-- Game list will be populated here by HTMX -->
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+
+</html>
