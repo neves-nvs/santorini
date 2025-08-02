@@ -88,8 +88,8 @@ describe("WebSocket Message Reception Tests", () => {
         });
       });
 
-      const { token: user2Token } = await helpers.createTestUserWithLogin();
-      await helpers.addTestPlayerToGame(gameId, user2Token);
+      const { user: user2, token: user2Token } = await helpers.createTestUserWithLogin();
+      await helpers.addTestPlayerToGameViaWebSocket(gameId, user2Token, user2.username);
 
       await wsMessagePromise;
     });

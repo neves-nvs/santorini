@@ -49,6 +49,74 @@ export async function createTestGame(jwtToken: string): Promise<number> {
   return response.body.gameId;
 }
 
-export async function addTestPlayerToGame(gameId: number, jwtToken: string) {
-  await request(app).post(`/games/${gameId}/players`).set("Cookie", `token=${jwtToken}`).expect(201);
+// HTTP join endpoint is disabled - use WebSocket join instead
+// export async function addTestPlayerToGame(gameId: number, jwtToken: string) {
+//   await request(app).post(`/games/${gameId}/players`).set("Cookie", `token=${jwtToken}`).expect(201);
+// }
+
+export async function addTestPlayerToGameViaWebSocket(gameId: number, jwtToken: string, username: string): Promise<void> {
+  // Add a small delay to ensure server is ready
+  await new Promise(resolve => setTimeout(resolve, 100));
+
+  return new Promise((resolve, reject) => {
+    const WebSocket = require('ws');
+    // Use the PORT environment variable set by test setup, not the config default
+    const testPort = process.env.PORT || '8081';
+    console.log(`WebSocket helper connecting to ws://localhost:${testPort} for game ${gameId}`);
+
+    const ws = new WebSocket(`ws://localhost:${testPort}`, {
+      headers: {
+        Authorization: `Bearer ${jwtToken}`,
+      },
+      perMessageDeflate: false,
+    });
+
+    let resolved = false;
+
+    const cleanup = () => {
+      if (!resolved) {
+        resolved = true;
+        ws.close();
+      }
+    };
+
+    ws.on('open', () => {
+      // Send join_game message
+      ws.send(JSON.stringify({
+        type: 'join_game',
+        payload: { gameId, username }
+      }));
+    });
+
+    ws.on('message', (data: any) => {
+      try {
+        const message = JSON.parse(data.toString());
+
+        if (message.type === 'game_state_update') {
+          // Successfully joined and received game state
+          cleanup();
+          resolve();
+        } else if (message.type === 'error') {
+          cleanup();
+          reject(new Error(message.payload || 'Failed to join game'));
+        }
+      } catch (error) {
+        // Ignore parsing errors, wait for the right message
+      }
+    });
+
+    ws.on('error', (error: any) => {
+      console.log('WebSocket error in test helper:', error);
+      cleanup();
+      reject(error);
+    });
+
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      if (!resolved) {
+        cleanup();
+        reject(new Error('WebSocket join timeout'));
+      }
+    }, 5000);
+  });
 }
