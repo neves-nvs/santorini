@@ -24,7 +24,7 @@ export type UserUpdate = Updateable<UserTable>;
 export type NewUser = Insertable<UserTable>;
 export type User = Selectable<UserTable>;
 
-export type GameStatus = "waiting" | "in-progress" | "completed" | "aborted";
+export type GameStatus = "waiting" | "ready" | "in-progress" | "completed" | "aborted";
 export type GamePhase = "placing" | "moving" | "building";
 
 export interface GameTable {

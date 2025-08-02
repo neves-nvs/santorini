@@ -15,16 +15,21 @@ import passport from "passport";
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate("jwt", { session: false }, async (err: Error, user: unknown, info: VerifyErrors) => {
     if (info && info.message === "No auth token") {
-      logger.error("No auth token");
+      logger.debug("No auth token");
       return res.status(401).json({ message: "Unauthorized" });
     } else if (info) {
-      logger.error("Forbidden", info);
+      // Reduce spam for common token expiration errors
+      if (info.name === "TokenExpiredError") {
+        logger.debug("Token expired", info.message);
+      } else {
+        logger.error("Forbidden", info);
+      }
       return res.status(403).json({ message: "Forbidden" });
     } else if (err) {
       logger.error("Unauthorized", err);
       return res.status(401).json({ message: "Unauthorized" });
     } else if (!user) {
-      logger.error("Unauthorized");
+      logger.debug("No user found");
       return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -85,8 +90,9 @@ router.post(
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        // sameSite: 'Strict',
-        sameSite: "none",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/",
+        domain: "localhost"
       });
       res.status(200).send("OK");
     } catch (err) {
@@ -95,6 +101,18 @@ router.post(
     }
   },
 );
+
+// Logout endpoint to clear the authentication cookie
+router.post("/logout", (req: Request, res: Response) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
+    domain: "localhost"
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+});
 
 router.get(
   "/auth/google",
@@ -123,8 +141,23 @@ router.get("/auth/google/callback", passport.authenticate("google", { session: f
 
 router.get("/test-auth", authenticate, async (req, res) => {
   try {
-    logger.info("User authenticated", new UserDTO(req.user as User));
+    logger.debug("User authenticated", new UserDTO(req.user as User)); // Changed to debug to reduce spam
     res.status(200).send(req.user);
+  } catch (e: unknown) {
+    const error = e as Error;
+    logger.error(error.message);
+    res.status(400).send(error.message);
+  }
+});
+
+// Endpoint to get JWT token for WebSocket authentication
+router.get("/token", authenticate, async (req, res) => {
+  try {
+    const user = req.user as User;
+    const token = jwt.sign({ username: user.username }, JWT_SECRET, {
+      expiresIn: "5h",
+    });
+    res.status(200).json({ token });
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);

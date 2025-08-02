@@ -12,8 +12,11 @@ import passport from "passport";
 import userController from "./users/userController";
 
 const CORS_CONFIG = {
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "http://localhost:5174"], // Support both old and new React clients
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  optionsSuccessStatus: 200
 };
 
 const app = express();

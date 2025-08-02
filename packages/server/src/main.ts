@@ -36,6 +36,8 @@ wss.on("connection", (ws) => {
   });
 });
 
-server.on("upgrade", webSocketAuthUpgrade);
+server.on("upgrade", (request, socket, head) => {
+  webSocketAuthUpgrade(request, socket, head, wss);
+});
 
 export { server, wss };
