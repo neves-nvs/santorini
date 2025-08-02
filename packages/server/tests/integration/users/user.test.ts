@@ -2,7 +2,7 @@ import { app } from "../../../src/app";
 import { db } from "../../../src/database";
 import { findUserByUsername } from "../../../src/users/userRepository";
 import request from "supertest";
-import { server } from "../../../src/main";
+// Removed server import - not needed for HTTP tests using supertest
 
 const userData = {
   username: "johndoe",
@@ -15,7 +15,6 @@ describe("Users API Integration Tests", () => {
   });
 
   afterAll(() => {
-    server.close();
     db.destroy();
   });
 

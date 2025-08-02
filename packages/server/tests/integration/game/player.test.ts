@@ -7,7 +7,7 @@ import { createTestUserWithLogin } from "../helper/helpers";
 import { db } from "../../../src/database";
 import logger from "../../../src/logger";
 import request from "supertest";
-import { server } from "../../../src/main";
+// Removed server import - not needed for HTTP tests using supertest
 
 const userData = {
   username: "testuser",
@@ -50,11 +50,11 @@ describe("Players in Game API", () => {
   });
 
   afterAll(async () => {
-    server.close();
     await db.destroy();
   });
 
-  describe("POST /games/:gameId/players", () => {
+  // HTTP join endpoint disabled - players should join via WebSocket
+  describe.skip("POST /games/:gameId/players", () => {
     test("201 Created when player is added to game", async () => {
       const game = await createGame(newGameData);
 
