@@ -23,6 +23,13 @@ async function loadContainerInfoFromEnv(): Promise<ConnectionInfo> {
   };
 }
 
+// Set unique port for each Jest worker BEFORE any imports that might start the server
+// Use random port assignment since JEST_WORKER_ID seems to be always 1
+const randomPort = Math.floor(Math.random() * 1000) + 4000; // Random port between 4000-4999
+const workerId = process.env.JEST_WORKER_ID || '1';
+console.log(`Setting PORT to ${randomPort} for worker ${workerId}`);
+process.env.PORT = randomPort.toString();
+
 const newDbName = `test_db_${randomUUID().replace(/-/g, "_")}`;
 process.env.DB_DATABASE = newDbName;
 
@@ -101,8 +108,6 @@ async function setup() {
   } finally {
     await db.destroy();
   }
-
-  process.env.PORT = (3000 + Number(process.env.JEST_WORKER_ID)).toString();
 }
 
 module.exports = async () => {

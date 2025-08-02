@@ -38,8 +38,45 @@ export async function addPlayerToGame(gameId: number, user: User): Promise<void>
       await gameRepository.addPlayerToGame(gameId, user.id, transaction);
 
       const playersCount = (await gameRepository.findPlayersByGameId(gameId, transaction)).length;
+      logger.info(`Game ${gameId} now has ${playersCount}/${game.player_count} players`);
+      logger.info(`Game ${gameId} status check: playersCount=${playersCount}, game.player_count=${game.player_count}, current_status=${game.game_status}`);
+
       if (playersCount === game.player_count) {
-        broadcastUpdate(gameId, { type: "game_start" });
+        logger.info(`Game ${gameId} is full! Setting to ready for confirmation...`);
+
+        // Update game status to ready (waiting for confirmations)
+        await gameRepository.updateGame(gameId, { game_status: "ready" });
+
+        // Broadcast that game is ready for confirmation
+        logger.info(`Broadcasting game_ready_for_start for game ${gameId}`);
+        broadcastUpdate(gameId, { type: "game_ready_for_start" });
+
+        // Send updated game state with enhanced ready status
+        const updatedGame = await gameRepository.findGameById(gameId);
+        const players = await gameRepository.findPlayersByGameId(gameId);
+
+        // Get enhanced ready status with usernames
+        const usersInGame = await gameRepository.findUsersByGame(gameId);
+        const gameSession = await import("./gameSession");
+        const playersReadyStatus = gameSession.getPlayersReadyStatus(gameId);
+        const enhancedReadyStatus = playersReadyStatus.map(status => {
+          const userInfo = usersInGame.find(u => u.id === status.userId);
+          return {
+            ...status,
+            username: userInfo?.username || 'Unknown',
+            displayName: userInfo?.display_name || userInfo?.username || 'Unknown'
+          };
+        });
+
+        logger.info(`Broadcasting game_state_update for game ${gameId} with status: ${updatedGame?.game_status} to ALL players`);
+        broadcastUpdate(gameId, {
+          type: "game_state_update",
+          payload: {
+            ...updatedGame,
+            players: players,
+            playersReadyStatus: enhancedReadyStatus
+          }
+        });
       }
     });
 }

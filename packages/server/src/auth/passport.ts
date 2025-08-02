@@ -8,7 +8,7 @@ import logger from "../logger";
 import passport from "passport";
 
 function extractJwtFromCookies(req: express.Request): string | null {
-  logger.info("Extracting JWT from cookies", req.cookies);
+  logger.debug("Extracting JWT from cookies", req.cookies);
   return req.cookies.token;
 }
 

@@ -65,6 +65,8 @@ export async function addPlayerToGame(
     .execute();
 }
 
+// Player ready functionality moved to in-memory tracking in gameSession.ts
+
 export async function removePlayerFromGame(gameId: number, userId: number): Promise<void> {
   await db.deleteFrom("players").where("game_id", "=", gameId).where("user_id", "=", userId).execute();
 }
