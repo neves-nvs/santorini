@@ -36,12 +36,21 @@ export interface GameTable {
   game_status: GameStatus;
   game_phase: GamePhase | null;
   current_player_id: number | null;
+  turn_number: number;
+  placing_turns_completed: number;
+
+  // Worker tracking for building restrictions
+  last_moved_worker_id: number | null;
+  last_moved_worker_x: number | null;
+  last_moved_worker_y: number | null;
 
   winner_id: number | null;
+  win_reason: string | null;
 
   created_at: ColumnType<Date, string, never>;
   started_at: ColumnType<Date | null, string | undefined, never>;
   finished_at: ColumnType<Date | null, string | undefined, never>;
+  completed_at: ColumnType<Date | null, string | undefined, never>;
 }
 
 export type GameUpdate = Updateable<GameTable>;

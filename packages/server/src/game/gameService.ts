@@ -20,6 +20,8 @@ export async function createGame(user: User, amountOfPlayers: number = 2): Promi
 }
 
 export async function addPlayerToGame(gameId: number, user: User): Promise<void> {
+  let shouldBroadcast = false;
+
   await db
     .transaction()
     .setIsolationLevel("serializable")
@@ -47,38 +49,47 @@ export async function addPlayerToGame(gameId: number, user: User): Promise<void>
         // Update game status to ready (waiting for confirmations)
         await gameRepository.updateGame(gameId, { game_status: "ready" });
 
-        // Broadcast that game is ready for confirmation
-        logger.info(`Broadcasting game_ready_for_start for game ${gameId}`);
-        broadcastUpdate(gameId, { type: "game_ready_for_start" });
-
-        // Send updated game state with enhanced ready status
-        const updatedGame = await gameRepository.findGameById(gameId);
-        const players = await gameRepository.findPlayersByGameId(gameId);
-
-        // Get enhanced ready status with usernames
-        const usersInGame = await gameRepository.findUsersByGame(gameId);
-        const gameSession = await import("./gameSession");
-        const playersReadyStatus = gameSession.getPlayersReadyStatus(gameId);
-        const enhancedReadyStatus = playersReadyStatus.map(status => {
-          const userInfo = usersInGame.find(u => u.id === status.userId);
-          return {
-            ...status,
-            username: userInfo?.username || 'Unknown',
-            displayName: userInfo?.display_name || userInfo?.username || 'Unknown'
-          };
-        });
-
-        logger.info(`Broadcasting game_state_update for game ${gameId} with status: ${updatedGame?.game_status} to ALL players`);
-        broadcastUpdate(gameId, {
-          type: "game_state_update",
-          payload: {
-            ...updatedGame,
-            players: players,
-            playersReadyStatus: enhancedReadyStatus
-          }
-        });
+        // Mark that we should broadcast after transaction commits
+        shouldBroadcast = true;
       }
     });
+
+  // Broadcast AFTER transaction is committed so all queries see the updated data
+  if (shouldBroadcast) {
+    logger.info(`Broadcasting game_ready_for_start for game ${gameId}`);
+    broadcastUpdate(gameId, { type: "game_ready_for_start" });
+
+    // Send updated game state with enhanced ready status
+    const updatedGame = await gameRepository.findGameById(gameId);
+    const players = await gameRepository.findPlayersByGameId(gameId);
+
+    // Get enhanced ready status with usernames
+    const usersInGame = await gameRepository.findUsersByGame(gameId);
+    const gameSession = await import("./gameSession");
+    const playersReadyStatus = gameSession.getPlayersReadyStatus(gameId);
+    const enhancedReadyStatus = playersReadyStatus.map(status => {
+      const userInfo = usersInGame.find(u => u.id === status.userId);
+      return {
+        ...status,
+        username: userInfo?.username || 'Unknown',
+        displayName: userInfo?.display_name || userInfo?.username || 'Unknown'
+      };
+    });
+
+    logger.info(`Broadcasting game_state_update for game ${gameId} with status: ${updatedGame?.game_status} to ALL players`);
+
+    // Use formatted game state instead of raw database object
+    const messageHandler = await import("../websockets/messageHandler");
+    const formattedGameState = await messageHandler.formatGameStateForFrontend(updatedGame, gameId);
+
+    broadcastUpdate(gameId, {
+      type: "game_state_update",
+      payload: {
+        ...formattedGameState,
+        playersReadyStatus: enhancedReadyStatus
+      }
+    });
+  }
 }
 
 export async function isReadyToStart(gameId: number): Promise<boolean> {
