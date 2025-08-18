@@ -1,8 +1,34 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 import { webSocketService, WebSocketEventHandler } from '../services/WebSocketService'
 import { useGame } from '../store/GameContext'
+import { useToast } from '../store/ToastContext'
 import { GameState, AvailablePlay } from '../types/game'
-import { gameplayService } from '../services/GameplayService'
+
+/**
+ * Calculate isMyTurn based on current user and game state
+ * Memoized to avoid recalculation on every render
+ */
+const calculateIsMyTurn = (gameState: any, currentUsername: string | null): any => {
+  if (!gameState || !currentUsername) {
+    return { ...gameState, isMyTurn: false }
+  }
+
+  // Find current user in players array
+  const currentUser = gameState.players?.find((player: any) =>
+    player.username === currentUsername
+  )
+
+  if (!currentUser) {
+    return { ...gameState, isMyTurn: false }
+  }
+
+  // Compare current user ID with currentPlayer
+  const isMyTurn = currentUser.id?.toString() === gameState.currentPlayer?.toString()
+
+  // Calculate if it's current user's turn
+
+  return { ...gameState, isMyTurn }
+}
 
 export const useWebSocket = () => {
   const {
@@ -11,8 +37,15 @@ export const useWebSocket = () => {
     setConnecting,
     setError,
     setGameState,
-    setAvailablePlays
+    setCurrentPlayerMoves,
+    setMyTurn
   } = useGame()
+  const { showToast } = useToast()
+
+  // Memoize turn calculation to avoid expensive operations
+  const calculateTurnMemoized = useCallback((gameState: any) => {
+    return calculateIsMyTurn(gameState, state.username)
+  }, [state.username])
 
   // Only set up event handlers, don't auto-connect
 
@@ -60,7 +93,8 @@ export const useWebSocket = () => {
     const handleJoinedGame: WebSocketEventHandler = (message) => {
       console.log('Joined game:', message.payload)
       if (message.payload.gameState) {
-        setGameState(message.payload.gameState)
+        const gameStateWithTurn = calculateTurnMemoized(message.payload.gameState)
+        setGameState(gameStateWithTurn)
       }
     }
 
@@ -85,34 +119,27 @@ export const useWebSocket = () => {
         players: message.payload
       }
       console.log('Updated game state:', newGameState)
-      setGameState(newGameState)
+      const gameStateWithTurn = calculateTurnMemoized(newGameState)
+      setGameState(gameStateWithTurn)
     }
 
-    const handleAvailablePlays: WebSocketEventHandler = (message) => {
-      console.log('🎯 Available plays received in useWebSocket:', message.payload)
-
-      // Set the old availablePlays state for backward compatibility
-      if (Array.isArray(message.payload)) {
-        setAvailablePlays(message.payload)
-      } else if (message.payload.plays) {
-        setAvailablePlays(message.payload.plays)
-      }
-
-      // IMPORTANT: Also route to GameplayService for new turn logic
-      console.log('🎯 Routing available_plays to GameplayService from useWebSocket')
-      gameplayService.handleMessage(message)
-    }
+    // Note: available_plays/available_moves are handled directly by GameplayService
+    // No need to handle them here to avoid duplicate processing
 
     const handleGameStateUpdate: WebSocketEventHandler = (message) => {
-      console.log('🎮 Game state update received:', {
-        game_status: message.payload?.game_status,
-        players_count: message.payload?.players?.length,
-        ready_status_count: message.payload?.playersReadyStatus?.length,
-        payload: message.payload
-      })
+      // Game state update received
+      console.log('🔄 Received game state update for game:', message.payload?.id, 'current game:', state.gameId)
+
+      // Only process updates for the current game
+      if (message.payload?.id && state.gameId && message.payload.id.toString() !== state.gameId.toString()) {
+        console.log('⚠️ Ignoring game state update for different game:', message.payload.id, 'vs current:', state.gameId)
+        return
+      }
 
       // Game state update should include players - use it immediately
-      setGameState(message.payload)
+      // Calculate isMyTurn based on current user
+      const gameStateWithTurn = calculateIsMyTurn(message.payload, state.username)
+      setGameState(gameStateWithTurn)
 
       // Log important state changes
       if (message.payload?.game_status === 'ready') {
@@ -124,30 +151,44 @@ export const useWebSocket = () => {
 
       // If this game state includes players, we don't need to wait for separate players_in_game message
       if (message.payload?.players) {
-        console.log('✅ Players included in game state:', message.payload.players)
+        // Players included in game state
       }
     }
 
     const handleGameStart: WebSocketEventHandler = (message) => {
-      console.log('🎮 Game started!', message.payload)
-      // Game has started, players can now make moves
-      // You could show a notification or update UI here
+      console.log('🚀 Game Started! All players are ready.', message.payload)
+
+      // Show toast notification
+      showToast('🚀 Game Started! All players are ready. Let the battle begin!', 'success', 6000)
+
+      // Also try browser notification if available
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification('Santorini Game Started!', {
+            body: 'All players are ready. The game has begun!',
+            icon: '/favicon.ico'
+          })
+        }
+      }
     }
 
     const handleGameReadyForStart: WebSocketEventHandler = (message) => {
-      console.log('Game ready for start!', message.payload)
-      // Game is full and ready for player confirmation
-      // The game state will be updated via the game_state_update message that follows
+      console.log('🎯 Game ready for start!', message.payload)
+
+      // Show toast notification that game is ready for confirmation
+      showToast('🎯 Game is full! Click "Ready" to start the game.', 'info', 5000)
     }
 
     const handlePlayerReadyStatus: WebSocketEventHandler = (message) => {
       console.log('Player ready status update:', message.payload)
       // Update the game state with the new ready status
       if (state.gameState) {
-        setGameState({
+        const newGameState = {
           ...state.gameState,
           playersReadyStatus: message.payload
-        })
+        }
+        const gameStateWithTurn = calculateTurnMemoized(newGameState)
+        setGameState(gameStateWithTurn)
       }
     }
 
@@ -155,18 +196,21 @@ export const useWebSocket = () => {
       console.log('🎯 Player ready status updated:', message.payload)
       // Update the current user's ready status and all players' ready status
       if (state.gameState) {
-        setGameState({
+        const newGameState = {
           ...state.gameState,
           currentUserReady: message.payload.isReady,
           playersReadyStatus: message.payload.playersReadyStatus
-        })
+        }
+        const gameStateWithTurn = calculateTurnMemoized(newGameState)
+        setGameState(gameStateWithTurn)
       }
     }
 
     const handleGameStarted: WebSocketEventHandler = (message) => {
       console.log('🚀 Game has started!', message.payload)
       // Update game state to reflect that the game has started
-      setGameState(message.payload)
+      const gameStateWithTurn = calculateIsMyTurn(message.payload, state.username)
+      setGameState(gameStateWithTurn)
     }
 
     const handleGameStartingCountdown: WebSocketEventHandler = (message) => {
@@ -178,7 +222,7 @@ export const useWebSocket = () => {
     webSocketService.on('joined_game', handleJoinedGame)
     webSocketService.on('current_players', handleCurrentPlayers)
     webSocketService.on('players_in_game', handlePlayersInGame)
-    webSocketService.on('available_plays', handleAvailablePlays)
+    // Note: available_plays/available_moves are handled directly by GameplayService
     webSocketService.on('game_state_update', handleGameStateUpdate)
     webSocketService.on('game_start', handleGameStart)
     webSocketService.on('game_ready_for_start', handleGameReadyForStart)
@@ -192,7 +236,7 @@ export const useWebSocket = () => {
       webSocketService.off('joined_game', handleJoinedGame)
       webSocketService.off('current_players', handleCurrentPlayers)
       webSocketService.off('players_in_game', handlePlayersInGame)
-      webSocketService.off('available_plays', handleAvailablePlays)
+      // Note: available_plays/available_moves cleanup handled by GameplayService
       webSocketService.off('game_state_update', handleGameStateUpdate)
       webSocketService.off('game_start', handleGameStart)
       webSocketService.off('game_ready_for_start', handleGameReadyForStart)
@@ -201,17 +245,22 @@ export const useWebSocket = () => {
       webSocketService.off('game_started', handleGameStarted)
       webSocketService.off('game_starting_countdown', handleGameStartingCountdown)
     }
-  }, [setGameState, setAvailablePlays])
+  }, [setGameState, setCurrentPlayerMoves, setMyTurn, calculateTurnMemoized])
 
-  // Game actions
-  const subscribeToGame = useCallback((gameId: string, username: string) => {
-    console.log('🎮 Subscribing to game:', gameId, 'as user:', username)
-    webSocketService.subscribeToGame(gameId, username)
+  // Game actions (backend extracts username from JWT token)
+  const subscribeToGame = useCallback((gameId: string) => {
+    // Subscribe to game updates
+    webSocketService.subscribeToGame(gameId)
   }, [])
 
-  const joinGame = useCallback((gameId: string, username: string) => {
-    console.log('🎮 Joining game via WebSocket:', gameId, 'as user:', username)
-    webSocketService.joinGame(gameId, username)
+  const unsubscribeFromGame = useCallback((gameId: string) => {
+    // Unsubscribe from game updates
+    webSocketService.unsubscribeFromGame(gameId)
+  }, [])
+
+  const joinGame = useCallback((gameId: string) => {
+    // Join game via WebSocket
+    webSocketService.joinGame(gameId)
   }, [])
 
   const placeWorker = useCallback((x: number, y: number) => {
@@ -243,6 +292,7 @@ export const useWebSocket = () => {
     connect,
     disconnect,
     subscribeToGame,
+    unsubscribeFromGame,
     joinGame,
     placeWorker,
     moveWorker,

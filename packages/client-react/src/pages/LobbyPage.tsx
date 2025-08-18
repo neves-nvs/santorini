@@ -20,7 +20,7 @@ interface GameInfo {
 }
 
 const LobbyPage = () => {
-  const { state, setGameId, setUsername, logout } = useGame()
+  const { state, setGameId, logout } = useGame()
   const { isConnected, subscribeToGame, joinGame } = useWebSocket()
   const navigate = useNavigate()
   
@@ -28,10 +28,7 @@ const LobbyPage = () => {
   const [playerCount, setPlayerCount] = useState(2)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [usernameInput, setUsernameInput] = useState(state.username || '')
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isGettingUser, setIsGettingUser] = useState(false)
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -40,12 +37,7 @@ const LobbyPage = () => {
     }
   }, [state.username, navigate])
 
-  // Get current user info once when component mounts
-  useEffect(() => {
-    if (state.username && !currentUserId) {
-      getCurrentUserInfo()
-    }
-  }, [state.username, currentUserId])
+  // Note: getCurrentUser functionality removed as test-auth endpoint was removed
 
   // Auto-refresh games on mount and periodically
   useEffect(() => {
@@ -61,24 +53,7 @@ const LobbyPage = () => {
     }
   }, [state.username]) // Only depends on username
 
-  const getCurrentUserInfo = async () => {
-    // Prevent multiple simultaneous user info requests
-    if (isGettingUser) {
-      console.log('🚫 User info request already in progress, skipping...')
-      return
-    }
 
-    setIsGettingUser(true)
-    try {
-      const user = await apiService.getCurrentUser()
-      setCurrentUserId(user.id)
-      console.log('✅ Got current user info:', user.id)
-    } catch (err) {
-      console.error('Failed to get current user:', err)
-    } finally {
-      setIsGettingUser(false)
-    }
-  }
 
   const handleCreateGame = async () => {
     if (!state.username) {
@@ -98,7 +73,7 @@ const LobbyPage = () => {
 
         // Creator automatically joins the game via WebSocket (eliminates race condition)
         setGameId(gameId)
-        joinGame(gameId, state.username) // This handles both joining and subscribing
+        joinGame(gameId) // This handles both joining and subscribing
         navigate(`/game/${gameId}`)
       }
     } catch (err) {
@@ -120,15 +95,15 @@ const LobbyPage = () => {
 
     try {
       const gameId = game.id.toString()
-      const gamePlayers = game.players || []
-      const isPlayerInGame = currentUserId && gamePlayers.includes(currentUserId)
+      // Note: User ID check removed since getCurrentUser was removed
+      const isPlayerInGame = false // TODO: Implement proper user ID check if needed
 
       // Join game via WebSocket (handles both joining and subscribing)
       setGameId(gameId)
       if (!isPlayerInGame) {
-        joinGame(gameId, state.username) // Join and subscribe in one atomic operation
+        joinGame(gameId) // Join and subscribe in one atomic operation
       } else {
-        subscribeToGame(gameId, state.username) // Just subscribe if already in game
+        subscribeToGame(gameId) // Just subscribe if already in game
       }
       navigate(`/game/${gameId}`)
     } catch (err) {
@@ -154,7 +129,7 @@ const LobbyPage = () => {
       // Single request that returns games with player counts included
       const games = await apiService.getGamesWithPlayerCounts()
       setAvailableGames(games)
-      console.log('✅ Fetched games with player counts in single request:', games.length)
+      console.log('✅ Fetched', games.length, 'games')
     } catch (err) {
       console.error('Failed to fetch games:', err)
       setError('Failed to fetch games. Please try again.')
@@ -164,11 +139,7 @@ const LobbyPage = () => {
     }
   }
 
-  const handleSetUsername = () => {
-    if (usernameInput.trim()) {
-      setUsername(usernameInput.trim())
-    }
-  }
+
 
   const handleLogout = async () => {
     try {
@@ -338,8 +309,8 @@ const LobbyPage = () => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {availableGames.map((game) => {
-                    const gamePlayers = game.players || []
-                    const isPlayerInGame = currentUserId && gamePlayers.includes(currentUserId)
+                    // Note: User ID check removed since getCurrentUser was removed
+                    const isPlayerInGame = false // TODO: Implement proper user ID check if needed
                     const canJoin = isConnected && (game.game_status === 'waiting' || isPlayerInGame)
 
                     return (

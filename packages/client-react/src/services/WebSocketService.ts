@@ -1,5 +1,7 @@
-import { WebSocketMessage, GameState, AvailablePlay } from '../types/game'
+import { WebSocketMessage } from '../types/game'
 import { gameplayService } from './GameplayService'
+import { ErrorHandler, ErrorType } from '../utils/errorHandler'
+import { RECONNECTION_DELAY } from '../constants/gameConstants'
 
 export type WebSocketEventHandler = (message: WebSocketMessage) => void
 
@@ -8,7 +10,7 @@ export class WebSocketService {
   private serverAddress = 'ws://localhost:3000'
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
-  private reconnectDelay = 1000
+  private reconnectDelay = RECONNECTION_DELAY
   private eventHandlers: Map<string, WebSocketEventHandler[]> = new Map()
   private isAuthenticated = false
 
@@ -25,10 +27,16 @@ export class WebSocketService {
       const { apiService } = await import('./ApiService')
       const tokenResponse = await apiService.getToken()
       this.authToken = tokenResponse.token
-      console.log('Got JWT token for WebSocket:', this.authToken)
+      console.log('🔑 Got JWT token for WebSocket')
     } catch (error) {
-      console.error('Failed to get JWT token:', error)
-      // If we can't get a token, don't try to connect - user needs to re-authenticate
+      const authError = ErrorHandler.createError(
+        ErrorType.AUTHENTICATION,
+        error as Error,
+        undefined,
+        { context: 'JWT token retrieval' }
+      )
+
+      ErrorHandler.logError(authError, 'WebSocketService.connectAfterAuth')
       this.isAuthenticated = false
       return
     }
@@ -71,11 +79,11 @@ export class WebSocketService {
         wsUrl += `?token=${this.authToken}`
       }
 
-      console.log('Creating new WebSocket connection to:', wsUrl)
+      console.log('🔌 Creating WebSocket connection')
       this.socket = new WebSocket(wsUrl)
-      
+
       this.socket.onopen = () => {
-        console.log('Connected to WebSocket server')
+        console.log('✅ WebSocket connected')
         this.reconnectAttempts = 0
         this.emit('connected', { connected: true })
       }
@@ -83,10 +91,15 @@ export class WebSocketService {
       this.socket.onmessage = (event) => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data)
-          console.log('WebSocket message received:', message)
           this.handleMessage(message)
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error)
+          const parseError = ErrorHandler.createError(
+            ErrorType.WEBSOCKET,
+            `Failed to parse WebSocket message: ${error}`,
+            undefined,
+            { rawMessage: event.data }
+          )
+          ErrorHandler.logError(parseError, 'WebSocketService.onmessage')
         }
       }
 
@@ -97,8 +110,15 @@ export class WebSocketService {
       }
 
       this.socket.onerror = (error) => {
-        console.error('WebSocket error:', error)
-        this.emit('error', { error: 'WebSocket connection error' })
+        const wsError = ErrorHandler.handleWebSocketError(error)
+        ErrorHandler.logError(wsError, 'WebSocketService.connect')
+
+        this.emit('error', {
+          error: ErrorHandler.getUserMessage(wsError)
+        })
+
+        // Don't immediately try to reconnect on error - let onclose handle it
+        // This prevents rapid reconnection attempts that can cause more errors
       }
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error)
@@ -123,29 +143,23 @@ export class WebSocketService {
   private handleMessage(message: WebSocketMessage) {
     const { type, payload } = message
 
-    // Log all messages for debugging
-    console.log('🔌 WebSocket message received:', { type, payload })
-    console.log('🔌 Full message object:', JSON.stringify(message, null, 2))
-
-    // Special logging for turn-related messages
-    if (type === 'available_plays') {
-      console.log('🎯 AVAILABLE_PLAYS message detected!')
-      console.log('🎯 Payload:', payload)
-      console.log('🎯 Payload type:', typeof payload)
-      console.log('🎯 Is array:', Array.isArray(payload))
+    // Log important game flow messages
+    if (type === 'game_start' || type === 'game_ready_for_start' || type === 'error') {
+      console.log('🔌 WebSocket message:', type, payload)
     }
 
-    if (type === 'game_state_update') {
-      console.log('📢 GAME_STATE_UPDATE message detected!')
-      console.log('📢 Payload:', payload)
+    // Handle error messages
+    if (type === 'error') {
+      console.error('🚨 Server error received:', payload)
+      // Don't disconnect on server errors - just log them
+      // The error might be a game logic error (like "not your turn")
+      this.emit('server_error', payload)
     }
 
     // Route gameplay messages to GameplayService
-    if (type === 'your_turn' || type === 'game_update' || type === 'available_plays' || type === 'game_state_update' || type === 'move_acknowledged') {
-      console.log('🎮 Routing to GameplayService:', type)
+    if (type === 'your_turn' || type === 'game_update' || type === 'available_plays' || type === 'available_moves' || type === 'game_state_update' || type === 'move_acknowledged' || type === 'error') {
+      console.log(`🔌 Routing ${type} message to GameplayService:`, message)
       gameplayService.handleMessage(message)
-    } else {
-      console.log('🔌 Not routing to GameplayService, message type:', type)
     }
 
     // Emit the specific message type
@@ -180,7 +194,13 @@ export class WebSocketService {
         try {
           handler({ type: event, payload: data })
         } catch (error) {
-          console.error(`Error in event handler for ${event}:`, error)
+          const handlerError = ErrorHandler.createError(
+            ErrorType.UNKNOWN,
+            `Event handler error for ${event}: ${error}`,
+            undefined,
+            { event, data }
+          )
+          ErrorHandler.logError(handlerError, 'WebSocketService.emit')
         }
       })
     }
@@ -188,41 +208,57 @@ export class WebSocketService {
 
   // Send message to server
   send(type: string, payload: any) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      const error = new Error(`WebSocket is not connected. State: ${this.socket?.readyState || 'null'}`)
+      console.error('WebSocket send failed:', error.message, { type, payload })
+      throw error
+    }
+
+    try {
       const message = { type, payload }
       this.socket.send(JSON.stringify(message))
-      console.log('Sent WebSocket message:', message)
-    } else {
-      console.warn('WebSocket is not connected. Cannot send message:', { type, payload })
+      console.log('📤 Sent:', type)
+    } catch (error) {
+      console.error('Failed to send WebSocket message:', error, { type, payload })
+      throw error
     }
   }
 
-  // Game-specific methods
-  subscribeToGame(gameId: string, username: string) {
+  // Game-specific methods (backend extracts username from JWT token)
+  subscribeToGame(gameId: string) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      console.log('📡 Sending subscribe_game message:', { gameId, username })
-      this.send('subscribe_game', { gameId, username })
+      console.log('📡 Subscribing to game:', gameId)
+      this.send('subscribe_game', { gameId })
     } else {
       console.warn('⚠️ WebSocket not ready for subscription. State:', this.socket?.readyState)
       // Simple retry after a short delay if connection is still connecting
       if (this.socket?.readyState === WebSocket.CONNECTING) {
         setTimeout(() => {
-          this.subscribeToGame(gameId, username)
+          this.subscribeToGame(gameId)
         }, 200)
       }
     }
   }
 
-  joinGame(gameId: string, username: string) {
+  unsubscribeFromGame(gameId: string) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      console.log('🎮 Sending join_game message:', { gameId, username })
-      this.send('join_game', { gameId: parseInt(gameId), username })
+      console.log('📡 Unsubscribing from game:', gameId)
+      this.send('unsubscribe_game', { gameId })
+    } else {
+      console.warn('⚠️ WebSocket not ready for unsubscription. State:', this.socket?.readyState)
+    }
+  }
+
+  joinGame(gameId: string) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      console.log('🎮 Joining game:', gameId)
+      this.send('join_game', { gameId: parseInt(gameId) })
     } else {
       console.warn('⚠️ WebSocket not ready for joining. State:', this.socket?.readyState)
       // Simple retry after a short delay if connection is still connecting
       if (this.socket?.readyState === WebSocket.CONNECTING) {
         setTimeout(() => {
-          this.joinGame(gameId, username)
+          this.joinGame(gameId)
         }, 200)
       }
     }
@@ -286,12 +322,16 @@ export const webSocketService = {
     this.getInstance().send(type, payload)
   },
 
-  subscribeToGame(gameId: string, username: string) {
-    this.getInstance().subscribeToGame(gameId, username)
+  subscribeToGame(gameId: string) {
+    this.getInstance().subscribeToGame(gameId)
   },
 
-  joinGame(gameId: string, username: string) {
-    this.getInstance().joinGame(gameId, username)
+  unsubscribeFromGame(gameId: string) {
+    this.getInstance().unsubscribeFromGame(gameId)
+  },
+
+  joinGame(gameId: string) {
+    this.getInstance().joinGame(gameId)
   },
 
   placeWorker(x: number, y: number) {

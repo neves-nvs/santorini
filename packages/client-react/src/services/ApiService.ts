@@ -1,3 +1,5 @@
+import { ErrorHandler, ErrorType } from '../utils/errorHandler'
+
 export interface LoginRequest {
   username: string
   password: string
@@ -41,27 +43,24 @@ export class ApiService {
       const response = await fetch(url, config)
 
       if (!response.ok) {
-        const errorText = await response.text()
+        // Use centralized error handling
+        const error = await ErrorHandler.handleHttpError(response)
 
-        // Handle authentication errors (401/403) - likely expired token
-        if (response.status === 401 || response.status === 403) {
-          console.warn('Authentication failed - token likely expired. Clearing auth state.')
-          // Clear localStorage to force re-authentication
-          localStorage.removeItem('username')
-          localStorage.removeItem('gameId')
-          // Redirect to auth page if not already there
+        // Handle specific error types with consistent actions
+        if (error.type === ErrorType.AUTHENTICATION) {
+          console.warn('Authentication failed - redirecting to auth.')
           if (window.location.pathname !== '/auth') {
             window.location.href = '/auth'
           }
         }
 
-        // Handle 404 for game-related endpoints - clear invalid game ID
         if (response.status === 404 && endpoint.includes('/games/')) {
-          console.warn('Game not found (404) - clearing invalid game ID from localStorage')
-          localStorage.removeItem('gameId')
+          console.warn('Game not found')
+          // Let the UI handle clearing game state, don't manipulate localStorage
         }
 
-        throw new Error(`HTTP ${response.status}: ${errorText}`)
+        ErrorHandler.logError(error, `ApiService.request(${endpoint})`)
+        throw error
       }
 
       // Handle empty responses
@@ -72,8 +71,21 @@ export class ApiService {
         return await response.text() as unknown as T
       }
     } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error)
-      throw error
+      // If it's already a GameError, just re-throw
+      if (error instanceof Error && error.name === 'GameError') {
+        throw error
+      }
+
+      // Handle network/fetch errors
+      const networkError = ErrorHandler.createError(
+        ErrorType.NETWORK,
+        error as Error,
+        undefined,
+        { endpoint, url }
+      )
+
+      ErrorHandler.logError(networkError, `ApiService.request(${endpoint})`)
+      throw networkError
     }
   }
 
@@ -91,17 +103,25 @@ export class ApiService {
         method: 'POST',
       })
     } catch (error) {
-      // Even if logout fails, clear local state
-      console.warn('Logout request failed, but clearing local state anyway:', error)
+      console.warn('Logout request failed:', error)
     }
-    // Always clear localStorage regardless of server response
-    localStorage.removeItem('username')
-    localStorage.removeItem('gameId')
+    // Note: No longer clearing localStorage - let GameContext handle state
   }
 
   // Get JWT token for WebSocket authentication
   async getToken(): Promise<{ token: string }> {
     return this.request<{ token: string }>('/token')
+  }
+
+  // Check if user is authenticated and get user info
+  async checkAuth(): Promise<{ username: string } | null> {
+    try {
+      // This endpoint should return user info if authenticated, 401 if not
+      return await this.request<{ username: string }>('/me')
+    } catch (error) {
+      // If 401 or any auth error, user is not authenticated
+      return null
+    }
   }
 
   // User management
@@ -153,17 +173,15 @@ export class ApiService {
     return this.request<any[]>(`/games/${gameId}/players`)
   }
 
-  async getCurrentUser(): Promise<any> {
-    return this.request<any>('/test-auth')
-  }
+
 
   async getGameState(gameId: string): Promise<any> {
-    const game = await this.request<any>(`/games/${gameId}`)
-    const players = await this.request<any>(`/games/${gameId}/players`)
-    return {
-      ...game,
-      players: players
-    }
+    // Use the new comprehensive game state endpoint
+    console.log(`🔍 Fetching game state for game ID: ${gameId}`)
+    const result = await this.request<any>(`/games/${gameId}/state`)
+    console.log(`🔍 Game state response:`, result)
+    console.log(`🔍 Board in response:`, result?.board)
+    return result
   }
 
   async setPlayerReady(gameId: string, isReady: boolean): Promise<boolean> {
@@ -191,6 +209,19 @@ export class ApiService {
       method: 'POST',
       body: JSON.stringify({ play }),
     })
+  }
+
+  // Make a move using the new turn management system
+  async makeMove(gameId: string, move: any): Promise<any> {
+    return this.request<any>(`/games/${gameId}/move`, {
+      method: 'POST',
+      body: JSON.stringify({ move }),
+    })
+  }
+
+  // Get current turn state and available plays
+  async getTurnState(gameId: string): Promise<any> {
+    return this.request<any>(`/games/${gameId}/turn`)
   }
 }
 

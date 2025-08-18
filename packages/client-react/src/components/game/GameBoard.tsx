@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Environment } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import { PerspectiveCamera } from 'three'
 import Board3D from './Board3D'
 import { GameState } from '../../types/game'
@@ -110,8 +110,14 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, debugState, onCellClic
             shadow-mapSize-height={2048}
           />
 
-          {/* Environment */}
-          <Environment preset="sunset" />
+          {/* Environment - Simple background without external HDR */}
+          <color attach="background" args={['#87CEEB']} />
+          <ambientLight intensity={0.4} />
+          <hemisphereLight
+            skyColor="#87CEEB"
+            groundColor="#8B4513"
+            intensity={0.6}
+          />
 
           {/* 3D Board */}
           <Board3D
