@@ -1,4 +1,4 @@
-import { Database, Game, GameUpdate, NewGame, NewPlayer, User } from "../model";
+import { Database, Game, GameUpdate, NewGame, NewPlayer, User, Piece } from "../model";
 import { Kysely, Transaction } from "kysely";
 
 import { db } from "../database";
@@ -18,7 +18,7 @@ export async function findGameById(
 }
 
 export async function getAllGames(database: Transaction<Database> | Kysely<Database> = db): Promise<Game[]> {
-  return database.selectFrom("games").selectAll().execute();
+  return database.selectFrom("games").selectAll().orderBy("id", "desc").execute();
 }
 
 export async function createGame(game: NewGame): Promise<Game> {
@@ -86,4 +86,12 @@ export async function findUsersByGame(
     .where("games.id", "=", gameId)
     .selectAll("users")
     .execute();
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   PIECES                                   */
+/* -------------------------------------------------------------------------- */
+
+export async function getPiecesByGame(gameId: number): Promise<Piece[]> {
+  return await db.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
 }

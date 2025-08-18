@@ -20,3 +20,7 @@ export const checkValidation = (req: Request, res: Response, next: NextFunction)
 export const validateUUIDParam = (paramName: string) => {
   return param(paramName).isUUID().withMessage(`${paramName} must be a valid UUID`);
 };
+
+export const validateIntParam = (paramName: string) => {
+  return param(paramName).isInt({ min: 1 }).withMessage(`${paramName} must be a valid positive integer`);
+};

@@ -4,7 +4,7 @@ import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { JWT_SECRET } from "../configs/config";
 import { StatusCodes } from "http-status-codes";
 import { User } from "../model";
-import { UserDTO } from "../users/userDTO";
+
 import bcrypt from "bcryptjs";
 import { body } from "express-validator";
 import { checkValidation } from "../middlewares/middleware";
@@ -139,17 +139,6 @@ router.get("/auth/google/callback", passport.authenticate("google", { session: f
   res.redirect("http://localhost:5173");
 });
 
-router.get("/test-auth", authenticate, async (req, res) => {
-  try {
-    logger.debug("User authenticated", new UserDTO(req.user as User)); // Changed to debug to reduce spam
-    res.status(200).send(req.user);
-  } catch (e: unknown) {
-    const error = e as Error;
-    logger.error(error.message);
-    res.status(400).send(error.message);
-  }
-});
-
 // Endpoint to get JWT token for WebSocket authentication
 router.get("/token", authenticate, async (req, res) => {
   try {
@@ -158,6 +147,18 @@ router.get("/token", authenticate, async (req, res) => {
       expiresIn: "5h",
     });
     res.status(200).json({ token });
+  } catch (e: unknown) {
+    const error = e as Error;
+    logger.error(error.message);
+    res.status(400).send(error.message);
+  }
+});
+
+// Endpoint to check authentication status and get user info
+router.get("/me", authenticate, async (req, res) => {
+  try {
+    const user = req.user as User;
+    res.status(200).json({ username: user.username });
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);
