@@ -1,23 +1,56 @@
-import { 
-  YourTurnMessage, 
-  GameUpdateMessage, 
-  MakeMoveMessage, 
+import {
+  YourTurnMessage,
+  GameUpdateMessage,
   PlaceWorkerMove,
-  AvailableMove 
+  AvailableMove
 } from '../types/game'
 import { webSocketService } from './WebSocketService'
+import { MOVE_TIMEOUT } from '../constants/gameConstants'
+import { ErrorHandler, ErrorType, ERROR_MESSAGES } from '../utils/errorHandler'
 
 /**
  * Service for handling gameplay WebSocket messages and move submission
  */
 class GameplayService {
   private gameContext: any = null
+  private previousState: {
+    currentPlayerMoves: AvailableMove[]
+    isMyTurn: boolean
+  } | null = null
 
   /**
    * Initialize with game context for state updates
    */
   setGameContext(context: any) {
     this.gameContext = context
+  }
+
+  /**
+   * Save current state for potential rollback
+   */
+  private saveStateForRollback() {
+    if (!this.gameContext) return
+
+    this.previousState = {
+      currentPlayerMoves: [...this.gameContext.state.currentPlayerMoves],
+      isMyTurn: this.gameContext.state.isMyTurn
+    }
+    console.log('💾 Saved state for rollback:', this.previousState)
+  }
+
+  /**
+   * Restore previous state if move fails
+   */
+  private rollbackOptimisticUpdate() {
+    if (!this.gameContext || !this.previousState) {
+      console.warn('⚠️ Cannot rollback: no previous state saved')
+      return
+    }
+
+    console.log('🔄 Rolling back optimistic update to:', this.previousState)
+    this.gameContext.setCurrentPlayerMoves(this.previousState.currentPlayerMoves)
+    this.gameContext.setMyTurn(this.previousState.isMyTurn)
+    this.previousState = null
   }
 
   /**
@@ -46,41 +79,35 @@ class GameplayService {
    * Handle incoming WebSocket messages related to gameplay
    */
   handleMessage(message: any) {
-    console.log('🎮 GameplayService.handleMessage() called!')
-    console.log('🎮 GameplayService received message:', message)
-    console.log('🎮 Message type:', message.type)
-    console.log('🎮 Message payload:', message.payload)
-    console.log('🎮 GameContext available:', !!this.gameContext)
+    if (!this.gameContext) {
+      console.error('❌ GameContext not available')
+      return
+    }
 
     switch (message.type) {
       case 'your_turn':
-        console.log('🎯 Processing YOUR_TURN message')
         this.handleYourTurn(message as YourTurnMessage)
         break
-
       case 'game_update':
-        console.log('📢 Processing GAME_UPDATE message')
         this.handleGameUpdate(message as GameUpdateMessage)
         break
-
       case 'available_plays':
-        console.log('🎯 Processing AVAILABLE_PLAYS message (backend format)')
-        this.handleAvailablePlays(message)
+        this.handleAvailableMoves(message)
         break
-
+      case 'available_moves':
+        this.handleAvailableMoves(message)
+        break
       case 'game_state_update':
-        console.log('📢 Processing GAME_STATE_UPDATE message (backend format)')
         this.handleGameStateUpdate(message)
         break
-
       case 'move_acknowledged':
-        console.log('✅ Processing MOVE_ACKNOWLEDGED message')
         this.handleMoveAcknowledged(message)
         break
-
+      case 'error':
+        this.handleError(message)
+        break
       default:
-        console.log('❓ Unhandled gameplay message type:', message.type)
-        console.log('❓ Full message:', JSON.stringify(message, null, 2))
+        console.warn('❓ Unhandled message type:', message.type)
     }
   }
 
@@ -109,7 +136,7 @@ class GameplayService {
 
     if (isGameStarted) {
       // Set available moves
-      this.gameContext.setAvailableMoves(message.availableMoves)
+      this.gameContext.setCurrentPlayerMoves(message.availableMoves)
 
       // Mark as player's turn
       this.gameContext.setMyTurn(true)
@@ -117,7 +144,7 @@ class GameplayService {
       console.log('Game has started, setting available moves:', message.availableMoves)
     } else {
       // Game not started yet, clear moves and turn state
-      this.gameContext.setAvailableMoves([])
+      this.gameContext.setCurrentPlayerMoves([])
       this.gameContext.setMyTurn(false)
 
       console.log('Game not started yet, clearing moves. Status:', gameState.game_status, 'Phase:', gameState.phase, 'Game Phase:', gameState.game_phase)
@@ -137,17 +164,30 @@ class GameplayService {
     }
 
     console.log('📢 GAME_UPDATE message received:', message)
-    console.log('📢 Setting isMyTurn to FALSE (not my turn after update)')
-    
+
     // Update game state
     this.gameContext.setGameState(message.gameState)
-    
-    // Clear available moves (not our turn)
-    this.gameContext.setAvailableMoves([])
-    
-    // Mark as not our turn
-    this.gameContext.setMyTurn(false)
-    
+
+    // Check if this update includes available plays (means it's our turn)
+    if (message.gameState.availablePlays && Array.isArray(message.gameState.availablePlays) && message.gameState.availablePlays.length > 0) {
+      console.log('📢 Game update includes available plays - setting as our turn')
+
+      // Convert backend plays to our AvailableMove format
+      const availableMoves = this.convertBackendPlaysToMoves(message.gameState.availablePlays)
+      this.gameContext.setCurrentPlayerMoves(availableMoves)
+
+      // Mark as our turn
+      this.gameContext.setMyTurn(true)
+    } else {
+      console.log('📢 Game update has no available plays - not our turn')
+
+      // Clear available moves (not our turn)
+      this.gameContext.setCurrentPlayerMoves([])
+
+      // Mark as not our turn
+      this.gameContext.setMyTurn(false)
+    }
+
     // TODO: Show animation of last move if provided
     if (message.lastMove) {
       console.log('Last move:', message.lastMove)
@@ -155,29 +195,25 @@ class GameplayService {
     }
   }
 
+
+
   /**
-   * Handle "available_plays" message - backend format for available moves
+   * Handle "available_moves" message - new clean format for available moves
    */
-  private handleAvailablePlays(message: any) {
+  private handleAvailableMoves(message: any) {
     if (!this.gameContext) {
       console.error('Game context not set')
       return
     }
 
-    console.log('🎯 Available plays received (backend format):', message.payload)
-
-    // If we receive available plays, it means it's our turn
+    // If we receive available moves, it means it's our turn
     if (message.payload && Array.isArray(message.payload) && message.payload.length > 0) {
-      console.log('🎯 Setting isMyTurn = TRUE (received available plays)')
       this.gameContext.setMyTurn(true)
-
-      // Convert backend plays to our AvailableMove format
       const availableMoves = this.convertBackendPlaysToMoves(message.payload)
-      this.gameContext.setAvailableMoves(availableMoves)
+      this.gameContext.setCurrentPlayerMoves(availableMoves)
     } else {
-      console.log('🎯 No available plays, setting isMyTurn = FALSE')
       this.gameContext.setMyTurn(false)
-      this.gameContext.setAvailableMoves([])
+      this.gameContext.setCurrentPlayerMoves([])
     }
   }
 
@@ -190,52 +226,139 @@ class GameplayService {
       return
     }
 
-    console.log('📢 Game state update received (backend format):', message.payload)
+    console.log('🔄 GAME_STATE_UPDATE received:', message)
+    console.log('🔄 Current game state before update:', this.gameContext.state.gameState)
+    console.log('🔄 New game state payload:', message.payload)
 
     // Update game state
     if (message.payload) {
       this.gameContext.setGameState(message.payload)
+      console.log('🔄 Game state updated successfully')
+
+      // Check if this update includes available plays (means it's our turn)
+      if (message.payload.availablePlays && Array.isArray(message.payload.availablePlays) && message.payload.availablePlays.length > 0) {
+        console.log('📢 Game state update includes available plays - setting as our turn')
+
+        // Convert backend plays to our AvailableMove format
+        const availableMoves = this.convertBackendPlaysToMoves(message.payload.availablePlays)
+        this.gameContext.setCurrentPlayerMoves(availableMoves)
+
+        // Mark as our turn
+        this.gameContext.setMyTurn(true)
+      } else {
+        // Not our turn - no available plays
+
+        // Clear available moves (not our turn)
+        this.gameContext.setCurrentPlayerMoves([])
+
+        // Mark as not our turn
+        this.gameContext.setMyTurn(false)
+      }
     }
 
-    // Game state updates typically mean it's not our turn anymore
-    // (unless we also receive available_plays)
-    console.log('📢 Game state updated, clearing turn state')
-    this.gameContext.setMyTurn(false)
-    this.gameContext.setAvailableMoves([])
+    // Game state updated
   }
 
   /**
    * Convert backend plays format to our AvailableMove format
    */
   private convertBackendPlaysToMoves(backendPlays: any[]): AvailableMove[] {
-    console.log('🔄 Converting backend plays to moves:', backendPlays)
+    // Convert backend plays to frontend moves
+    console.log('🔄 Converting backend plays:', JSON.stringify(backendPlays.slice(0, 3), null, 2))
 
     if (!Array.isArray(backendPlays)) {
       console.warn('Backend plays is not an array:', backendPlays)
       return []
     }
 
-    // During placing phase, we need to assign workers to positions
-    // For simplicity, we'll create moves for worker 1 (first worker to be placed)
+    // Handle placing phase
     const placingMoves = backendPlays.filter(play => play.type === 'place_worker')
-
     if (placingMoves.length > 0) {
       const availableMove: AvailableMove = {
         type: 'place_worker',
         workerId: 1, // For placing phase, start with worker 1
         validPositions: placingMoves.map(play => ({
           x: play.position.x,
-          y: play.position.y
+          y: play.position.y,
+          serverMoveObject: play // Store complete server object
         }))
       }
 
-      console.log('🔄 Converted to AvailableMove:', availableMove)
-      console.log('🔄 Valid positions count:', availableMove.validPositions.length)
-
+      console.log('🔄 Converted placing moves:', availableMove)
       return [availableMove]
     }
 
-    console.warn('No valid placing moves found in backend plays')
+    // Handle moving phase - group moves by worker
+    const movingMoves = backendPlays.filter(play => play.type === 'move_worker')
+    if (movingMoves.length > 0) {
+      const movesByWorker = new Map<number, any[]>()
+
+      // Group moves by workerId
+      for (const move of movingMoves) {
+        const workerId = move.workerId
+        if (!movesByWorker.has(workerId)) {
+          movesByWorker.set(workerId, [])
+        }
+        movesByWorker.get(workerId)!.push(move)
+      }
+
+      // Convert to AvailableMove format
+      const availableMoves: AvailableMove[] = []
+      for (const [workerId, moves] of movesByWorker) {
+        availableMoves.push({
+          type: 'move_worker',
+          workerId: workerId as 1 | 2,
+          validPositions: moves.map(move => ({
+            x: move.position.x,
+            y: move.position.y,
+            serverMoveObject: move // Store complete server object
+          }))
+        })
+      }
+
+      console.log('🔄 Converted moving moves:', availableMoves)
+      return availableMoves
+    }
+
+    // Handle building phase - group builds by worker
+    const buildingMoves = backendPlays.filter(play => play.type === 'build_block' || play.type === 'build_dome')
+    if (buildingMoves.length > 0) {
+      const buildsByWorker = new Map<number, any[]>()
+
+      // Group builds by workerId (if available) or assume current worker
+      for (const build of buildingMoves) {
+        const workerId = build.workerId || 1 // Fallback to worker 1
+        if (!buildsByWorker.has(workerId)) {
+          buildsByWorker.set(workerId, [])
+        }
+        buildsByWorker.get(workerId)!.push(build)
+      }
+
+      // Convert to AvailableMove format
+      const availableMoves: AvailableMove[] = []
+      for (const [workerId, builds] of buildsByWorker) {
+        availableMoves.push({
+          type: 'build_block',
+          workerId: workerId as 1 | 2,
+          validPositions: builds.map(build => ({
+            x: build.position.x,
+            y: build.position.y,
+            buildingLevel: build.buildingLevel,
+            buildingType: build.buildingType,
+            moveType: build.type as 'build_block' | 'build_dome',
+            // Store the complete server move object for direct use
+            serverMoveObject: build
+          }))
+        })
+      }
+
+      console.log('🔄 Converted building moves:', availableMoves)
+      console.log('🔄 First building move details:', JSON.stringify(availableMoves[0], null, 2))
+      console.log('🔄 Raw backend building moves:', JSON.stringify(buildingMoves.slice(0, 2), null, 2))
+      return availableMoves
+    }
+
+    console.warn('No valid moves found in backend plays:', backendPlays)
     return []
   }
 
@@ -252,16 +375,57 @@ class GameplayService {
 
     if (message.payload?.success) {
       console.log('✅ Move was successful:', message.payload.move)
-      // Move was successful - the backend should send updated game state and next player's available moves
-      // For now, just log the success
+      // Move was successful - clear saved state (no rollback needed)
+      this.previousState = null
     } else {
       console.error('❌ Move was rejected by backend:', message.payload)
-      // TODO: Handle move rejection - restore previous state, show error message
+      // Move was rejected - rollback optimistic update
+      this.rollbackOptimisticUpdate()
+      this.gameContext.setError('Move was rejected. Please try a different position.')
     }
   }
 
   /**
-   * Submit a worker placement move
+   * Handle "error" message - server sent an error
+   */
+  private handleError(message: any) {
+    if (!this.gameContext) {
+      console.error('Game context not set')
+      return
+    }
+
+    console.error('🚨 Server error received:', message.payload)
+
+    // Handle common game errors with consistent messaging
+    if (typeof message.payload === 'string') {
+      if (message.payload.includes('Not your turn')) {
+        console.log('🚨 Not your turn error - expected behavior')
+        this.rollbackOptimisticUpdate()
+        // Don't show user error for expected behavior
+        return
+      }
+
+      if (message.payload.includes('Invalid move')) {
+        console.log('🚨 Invalid move error')
+        this.rollbackOptimisticUpdate()
+        this.gameContext.setError(ERROR_MESSAGES.VALIDATION.INVALID_MOVE)
+        return
+      }
+    }
+
+    // Generic error handling with consistent messaging
+    const error = ErrorHandler.createError(
+      ErrorType.GAME_LOGIC,
+      typeof message.payload === 'string' ? message.payload : 'Unknown server error'
+    )
+
+    ErrorHandler.logError(error, 'GameplayService.handleError')
+    this.rollbackOptimisticUpdate()
+    this.gameContext.setError(ErrorHandler.getUserMessage(error))
+  }
+
+  /**
+   * Submit a worker placement move with validation, optimistic updates and rollback
    */
   submitPlaceWorkerMove(workerId: 1 | 2, position: { x: number, y: number }) {
     if (!this.gameContext || !this.gameContext.state.gameId) {
@@ -269,29 +433,232 @@ class GameplayService {
       return
     }
 
+    // Validate move on frontend first
+    const validation = this.isValidMove(position.x, position.y)
+    if (!validation.valid) {
+      console.log('❌ Move validation failed on frontend - not sending to server')
+      this.gameContext.setError('Invalid move. Please select a highlighted position.')
+      return
+    }
+
+    console.log(`🎯 Submitting validated place worker move: Worker ${workerId} to (${position.x}, ${position.y})`)
+
+    // Save current state for potential rollback
+    this.saveStateForRollback()
+
     const move: PlaceWorkerMove = {
       type: 'place_worker',
       workerId,
       position
     }
 
-    const message = {
-      type: 'make_move',
-      gameId: this.gameContext.state.gameId,
-      move
+    // Apply optimistic update
+    this.gameContext.setCurrentPlayerMoves([])
+    this.gameContext.setMyTurn(false)
+
+    try {
+      // Send via WebSocket
+      webSocketService.send('make_move', {
+        gameId: parseInt(this.gameContext.state.gameId!),
+        move
+      })
+
+      // Set a timeout to rollback if no response received
+      setTimeout(() => {
+        if (this.previousState) {
+          console.warn('⏰ Move timeout - rolling back optimistic update')
+          this.rollbackOptimisticUpdate()
+          this.gameContext.setError(ERROR_MESSAGES.NETWORK.REQUEST_TIMEOUT)
+        }
+      }, MOVE_TIMEOUT)
+
+    } catch (error) {
+      const gameError = ErrorHandler.createError(
+        ErrorType.WEBSOCKET,
+        error as Error,
+        undefined,
+        { gameId: this.gameContext.state.gameId, move }
+      )
+
+      ErrorHandler.logError(gameError, 'GameplayService.submitPlaceWorkerMove')
+      this.rollbackOptimisticUpdate()
+      this.gameContext.setError(ERROR_MESSAGES.WEBSOCKET.MESSAGE_FAILED)
+    }
+  }
+
+  /**
+   * Submit a worker movement move
+   */
+  submitMoveWorker(workerId: 1 | 2, toPosition: { x: number, y: number }, fromPosition: { x: number, y: number }) {
+    if (!this.gameContext || !this.gameContext.state.gameId) {
+      console.error('Cannot submit move: no game context or game ID')
+      return
     }
 
-    console.log('Submitting move:', message)
+    console.log(`🎯 Submitting worker movement: Worker ${workerId} from (${fromPosition.x}, ${fromPosition.y}) to (${toPosition.x}, ${toPosition.y})`)
 
-    // Send via WebSocket
-    webSocketService.send('make_move', {
-      gameId: this.gameContext.state.gameId,
-      move
-    })
+    // Create the move object (match server's expected format)
+    const move = {
+      type: 'move_worker',
+      workerId: workerId,
+      fromPosition: fromPosition,
+      position: toPosition
+    }
 
-    // Optimistically clear available moves and turn state
-    this.gameContext.setAvailableMoves([])
-    this.gameContext.setMyTurn(false)
+    // Store previous state for potential rollback
+    this.previousState = { ...this.gameContext.state.gameState }
+
+    try {
+      // Send via WebSocket
+      const gameIdNumber = parseInt(this.gameContext.state.gameId!)
+      console.log('🎯 About to send make_move via WebSocket:', {
+        gameId: gameIdNumber,
+        move,
+        isConnected: webSocketService.isConnected()
+      })
+
+      webSocketService.send('make_move', {
+        gameId: gameIdNumber,
+        move
+      })
+
+      console.log('🎯 Successfully sent make_move via WebSocket')
+
+      // Set a timeout to rollback if no response received
+      setTimeout(() => {
+        if (this.previousState) {
+          console.warn('⏰ Move timeout - rolling back optimistic update')
+          this.rollbackOptimisticUpdate()
+          this.gameContext.setError(ERROR_MESSAGES.NETWORK.REQUEST_TIMEOUT)
+        }
+      }, MOVE_TIMEOUT)
+
+    } catch (error) {
+      const gameError = ErrorHandler.createError(
+        ErrorType.WEBSOCKET,
+        error as Error,
+        undefined,
+        { gameId: this.gameContext.state.gameId, move }
+      )
+
+      ErrorHandler.logError(gameError, 'GameplayService.submitMoveWorker')
+      this.rollbackOptimisticUpdate()
+      this.gameContext.setError(ERROR_MESSAGES.WEBSOCKET.MESSAGE_FAILED)
+    }
+  }
+
+  /**
+   * Submit a move using the exact server move object
+   */
+  submitServerMove(serverMoveObject: any) {
+    if (!this.gameContext || !this.gameContext.state.gameId) {
+      console.error('Cannot submit server move: no game context or game ID')
+      return
+    }
+
+    console.log(`🎯 Submitting exact server move object:`, JSON.stringify(serverMoveObject, null, 2))
+    console.log(`🎯 Move type:`, serverMoveObject.type)
+
+    // Store previous state for potential rollback
+    this.previousState = { ...this.gameContext.state.gameState }
+
+    try {
+      // Check WebSocket connection status
+      const isConnected = webSocketService.isConnected()
+      console.log(`🔌 WebSocket connection status: ${isConnected}`)
+
+      if (!isConnected) {
+        console.warn('⚠️ WebSocket not connected, attempting to reconnect...')
+        // Could add reconnection logic here if needed
+      }
+
+      // Send the exact server move object via WebSocket
+      const gameIdNumber = parseInt(this.gameContext.state.gameId!)
+      console.log(`🎯 Sending WebSocket message with server move:`, {
+        gameId: gameIdNumber,
+        move: serverMoveObject
+      })
+      webSocketService.send('make_move', {
+        gameId: gameIdNumber,
+        move: serverMoveObject
+      })
+
+      // Fallback: refresh game state after a delay if WebSocket update doesn't arrive
+      setTimeout(async () => {
+        console.log('🔄 Fallback: Refreshing game state after move submission')
+        try {
+          await this.gameContext.refreshGameState()
+        } catch (error) {
+          console.error('Failed to refresh game state:', error)
+        }
+      }, 2000)
+
+    } catch (error) {
+      console.error('Failed to submit server move:', error)
+      this.rollbackOptimisticUpdate()
+    }
+  }
+
+  /**
+   * Submit a building move (fallback method)
+   */
+  submitBuild(position: { x: number, y: number }, workerId?: number, fromWorkerPosition?: { x: number, y: number }) {
+    if (!this.gameContext || !this.gameContext.state.gameId) {
+      console.error('Cannot submit build: no game context or game ID')
+      return
+    }
+
+    console.log(`🎯 Submitting build at (${position.x}, ${position.y})`)
+
+    // Get current player ID for the move
+    const currentPlayerId = this.gameContext.state.gameState?.currentPlayer
+    if (!currentPlayerId) {
+      console.error('Cannot submit build: no current player ID')
+      return
+    }
+
+    // Create the move object with all required fields
+    const move = {
+      type: 'build_block',
+      position: position,
+      playerId: parseInt(currentPlayerId),
+      ...(workerId && { workerId }),
+      ...(fromWorkerPosition && { fromPosition: fromWorkerPosition })
+    }
+
+    console.log(`🎯 Created move object:`, move)
+
+    // Store previous state for potential rollback
+    this.previousState = { ...this.gameContext.state.gameState }
+
+    try {
+      // Send via WebSocket
+      webSocketService.send('make_move', {
+        gameId: parseInt(this.gameContext.state.gameId!),
+        move
+      })
+
+      // Set a timeout to rollback if no response received
+      setTimeout(() => {
+        if (this.previousState) {
+          console.warn('⏰ Build timeout - rolling back optimistic update')
+          this.rollbackOptimisticUpdate()
+          this.gameContext.setError(ERROR_MESSAGES.NETWORK.REQUEST_TIMEOUT)
+        }
+      }, MOVE_TIMEOUT)
+
+    } catch (error) {
+      const gameError = ErrorHandler.createError(
+        ErrorType.WEBSOCKET,
+        error as Error,
+        undefined,
+        { gameId: this.gameContext.state.gameId, move }
+      )
+
+      ErrorHandler.logError(gameError, 'GameplayService.submitBuild')
+      this.rollbackOptimisticUpdate()
+      this.gameContext.setError(ERROR_MESSAGES.WEBSOCKET.MESSAGE_FAILED)
+    }
   }
 
   /**
@@ -316,7 +683,7 @@ class GameplayService {
       return { valid: false }
     }
 
-    const availableMoves: AvailableMove[] = this.gameContext.state.availableMoves
+    const availableMoves: AvailableMove[] = this.gameContext.state.currentPlayerMoves
 
     for (const move of availableMoves) {
       const validPosition = move.validPositions.find(pos => pos.x === x && pos.y === y)
@@ -336,7 +703,7 @@ class GameplayService {
       return []
     }
 
-    const availableMoves: AvailableMove[] = this.gameContext.state.availableMoves
+    const availableMoves: AvailableMove[] = this.gameContext.state.currentPlayerMoves
     const positions: Array<{ x: number, y: number, workerId: 1 | 2 }> = []
     
     for (const move of availableMoves) {

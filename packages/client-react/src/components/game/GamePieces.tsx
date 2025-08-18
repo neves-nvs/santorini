@@ -1,22 +1,25 @@
 import React from 'react'
 import * as THREE from 'three'
 import STLPiece from './STLPiece'
+import { PLAYER_COLORS } from '../../constants/gameConstants'
 
 // Building Block Component
 interface BlockProps {
   type: 'base' | 'mid' | 'top' | 'dome'
   position: [number, number, number]
+  isPreview?: boolean
 }
 
-export const Block: React.FC<BlockProps> = ({ type, position }) => {
+export const Block: React.FC<BlockProps> = ({ type, position, isPreview = false }) => {
   return (
     <STLPiece
       type={type}
       position={position}
-      color="white"
-      transparent={false}
-      castShadow={true}
-      receiveShadow={true}
+      color={isPreview ? "#4A90E2" : "white"}
+      transparent={isPreview}
+      opacity={isPreview ? 0.6 : 1.0}
+      castShadow={!isPreview}
+      receiveShadow={!isPreview}
     />
   )
 }
@@ -25,19 +28,97 @@ export const Block: React.FC<BlockProps> = ({ type, position }) => {
 interface WorkerProps {
   playerId: number
   position: [number, number, number]
+  gameState?: any // Add gameState to get player order
+  canMove?: boolean // Whether this worker can move
+  isSelected?: boolean // Whether this worker is selected
+  onClick?: () => void // Click handler for worker selection
 }
 
-export const Worker: React.FC<WorkerProps> = ({ playerId, position }) => {
-  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4']
+export const Worker: React.FC<WorkerProps> = ({
+  playerId,
+  position,
+  gameState,
+  canMove = false,
+  isSelected = false,
+  onClick
+}) => {
+  // Use centralized player colors
+  const colors = PLAYER_COLORS
+
+  // Get player order from game state to ensure consistent coloring
+  let colorIndex = 0
+  if (gameState?.players && Array.isArray(gameState.players)) {
+    // Players array contains objects, need to find by ID
+    colorIndex = gameState.players.findIndex((player: any) =>
+      (typeof player === 'object' ? player.id || player.userId : player) === playerId
+    )
+    if (colorIndex === -1) {
+      // Fallback: use playerId directly
+      colorIndex = (playerId - 1) % colors.length
+    }
+  } else {
+    // Fallback: use playerId directly
+    colorIndex = (playerId - 1) % colors.length
+  }
+
+  const selectedColor = colors[colorIndex] || colors[0]
+
+  // Debug logging (can be removed in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🎨 Rendering worker for playerId ${playerId}, colorIndex ${colorIndex}, color ${selectedColor}`)
+  }
 
   return (
-    <STLPiece
-      type="builder"
-      position={position}
-      color={colors[playerId - 1] || colors[0]}
-      transparent={false}
-      castShadow={true}
-    />
+    <group
+      onClick={canMove ? (e) => {
+        e.stopPropagation()
+        onClick?.()
+      } : undefined}
+      onPointerOver={canMove ? (e) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'pointer'
+      } : undefined}
+      onPointerOut={canMove ? (e) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'default'
+      } : undefined}
+    >
+      {/* Main worker piece */}
+      <STLPiece
+        type="builder"
+        position={position}
+        color={selectedColor}
+        transparent={false}
+        castShadow={true}
+      />
+
+      {/* Highlight ring for moveable workers */}
+      {canMove && (
+        <mesh
+          position={[position[0], position[1] - 0.1, position[2]]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
+          <ringGeometry args={[0.4, 0.6, 16]} />
+          <meshBasicMaterial
+            color={isSelected ? '#ffff00' : '#00ff00'}
+            transparent
+            opacity={isSelected ? 0.8 : 0.6}
+          />
+        </mesh>
+      )}
+
+      {/* Selection indicator */}
+      {isSelected && (
+        <mesh position={[position[0], position[1] + 0.5, position[2]]}>
+          <sphereGeometry args={[0.1, 8, 8]} />
+          <meshBasicMaterial
+            color="#ffff00"
+            transparent
+            opacity={0.8}
+          />
+        </mesh>
+      )}
+    </group>
   )
 }
 
@@ -157,24 +238,46 @@ interface MovePreviewProps {
   position: [number, number, number]
   workerId: 1 | 2
   visible: boolean
+  onClick?: () => void
 }
 
-export const MovePreview: React.FC<MovePreviewProps> = ({ position, workerId, visible }) => {
+// Building Preview Component - Shows what building will be constructed
+interface BuildingPreviewProps {
+  position: [number, number, number]
+  buildingLevel?: number
+  buildingType?: string
+  moveType?: 'build_block' | 'build_dome'
+  visible: boolean
+  onClick?: () => void
+}
+
+export const MovePreview: React.FC<MovePreviewProps> = ({ position, workerId, visible, onClick }) => {
   if (!visible) return null
 
-  // Different colors for different workers
-  const workerColors = {
-    1: '#FFD700', // Gold for worker 1
-    2: '#FF6B6B'  // Red for worker 2
-  }
+  // Use a neutral color for move previews since they represent possible moves, not specific players
+  const previewColor = '#FFD700' // Gold color for move previews
 
   return (
-    <group position={position}>
+    <group
+      position={position}
+      onClick={(e) => {
+        e.stopPropagation()
+        onClick?.()
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'default'
+      }}
+    >
       {/* Glowing ring at ground level */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.3, 0.45, 16]} />
         <meshBasicMaterial
-          color={workerColors[workerId]}
+          color={previewColor}
           transparent
           opacity={0.8}
         />
@@ -184,7 +287,7 @@ export const MovePreview: React.FC<MovePreviewProps> = ({ position, workerId, vi
       <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.2, 16]} />
         <meshBasicMaterial
-          color={workerColors[workerId]}
+          color={previewColor}
           transparent
           opacity={0.6}
         />
@@ -194,9 +297,72 @@ export const MovePreview: React.FC<MovePreviewProps> = ({ position, workerId, vi
       <mesh position={[0, 0.25, 0]}>
         <cylinderGeometry args={[0.05, 0.05, 0.5]} />
         <meshBasicMaterial
-          color={workerColors[workerId]}
+          color={previewColor}
           transparent
           opacity={0.4}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+// Building Preview Component - Shows what building will be constructed
+export const BuildingPreview: React.FC<BuildingPreviewProps> = ({
+  position,
+  buildingLevel,
+  buildingType,
+  moveType,
+  visible,
+  onClick
+}) => {
+  console.log('🔧 BuildingPreview rendering:', { position, buildingLevel, buildingType, moveType, visible })
+
+  if (!visible) return null
+
+  const isDome = moveType === 'build_dome' || buildingType === 'dome'
+  const level = buildingLevel || 1
+
+  return (
+    <group
+      position={position}
+      onClick={(e) => {
+        console.log('🔧 BuildingPreview group clicked!')
+        e.stopPropagation()
+        onClick?.()
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'pointer'
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'default'
+      }}
+    >
+      {/* Render actual building geometry as preview */}
+      {isDome ? (
+        // Dome preview - use actual dome geometry
+        <Block
+          type="dome"
+          position={[0, 0, 0]}
+          isPreview={true}
+        />
+      ) : (
+        // Block preview - use actual block geometry
+        <Block
+          type={level === 1 ? 'base' : level === 2 ? 'mid' : 'top'}
+          position={[0, 0, 0]}
+          isPreview={true}
+        />
+      )}
+
+      {/* Glowing base ring to indicate it's a preview */}
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.3, 0.45, 16]} />
+        <meshBasicMaterial
+          color="#4A90E2"
+          transparent
+          opacity={0.7}
         />
       </mesh>
     </group>

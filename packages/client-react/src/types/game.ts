@@ -3,6 +3,13 @@ export interface Position {
   y: number;
 }
 
+export interface BuildPosition extends Position {
+  buildingLevel?: number;  // Level that will be built (1, 2, 3)
+  buildingType?: string;   // "dome" for dome builds
+  moveType?: 'build_block' | 'build_dome';  // Type of building move
+  serverMoveObject?: any;  // Complete server move object for direct use
+}
+
 export type BlockType = 'BASE' | 'MID' | 'TOP' | 'DOME';
 
 export type PieceType = BlockType | 'WORKER';
@@ -18,8 +25,21 @@ export interface Stack {
   position: Position;
 }
 
+// Backend format for board spaces
+export interface BoardSpace {
+  x: number;
+  y: number;
+  height: number;
+  hasDome?: boolean;
+  workers: Array<{
+    playerId: number;
+    workerId: number;
+    color: string;
+  }>;
+}
+
 export interface Board {
-  spaces: Stack[][];
+  spaces: BoardSpace[]; // Changed from Stack[][] to BoardSpace[] to match backend
 }
 
 export interface Player {
@@ -56,6 +76,20 @@ export interface GameState {
   // Ready status fields
   currentUserReady?: boolean;
   playersReadyStatus?: PlayerReadyStatus[];
+
+  // Turn management fields from backend
+  turnState?: {
+    gameId: number;
+    currentPlayerId: number;
+    currentPhase: 'placing' | 'moving' | 'building';
+    turnNumber: number;
+    placingTurnsCompleted: number;
+    isGameOver: boolean;
+    winner?: number;
+    winReason?: string;
+  };
+  availablePlays?: any[];
+  isMyTurn?: boolean;
 }
 
 export interface Move {
@@ -73,9 +107,9 @@ export interface PlaceWorkerMove {
 }
 
 export interface AvailableMove {
-  type: 'place_worker';
+  type: 'place_worker' | 'move_worker' | 'build_block';
   workerId: 1 | 2;
-  validPositions: Position[];
+  validPositions: (Position | BuildPosition)[];
 }
 
 // WebSocket message types

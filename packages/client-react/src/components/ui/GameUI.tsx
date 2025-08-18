@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import { useGame } from '../../store/GameContext'
 import { useWebSocket } from '../../hooks/useWebSocket'
 import { apiService } from '../../services/ApiService'
 import { gameplayService } from '../../services/GameplayService'
 import GameBoard from '../game/GameBoard'
+import { PerformanceDashboard } from '../debug/PerformanceDashboard'
+import { PLAYER_COLORS } from '../../constants/gameConstants'
 
 // Debug state interface
 interface DebugState {
@@ -14,6 +16,7 @@ interface DebugState {
   showStats: boolean
   showBoundingBoxes: boolean
   useSampleBoard: boolean
+  showPerformance: boolean
 }
 
 // Debug UI Component
@@ -176,6 +179,26 @@ const DebugMenu: React.FC<{
             Use Sample Board
           </label>
 
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            pointerEvents: 'auto'
+          }}>
+            <input
+              type="checkbox"
+              checked={debugState.showPerformance}
+              onChange={(e) => {
+                e.stopPropagation()
+                onDebugChange('showPerformance', e.target.checked)
+                console.log('Show Performance toggled:', e.target.checked)
+              }}
+              style={{ pointerEvents: 'auto' }}
+            />
+            📊 Performance Monitor
+          </label>
+
           <div style={{ marginTop: '10px', borderTop: '1px solid #444', paddingTop: '10px' }}>
             <div style={{ fontSize: '11px', marginBottom: '5px', color: '#ccc' }}>Debug Actions:</div>
             <button
@@ -233,7 +256,7 @@ const DebugMenu: React.FC<{
                   isConnected,
                   gameState: gameContext.state.gameState,
                   isMyTurn: gameContext.state.isMyTurn,
-                  availableMoves: gameContext.state.availableMoves.length
+                  currentPlayerMoves: gameContext.state.currentPlayerMoves.length
                 })
               }}
             >
@@ -279,9 +302,15 @@ const getGameStatusDisplay = (gameState: any, isMyTurn: boolean) => {
 
   // Waiting for players to join/ready up
   if (gameStatus === 'waiting' || mainPhase === 'SETUP') {
+    const currentPlayers = gameState.players?.length || 0
+    const totalPlayers = gameState.player_count || 2
     const readyCount = gameState.playersReadyStatus?.filter((p: any) => p.isReady).length || 0
-    const totalPlayers = gameState.playersReadyStatus?.length || 0
-    return `⏳ Waiting for players (${readyCount}/${totalPlayers} ready)`
+
+    if (currentPlayers < totalPlayers) {
+      return `⏳ Waiting for players (${currentPlayers}/${totalPlayers} joined)`
+    } else {
+      return `⏳ Waiting for players (${readyCount}/${currentPlayers} ready)`
+    }
   }
 
   // Game is starting
@@ -321,6 +350,19 @@ const GameUI = () => {
   const [isReady, setIsReady] = useState(false)
   const [isSettingReady, setIsSettingReady] = useState(false)
 
+  // Keyboard shortcut for performance dashboard (Ctrl+Shift+P)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.shiftKey && event.key === 'P') {
+        event.preventDefault()
+        setDebugState(prev => ({ ...prev, showPerformance: !prev.showPerformance }))
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   // Debug state
   const [debugState, setDebugState] = useState<DebugState>({
     showAxis: true,
@@ -328,12 +370,13 @@ const GameUI = () => {
     showWireframe: false,
     showStats: false,
     showBoundingBoxes: false,
-    useSampleBoard: false
+    useSampleBoard: false,
+    showPerformance: false
   })
 
-  const handleDebugChange = (key: keyof DebugState, value: boolean) => {
+  const handleDebugChange = useCallback((key: keyof DebugState, value: boolean) => {
     setDebugState(prev => ({ ...prev, [key]: value }))
-  }
+  }, [])
 
   // Initialize GameplayService with game context
   useEffect(() => {
@@ -374,6 +417,24 @@ const GameUI = () => {
     if (success) {
       setIsReady(newReadyState)
       console.log('🎯 Local ready state updated to:', newReadyState)
+
+      // Fallback: refresh game state after a delay in case WebSocket update doesn't arrive
+      setTimeout(async () => {
+        console.log('🔄 Fallback: Refreshing game state after ready status change')
+        try {
+          // Refresh game state to catch any changes that WebSocket missed
+          if (state.gameId) {
+            const gameResponse = await apiService.getGameState(state.gameId)
+            if (gameResponse) {
+              gameContext.setGameState(gameResponse)
+              console.log('🔄 Game state refreshed successfully after ready change')
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh game state after ready change:', error)
+        }
+      }, 3000) // Wait 3 seconds for WebSocket updates, then fallback
+
     } else {
       console.error('🎯 Failed to update ready status on backend')
     }
@@ -414,7 +475,7 @@ const GameUI = () => {
           <div>Game Phase: {state.gameState.game_phase || 'N/A'}</div>
           <div>Current Player: {state.gameState.currentPlayer || 'N/A'}</div>
           <div>My Turn: <strong style={{color: state.isMyTurn ? 'lightgreen' : 'orange'}}>{state.isMyTurn ? 'YES' : 'NO'}</strong></div>
-          <div>Available Moves: {state.availableMoves.length}</div>
+          <div>Available Moves: {state.currentPlayerMoves.length}</div>
           <div>Board: {state.gameState.board ? 'Present' : 'Missing'}</div>
           <div>Players Ready: {state.gameState.playersReadyStatus?.filter(p => p.isReady).length || 0}/{state.gameState.playersReadyStatus?.length || 0}</div>
           <div>Username: {state.username}</div>
@@ -496,7 +557,10 @@ const GameUI = () => {
                 </div>
               )}
 
-              {state.gameState.game_status === 'ready' && (
+              {/* Show ready button only when game has enough players AND is in ready status */}
+              {state.gameState.game_status === 'ready' &&
+               state.gameState.players &&
+               state.gameState.players.length >= (state.gameState.player_count || 2) && (
                 <div style={{ marginTop: '0.5rem' }}>
                   <div style={{ color: 'yellow', marginBottom: '0.5rem' }}>
                     All players joined! Ready to start?
@@ -547,11 +611,11 @@ const GameUI = () => {
       <div className="bottom-left">
         <div className="ui-panel">
           <h3>Available Moves</h3>
-          {state.availablePlays.length > 0 ? (
+          {state.currentPlayerMoves && state.currentPlayerMoves.length > 0 ? (
             <ul style={{ margin: 0, paddingLeft: '1rem' }}>
-              {state.availablePlays.map((play, index) => (
+              {state.currentPlayerMoves.map((move, index) => (
                 <li key={index}>
-                  {play.type} {play.position && `at (${play.position.x}, ${play.position.y})`}
+                  Worker {move.workerId}: {move.validPositions?.length || 0} positions
                 </li>
               ))}
             </ul>
@@ -569,12 +633,17 @@ const GameUI = () => {
             <div>
               {Array.isArray(state.gameState.players) ? (
                 <ul style={{ margin: 0, paddingLeft: '1rem' }}>
-                  {state.gameState.players.map((playerId: any, index: number) => (
-                    <li key={String(playerId)}>
-                      <span style={{ color: index === 0 ? 'blue' : 'red' }}>●</span> Player {String(playerId)}
-                      {playerId === state.gameState?.currentPlayer && ' (Current)'}
-                    </li>
-                  ))}
+                  {state.gameState.players.map((player: any, index: number) => {
+                    // Use same color system as workers
+                    const playerColor = PLAYER_COLORS[index % PLAYER_COLORS.length]
+                    return (
+                      <li key={player.id || player.username || index}>
+                        <span style={{ color: playerColor }}>●</span>
+                        {player.username || `Player ${player.id || index + 1}`}
+                        {(player.id || player) === state.gameState?.currentPlayer && ' (Current)'}
+                      </li>
+                    )
+                  })}
                 </ul>
               ) : (
                 <div>Players: {JSON.stringify(state.gameState.players)}</div>
@@ -610,8 +679,14 @@ const GameUI = () => {
         gameContext={gameContext}
         isConnected={isConnected}
       />
+
+      {/* Performance Dashboard */}
+      <PerformanceDashboard
+        visible={debugState.showPerformance}
+        onToggle={() => handleDebugChange('showPerformance', !debugState.showPerformance)}
+      />
     </>
   )
 }
 
-export default GameUI
+export default memo(GameUI)

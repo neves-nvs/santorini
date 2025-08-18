@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { GameProvider } from './store/GameContext'
+import { ToastProvider } from './store/ToastContext'
 import { useEffect, useState } from 'react'
 import { useGame } from './store/GameContext'
 import { useWebSocket } from './hooks/useWebSocket'
@@ -8,45 +9,71 @@ import HomePage from './pages/HomePage'
 import GamePage from './pages/GamePage'
 import AuthPage from './pages/AuthPage'
 import LobbyPage from './pages/LobbyPage'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import './App.css'
 
 // Component to handle auto-connection after app loads
 const AppInitializer = () => {
-  const { state, setConnecting, setGameState, resetGame } = useGame()
-  const { connect, subscribeToGame } = useWebSocket()
+  const { state, setConnecting, setGameState, resetGame, setUsername } = useGame()
+  const { connect } = useWebSocket()
 
   // Prevent rapid-fire requests with a simple flag
   const [isInitializing, setIsInitializing] = useState(false)
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false)
 
+  // Check authentication status on app startup
   useEffect(() => {
-    // Auto-connect WebSocket if user is logged in
-    if (state.username && !state.isConnected && !state.isConnecting) {
-      console.log('Auto-connecting WebSocket for user:', state.username)
+    const checkAuthStatus = async () => {
+      if (hasCheckedAuth) return
+
+      try {
+        console.log('🔍 Checking authentication status...')
+        const authInfo = await apiService.checkAuth()
+
+        if (authInfo) {
+          console.log('✅ User is authenticated:', authInfo.username)
+          setUsername(authInfo.username)
+        } else {
+          console.log('❌ User is not authenticated')
+        }
+      } catch (error) {
+        console.log('❌ Authentication check failed:', error)
+      } finally {
+        setHasCheckedAuth(true)
+      }
+    }
+
+    checkAuthStatus()
+  }, [hasCheckedAuth, setUsername])
+
+  // Connect WebSocket when user logs in (only after auth check is complete)
+  useEffect(() => {
+    if (hasCheckedAuth && state.username && !state.isConnected && !state.isConnecting) {
+      console.log('🔌 Connecting WebSocket for user:', state.username)
       setConnecting(true)
 
-      // Try to connect, but handle failures gracefully
       try {
         connect()
       } catch (error) {
-        console.error('Failed to connect WebSocket:', error)
+        console.error('❌ Failed to connect WebSocket:', error)
         setConnecting(false)
       }
 
-      // Set a timeout to show disconnected if connection takes too long
+      // Set a timeout to reset connecting state if connection takes too long
       const timeout = setTimeout(() => {
         if (!state.isConnected) {
-          console.warn('WebSocket connection timeout - resetting connecting state')
+          console.warn('⏰ WebSocket connection timeout - resetting connecting state')
           setConnecting(false)
         }
-      }, 5000) // 5 second timeout
+      }, 5000)
 
       return () => clearTimeout(timeout)
     }
-  }, [state.username, state.isConnected, state.isConnecting, connect, setConnecting])
+  }, [hasCheckedAuth, state.username, state.isConnected, state.isConnecting, connect, setConnecting])
 
   // Handle page reload: Fetch HTTP first, then connect WebSocket
   useEffect(() => {
-    if (state.gameId && state.username && !state.gameState && !state.isConnected && !isInitializing) {
+    if (hasCheckedAuth && state.gameId && state.username && !state.gameState && !state.isConnected && !isInitializing) {
       console.log('🔄 Page reload detected - fetching game state via HTTP first')
       setIsInitializing(true)
 
@@ -87,55 +114,59 @@ const AppInitializer = () => {
 
       fetchThenConnect()
     }
-  }, [state.gameId, state.username, state.gameState, state.isConnected, isInitializing, setGameState, setConnecting, connect, resetGame, setIsInitializing])
+  }, [hasCheckedAuth, state.gameId, state.username, state.gameState, state.isConnected, isInitializing, setGameState, setConnecting, connect, resetGame, setIsInitializing])
 
-  // Handle fresh login: Connect WebSocket immediately (no HTTP needed)
-  useEffect(() => {
-    if (state.username && !state.isConnected && !state.isConnecting && !state.gameId) {
-      console.log('🚀 Fresh login - connecting WebSocket immediately')
-      setConnecting(true)
+  // Removed duplicate WebSocket connection logic - handled by first useEffect
 
-      try {
-        connect()
-      } catch (error) {
-        console.error('Failed to connect WebSocket on fresh login:', error)
-        setConnecting(false)
-      }
-    }
-  }, [state.username, state.isConnected, state.isConnecting, state.gameId, setConnecting, connect])
+  // Note: Game subscription is handled by LobbyPage when joining games
+  // No need for duplicate subscription here
 
-  // Subscribe to game updates once WebSocket is connected (for both reload and fresh login)
-  useEffect(() => {
-    if (state.isConnected && state.gameId && state.username) {
-      console.log('📡 WebSocket connected - subscribing to game updates:', state.gameId)
-
-      const timer = setTimeout(() => {
-        subscribeToGame(state.gameId!, state.username!)
-      }, 100)
-
-      return () => clearTimeout(timer)
-    }
-  }, [state.isConnected, state.gameId, state.username, subscribeToGame])
+  // Show loading while checking authentication
+  if (!hasCheckedAuth) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        zIndex: 9999
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h3>Loading...</h3>
+          <p>Checking authentication status</p>
+        </div>
+      </div>
+    )
+  }
 
   return null
 }
 
 function App() {
   return (
-    <GameProvider>
-      <Router>
-        <div className="app">
-          <AppInitializer />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/lobby" element={<LobbyPage />} />
-            <Route path="/game" element={<GamePage />} />
-            <Route path="/game/:gameId" element={<GamePage />} />
-          </Routes>
-        </div>
-      </Router>
-    </GameProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <GameProvider>
+          <Router>
+            <div className="app">
+              <AppInitializer />
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/lobby" element={<LobbyPage />} />
+                <Route path="/game" element={<GamePage />} />
+                <Route path="/game/:gameId" element={<GamePage />} />
+              </Routes>
+            </div>
+          </Router>
+        </GameProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   )
 }
 
