@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useGame } from '../store/GameContext'
-import { useWebSocket } from '../hooks/useWebSocket'
+import { useApp } from '../store/AppContext'
 import { apiService } from '../services/ApiService'
 
 interface GameInfo {
@@ -20,26 +19,16 @@ interface GameInfo {
 }
 
 const LobbyPage = () => {
-  const { state, setGameId, logout } = useGame()
-  const { isConnected, subscribeToGame, joinGame } = useWebSocket()
+  const { state, logout } = useApp()
   const navigate = useNavigate()
-  
-  const [availableGames, setAvailableGames] = useState<GameInfo[]>([])
-  const [playerCount, setPlayerCount] = useState(2)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  const [availableGames, setAvailableGames] = useState<GameInfo[]>([])
+  const [playerCount, setPlayerCount] = useState(2)
 
-  // Redirect to auth if not logged in
-  useEffect(() => {
-    if (!state.username) {
-      navigate('/auth')
-    }
-  }, [state.username, navigate])
-
-  // Note: getCurrentUser functionality removed as test-auth endpoint was removed
-
-  // Auto-refresh games on mount and periodically
   useEffect(() => {
     if (state.username) {
       handleRefreshGames()
@@ -53,8 +42,6 @@ const LobbyPage = () => {
     }
   }, [state.username]) // Only depends on username
 
-
-
   const handleCreateGame = async () => {
     if (!state.username) {
       setError('Please login first')
@@ -66,14 +53,8 @@ const LobbyPage = () => {
 
     try {
       const result = await apiService.createGame({ player_count: playerCount })
-      console.log('Game created:', result)
-
       if (result.gameId) {
         const gameId = result.gameId.toString()
-
-        // Creator automatically joins the game via WebSocket (eliminates race condition)
-        setGameId(gameId)
-        joinGame(gameId) // This handles both joining and subscribing
         navigate(`/game/${gameId}`)
       }
     } catch (err) {
@@ -95,16 +76,6 @@ const LobbyPage = () => {
 
     try {
       const gameId = game.id.toString()
-      // Note: User ID check removed since getCurrentUser was removed
-      const isPlayerInGame = false // TODO: Implement proper user ID check if needed
-
-      // Join game via WebSocket (handles both joining and subscribing)
-      setGameId(gameId)
-      if (!isPlayerInGame) {
-        joinGame(gameId) // Join and subscribe in one atomic operation
-      } else {
-        subscribeToGame(gameId) // Just subscribe if already in game
-      }
       navigate(`/game/${gameId}`)
     } catch (err) {
       console.error('Failed to join game:', err)
@@ -155,9 +126,7 @@ const LobbyPage = () => {
     navigate('/')
   }
 
-  if (!state.username) {
-    return <div>Redirecting to login...</div>
-  }
+  // Authentication is now guaranteed by App-level routing
 
   return (
     <div className="page" style={{ 
@@ -177,15 +146,6 @@ const LobbyPage = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div>
               <strong>Player:</strong> {state.username}
-            </div>
-            <div>
-              <strong>Status:</strong>
-              <span style={{
-                color: isConnected ? 'lightgreen' : (state.isConnecting ? 'yellow' : 'orange'),
-                marginLeft: '0.5rem'
-              }}>
-                {isConnected ? 'Connected' : (state.isConnecting ? 'Connecting...' : 'Disconnected')}
-              </span>
             </div>
             <button onClick={handleLogout} style={{
               background: 'rgba(255, 255, 255, 0.2)',
@@ -246,18 +206,18 @@ const LobbyPage = () => {
               </select>
             </div>
             
-            <button 
-              onClick={handleCreateGame} 
-              disabled={loading || !isConnected}
+            <button
+              onClick={handleCreateGame}
+              disabled={loading}
               style={{
                 width: '100%',
                 padding: '1rem',
                 fontSize: '1.1rem',
-                background: loading || !isConnected ? '#666' : '#4CAF50',
+                background: loading ? '#666' : '#4CAF50',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
-                cursor: loading || !isConnected ? 'not-allowed' : 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 transition: 'background-color 0.3s'
               }}
             >
@@ -309,9 +269,8 @@ const LobbyPage = () => {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {availableGames.map((game) => {
-                    // Note: User ID check removed since getCurrentUser was removed
-                    const isPlayerInGame = false // TODO: Implement proper user ID check if needed
-                    const canJoin = isConnected && (game.game_status === 'waiting' || isPlayerInGame)
+                    const isPlayerInGame = false
+                    const canJoin = game.game_status === 'waiting' || isPlayerInGame
 
                     return (
                       <div key={game.id} style={{

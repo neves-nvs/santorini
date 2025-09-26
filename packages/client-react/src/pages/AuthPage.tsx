@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiService } from '../services/ApiService'
-import { useGame } from '../store/GameContext'
+import { useApp } from '../store/AppContext'
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true)
-  const [username, setUsername] = useState('')
+  const [usernameInput, setUsernameInput] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
-  const { setUsername: setGameUsername } = useGame()
+  const { setUsername } = useApp()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,17 +20,15 @@ const AuthPage = () => {
     try {
       if (isLogin) {
         // Login
-        await apiService.login({ username, password })
-        setGameUsername(username)
-        // WebSocket will auto-connect via AppInitializer
+        await apiService.login({ username: usernameInput, password })
+        setUsername(usernameInput)
         navigate('/lobby')
       } else {
         // Register
-        await apiService.createUser({ username, password })
+        await apiService.createUser({ username: usernameInput, password })
         // After successful registration, automatically login
-        await apiService.login({ username, password })
-        setGameUsername(username)
-        // WebSocket will auto-connect via AppInitializer
+        await apiService.login({ username: usernameInput, password })
+        setUsername(usernameInput)
         navigate('/lobby')
       }
     } catch (err) {
@@ -83,8 +81,8 @@ const AuthPage = () => {
             </label>
             <input
               type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              value={usernameInput}
+              onChange={(e) => setUsernameInput(e.target.value)}
               style={{
                 width: '100%',
                 padding: '0.75rem',
