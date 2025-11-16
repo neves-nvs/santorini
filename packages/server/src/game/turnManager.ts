@@ -66,6 +66,7 @@ export async function getCurrentTurnState(gameId: number): Promise<TurnState | n
 
 /**
  * Get available plays for current turn state
+ * If no plays are available during moving or building phase, the player is blocked and loses
  */
 export async function getAvailablePlays(gameId: number): Promise<any[]> {
   const turnState = await getCurrentTurnState(gameId);
@@ -74,19 +75,36 @@ export async function getAvailablePlays(gameId: number): Promise<any[]> {
   }
 
   try {
+    let availablePlays: any[] = [];
+
     switch (turnState.currentPhase) {
       case 'placing':
-        return await generatePlacingPhaseAvailablePlays(gameId);
-      
+        availablePlays = await generatePlacingPhaseAvailablePlays(gameId);
+        break;
+
       case 'moving':
-        return await generateMovingPhaseAvailablePlays(gameId, turnState.currentPlayerId);
-      
+        availablePlays = await generateMovingPhaseAvailablePlays(gameId, turnState.currentPlayerId);
+        break;
+
       case 'building':
-        return await generateBuildingPhaseAvailablePlays(gameId, turnState.currentPlayerId);
-      
+        availablePlays = await generateBuildingPhaseAvailablePlays(gameId, turnState.currentPlayerId);
+        break;
+
       default:
         return [];
     }
+
+    // Check for blocked player: if no moves available during moving or building phase, eliminate player
+    if (availablePlays.length === 0 && (turnState.currentPhase === 'moving' || turnState.currentPhase === 'building')) {
+      logger.info(`🚫 Player ${turnState.currentPlayerId} is blocked in ${turnState.currentPhase} phase - no moves available!`);
+
+      await handleBlockedPlayer(gameId, turnState.currentPlayerId);
+
+      // Return empty array since current player is eliminated
+      return [];
+    }
+
+    return availablePlays;
   } catch (error) {
     logger.error(`Failed to get available plays for game ${gameId}:`, error);
     return [];
@@ -180,12 +198,24 @@ export async function executeMove(gameId: number, playerId: number, move: any): 
     // Advance turn state
     const newTurnState = await advanceTurnState(gameId, turnState, move, moveResult);
     
-    // Get next available plays
+    // Get next available plays (this may end the game if player is blocked)
     const nextPlays = await getAvailablePlays(gameId);
+
+    // Check if game ended due to blocked player
+    const finalTurnState = await getCurrentTurnState(gameId);
+    if (finalTurnState?.isGameOver) {
+      return {
+        success: true,
+        gameOver: true,
+        winner: finalTurnState.winner,
+        newTurnState: finalTurnState,
+        availablePlays: []
+      };
+    }
 
     return {
       success: true,
-      newTurnState,
+      newTurnState: finalTurnState || undefined,
       availablePlays: nextPlays
     };
 
@@ -448,4 +478,97 @@ async function endGame(gameId: number, winnerId: number, reason: string): Promis
   });
 
   logger.info(`Game ${gameId} ended: Player ${winnerId} wins by ${reason}`);
+}
+
+/**
+ * Handle a blocked player - eliminate them or end the game
+ */
+async function handleBlockedPlayer(gameId: number, blockedPlayerId: number): Promise<void> {
+  // Get all players in the game
+  const allPlayerIds = await gameRepository.findPlayersByGameId(gameId);
+  const remainingPlayers = allPlayerIds.filter(id => id !== blockedPlayerId);
+
+  // Remove blocked player's workers from board
+  await removePlayerWorkers(gameId, blockedPlayerId);
+
+  logger.info(`Player ${blockedPlayerId} eliminated. ${remainingPlayers.length} players remaining.`);
+
+  // Check if game should end (only 1 player left)
+  if (remainingPlayers.length === 1) {
+    const winner = remainingPlayers[0];
+    await endGame(gameId, winner, 'last_player_standing');
+    logger.info(`🏁 Game ${gameId} ended: Player ${winner} wins - last player standing`);
+    return;
+  }
+
+  // Game continues - advance to next active player
+  const nextPlayer = getNextActivePlayer(blockedPlayerId, allPlayerIds, remainingPlayers);
+
+  await gameRepository.updateGame(gameId, {
+    current_player_id: nextPlayer,
+    game_phase: 'moving', // Reset to moving phase for next player
+    last_moved_worker_id: null,
+    last_moved_worker_x: null,
+    last_moved_worker_y: null
+  });
+
+  logger.info(`Game ${gameId} continues with player ${nextPlayer}`);
+}
+
+/**
+ * Remove all workers belonging to an eliminated player
+ */
+async function removePlayerWorkers(gameId: number, playerId: number): Promise<void> {
+  const boardState = await loadBoardState(gameId);
+
+  // Remove all workers belonging to this player
+  for (let x = 0; x < 5; x++) {
+    for (let y = 0; y < 5; y++) {
+      const worker = boardState.cells[x][y].worker;
+      if (worker && worker.playerId === playerId) {
+        boardState.cells[x][y].worker = undefined;
+      }
+    }
+  }
+
+  // Remove from worker tracking
+  const workersToRemove: string[] = [];
+  for (const [workerKey, workerData] of boardState.workers.entries()) {
+    if (workerData.playerId === playerId) {
+      workersToRemove.push(workerKey);
+    }
+  }
+
+  for (const workerKey of workersToRemove) {
+    boardState.workers.delete(workerKey);
+  }
+
+  await saveBoardState(gameId, boardState);
+  logger.info(`Removed all workers for eliminated player ${playerId}`);
+}
+
+/**
+ * Get the next active player in turn order
+ */
+function getNextActivePlayer(
+  eliminatedPlayerId: number,
+  originalPlayerIds: number[],
+  activePlayerIds: number[]
+): number {
+  // Find eliminated player in original turn order
+  const eliminatedIndex = originalPlayerIds.indexOf(eliminatedPlayerId);
+
+  // Find the next active player in the original turn order
+  for (let i = 1; i < originalPlayerIds.length; i++) {
+    const nextIndex = (eliminatedIndex + i) % originalPlayerIds.length;
+    const nextPlayerId = originalPlayerIds[nextIndex];
+
+    // If this player is still active, they're the next player
+    if (activePlayerIds.includes(nextPlayerId)) {
+      return nextPlayerId;
+    }
+  }
+
+  // Fallback to first active player (shouldn't happen)
+  return activePlayerIds[0];
 }

@@ -8,9 +8,20 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
-  "keywords": ["santorini", "board-game", "react", "three.js"],
+  "keywords": [
+    "santorini",
+    "board-game",
+    "react",
+    "three.js"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -27,9 +38,18 @@
     "zustand": "^5.0.6"
   },
   "devDependencies": {
-    "@types/node": "^24.1.0",
+    "@playwright/test": "^1.55.1",
+    "@react-three/test-renderer": "^9.1.0",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.1",
+    "@types/node": "^24.6.1",
     "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "^1.0.4",
+    "@vitest/ui": "^1.0.4",
+    "jsdom": "^23.0.1",
     "typescript": "^5.8.3",
-    "vite": "^7.0.5"
+    "vite": "^7.0.5",
+    "vitest": "^1.0.4"
   }
 }

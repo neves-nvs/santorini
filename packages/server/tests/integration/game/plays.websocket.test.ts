@@ -6,6 +6,7 @@ import { PORT } from "../../../src/configs/config";
 import { UserDTO } from "../../../src/users/userDTO";
 import WebSocket from "ws";
 import { db } from "../../../src/database";
+import { cleanupTestData } from "../helper/testDb";
 
 let user: UserDTO;
 let jwtToken: string;
@@ -29,9 +30,8 @@ describe("WebSocket Message Reception Tests", () => {
   });
 
   afterEach(async () => {
-    await db.deleteFrom("players").execute();
-    await db.deleteFrom("games").execute();
-    await db.deleteFrom("users").execute();
+    // Fast truncate instead of slow individual deletes
+    await cleanupTestData();
     ws.close();
   });
 

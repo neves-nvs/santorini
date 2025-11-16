@@ -166,4 +166,21 @@ router.get("/me", authenticate, async (req, res) => {
   }
 });
 
+// Test endpoint for authentication testing
+router.get("/test-auth", authenticate, async (req, res) => {
+  try {
+    const user = req.user as User;
+    res.status(200).json({
+      id: user.id,
+      username: user.username,
+      display_name: user.display_name,
+      created_at: user.created_at
+    });
+  } catch (e: unknown) {
+    const error = e as Error;
+    logger.error(error.message);
+    res.status(400).send(error.message);
+  }
+});
+
 export default router;
