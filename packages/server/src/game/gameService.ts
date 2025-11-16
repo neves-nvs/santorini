@@ -5,13 +5,16 @@ import { broadcastUpdate } from "./gameSession";
 import { db } from "../database";
 import logger from "../logger";
 
-export async function createGame(user: User, amountOfPlayers: number = 2): Promise<{ gameId: number }> {
+// Santorini is a 2-player game
+const SANTORINI_MAX_PLAYERS = 2;
+
+export async function createGame(user: User, maxPlayers: number = SANTORINI_MAX_PLAYERS): Promise<{ gameId: number }> {
   const newGame = {
     created_at: new Date().toISOString(),
     user_creator_id: user.id,
-    player_count: amountOfPlayers,
+    player_count: maxPlayers, // Set the game capacity
     game_status: "waiting",
-    game_phase: "placing",
+    game_phase: null, // No phase until game starts
   } as NewGame;
 
   const game = await gameRepository.createGame(newGame);
@@ -32,6 +35,13 @@ export async function addPlayerToGame(gameId: number, user: User): Promise<void>
       }
 
       const playersInGame = await gameRepository.findPlayersByGameId(gameId, transaction);
+
+      // Check if player is already in the game
+      if (playersInGame.includes(user.id)) {
+        logger.info(`Player ${user.id} already in game ${gameId}, skipping add`);
+        return;
+      }
+
       if (playersInGame.length >= game.player_count) {
         logger.error("Game is full");
         throw new Error("Game is full");
@@ -41,14 +51,12 @@ export async function addPlayerToGame(gameId: number, user: User): Promise<void>
 
       const playersCount = (await gameRepository.findPlayersByGameId(gameId, transaction)).length;
       logger.info(`Game ${gameId} now has ${playersCount}/${game.player_count} players`);
-      logger.info(`Game ${gameId} status check: playersCount=${playersCount}, game.player_count=${game.player_count}, current_status=${game.game_status}`);
+      logger.info(`Game ${gameId} status check: playersCount=${playersCount}, maxPlayers=${game.player_count}, current_status=${game.game_status}`);
 
       if (playersCount === game.player_count) {
-        logger.info(`Game ${gameId} is full! Setting to ready for confirmation...`);
+        logger.info(`Game ${gameId} is full! Players can now ready up...`);
 
-        // Update game status to ready (waiting for confirmations)
-        await gameRepository.updateGame(gameId, { game_status: "ready" });
-
+        // Game stays in "waiting" status - players will ready up, then it moves to "in-progress"
         // Mark that we should broadcast after transaction commits
         shouldBroadcast = true;
       }
@@ -66,7 +74,7 @@ export async function addPlayerToGame(gameId: number, user: User): Promise<void>
     // Get enhanced ready status with usernames
     const usersInGame = await gameRepository.findUsersByGame(gameId);
     const gameSession = await import("./gameSession");
-    const playersReadyStatus = gameSession.getPlayersReadyStatus(gameId);
+    const playersReadyStatus = await gameSession.getPlayersReadyStatus(gameId);
     const enhancedReadyStatus = playersReadyStatus.map(status => {
       const userInfo = usersInGame.find(u => u.id === status.userId);
       return {
@@ -79,8 +87,8 @@ export async function addPlayerToGame(gameId: number, user: User): Promise<void>
     logger.info(`Broadcasting game_state_update for game ${gameId} with status: ${updatedGame?.game_status} to ALL players`);
 
     // Use formatted game state instead of raw database object
-    const messageHandler = await import("../websockets/messageHandler");
-    const formattedGameState = await messageHandler.formatGameStateForFrontend(updatedGame, gameId);
+    const gameStateService = await import("./gameStateService");
+    const formattedGameState = await gameStateService.generateGameStateForFrontend(updatedGame, gameId);
 
     broadcastUpdate(gameId, {
       type: "game_state_update",

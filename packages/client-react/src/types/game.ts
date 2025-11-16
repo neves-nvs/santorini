@@ -64,11 +64,12 @@ export interface GameState {
 
   // Database fields from backend
   user_creator_id?: number;
-  player_count?: number;
-  game_status?: 'waiting' | 'ready' | 'in-progress' | 'completed' | 'aborted';
-  game_phase?: 'waiting' | 'placing' | 'moving' | 'building' | null;
+  player_count?: number; // Maximum players allowed in the game
+  game_status?: 'waiting' | 'in-progress' | 'completed';
+  game_phase?: 'placing' | 'moving' | 'building' | null;
   current_player_id?: number | null;
   winner_id?: number | null;
+  win_reason?: string | null;
   created_at?: string;
   started_at?: string | null;
   finished_at?: string | null;

@@ -155,11 +155,7 @@ export class StandardMoveGenerator implements MoveGenerator {
     // In building phase, only the worker that just moved can build
     let workersToCheck = [];
 
-    console.log(`🔧 Building generation debug:`, {
-      lastMovedWorkerId: context.lastMovedWorkerId,
-      lastMovedWorkerPosition: context.lastMovedWorkerPosition,
-      currentPlayerId: context.currentPlayerId
-    });
+
 
     if (context.lastMovedWorkerId && context.lastMovedWorkerPosition) {
       // Only the worker that just moved can build
@@ -169,11 +165,11 @@ export class StandardMoveGenerator implements MoveGenerator {
         y: context.lastMovedWorkerPosition.y,
         playerId: context.currentPlayerId
       }];
-      console.log(`🔧 Using moved worker only: Worker ${context.lastMovedWorkerId} at (${context.lastMovedWorkerPosition.x}, ${context.lastMovedWorkerPosition.y})`);
+
     } else {
       // Fallback: get all player workers (for backward compatibility)
       workersToCheck = getPlayerWorkers(context.boardState, context.currentPlayerId);
-      console.log(`🔧 Fallback: Using all ${workersToCheck.length} workers for player ${context.currentPlayerId}`);
+
     }
 
     // Generate building moves for the specified worker(s)
@@ -198,7 +194,7 @@ export class StandardMoveGenerator implements MoveGenerator {
           // Get current height to determine what can be built
           const currentHeight = getHeight(context.boardState, buildX, buildY);
 
-          // Build logic: blocks for levels 0-2, dome for level 3 or as alternative
+          // Build logic: players can choose block or dome at any level (except level 3 which must be dome)
           if (currentHeight < 3) {
             // Can build next level block (0->1, 1->2, 2->3)
             moves.push({
@@ -208,6 +204,16 @@ export class StandardMoveGenerator implements MoveGenerator {
               position: { x: buildX, y: buildY },
               fromWorkerPosition: { x: worker.x, y: worker.y },
               buildingLevel: currentHeight + 1
+            });
+
+            // Can also choose to build dome at any level (strategic choice)
+            moves.push({
+              type: "build_dome",
+              workerId: worker.workerId,
+              playerId: context.currentPlayerId,
+              position: { x: buildX, y: buildY },
+              fromWorkerPosition: { x: worker.x, y: worker.y },
+              buildingType: "dome"
             });
           } else {
             // At level 3, can only build dome

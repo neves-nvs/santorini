@@ -303,3 +303,6 @@ Temporary Items
 # Editors
 .idea/
 .vscode/
+
+#
+.direnv

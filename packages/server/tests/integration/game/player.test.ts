@@ -15,7 +15,6 @@ const userData = {
 };
 
 let newGameData = {
-  player_count: 2,
   game_status: "waiting",
 } as NewGame;
 
@@ -137,17 +136,18 @@ describe("Players in Game API", () => {
         ]);
 
         const players = await findPlayersByGameId(game.id);
+        const SANTORINI_MAX_PLAYERS = 2;
         expect(players.length).toBeGreaterThanOrEqual(1);
-        expect(players.length).toBeLessThanOrEqual(game.player_count);
+        expect(players.length).toBeLessThanOrEqual(SANTORINI_MAX_PLAYERS);
 
         const actualStatusCodes = responses.map((res) => res.statusCode);
 
         const successCount = actualStatusCodes.filter((code) => code === 201).length;
         const failCount = actualStatusCodes.filter((code) => code === 400).length;
 
-        // The success count should be between 1 and game.player_count
+        // The success count should be between 1 and SANTORINI_MAX_PLAYERS
         expect(successCount).toBeGreaterThanOrEqual(1);
-        expect(successCount).toBeLessThanOrEqual(game.player_count);
+        expect(successCount).toBeLessThanOrEqual(SANTORINI_MAX_PLAYERS);
         // The failure count should be between 0 and the number of excess requests
         expect(failCount).toBeGreaterThanOrEqual(0);
         expect(failCount).toBeLessThanOrEqual(3 - successCount);

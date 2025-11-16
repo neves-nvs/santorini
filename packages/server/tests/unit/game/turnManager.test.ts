@@ -81,7 +81,12 @@ describe("Turn Manager", () => {
         placingTurnsCompleted: 0,
         isGameOver: false,
         winner: undefined,
-        winReason: undefined
+        winReason: undefined,
+        lastMovedWorkerId: undefined,
+        lastMovedWorkerPosition: {
+          x: undefined,
+          y: undefined
+        }
       });
     });
 
@@ -113,7 +118,12 @@ describe("Turn Manager", () => {
         placingTurnsCompleted: 4,
         isGameOver: true,
         winner: 1,
-        winReason: 'win_condition'
+        winReason: 'win_condition',
+        lastMovedWorkerId: undefined,
+        lastMovedWorkerPosition: {
+          x: undefined,
+          y: undefined
+        }
       });
     });
 

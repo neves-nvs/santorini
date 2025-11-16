@@ -30,6 +30,8 @@ describe("Games API Integration", () => {
       player_count: newGameDTO.player_count,
       user_creator_id: user.id,
       game_status: "waiting",
+      turn_number: 1,
+      placing_turns_completed: 0,
     };
   });
 

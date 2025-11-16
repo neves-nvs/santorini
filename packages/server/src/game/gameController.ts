@@ -13,6 +13,9 @@ import logger from "../logger";
 
 const router = Router();
 
+// Santorini is a 2-player game
+const SANTORINI_MAX_PLAYERS = 2;
+
 // Create a global game engine instance
 // TODO: In production, this should be managed per-game or injected
 const gameEngine = new GameEngine();
@@ -43,7 +46,7 @@ export async function generatePlacingPhaseAvailablePlays(gameId: number, provide
     currentPhase: 'placing',
     currentPlayerId: game?.current_player_id || undefined,
     boardState,
-    playerCount: game?.player_count
+    playerCount: SANTORINI_MAX_PLAYERS
   };
 
   const availablePlays = gameEngine.generateAvailablePlays(context);
@@ -78,7 +81,7 @@ export async function generateMovingPhaseAvailablePlays(gameId: number, currentP
     currentPhase: 'moving',
     currentPlayerId: currentPlayerId,
     boardState,
-    playerCount: game?.player_count
+    playerCount: SANTORINI_MAX_PLAYERS
   };
 
   const availablePlays = gameEngine.generateAvailablePlays(context);
@@ -99,7 +102,7 @@ export async function generateBuildingPhaseAvailablePlays(gameId: number, curren
   if (providedBoardState !== undefined) {
     // Use provided board state (for testing)
     boardState = providedBoardState;
-    game = { current_player_id: currentPlayerId, player_count: 2 }; // Default for tests
+    game = { current_player_id: currentPlayerId }; // Default for tests
     turnState = null; // No turn state in tests
   } else {
     // Load board state from database
@@ -113,12 +116,7 @@ export async function generateBuildingPhaseAvailablePlays(gameId: number, curren
     const { getCurrentTurnState } = require('./turnManager');
     turnState = await getCurrentTurnState(gameId);
 
-    console.log(`🔧 Turn state debug for game ${gameId}:`, {
-      turnState,
-      lastMovedWorkerId: turnState?.lastMovedWorkerId,
-      lastMovedWorkerPosition: turnState?.lastMovedWorkerPosition,
-      currentPhase: turnState?.currentPhase
-    });
+
   }
 
   const context: GameContext = {
@@ -126,7 +124,7 @@ export async function generateBuildingPhaseAvailablePlays(gameId: number, curren
     currentPhase: 'building',
     currentPlayerId: currentPlayerId,
     boardState,
-    playerCount: game?.player_count,
+    playerCount: SANTORINI_MAX_PLAYERS,
     lastMovedWorkerId: turnState?.lastMovedWorkerId,
     lastMovedWorkerPosition: turnState?.lastMovedWorkerPosition
   };
@@ -163,7 +161,7 @@ export async function checkGameState(gameId: number, providedBoardState?: any) {
 
   if (providedBoardState !== undefined) {
     boardState = providedBoardState;
-    game = { player_count: 2, game_phase: 'moving' }; // Default for tests
+    game = { game_phase: 'moving' }; // Default for tests
   } else {
     const { loadBoardState } = require('./boardState');
     boardState = await loadBoardState(gameId);
@@ -173,7 +171,7 @@ export async function checkGameState(gameId: number, providedBoardState?: any) {
   const { checkGameWinner } = require('./boardState');
 
   // Check for winner
-  const winner = checkGameWinner(boardState, game?.player_count || 2);
+  const winner = checkGameWinner(boardState, game?.player_count || SANTORINI_MAX_PLAYERS);
   if (winner) {
     logger.info(`Game ${gameId}: Player ${winner} has won!`);
     return {
@@ -189,7 +187,7 @@ export async function checkGameState(gameId: number, providedBoardState?: any) {
     logger.info(`Game ${gameId}: Checking for blocked players (phase: ${game?.game_phase})`);
 
     // Check for blocked players (loss condition)
-    for (let playerId = 1; playerId <= (game?.player_count || 2); playerId++) {
+    for (let playerId = 1; playerId <= (game?.player_count || SANTORINI_MAX_PLAYERS); playerId++) {
       const isBlocked = await checkPlayerBlocked(gameId, playerId, boardState);
       if (isBlocked) {
         // Find the winner (the other player)
@@ -356,8 +354,9 @@ router.get("/:gameId", authenticate, validateUUIDParam("gameId"), checkValidatio
       return res.status(404).json({ message: "Game not found" });
     }
 
-    // Get players in the game
-    const players = await gameRepository.findPlayersByGameId(gameId);
+    // Get players in the game (with full user data)
+    const players = await gameRepository.findUsersByGame(gameId);
+    logger.info(`Game ${gameId} getGameState: Found ${players.length} players:`, players.map(p => ({ id: p.id, username: p.username })));
 
     // Get players ready status
     const gameSession = await import("./gameSession");
@@ -366,9 +365,9 @@ router.get("/:gameId", authenticate, validateUUIDParam("gameId"), checkValidatio
     // Get board state if game is in progress
     let boardState = null;
     if (game.game_status === 'in-progress') {
-      // Import the getGameBoard function from messageHandler
-      const { getGameBoard } = await import("../websockets/messageHandler");
-      boardState = await getGameBoard(gameId);
+      // Import the generateGameBoard function from gameStateService
+      const { generateGameBoard } = await import("./gameStateService");
+      boardState = await generateGameBoard(gameId);
     }
 
     // Return complete game state
@@ -391,11 +390,13 @@ router.get("/:gameId", authenticate, validateUUIDParam("gameId"), checkValidatio
 router.post(
   "/",
   authenticate,
-  body("player_count").isInt({ min: 2, max: 4 }).withMessage("Amount of players must be between 2 and 4"),
+  body("player_count")
+    .isInt({ min: 2, max: 4 })
+    .withMessage("Amount of players must be between 2 and 4"),
   checkValidation,
   async (req, res, next) => {
-    const { player_count } = req.body as { player_count: number | undefined };
     const user = req.user as User;
+    const { player_count } = req.body;
 
     try {
       const result = await gameService.createGame(user, player_count);
@@ -510,15 +511,17 @@ router.post("/:gameId/ready", authenticate, async (req, res) => {
     const gameSession = await import("./gameSession");
     gameSession.setPlayerReady(gameId, user.id, isReady);
 
+    logger.info(`Player ${user.username} (${user.id}) set ready status to ${isReady} for game ${gameId}`);
+
     // Check if all players are ready
-    const allReady = gameSession.areAllPlayersReady(gameId);
-    const playersStatus = gameSession.getPlayersReadyStatus(gameId);
+    const allReady = await gameSession.areAllPlayersReady(gameId);
+    const playersStatus = await gameSession.getPlayersReadyStatus(gameId);
     const connectedPlayersCount = gameSession.getConnectedPlayersCount(gameId);
 
     logger.info(`Game ${gameId} ready check: allReady=${allReady}, game_status=${game.game_status}, connectedPlayers=${connectedPlayersCount}, playersStatus=${JSON.stringify(playersStatus)}`);
     logger.info(`Game ${gameId} debug - playersStatus.length=${playersStatus.length}, playersStatus.filter(ready)=${playersStatus.filter(p => p.isReady).length}`);
 
-    if (allReady && game.game_status === "ready") {
+    if (allReady && game.game_status === "waiting") {
       // Get all players for random selection
       const playerIds = await gameRepository.findPlayersByGameId(gameId);
 
@@ -547,8 +550,8 @@ router.post("/:gameId/ready", authenticate, async (req, res) => {
       logger.info(`Broadcasting game state for game ${gameId} with status: ${updatedGame?.game_status} to all players`);
 
       // Format game state (same for everyone)
-      const messageHandler = await import("../websockets/messageHandler");
-      const formattedGameState = await messageHandler.formatGameStateForFrontend(updatedGame, gameId);
+      const gameStateService = await import("./gameStateService");
+      const formattedGameState = await gameStateService.generateGameStateForFrontend(updatedGame, gameId);
 
       // Broadcast identical game state to ALL players
       gameSession.broadcastUpdate(gameId, {
@@ -578,7 +581,8 @@ router.post("/:gameId/ready", authenticate, async (req, res) => {
 
     } else {
       // Broadcast ready status update
-      logger.info(`Broadcasting player_ready_status for game ${gameId}. Ready players: ${playersStatus.length}`);
+      const readyCount = playersStatus.filter(p => p.isReady).length;
+      logger.info(`Broadcasting player_ready_status for game ${gameId}. Ready players: ${readyCount}/${playersStatus.length}`);
       gameSession.broadcastUpdate(gameId, {
         type: "player_ready_status",
         payload: playersStatus
@@ -693,8 +697,8 @@ router.get("/:gameId/state", authenticate, validateIntParam("gameId"), checkVali
     // Get board state
     let boardState = null;
     if (game.game_status === 'in-progress' || game.game_status === 'completed') {
-      const { getGameBoard } = await import("../websockets/messageHandler");
-      boardState = await getGameBoard(gameId);
+      const { generateGameBoard } = await import("./gameStateService");
+      boardState = await generateGameBoard(gameId);
     }
 
     // Convert to frontend format
@@ -713,7 +717,7 @@ router.get("/:gameId/state", authenticate, validateIntParam("gameId"), checkVali
 
       // Backend fields for compatibility
       user_creator_id: game.user_creator_id,
-      player_count: game.player_count,
+      player_count: game.player_count, // Maximum players allowed
       game_status: game.game_status,
       game_phase: game.game_phase,
       current_player_id: game.current_player_id,

@@ -1,5 +1,6 @@
 import WebSocket from "ws";
 import logger from "../logger";
+import { findUsersByGame } from "./gameRepository";
 
 interface GameConnection {
   clients: Map<number, WebSocket>;
@@ -63,9 +64,18 @@ export function addClient(gameId: number, userId: number, ws: WebSocket) {
 
 export function removeClient(gameId: number, userId: number) {
   const gameConnection = gameConnections.get(gameId);
-  logger.info(`Removing client ${userId} from game ${gameId}`);
+  logger.info(`🔌 Removing client ${userId} from game ${gameId}`);
   if (gameConnection) {
+    const sizeBefore = gameConnection.clients.size;
     gameConnection.clients.delete(userId);
+    const sizeAfter = gameConnection.clients.size;
+    logger.info(`🔌 Client ${userId} removed from game ${gameId}. Clients: ${sizeBefore} -> ${sizeAfter}`);
+
+    // Log remaining clients
+    const remainingClients = Array.from(gameConnection.clients.keys());
+    logger.info(`🔌 Remaining clients in game ${gameId}: [${remainingClients.join(', ')}]`);
+  } else {
+    logger.warn(`🔌 No game connection found when trying to remove client ${userId} from game ${gameId}`);
   }
 }
 
@@ -147,7 +157,7 @@ export function setPlayerReady(gameId: number, userId: number, isReady: boolean)
   logger.info(`setPlayerReady debug - gameId=${gameId}, userId=${userId}, isReady=${isReady}, readyPlayers.size=${readyPlayers.size}, connectedPlayers=${connectedPlayers}`);
 }
 
-export function getPlayersReadyStatus(gameId: number): { userId: number, isReady: boolean }[] {
+export async function getPlayersReadyStatus(gameId: number): Promise<{ userId: number, isReady: boolean }[]> {
   const gameConnection = gameConnections.get(gameId);
   if (!gameConnection) {
     logger.info(`getPlayersReadyStatus: No game connection found for game ${gameId}`);
@@ -155,7 +165,10 @@ export function getPlayersReadyStatus(gameId: number): { userId: number, isReady
   }
 
   const readyPlayers = playerReadyStatus.get(gameId) || new Set();
-  const allPlayers = Array.from(gameConnection.clients.keys());
+
+  // Use actual players in game from database, not WebSocket client keys
+  const playersInGame = await findUsersByGame(gameId);
+  const allPlayers = playersInGame.map(player => player.id);
 
   logger.info(`getPlayersReadyStatus: game ${gameId}, readyPlayers=${Array.from(readyPlayers)}, allPlayers=${allPlayers}, gameConnection.clients.size=${gameConnection.clients.size}`);
 
@@ -169,7 +182,7 @@ export function getPlayersReadyStatus(gameId: number): { userId: number, isReady
   return result;
 }
 
-export function areAllPlayersReady(gameId: number): boolean {
+export async function areAllPlayersReady(gameId: number): Promise<boolean> {
   const gameConnection = gameConnections.get(gameId);
   if (!gameConnection) {
     logger.info(`areAllPlayersReady: No game connection found for game ${gameId}`);
@@ -177,10 +190,14 @@ export function areAllPlayersReady(gameId: number): boolean {
   }
 
   const readyPlayers = playerReadyStatus.get(gameId) || new Set();
-  const totalPlayers = gameConnection.clients.size;
+
+  // Use actual players in game from database, not WebSocket client count
+  const playersInGame = await findUsersByGame(gameId);
+  const totalPlayers = playersInGame.length;
+
   const allReady = totalPlayers > 0 && readyPlayers.size === totalPlayers;
 
-  logger.info(`areAllPlayersReady: game ${gameId}, readyPlayers=${readyPlayers.size}, totalPlayers=${totalPlayers}, allReady=${allReady}`);
+  logger.info(`areAllPlayersReady: game ${gameId}, readyPlayers=${readyPlayers.size}, totalPlayers=${totalPlayers} (from DB), connectedClients=${gameConnection.clients.size}, allReady=${allReady}`);
   return allReady;
 }
 
@@ -192,4 +209,10 @@ export function clearPlayerReadyStatus(gameId: number) {
 export function getConnectedPlayersCount(gameId: number): number {
   const gameConnection = gameConnections.get(gameId);
   return gameConnection ? gameConnection.clients.size : 0;
+}
+
+// Test utility function to clean up all game sessions
+export function clearAllGameSessions() {
+  gameConnections.clear();
+  playerReadyStatus.clear();
 }
