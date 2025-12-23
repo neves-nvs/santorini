@@ -29,15 +29,17 @@ export interface GameLifecycle {
 
 /**
  * Convert backend game state to clean lifecycle state
+ * Supports both old format (game_status) and new format (status)
  */
 export function mapToGameLifecycle(backendState: any): GameLifecycle {
-  const gameStatus = backendState.game_status
-  const gamePhase = backendState.game_phase
+  // Support both old and new API formats
+  const gameStatus = backendState.status || backendState.game_status
+  const gamePhase = backendState.phase || backendState.game_phase
   const players = backendState.players || []
-  const playerCount = backendState.player_count || 2
+  const playerCount = backendState.maxPlayers || backendState.player_count || 2
 
   // FINISHED state
-  if (gameStatus === 'completed' || backendState.winner_id) {
+  if (gameStatus === 'completed' || backendState.winnerId || backendState.winner_id) {
     return {
       main: 'FINISHED',
       sub: 'VICTORY'
@@ -47,9 +49,9 @@ export function mapToGameLifecycle(backendState: any): GameLifecycle {
   // IN_PROGRESS state
   if (gameStatus === 'in-progress') {
     let sub: GameplaySubState = 'PLACING' // default
-    
+
     if (gamePhase === 'placing') sub = 'PLACING'
-    else if (gamePhase === 'moving') sub = 'MOVING'  
+    else if (gamePhase === 'moving') sub = 'MOVING'
     else if (gamePhase === 'building') sub = 'BUILDING'
 
     return {

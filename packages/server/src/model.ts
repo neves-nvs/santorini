@@ -49,9 +49,9 @@ export interface GameTable {
   win_reason: string | null;
 
   created_at: ColumnType<Date, string, never>;
-  started_at: ColumnType<Date | null, string | undefined, never>;
-  finished_at: ColumnType<Date | null, string | undefined, never>;
-  completed_at: ColumnType<Date | null, string | undefined, never>;
+  started_at: ColumnType<Date | null, string | undefined, string | null>;
+  finished_at: ColumnType<Date | null, string | undefined, string | null>;
+  completed_at: ColumnType<Date | null, string | undefined, string | null>;
 }
 
 export type GameUpdate = Updateable<GameTable>;
@@ -61,6 +61,7 @@ export type Game = Selectable<GameTable>;
 export interface PlayerTable {
   game_id: number;
   user_id: number;
+  is_ready: boolean;
 }
 
 export type PlayerUpdate = Updateable<PlayerTable>;

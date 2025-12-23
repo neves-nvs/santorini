@@ -2,21 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../store/AppContext'
 import { apiService } from '../services/ApiService'
-
-interface GameInfo {
-  id: number
-  user_creator_id: number
-  created_at: string
-  player_count: number
-  started_at: string | null
-  game_status: string
-  game_phase: string | null
-  current_player_id: number | null
-  winner_id: number | null
-  finished_at: string | null
-  current_players: number
-  players: number[]
-}
+import { GameInfo } from '../types/game'
 
 const LobbyPage = () => {
   const { state, logout } = useApp()
@@ -52,7 +38,7 @@ const LobbyPage = () => {
     setError('')
 
     try {
-      const result = await apiService.createGame({ player_count: playerCount })
+      const result = await apiService.createGame({ maxPlayers: playerCount })
       if (result.gameId) {
         const gameId = result.gameId.toString()
         navigate(`/game/${gameId}`)
@@ -270,7 +256,7 @@ const LobbyPage = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {availableGames.map((game) => {
                     const isPlayerInGame = false
-                    const canJoin = game.game_status === 'waiting' || isPlayerInGame
+                    const canJoin = game.status === 'waiting' || isPlayerInGame
 
                     return (
                       <div key={game.id} style={{
@@ -284,7 +270,7 @@ const LobbyPage = () => {
                         <div>
                           <div><strong>Game {game.id}</strong></div>
                           <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                            {game.current_players}/{game.player_count} players • {game.game_status}
+                            {game.playerCount}/{game.maxPlayers} players • {game.status}
                             {isPlayerInGame && <span style={{ color: 'lightgreen' }}> • You're in this game</span>}
                           </div>
                         </div>
@@ -300,7 +286,7 @@ const LobbyPage = () => {
                             cursor: !canJoin ? 'not-allowed' : 'pointer'
                           }}
                         >
-                          {isPlayerInGame ? 'Rejoin' : (game.game_status === 'waiting' ? 'Join' : game.game_status)}
+                          {isPlayerInGame ? 'Rejoin' : (game.status === 'waiting' ? 'Join' : game.status)}
                         </button>
                       </div>
                     )

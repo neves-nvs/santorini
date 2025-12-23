@@ -397,12 +397,8 @@ export class WebSocketService {
   }
 
   unsubscribeFromGame(gameId: string) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      console.log('📡 Unsubscribing from game:', gameId)
-      this.send(WS_MESSAGE_TYPES.UNSUBSCRIBE_GAME, { gameId })
-    } else {
-      console.warn('⚠️ WebSocket not ready for unsubscription. State:', this.socket?.readyState)
-    }
+    // No longer needed - server automatically cleans up on connection close
+    console.log('📡 Unsubscribe from game requested (automatic cleanup on disconnect):', gameId)
   }
 
   joinGame(gameId: string) {

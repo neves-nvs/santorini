@@ -89,7 +89,7 @@ describe("Auth Controller Integration Tests", () => {
 
   describe("GET /test-auth", () => {
     test("200 OK with valid token authentication", async () => {
-      const validToken = jwt.sign({ username: userData.username }, JWT_SECRET!, { expiresIn: "5h" });
+      const validToken = jwt.sign({ username: userData.username }, JWT_SECRET, { expiresIn: "5h" });
 
       const response = await request(app).get("/test-auth").set("Cookie", `token=${validToken}`).expect(200);
 

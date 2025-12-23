@@ -6,7 +6,7 @@ export interface LoginRequest {
 }
 
 export interface CreateGameRequest {
-  player_count: number
+  maxPlayers: number
 }
 
 export interface JoinGameRequest {
@@ -141,9 +141,9 @@ export class ApiService {
     return this.request<any[]>('/games')
   }
 
-  async getGamesWithPlayerCounts(): Promise<any[]> {
+  async getGamesWithPlayerCounts(): Promise<GameInfo[]> {
     // This now returns games with player counts included
-    return this.request<any[]>('/games')
+    return this.request<GameInfo[]>('/games')
   }
 
   async createGame(gameData: CreateGameRequest): Promise<any> {
@@ -159,7 +159,7 @@ export class ApiService {
 
   async joinGame(gameId: string): Promise<boolean> {
     try {
-      await this.request<any>(`/games/${gameId}/players`, {
+      await this.request<any>(`/games/${gameId}/join`, {
         method: 'POST',
       })
       return true
@@ -178,7 +178,7 @@ export class ApiService {
   async getGameState(gameId: string): Promise<any> {
     // Use the new comprehensive game state endpoint
     console.log(`🔍 Fetching game state for game ID: ${gameId}`)
-    const result = await this.request<any>(`/games/${gameId}/state`)
+    const result = await this.request<any>(`/games/${gameId}`)
     console.log(`🔍 Game state response:`, result)
     console.log(`🔍 Board in response:`, result?.board)
     return result

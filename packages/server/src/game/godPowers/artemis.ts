@@ -1,7 +1,7 @@
 // Artemis - Goddess of the Hunt
 // Power: Your Worker may move one additional time, but not back to the space they started from.
 
-import { GameHook, GameContext, Play, Position } from '../gameEngine';
+import { GameContext, GameHook, Play, Position } from '../gameEngine';
 
 export class ArtemisHook implements GameHook {
   name = "Artemis";

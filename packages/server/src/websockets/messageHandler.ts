@@ -1,315 +1,200 @@
-import * as gameSession from "../game/gameSession";
-import * as gameActionService from "../game/gameActionService";
-
-import { findGameById, findUsersByGame } from "../game/gameRepository";
-import { generateGameStateForFrontend } from "../game/gameStateService";
-
-import { WebSocket } from "ws";
-import { findUserByUsername } from "../users/userRepository";
-import { User } from "../model";
-import logger from "../logger";
 import {
-  WS_MESSAGE_TYPES,
-  GenericWSMessage,
-  MakeMoveMessage
+  ClientMessage,
+  MakeMoveMessage,
+  WS_MESSAGE_TYPES
 } from "../../../shared/src/websocket-types";
 
-interface Message extends GenericWSMessage { }
+import { AuthenticatedWebSocket } from "./authenticatedWebsocket";
+import { GameError } from "../errors/GameErrors";
+import { GameWsController } from "../game/transport/GameWsController";
+import { LobbyWsController } from "../game/transport/LobbyWsController";
+import { User } from "../model";
+import { gameService } from "../composition-root";
+import logger from "../logger";
+import { sendError } from "./utils";
+import { webSocketConnectionManager } from "../game/infra/WebSocketConnectionManager";
 
-function send(ws: WebSocket, type: string, payload: unknown) {
-  ws.send(JSON.stringify({ type: type, payload: payload }));
-}
+const gameController = new GameWsController();
+const lobbyController = new LobbyWsController();
 
-function getAuthenticatedUser(ws: WebSocket): User | null {
-  const user = (ws as any).user;
-  if (!user) {
-    send(ws, WS_MESSAGE_TYPES.ERROR, "Not authenticated");
+function getAuthenticatedUser(ws: AuthenticatedWebSocket): User | null {
+  if (!ws.user) {
+    sendError(ws, "Not authenticated");
     return null;
   }
-  return user;
+
+  return ws.user;
 }
 
-export function handleMessage(ws: WebSocket, message: string) {
-  const parsedMessage: Message = JSON.parse(message);
-  const { type } = parsedMessage;
-  const payload = parsedMessage.payload as {
-    gameId: number;
-  };
+/**
+ * Handle WebSocket connection close.
+ * If player loses all connections to a waiting game and hasn't readied,
+ * they are automatically removed from the game.
+ */
+export async function handleConnectionClose(ws: AuthenticatedWebSocket) {
+  const user = ws.user;
+  if (!user) {
+    logger.warn("Connection close from unauthenticated WebSocket");
+    return;
+  }
 
-  logger.info(`Received message: ${type}`);
-  logger.debug(`Payload: ${JSON.stringify(payload)}`);
+  logger.info(`Cleaning up connection for user ${user.username} (${user.id})`);
 
+  const results = webSocketConnectionManager.removeConnection(ws);
+
+  // For games where user lost their last connection, check if they should be auto-removed
+  for (const { gameId, userId, wasLastConnection } of results) {
+    if (wasLastConnection) {
+      logger.info(`User ${userId} lost last connection to game ${gameId}, checking auto-remove`);
+
+      try {
+        // Try to remove player - will fail if game not waiting or player is ready
+        const { game } = await gameService.removePlayer(gameId, userId);
+
+        // Broadcast to remaining players that someone left
+        webSocketConnectionManager.broadcastToGame(gameId, {
+          type: WS_MESSAGE_TYPES.PLAYER_LEFT,
+          payload: {
+            gameId,
+            userId,
+            playerCount: game.players.size,
+            maxPlayers: game.maxPlayers
+          }
+        });
+
+        logger.info(`Player ${userId} auto-removed from game ${gameId}`);
+      } catch (error) {
+        // Expected if game is in-progress or player is ready - they stay in game
+        logger.debug(`Player ${userId} not auto-removed from game ${gameId}: ${error instanceof Error ? error.message : error}`);
+      }
+    }
+  }
+}
+
+export async function handleMessage(ws: AuthenticatedWebSocket, message: string) {
   const user = getAuthenticatedUser(ws);
   if (!user) {
     logger.warn("Message received from unauthenticated WebSocket");
     return;
   }
 
-  switch (type) {
-    case WS_MESSAGE_TYPES.SUBSCRIBE_GAME:
-      handleSubscribeGame(ws, payload.gameId, user.username);
-      break;
-
-    case WS_MESSAGE_TYPES.UNSUBSCRIBE_GAME:
-      handleUnsubscribeGame(ws, payload.gameId, user.username);
-      break;
-
-    case WS_MESSAGE_TYPES.JOIN_GAME:
-      handleJoinGame(ws, payload.gameId, user.username);
-      break;
-
-    case WS_MESSAGE_TYPES.MAKE_MOVE:
-      handleMakeMove(ws, parsedMessage as MakeMoveMessage);
-      break;
-
-    case WS_MESSAGE_TYPES.SET_READY:
-      handleSetReady(ws, payload as { gameId: number; isReady: boolean }, user.username);
-      break;
-
-    default:
-      logger.error("Unknown message type:", type);
-  }
-}
-
-async function handleMakeMove(ws: WebSocket, message: MakeMoveMessage) {
-  const payload = message.payload;
-
-  logger.info(`Received make_move:`, JSON.stringify(payload, null, 2));
-
-  const user = getAuthenticatedUser(ws);
-  if (!user) {
-    logger.warn("Move attempt without authentication");
-    return;
-  }
-
-  const gameId = payload.gameId;
-  if (!gameId) {
-    send(ws, WS_MESSAGE_TYPES.ERROR, "Game ID required");
-    return;
-  }
-
-  logger.info(`User ${user.username} (${user.id}) making move in game ${gameId}:`, payload.move);
-
-  const result = await gameActionService.processMove(gameId, user.id, payload.move);
-
-  if (!result.success) {
-    send(ws, WS_MESSAGE_TYPES.ERROR, result.error || "Failed to process move");
-    return;
-  }
-
-  logger.info(`Move processed successfully for user ${user.username} in game ${gameId}`);
-}
-
-
-
-
-
-
-
-async function handleJoinGame(ws: WebSocket, gameId: number, username: string) {
-  logger.info(`User ${username} joining game ${gameId} via WebSocket`);
-
-  const game = await getGameOrError(ws, gameId);
-  const user = await getUserOrError(ws, username);
-  if (game === undefined || user === undefined) {
-    return;
-  }
-
   try {
-    const gameService = await import("../game/gameService");
-    await gameService.addPlayerToGame(gameId, user);
+    const parsedMessage = JSON.parse(message) as ClientMessage;
+    const { type } = parsedMessage;
 
-    const gameSession = await import("../game/gameSession");
-    gameSession.addClient(gameId, user.id, ws);
-    const currentGame = await findGameById(gameId);
-    if (currentGame) {
-      await sendGameStateWithReadyStatus(ws, gameId, currentGame, user.id);
+    logger.info(`Received message: ${type} from user ${user.username}`);
+    logger.debug(`Payload: ${JSON.stringify(parsedMessage.payload)}`);
+
+    switch (type) {
+      case WS_MESSAGE_TYPES.SUBSCRIBE_GAME:
+        if (!parsedMessage.payload?.gameId) {
+          sendError(ws, "Game ID required");
+          return;
+        }
+        await handleSubscribeGame(ws, parsedMessage.payload.gameId, user);
+        break;
+
+      case WS_MESSAGE_TYPES.JOIN_GAME:
+        if (!parsedMessage.payload?.gameId) {
+          sendError(ws, "Game ID required");
+          return;
+        }
+        await handleJoinGame(ws, parsedMessage.payload.gameId, user);
+        break;
+
+      case WS_MESSAGE_TYPES.SET_READY:
+        if (!parsedMessage.payload?.gameId || typeof parsedMessage.payload.isReady !== 'boolean') {
+          sendError(ws, "Game ID and ready status required");
+          return;
+        }
+        await handleSetReady(ws, parsedMessage.payload, user);
+        break;
+
+      case WS_MESSAGE_TYPES.MAKE_MOVE:
+        await handleMakeMove(ws, parsedMessage, user);
+        break;
+
+      default:
+        logger.warn(`Unknown message type: ${type} from user ${user.username}`);
+        sendError(ws, `Unknown message type: ${type}`);
     }
-
-    logger.info(`✅ User ${username} successfully joined game ${gameId} via WebSocket`);
-
   } catch (error) {
-    logger.error(`Failed to join game ${gameId} for user ${username}:`, error);
-
-    if (error instanceof Error) {
-      if (error.message === "Game is full") {
-        send(ws, "error", "Game is full");
-      } else if (error.message === "Game not found") {
-        send(ws, "error", "Game not found");
-      } else if (error.message.includes("duplicate key")) {
-        send(ws, "error", "Already in game");
-      } else {
-        send(ws, "error", "Failed to join game");
-      }
-    }
+    logger.error(`Error handling WebSocket message from user ${user.username}:`, error);
+    sendError(ws, "Invalid message format");
   }
 }
 
-async function handleSubscribeGame(ws: WebSocket, gameId: number, username: string) {
-  logger.info(`User ${username} is trying to join game ${gameId}`);
-  const game = await getGameOrError(ws, gameId);
-  const user = await getUserOrError(ws, username);
-  if (game === undefined || user === undefined) {
-    return;
-  }
-
+async function handleSubscribeGame(ws: AuthenticatedWebSocket, gameId: number, user: User) {
   logger.info(`User ${user.username} subscribing to game ${gameId}`);
 
-  const wasAlreadyInSession = gameSession.isPlayerInGameSession(gameId, user.id);
-  gameSession.addClient(gameId, user.id, ws);
+  try {
+    webSocketConnectionManager.addClient(gameId, user.id, ws);
 
-  const currentGame = await findGameById(gameId);
-  const playersInGame = await findUsersByGame(gameId);
-
-  logger.info(`Sending game state to user ${user.username}:`, {
-    gameExists: !!currentGame,
-    playersCount: playersInGame.length,
-    players: playersInGame,
-    wasReconnection: wasAlreadyInSession
-  });
-
-  if (currentGame) {
-    await sendGameStateWithReadyStatus(ws, gameId, currentGame, user.id);
-
-    if (currentGame?.game_status === 'in-progress' &&
-      currentGame?.current_player_id === user.id &&
-      currentGame?.game_phase) {
-
-      logger.info(`Sending available_plays to reconnected current player ${user.id} in game ${gameId}`);
-
-      const { getAvailablePlays } = await import('../game/turnManager');
-      const availablePlays = await getAvailablePlays(gameId);
-      send(ws, "available_plays", availablePlays);
-    }
-  }
-
-  if (currentGame?.game_status === 'waiting') {
-    send(ws, "players_in_game", playersInGame);
-  }
-
-  if (currentGame) {
-    const playersReadyStatus = await gameSession.getPlayersReadyStatus(gameId);
-    const formattedGameState = await generateGameStateForFrontend(currentGame, gameId);
-    logger.info(`Broadcasting game_state_update for subscription to game ${gameId}`);
-
-    if (currentGame.game_status === 'waiting') {
-      gameSession.broadcastUpdate(gameId, {
-        type: "game_state_update",
-        payload: {
-          ...formattedGameState,
-          playersReadyStatus: playersReadyStatus
-        }
-      });
+    await gameController.handleGetGameState(ws, user.id, { gameId });
+  } catch (error) {
+    logger.error(`Failed to subscribe to game ${gameId} for user ${user.username}:`, error);
+    if (error instanceof GameError) {
+      sendError(ws, error.userMessage);
     } else {
-      gameSession.broadcastUpdate(gameId, {
-        type: "game_state_update",
-        payload: formattedGameState
-      });
-    }
-  }
-
-  if (!wasAlreadyInSession && currentGame?.game_status === 'waiting') {
-    logger.info(`New player subscription - broadcasting player list update to other players`);
-    gameSession.broadcastUpdate(gameId, {
-      type: "players_in_game",
-      payload: playersInGame,
-    });
-  }
-
-  // Check if game is full (only for new connections)
-  if (!wasAlreadyInSession) {
-    logger.info(`Game ${gameId} WebSocket status check: playersInGame.length=${playersInGame.length}, maxPlayers=${currentGame?.player_count}, currentGame.game_status=${currentGame?.game_status}`);
-    if (currentGame && playersInGame.length === currentGame.player_count && currentGame.game_status === "waiting") {
-      logger.info(`Game ${gameId} is full (${playersInGame.length}/${currentGame.player_count}) - players can now ready up!`);
-
-      // Game stays in "waiting" - no status change needed
-      // Players will ready up, then game transitions to "in-progress"
-
-      // Broadcast that game is full and ready for player confirmations
-      logger.info(`Broadcasting game_ready_for_start for game ${gameId}`);
-      gameSession.broadcastUpdate(gameId, { type: "game_ready_for_start" });
-
-      // Send updated game state to ALL players
-      const updatedGame = await findGameById(gameId);
-      const playersReadyStatus = await gameSession.getPlayersReadyStatus(gameId);
-      logger.info(`Broadcasting game_state_update for game ${gameId} with status: ${updatedGame?.game_status} to all players`);
-      // Use formatted game state with additional WebSocket fields
-      const formattedGameState = await generateGameStateForFrontend(updatedGame, gameId);
-      gameSession.broadcastUpdate(gameId, {
-        type: "game_state_update",
-        payload: {
-          ...formattedGameState,
-          playersReadyStatus: playersReadyStatus
-        }
-      });
+      sendError(ws, "Failed to subscribe to game");
     }
   }
 }
 
-/**
- * Handle player setting ready status
- */
-async function handleSetReady(ws: WebSocket, payload: { gameId: number; isReady: boolean }, username: string) {
+async function handleJoinGame(ws: AuthenticatedWebSocket, gameId: number, user: User) {
+  logger.info(`User ${user.username} joining game ${gameId} via WebSocket`);
+
+  try {
+    // Register WebSocket connection for this game (auto-subscribe on join)
+    webSocketConnectionManager.addClient(gameId, user.id, ws);
+
+    await lobbyController.handleJoinGame(ws, user.id, { gameId });
+  } catch (error) {
+    logger.error(`Failed to join game ${gameId} for user ${user.username}:`, error);
+    if (error instanceof GameError) {
+      sendError(ws, error.userMessage);
+    } else {
+      sendError(ws, "Failed to join game");
+    }
+  }
+}
+
+async function handleSetReady(ws: AuthenticatedWebSocket, payload: { gameId: number; isReady: boolean }, user: User) {
   const { gameId, isReady } = payload;
-  logger.info(`User ${username} setting ready status to ${isReady} for game ${gameId}`);
+  logger.info(`User ${user.username} setting ready status to ${isReady} for game ${gameId}`);
 
-  const user = getAuthenticatedUser(ws);
-  if (!user) {
-    logger.warn("Set ready attempt without authentication");
+  try {
+    await gameController.handlePlayerReady(ws, user.id, { gameId, ready: isReady });
+  } catch (error) {
+    logger.error(`Error setting ready status for user ${user.username}:`, error);
+    if (error instanceof GameError) {
+      sendError(ws, error.userMessage);
+    } else {
+      sendError(ws, "Failed to set ready status");
+    }
+  }
+}
+
+async function handleMakeMove(ws: AuthenticatedWebSocket, message: MakeMoveMessage, user: User) {
+  const { payload } = message;
+  const { gameId, move } = payload;
+
+  if (!gameId) {
+    sendError(ws, "Game ID required");
     return;
   }
 
-  // Delegate to game action service
-  const result = await gameActionService.setPlayerReady(gameId, user.id, isReady);
+  logger.info(`User ${user.username} making move in game ${gameId}:`, JSON.stringify(move));
 
-  if (!result.success) {
-    send(ws, WS_MESSAGE_TYPES.ERROR, result.error || "Failed to set ready status");
+  try {
+    await gameController.handleMove(ws, user.id, { gameId, move });
+    logger.info(`Move processed successfully for user ${user.username} in game ${gameId}`);
+  } catch (error) {
+    logger.error(`Error processing move for user ${user.username}:`, error);
+    if (error instanceof GameError) {
+      sendError(ws, error.userMessage);
+    } else {
+      sendError(ws, "Failed to process move");
+    }
   }
-}
-
-async function handleUnsubscribeGame(ws: WebSocket, gameId: number, username: string) {
-  logger.info(`User ${username} is unsubscribing from game ${gameId}`);
-  const user = await getUserOrError(ws, username);
-  if (user === undefined) {
-    return;
-  }
-
-  // Remove user from game session
-  gameSession.removeClient(gameId, user.id);
-  logger.info(`User ${username} (${user.id}) unsubscribed from game ${gameId}`);
-}
-
-function getGameOrError(ws: WebSocket, gameID: number) {
-  const game = findGameById(gameID);
-  if (game === undefined) {
-    send(ws, "error", "Game not found");
-    return;
-  }
-  return game;
-}
-
-async function sendGameStateWithReadyStatus(ws: WebSocket, gameId: number, game: any, userId?: number): Promise<void> {
-  const playersReadyStatus = await gameSession.getPlayersReadyStatus(gameId);
-  const currentUserReady = userId ? playersReadyStatus.find(p => p.userId === userId)?.isReady || false : false;
-
-  const formattedGameState = await generateGameStateForFrontend(game, gameId);
-
-  if (game.game_status === 'waiting') {
-    send(ws, "game_state_update", {
-      ...formattedGameState,
-      currentUserReady: currentUserReady,
-      playersReadyStatus: playersReadyStatus
-    });
-  } else {
-    send(ws, "game_state_update", formattedGameState);
-  }
-}
-
-function getUserOrError(ws: WebSocket, username: string): Promise<User | undefined> {
-  const user = findUserByUsername(username);
-  if (user === undefined) {
-    send(ws, "error", "User not found");
-    return Promise.resolve(undefined);
-  }
-  return user;
 }

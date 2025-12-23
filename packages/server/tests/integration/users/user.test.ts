@@ -14,8 +14,8 @@ describe("Users API Integration Tests", () => {
     await db.deleteFrom("users").execute();
   });
 
-  afterAll(() => {
-    db.destroy();
+  afterAll(async () => {
+    await db.destroy();
   });
 
   describe("POST /users", () => {
