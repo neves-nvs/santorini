@@ -54,6 +54,29 @@ export interface PlayerReadyStatus {
   isReady: boolean;
 }
 
+// New clean architecture API format for games list
+export interface GameInfo {
+  id: number;
+  creatorId: number;
+  maxPlayers: number;
+  status: 'waiting' | 'in-progress' | 'completed';
+  phase: 'placing' | 'moving' | 'building' | null;
+  currentPlayerId: number | null;
+  turnNumber: number;
+  version: number;
+  playerCount: number; // Current number of players
+  players: Array<{
+    id: number;
+    userId: number;
+    seat: number;
+    status: 'active' | 'disconnected' | 'blocked' | 'eliminated';
+    isReady: boolean;
+  }>;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
 export interface GameState {
   id: string;
   board: Board;
@@ -62,7 +85,7 @@ export interface GameState {
   phase: 'SETUP' | 'PLAYING' | 'FINISHED';
   winner?: string;
 
-  // Database fields from backend
+  // Database fields from backend (legacy format - keeping for compatibility)
   user_creator_id?: number;
   player_count?: number; // Maximum players allowed in the game
   game_status?: 'waiting' | 'in-progress' | 'completed';

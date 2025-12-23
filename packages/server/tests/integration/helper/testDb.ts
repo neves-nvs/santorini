@@ -1,5 +1,5 @@
-import { sql } from "kysely";
 import { db } from "../../../src/database";
+import { sql } from "kysely";
 
 /**
  * Fast truncation-based test cleanup

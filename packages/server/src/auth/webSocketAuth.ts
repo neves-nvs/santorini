@@ -1,12 +1,12 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-import { AuthenticatedWebSocket } from "../websockets";
+import { AuthenticatedWebSocket } from "../websockets/authenticatedWebsocket";
 import { IncomingMessage } from "http";
 import { JWT_SECRET } from "../configs/config";
+import WebSocket from "ws";
 import { findUserByUsername } from "../users/userRepository";
 import internal from "stream";
 import logger from "../logger";
-import WebSocket from "ws";
 
 export async function webSocketAuthUpgrade(request: IncomingMessage, socket: internal.Duplex, head: Buffer, wss: WebSocket.Server) {
   const authHeader = request.headers["authorization"];

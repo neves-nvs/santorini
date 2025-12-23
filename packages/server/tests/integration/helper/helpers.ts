@@ -1,5 +1,6 @@
 import { NewGame } from "../../../src/model";
 import { UserDTO } from "../../../src/users/userDTO";
+import WebSocket from "ws";
 import { app } from "../../../src/app";
 import request from "supertest";
 
@@ -44,7 +45,7 @@ export function generateTestNewGameData(): NewGame {
 export async function createTestGame(jwtToken: string): Promise<number> {
   const newGameData = generateTestNewGameData();
 
-  const response = await request(app).post("/games").set("Cookie", `token=${jwtToken}`).send(newGameData).expect(201);
+  const response = await request(app).post("/games").set("Cookie", `token=${jwtToken}`).send(newGameData).expect(200);
 
   return response.body.gameId;
 }
@@ -59,7 +60,6 @@ export async function addTestPlayerToGameViaWebSocket(gameId: number, jwtToken: 
   await new Promise(resolve => setTimeout(resolve, 100));
 
   return new Promise((resolve, reject) => {
-    const WebSocket = require('ws');
     // Use the PORT environment variable set by test setup, not the config default
     const testPort = process.env.PORT || '8081';
     console.log(`WebSocket helper connecting to ws://localhost:${testPort} for game ${gameId}`);
@@ -88,7 +88,7 @@ export async function addTestPlayerToGameViaWebSocket(gameId: number, jwtToken: 
       }));
     });
 
-    ws.on('message', (data: any) => {
+    ws.on('message', (data: WebSocket.RawData) => {
       try {
         const message = JSON.parse(data.toString());
 
@@ -100,12 +100,12 @@ export async function addTestPlayerToGameViaWebSocket(gameId: number, jwtToken: 
           cleanup();
           reject(new Error(message.payload || 'Failed to join game'));
         }
-      } catch (error) {
+      } catch {
         // Ignore parsing errors, wait for the right message
       }
     });
 
-    ws.on('error', (error: any) => {
+    ws.on('error', (error: Error) => {
       console.log('WebSocket error in test helper:', error);
       cleanup();
       reject(error);

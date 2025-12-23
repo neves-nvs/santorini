@@ -1,7 +1,7 @@
 // Demeter - Goddess of the Harvest
 // Power: Your Worker may build one additional time, but not on the same space.
 
-import { GameHook, GameContext, Play, Position } from '../gameEngine';
+import { GameContext, GameHook, Play, Position } from '../gameEngine';
 
 export class DemeterHook implements GameHook {
   name = "Demeter";

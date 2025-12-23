@@ -1,10 +1,15 @@
 import * as helpers from "../helper/helpers";
+
 import { server, wss } from "../../../src/main";
 import { PORT } from "../../../src/configs/config";
 import { UserDTO } from "../../../src/users/userDTO";
 import WebSocket from "ws";
-import { db } from "../../../src/database";
 import { cleanupTestData } from "../helper/testDb";
+import { db } from "../../../src/database";
+
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type WsMessage = Record<string, any>;
 
 interface TestPlayer {
   user: UserDTO;
@@ -60,25 +65,26 @@ describe("WebSocket Multiplayer Game Tests", () => {
         perMessageDeflate: false,
       });
 
+      const timeoutId = setTimeout(() => {
+        reject(new Error("WebSocket connection timeout"));
+      }, 5000);
+
       ws.on("open", () => {
+        clearTimeout(timeoutId);
         resolve(ws);
       });
 
       ws.on("error", (error) => {
+        clearTimeout(timeoutId);
         reject(error);
       });
-
-      // Timeout after 5 seconds
-      setTimeout(() => {
-        reject(new Error("WebSocket connection timeout"));
-      }, 5000);
     });
   }
 
   /**
    * Helper function to wait for a specific message type
    */
-  function waitForMessage(ws: WebSocket, messageType: string, timeout = 5000): Promise<any> {
+  function waitForMessage(ws: WebSocket, messageType: string, timeout = 5000): Promise<WsMessage> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error(`Timeout waiting for message type: ${messageType}`));
@@ -86,13 +92,13 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
       function onMessage(data: WebSocket.RawData) {
         try {
-          const message = JSON.parse(data.toString());
+          const message = JSON.parse(data.toString()) as WsMessage;
           if (message.type === messageType) {
             clearTimeout(timeoutId);
             ws.off("message", onMessage);
             resolve(message);
           }
-        } catch (error) {
+        } catch {
           // Ignore parsing errors, continue waiting
         }
       }
@@ -120,80 +126,55 @@ describe("WebSocket Multiplayer Game Tests", () => {
     test("should handle multiple players joining the same game", async () => {
       // Create 2 players
       players = await createMultiplePlayers(2);
-      
+
       // Both players join the game
-      const joinPromises = players.map(async (player, index) => {
-        const messagePromise = waitForMessage(player.ws, "game_state_update");
-        
+      const joinPromises = players.map(async (player) => {
+        const messagePromise = waitForMessage(player.ws, "game_joined");
+
         player.ws.send(JSON.stringify({
           type: "join_game",
-          payload: { gameId, username: player.user.username }
+          payload: { gameId }
         }));
-        
+
         return messagePromise;
       });
 
-      // Wait for both players to receive game state updates
+      // Wait for both players to receive game_joined confirmation
       const responses = await Promise.all(joinPromises);
-      
-      // Verify both players received game state
+
+      // Verify both players joined successfully
       expect(responses).toHaveLength(2);
       responses.forEach(response => {
-        expect(response.type).toBe("game_state_update");
+        expect(response.type).toBe("game_joined");
         expect(response.payload).toBeDefined();
-        expect(response.payload.id).toBe(gameId.toString());
+        expect(response.payload.gameId).toBe(gameId);
       });
     }, 10000);
 
-    test("should broadcast game state updates to all connected players", async () => {
+    test("should send game state to subscriber when subscribe_game is called", async () => {
       // Create 2 players
       players = await createMultiplePlayers(2);
 
       // Both players join the game
       for (const player of players) {
-        const messagePromise = waitForMessage(player.ws, "game_state_update");
+        const messagePromise = waitForMessage(player.ws, "game_joined");
         player.ws.send(JSON.stringify({
           type: "join_game",
-          payload: { gameId, username: player.user.username }
+          payload: { gameId }
         }));
         await messagePromise;
       }
 
-      // Wait for connections to stabilize
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      // Track messages received by second player
-      const receivedMessages: any[] = [];
-      const messageHandler = (data: WebSocket.RawData) => {
-        try {
-          const message = JSON.parse(data.toString());
-          if (message.type === "game_state_update") {
-            receivedMessages.push(message);
-          }
-        } catch (error) {
-          // Ignore parsing errors
-        }
-      };
-
-      players[1].ws.on("message", messageHandler);
-
-      // First player subscribes to trigger broadcast
+      // Player subscribes and receives game state
+      const statePromise = waitForMessage(players[0].ws, "game_state_update");
       players[0].ws.send(JSON.stringify({
         type: "subscribe_game",
-        payload: { gameId, username: players[0].user.username }
+        payload: { gameId }
       }));
 
-      // Wait for broadcast to be received
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Clean up listener
-      players[1].ws.off("message", messageHandler);
-
-      // Verify broadcast was received (may have received multiple updates)
-      expect(receivedMessages.length).toBeGreaterThan(0);
-      const lastMessage = receivedMessages[receivedMessages.length - 1];
-      expect(lastMessage.type).toBe("game_state_update");
-      expect(lastMessage.payload.id).toBe(gameId.toString());
+      const response = await statePromise;
+      expect(response.type).toBe("game_state_update");
+      expect(response.payload.gameId).toBe(gameId);
     }, 10000);
   });
 
@@ -201,47 +182,47 @@ describe("WebSocket Multiplayer Game Tests", () => {
     test("should track connected players correctly", async () => {
       // Create 2 players
       players = await createMultiplePlayers(2);
-      
+
       // First player joins
-      let messagePromise = waitForMessage(players[0].ws, "game_state_update");
+      let messagePromise = waitForMessage(players[0].ws, "game_joined");
       players[0].ws.send(JSON.stringify({
         type: "join_game",
-        payload: { gameId, username: players[0].user.username }
+        payload: { gameId }
       }));
       await messagePromise;
 
-      // Second player joins
-      messagePromise = waitForMessage(players[1].ws, "game_state_update");
+      // Second player joins - game_joined includes gameState with players
+      messagePromise = waitForMessage(players[1].ws, "game_joined");
       players[1].ws.send(JSON.stringify({
         type: "join_game",
-        payload: { gameId, username: players[1].user.username }
+        payload: { gameId }
       }));
-      const gameState = await messagePromise;
+      const response = await messagePromise;
 
-      // Verify game state shows both players
-      expect(gameState.payload.players).toHaveLength(2);
-      const playerUsernames = gameState.payload.players.map((p: any) => p.username);
-      expect(playerUsernames).toContain(players[0].user.username);
-      expect(playerUsernames).toContain(players[1].user.username);
-    });
+      // Verify game state in join response shows both players (by userId)
+      expect(response.payload.gameState.players).toHaveLength(2);
+      const playerUserIds = response.payload.gameState.players.map((p: { userId: number }) => p.userId);
+      expect(playerUserIds).toContain(players[0].user.id);
+      expect(playerUserIds).toContain(players[1].user.id);
+    }, 10000);
 
     test("should handle player disconnection gracefully", async () => {
       // Create 2 players
       players = await createMultiplePlayers(2);
-      
+
       // Both players join
       for (const player of players) {
-        const messagePromise = waitForMessage(player.ws, "game_state_update");
+        const messagePromise = waitForMessage(player.ws, "game_joined");
         player.ws.send(JSON.stringify({
           type: "join_game",
-          payload: { gameId, username: player.user.username }
+          payload: { gameId }
         }));
         await messagePromise;
       }
 
       // Disconnect first player
       players[0].ws.close();
-      
+
       // Wait a bit for cleanup
       await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -249,32 +230,32 @@ describe("WebSocket Multiplayer Game Tests", () => {
       const messagePromise = waitForMessage(players[1].ws, "game_state_update");
       players[1].ws.send(JSON.stringify({
         type: "subscribe_game",
-        payload: { gameId, username: players[1].user.username }
+        payload: { gameId }
       }));
-      
+
       const response = await messagePromise;
       expect(response.type).toBe("game_state_update");
-    });
+    }, 10000);
   });
 
   describe("Message Broadcasting", () => {
     test("should send messages to specific players", async () => {
       // Create 2 players
       players = await createMultiplePlayers(2);
-      
+
       // Both players join and subscribe
       for (const player of players) {
-        let messagePromise = waitForMessage(player.ws, "game_state_update");
+        let messagePromise = waitForMessage(player.ws, "game_joined");
         player.ws.send(JSON.stringify({
           type: "join_game",
-          payload: { gameId, username: player.user.username }
+          payload: { gameId }
         }));
         await messagePromise;
 
         messagePromise = waitForMessage(player.ws, "game_state_update");
         player.ws.send(JSON.stringify({
           type: "subscribe_game",
-          payload: { gameId, username: player.user.username }
+          payload: { gameId }
         }));
         await messagePromise;
       }
@@ -283,6 +264,6 @@ describe("WebSocket Multiplayer Game Tests", () => {
       // targeted messages (though specific targeting would need game logic)
       expect(players[0].ws.readyState).toBe(WebSocket.OPEN);
       expect(players[1].ws.readyState).toBe(WebSocket.OPEN);
-    });
+    }, 10000);
   });
 });

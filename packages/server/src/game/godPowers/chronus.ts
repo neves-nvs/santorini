@@ -1,6 +1,6 @@
 // Chronus: You also win when there are at least five Complete Towers on the board.
 
-import { GameHook, GameContext } from '../gameEngine';
+import { GameContext, GameHook } from '../gameEngine';
 
 export class ChronusHook implements GameHook {
   name = "Chronus";

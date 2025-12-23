@@ -3,13 +3,18 @@ import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import logger from "../logger";
 
-const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+interface HttpError extends Error {
+  status?: number;
+  errors?: Array<{ msg: string }>;
+}
+
+const errorHandler = (err: HttpError, _req: Request, res: Response, _next: NextFunction) => {
   logger.error(err.message, { stack: err.stack });
 
   const statusCode = err.status || StatusCodes.INTERNAL_SERVER_ERROR;
 
   if (err.errors && Array.isArray(err.errors) && err.errors.length > 0) {
-    const validationErrors = err.errors.map((error: any) => error.msg).join(", ");
+    const validationErrors = err.errors.map((error) => error.msg).join(", ");
     logger.warn(`Validation error: ${validationErrors}`);
     return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
       message: validationErrors,
