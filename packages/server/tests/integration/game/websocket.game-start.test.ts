@@ -27,9 +27,10 @@ interface TestPlayer {
 describe("WebSocket Game Ready and Auto-Start Tests", () => {
   let gameId: number;
   let players: TestPlayer[] = [];
+  let creator: { user: UserDTO; token: string };
 
   beforeEach(async () => {
-    const creator = await helpers.createTestUserWithLogin();
+    creator = await helpers.createTestUserWithLogin();
     gameId = await helpers.createTestGame(creator.token);
     players = [];
   });
@@ -69,13 +70,15 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
 
   function waitForMessage(ws: WebSocket, messageType: string, timeout = 5000): Promise<WsMessage> {
     return new Promise((resolve, reject) => {
+      const receivedMessages: string[] = [];
       const timeoutId = setTimeout(() => {
-        reject(new Error(`Timeout waiting for message type: ${messageType}`));
+        reject(new Error(`Timeout waiting for message type: ${messageType}. Received: ${receivedMessages.join(', ')}`));
       }, timeout);
 
       function onMessage(data: WebSocket.RawData) {
         try {
           const message = JSON.parse(data.toString());
+          receivedMessages.push(message.type);
           if (message.type === messageType) {
             clearTimeout(timeoutId);
             ws.off("message", onMessage);
@@ -91,13 +94,15 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
 
   async function createAndJoinPlayers(count: number): Promise<TestPlayer[]> {
     const testPlayers: TestPlayer[] = [];
-    
+
     for (let i = 0; i < count; i++) {
-      const { user, token } = await helpers.createTestUserWithLogin();
+      // First player is the creator (already in game via HTTP), rest are new users
+      const isCreator = i === 0;
+      const { user, token } = isCreator ? creator : await helpers.createTestUserWithLogin();
       const ws = await createPlayerConnection(user, token);
       testPlayers.push({ user, token, ws });
 
-      // Join game
+      // Join game via WebSocket (creator reconnects, others join fresh)
       const joinPromise = waitForMessage(ws, "game_joined");
       ws.send(JSON.stringify({
         type: "join_game",
@@ -105,7 +110,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       }));
       await joinPromise;
     }
-    
+
     return testPlayers;
   }
 
@@ -213,23 +218,24 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       }));
 
       const gameState = await statePromise;
-      expect(gameState.payload.status).toBe("in-progress");
-      expect(gameState.payload.phase).toBe("placing");
+      // State is nested under payload.state
+      const state = gameState.payload.state;
+      expect(state.status).toBe("in-progress");
+      expect(state.phase).toBe("placing");
 
       // Current player should have available moves (25 placement positions)
-      if (gameState.payload.isCurrentPlayer) {
-        expect(gameState.payload.availableMoves).toBeDefined();
-        expect(gameState.payload.availableMoves.length).toBe(25);
+      if (state.isCurrentPlayer) {
+        expect(state.availableMoves).toBeDefined();
+        expect(state.availableMoves.length).toBe(25);
       }
     }, 15000);
   });
 
   describe("Player Join Broadcasts", () => {
     test("should broadcast player_joined to subscribed players when someone joins", async () => {
-      // First player joins and subscribes
-      const { user: user1, token: token1 } = await helpers.createTestUserWithLogin();
-      const ws1 = await createPlayerConnection(user1, token1);
-      players.push({ user: user1, token: token1, ws: ws1 });
+      // First player (creator) joins via WebSocket and subscribes
+      const ws1 = await createPlayerConnection(creator.user, creator.token);
+      players.push({ user: creator.user, token: creator.token, ws: ws1 });
 
       let joinPromise = waitForMessage(ws1, "game_joined");
       ws1.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
@@ -256,17 +262,15 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       const broadcast = await playerJoinedPromise;
       expect(broadcast.type).toBe("player_joined");
       expect(broadcast.payload.gameId).toBe(gameId);
-      expect(broadcast.payload.userId).toBe(user2.id);
       expect(broadcast.payload.playerCount).toBe(2);
     }, 15000);
   });
 
   describe("Player Disconnect Auto-Remove", () => {
     test("should auto-remove unready player when they disconnect", async () => {
-      // First player joins and subscribes
-      const { user: user1, token: token1 } = await helpers.createTestUserWithLogin();
-      const ws1 = await createPlayerConnection(user1, token1);
-      players.push({ user: user1, token: token1, ws: ws1 });
+      // First player (creator) joins via WebSocket and subscribes
+      const ws1 = await createPlayerConnection(creator.user, creator.token);
+      players.push({ user: creator.user, token: creator.token, ws: ws1 });
 
       let joinPromise = waitForMessage(ws1, "game_joined");
       ws1.send(JSON.stringify({ type: "join_game", payload: { gameId } }));

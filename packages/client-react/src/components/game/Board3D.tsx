@@ -52,8 +52,10 @@ const parseServerBoard = (serverBoard: any): BoardState => {
       for (let y = 0; y < BOARD_SIZE; y++) {
         const cell = serverBoard.cells[x]?.[y]
         if (cell) {
+          // Server sends height (0-3) + hasDome. Convert to buildingLevel 0-4
+          const height = cell.height || 0
           boardState[x][y] = {
-            buildingLevel: cell.height || 0,
+            buildingLevel: cell.hasDome ? height + 1 : height,
             worker: cell.worker ? {
               playerId: cell.worker.playerId,
               workerId: cell.worker.workerId

@@ -42,6 +42,7 @@ export class GameRepositoryDb {
         'players.is_ready',
         'users.username'
       ])
+      .orderBy('players.user_id', 'asc') // Stable ordering by user_id
       .execute();
 
     // Load board state (pieces)
@@ -52,6 +53,7 @@ export class GameRepositoryDb {
       .execute();
 
     // Convert to domain snapshot
+    // Player IDs and seats are derived from stable array order
     const snapshot: GameSnapshot = {
       id: gameRecord.id,
       creatorId: gameRecord.user_creator_id,
@@ -73,9 +75,9 @@ export class GameRepositoryDb {
         : null,
       players: playerRecords.map((p, index) => {
         const player = new Player(
-          index + 1, // Player ID within game
-          p.user_id, // User ID
-          index // Seat
+          index + 1, // Player ID within game (1-indexed)
+          p.user_id,
+          index // Seat (0-indexed)
         );
         player.setReady(p.is_ready);
         return player;

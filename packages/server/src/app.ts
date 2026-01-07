@@ -5,9 +5,9 @@ import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from 
 import authController from "./auth/authController";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import { createGameRouter } from "./game/transport/GameHttpController";
 import errorHandler from "./middlewares/errorMiddleware";
 import express from "express";
+import { gameRoutes } from "./composition-root";
 import passport from "passport";
 import userController from "./users/userController";
 
@@ -32,7 +32,7 @@ app.use(cors(CORS_CONFIG));
 app.use(passport.initialize());
 
 app.use("/", authController);
-app.use("/games", createGameRouter());
+app.use("/games", gameRoutes);
 app.use("/users", userController);
 
 app.use(errorHandler);

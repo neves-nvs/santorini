@@ -22,7 +22,7 @@ export interface GameState {
 
 // Helper functions for board state
 export const createEmptyBoard = (size: number = 5): BoardState => {
-  return Array(size).fill(null).map(() => 
+  return Array(size).fill(null).map(() =>
     Array(size).fill(null).map(() => ({
       buildingLevel: 0,
       worker: null
