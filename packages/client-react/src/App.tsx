@@ -4,6 +4,7 @@ import { ToastProvider } from './store/ToastContext'
 import { useEffect, useState } from 'react'
 import { useApp } from './store/AppContext'
 import { apiService } from './services/ApiService'
+import { useGameStore } from './store/gameStore'
 import HomePage from './pages/HomePage'
 import GamePage from './pages/GamePage'
 import AuthPage from './pages/AuthPage'
@@ -12,7 +13,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import './App.css'
 
 const AppInitializer = ({ onInitialized }: { onInitialized: (initialized: boolean) => void }) => {
-  const { setUsername } = useApp()
+  const { setUser } = useApp()
 
   const [isInitialized, setIsInitialized] = useState(false)
 
@@ -21,7 +22,7 @@ const AppInitializer = ({ onInitialized }: { onInitialized: (initialized: boolea
       try {
         const authInfo = await apiService.checkAuth()
         if (authInfo) {
-          setUsername(authInfo.username)
+          setUser(authInfo)
         }
       } catch (error) {
         console.log('Authentication check failed:', error)
@@ -32,7 +33,7 @@ const AppInitializer = ({ onInitialized }: { onInitialized: (initialized: boolea
     }
 
     checkAuthStatus()
-  }, [setUsername])
+  }, [setUser])
 
   if (!isInitialized) {
     return (

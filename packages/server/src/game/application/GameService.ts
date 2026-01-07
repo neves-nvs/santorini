@@ -64,6 +64,13 @@ export class GameService {
   }
 
   /**
+   * Get a game by ID
+   */
+  async getGame(gameId: number): Promise<Game | null> {
+    return this.gameRepository.findById(gameId);
+  }
+
+  /**
    * Add a player to a game
    */
   async addPlayer(gameId: number, userId: number): Promise<{ game: Game; events: GameEvent[] }> {
@@ -72,6 +79,15 @@ export class GameService {
     const game = await this.gameRepository.findById(gameId);
     if (!game) {
       throw new GameNotFoundError(gameId);
+    }
+
+    // Check if player already in game
+    for (const player of game.players.values()) {
+      if (player.userId === userId) {
+        const error = new Error(`Player ${userId} is already in game ${gameId}`);
+        error.name = 'PlayerAlreadyInGameError';
+        throw error;
+      }
     }
 
     // Create player domain object

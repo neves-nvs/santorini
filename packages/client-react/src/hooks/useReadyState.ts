@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useGameState, useGameId } from '../store/gameSelectors'
-import { useGameStore } from '../store/gameStore'
 import { useApp } from '../store/AppContext'
-import { apiService } from '../services/ApiService'
+import { webSocketClient } from '../services/WebSocketClient'
 
 /**
  * Hook to manage player ready state
@@ -18,10 +17,10 @@ export function useReadyState() {
 
   // Sync ready state with server when game state updates
   useEffect(() => {
-    if (gameState?.game_status === 'ready' && gameState?.currentUserReady !== undefined) {
+    if (gameState?.status === 'waiting' && gameState?.currentUserReady !== undefined) {
       setIsReady(gameState.currentUserReady)
     }
-  }, [gameState?.game_status, gameState?.currentUserReady])
+  }, [gameState?.status, gameState?.currentUserReady])
 
   // Initialize ready state when component mounts or game state first loads
   useEffect(() => {
@@ -43,36 +42,18 @@ export function useReadyState() {
     setIsSettingReady(true)
     const newReadyState = !isReady
 
-    console.log('🎯 Sending ready status to backend:', newReadyState)
-    const success = await apiService.setPlayerReady(gameId, newReadyState)
-    console.log('🎯 Backend response success:', success)
+    try {
+      console.log('🎯 Sending ready status via WebSocket:', newReadyState)
+      webSocketClient.setReady(gameId, newReadyState)
 
-    if (success) {
+      // Optimistically update local state
       setIsReady(newReadyState)
       console.log('🎯 Local ready state updated to:', newReadyState)
-
-      // Fallback: refresh game state after a delay in case WebSocket update doesn't arrive
-      setTimeout(async () => {
-        console.log('🔄 Fallback: Refreshing game state after ready status change')
-        try {
-          // Refresh game state to catch any changes that WebSocket missed
-          if (gameId) {
-            const gameResponse = await apiService.getGameState(gameId)
-            if (gameResponse) {
-              const { setGameState } = useGameStore.getState()
-              setGameState(gameResponse)
-              console.log('🔄 Game state refreshed successfully after ready change')
-            }
-          }
-        } catch (error) {
-          console.error('Failed to refresh game state after ready change:', error)
-        }
-      }, 3000) // Wait 3 seconds for WebSocket updates, then fallback
-
-    } else {
-      console.error('🎯 Failed to update ready status on backend')
+    } catch (error) {
+      console.error('🎯 Failed to send ready status:', error)
+    } finally {
+      setIsSettingReady(false)
     }
-    setIsSettingReady(false)
   }, [gameId, isReady, appState.username])
 
   return {

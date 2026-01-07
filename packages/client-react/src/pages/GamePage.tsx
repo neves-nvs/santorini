@@ -1,11 +1,11 @@
 import { useParams } from 'react-router-dom'
-import { useGameConnection } from '../hooks/useGameConnection'
+import { useGameSetup } from '../hooks/useGameSetup'
 import { GameLoadingState, GameErrorState, GameMainState } from '../components/game/GamePageStates'
 import GameUI from '../components/ui/GameUI'
 
 const GamePage = () => {
   const { gameId } = useParams<{ gameId?: string }>()
-  const { isLoading, error } = useGameConnection(gameId)
+  const { isLoading, error } = useGameSetup(gameId)
 
   if (isLoading) {
     return <GameLoadingState gameId={gameId} />

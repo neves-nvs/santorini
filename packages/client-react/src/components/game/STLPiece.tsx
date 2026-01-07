@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useMemo } from 'react'
 import { useLoader } from '@react-three/fiber'
+// @ts-expect-error - STLLoader types not available
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
-import { Mesh, Box3, Vector3 } from 'three'
+import { Mesh, Vector3 } from 'three'
 import { configs, PieceType } from './stl-config'
 
 interface STLPieceProps {

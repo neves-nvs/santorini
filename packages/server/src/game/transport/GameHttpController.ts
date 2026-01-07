@@ -24,7 +24,11 @@ export function createGameRouter(): express.Router {
         return res.status(401).json({ error: "Authentication required" });
       }
 
-      const game = await lobbyService.createGame((user as User).id, maxPlayers);
+      const userId = (user as User).id;
+      const game = await lobbyService.createGame(userId, maxPlayers);
+
+      // Add creator as first player
+      await gameService.addPlayer(game.id, userId);
 
       res.json({ gameId: game.id });
     } catch (error) {

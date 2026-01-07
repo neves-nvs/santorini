@@ -27,8 +27,8 @@ export function useGameLifecycle() {
 
   // Calculate derived values
   const currentPlayers = gameState?.players?.length || 0
-  const totalPlayers = gameState?.player_count || 2
-  const readyCount = gameState?.playersReadyStatus?.filter((p: any) => p.isReady).length || 0
+  const totalPlayers = gameState?.totalPlayers || 2
+  const readyCount = gameState?.playersReadyStatus?.filter((p: { isReady: boolean }) => p.isReady).length || 0
 
   // Get user-friendly status message
   const statusMessage = useMemo(() => {
@@ -64,8 +64,8 @@ export function useGameLifecycle() {
     currentPlayer: gameState?.currentPlayer,
     
     // Winner info
-    winner: gameState?.winner_id || gameState?.winner,
-    isGameWon: !!gameState?.winner_id || !!gameState?.winner
+    winner: gameState?.winnerId,
+    isGameWon: !!gameState?.winnerId
   }), [lifecycle, currentPlayers, totalPlayers, readyCount, isMyTurn, gameState])
 
   return {

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import { GameState, AvailableMove } from '../types/game'
+import type { AvailableMove, BoardView, GameState } from '../types/game'
 
 // Board cell data for optimized 3D rendering
 export interface BoardCell {
@@ -30,25 +30,25 @@ interface GameStore {
   // Core game data
   gameState: GameState | null
   gameId: string | null
-  
+
   // Optimized board state for 3D rendering
   boardState: OptimizedBoardState | null
-  
+
   // Workers indexed by position for fast lookups
   workersByPosition: Map<string, WorkerPosition>
   workersByPlayer: Map<number, WorkerPosition[]>
-  
+
   // Turn and move state
   currentPlayerMoves: AvailableMove[]
   isMyTurn: boolean
   selectedWorker: { workerId: number; x: number; y: number } | null
-  
+
   // Connection state
   isConnected: boolean
   isConnecting: boolean
-  
+
   // Actions
-  setGameState: (gameState: GameState) => void
+  setGameState: (gameState: GameState | null) => void
   setGameId: (gameId: string) => void
   setCurrentPlayerMoves: (moves: AvailableMove[]) => void
   setMyTurn: (isMyTurn: boolean) => void
@@ -69,7 +69,8 @@ interface GameStore {
 }
 
 // Helper function to parse server board to optimized format
-const parseServerBoardToOptimized = (serverBoard: any): OptimizedBoardState => {
+// Backend sends board.cells as CellView[][] (2D array)
+const parseServerBoardToOptimized = (serverBoard: BoardView): OptimizedBoardState => {
   const cells: BoardCell[][] = Array(5).fill(null).map(() =>
     Array(5).fill(null).map(() => ({
       buildingLevel: 0,
@@ -77,16 +78,19 @@ const parseServerBoardToOptimized = (serverBoard: any): OptimizedBoardState => {
     }))
   )
 
-  if (serverBoard?.spaces && Array.isArray(serverBoard.spaces)) {
-    for (const space of serverBoard.spaces) {
-      const { x, y, height, workers } = space
-      if (x >= 0 && x < 5 && y >= 0 && y < 5) {
-        cells[x][y] = {
-          buildingLevel: height || 0,
-          worker: workers && workers.length > 0 ? {
-            playerId: workers[0].playerId,
-            workerId: workers[0].workerId
-          } : null
+  // Handle new format: board.cells is a 2D array of CellView
+  if (serverBoard?.cells && Array.isArray(serverBoard.cells)) {
+    for (let x = 0; x < 5; x++) {
+      for (let y = 0; y < 5; y++) {
+        const cell = serverBoard.cells[x]?.[y]
+        if (cell) {
+          cells[x][y] = {
+            buildingLevel: cell.height || 0,
+            worker: cell.worker ? {
+              playerId: cell.worker.playerId,
+              workerId: cell.worker.workerId
+            } : null
+          }
         }
       }
     }
@@ -144,10 +148,19 @@ export const useGameStore = create<GameStore>()(
     isConnecting: false,
 
     // Actions
-    setGameState: (gameState: GameState) => {
-      const optimizedBoard = gameState?.board ? parseServerBoardToOptimized(gameState.board) : null
+    setGameState: (gameState: GameState | null) => {
+      if (!gameState) {
+        set({
+          gameState: null,
+          boardState: null,
+          workersByPosition: new Map(),
+          workersByPlayer: new Map()
+        })
+        return
+      }
+      const optimizedBoard = gameState.board ? parseServerBoardToOptimized(gameState.board) : null
       const indices = optimizedBoard ? buildWorkerIndices(optimizedBoard) : { workersByPosition: new Map(), workersByPlayer: new Map() }
-      
+
       set({
         gameState,
         boardState: optimizedBoard,
@@ -158,8 +171,8 @@ export const useGameStore = create<GameStore>()(
 
     setGameId: (gameId: string) => set({ gameId }),
 
-    setCurrentPlayerMoves: (moves: AvailableMove[]) => set({ 
-      currentPlayerMoves: Array.isArray(moves) ? moves : [] 
+    setCurrentPlayerMoves: (moves: AvailableMove[]) => set({
+      currentPlayerMoves: Array.isArray(moves) ? moves : []
     }),
 
     setMyTurn: (isMyTurn: boolean) => set({ isMyTurn }),

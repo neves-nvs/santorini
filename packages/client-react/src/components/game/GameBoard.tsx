@@ -114,9 +114,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, debugState, onCellClic
           <color attach="background" args={['#87CEEB']} />
           <ambientLight intensity={0.4} />
           <hemisphereLight
-            skyColor="#87CEEB"
-            groundColor="#8B4513"
-            intensity={0.6}
+            args={['#87CEEB', '#8B4513', 0.6]}
           />
 
           {/* 3D Board */}

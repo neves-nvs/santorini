@@ -11,7 +11,7 @@ const LobbyPage = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isRefreshing, setIsRefreshing] = useState(false)
-  
+
   const [availableGames, setAvailableGames] = useState<GameInfo[]>([])
   const [playerCount, setPlayerCount] = useState(2)
 
@@ -115,16 +115,16 @@ const LobbyPage = () => {
   // Authentication is now guaranteed by App-level routing
 
   return (
-    <div className="page" style={{ 
+    <div className="page" style={{
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       color: 'white',
       padding: '2rem'
     }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '3rem'
         }}>
@@ -169,15 +169,15 @@ const LobbyPage = () => {
             backdropFilter: 'blur(10px)'
           }}>
             <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Create New Game</h2>
-            
+
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
                 Number of Players:
               </label>
-              <select 
-                value={playerCount} 
+              <select
+                value={playerCount}
                 onChange={(e) => setPlayerCount(Number(e.target.value))}
-                style={{ 
+                style={{
                   width: '100%',
                   padding: '0.75rem',
                   fontSize: '1rem',
@@ -191,7 +191,7 @@ const LobbyPage = () => {
                 <option value={4}>4 Players</option>
               </select>
             </div>
-            
+
             <button
               onClick={handleCreateGame}
               disabled={loading}
@@ -218,14 +218,14 @@ const LobbyPage = () => {
             borderRadius: '12px',
             backdropFilter: 'blur(10px)'
           }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
               marginBottom: '1.5rem'
             }}>
               <h2 style={{ margin: 0 }}>Available Games</h2>
-              <button 
+              <button
                 onClick={handleRefreshGames}
                 disabled={loading}
                 style={{
@@ -240,9 +240,9 @@ const LobbyPage = () => {
                 {loading ? 'Refreshing...' : 'Refresh'}
               </button>
             </div>
-            
-            <div style={{ 
-              maxHeight: '300px', 
+
+            <div style={{
+              maxHeight: '300px',
               overflowY: 'auto',
               border: '1px solid rgba(255, 255, 255, 0.3)',
               borderRadius: '8px',
@@ -299,8 +299,8 @@ const LobbyPage = () => {
 
         {/* Navigation */}
         <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <Link to="/" style={{ 
-            color: 'white', 
+          <Link to="/" style={{
+            color: 'white',
             textDecoration: 'none',
             fontSize: '1.1rem'
           }}>

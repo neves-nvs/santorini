@@ -236,7 +236,7 @@ export const BoundingBox: React.FC<BoundingBoxProps> = ({ position, blockLevel, 
 // Move Preview Component - Shows valid placement positions
 interface MovePreviewProps {
   position: [number, number, number]
-  workerId: 1 | 2
+  workerId: number
   visible: boolean
   onClick?: () => void
 }
@@ -251,7 +251,7 @@ interface BuildingPreviewProps {
   onClick?: () => void
 }
 
-export const MovePreview: React.FC<MovePreviewProps> = ({ position, workerId, visible, onClick }) => {
+export const MovePreview: React.FC<MovePreviewProps> = ({ position, workerId: _workerId, visible, onClick }) => {
   if (!visible) return null
 
   // Use a neutral color for move previews since they represent possible moves, not specific players

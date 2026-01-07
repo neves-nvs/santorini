@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useWebSocket } from '../../hooks/useWebSocket'
+import { useIsConnected } from '../../store/gameSelectors'
+import { webSocketClient } from '../../services/WebSocketClient'
 import { apiService } from '../../services/ApiService'
 
 const ConnectionTest = () => {
-  const { isConnected, sendMessage } = useWebSocket()
+  const isConnected = useIsConnected()
   const [testResults, setTestResults] = useState<string[]>([])
 
   const addResult = (message: string) => {
@@ -13,7 +14,7 @@ const ConnectionTest = () => {
   const testWebSocketConnection = () => {
     addResult(`WebSocket connected: ${isConnected}`)
     if (isConnected) {
-      sendMessage('test_message', { test: 'Hello from React!' })
+      webSocketClient.send('test_message', { test: 'Hello from React!' })
       addResult('Sent test message to WebSocket')
     }
   }

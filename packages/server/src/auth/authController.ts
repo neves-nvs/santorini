@@ -158,7 +158,7 @@ router.get("/token", authenticate, async (req, res) => {
 router.get("/me", authenticate, async (req, res) => {
   try {
     const user = req.user as User;
-    res.status(200).json({ username: user.username });
+    res.status(200).json({ id: user.id, username: user.username });
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);
