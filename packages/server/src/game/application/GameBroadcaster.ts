@@ -1,6 +1,7 @@
+import { GameViewBuilder, toSharedMove } from '../domain/GameViewBuilder';
+
 import { Game } from '../domain/Game';
 import { GameEvent } from '../domain/GameEvent';
-import { GameViewBuilder } from '../domain/GameViewBuilder';
 import { Move } from '../domain/Move';
 import { WS_MESSAGE_TYPES } from '../../../../shared/src/websocket-types';
 import { WebSocketConnectionManager } from '../infra/WebSocketConnectionManager';
@@ -19,15 +20,21 @@ export class GameBroadcaster {
   /**
    * Broadcast game update to all players in the game
    * Each player receives their personalized view of the game state
+   * The current player also receives their available moves
    */
   async broadcastGameUpdate(game: Game, events: GameEvent[]): Promise<void> {
     logger.info(`Broadcasting game update for game ${game.id} to all players`);
 
+    // Get available moves for the current player (if game is in progress)
+    const availableMoves = game.status === 'in-progress' ? game.getAvailableMoves() : [];
+
     // Send personalized game state to each player in the game
-    // We'll iterate through the players in the game and send to each
     for (const player of game.players.values()) {
       try {
-        const view = this.gameViewBuilder.buildForPlayer(game, player.userId);
+        // Only pass availableMoves to the current player
+        const isCurrentPlayer = game.currentPlayerId === player.id;
+        const playerMoves = isCurrentPlayer ? availableMoves : undefined;
+        const view = this.gameViewBuilder.buildForPlayer(game, player.userId, playerMoves);
 
         this.wsConnectionManager.sendToPlayer(game.id, player.userId, {
           type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
@@ -38,7 +45,7 @@ export class GameBroadcaster {
           }
         });
 
-        logger.debug(`Sent game state to player ${player.userId} for game ${game.id}`);
+        logger.debug(`Sent game state to player ${player.userId} for game ${game.id}, isCurrentPlayer: ${isCurrentPlayer}`);
       } catch (error) {
         logger.error(`Failed to send game state to player ${player.userId}:`, error);
       }
@@ -88,19 +95,26 @@ export class GameBroadcaster {
   }
 
   /**
-   * Broadcast game start notification to all players
+   * Broadcast game start to all players
+   * Each player gets: type, activePlayer, and availableMoves (only if they're active)
    */
-  async broadcastGameStart(game: Game): Promise<void> {
+  async broadcastGameStart(game: Game, availableMoves: Move[]): Promise<void> {
     logger.info(`Broadcasting game start for game ${game.id}`);
 
-    this.wsConnectionManager.broadcastToGame(game.id, {
-      type: WS_MESSAGE_TYPES.GAME_START,
-      payload: {
-        gameId: game.id,
-        startedAt: game.startedAt,
-        currentPlayerId: game.currentPlayerId
-      }
-    });
+    const sharedMoves = availableMoves.map(toSharedMove);
+
+    for (const player of game.players.values()) {
+      const isActivePlayer = game.currentPlayerId === player.id;
+
+      this.wsConnectionManager.sendToPlayer(game.id, player.userId, {
+        type: WS_MESSAGE_TYPES.GAME_START,
+        payload: {
+          gameId: game.id,
+          activePlayerId: game.currentPlayerId,
+          availableMoves: isActivePlayer ? sharedMoves : undefined
+        }
+      });
+    }
   }
 
   /**

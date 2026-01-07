@@ -20,7 +20,7 @@ export type { BoardView, CellView, PlayerGameView, PlayerView, SpectatorGameView
 /**
  * Convert domain Move to shared Move format
  */
-function toSharedMove(move: Move): SharedMove {
+export function toSharedMove(move: Move): SharedMove {
   if (move instanceof PlaceWorkerMove) {
     return {
       type: 'place_worker',
@@ -38,7 +38,7 @@ function toSharedMove(move: Move): SharedMove {
     const buildType = move.type as 'build_block' | 'build_dome';
     return {
       type: buildType,
-      workerId: 0, // BuildMove doesn't have workerId in current domain
+      workerId: move.workerId,
       position: move.position
     };
   }

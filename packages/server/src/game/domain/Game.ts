@@ -197,6 +197,7 @@ export class Game {
     }
 
     const { x: wx, y: wy } = this._lastMovedWorkerPosition;
+    const workerId = this._lastMovedWorkerId;
 
     for (let dx = -1; dx <= 1; dx++) {
       for (let dy = -1; dy <= 1; dy++) {
@@ -210,10 +211,10 @@ export class Game {
           const height = cell?.height ?? 0;
 
           if (height < 3) {
-            moves.push(new BuildMove(playerId, { x: bx, y: by }, 'block'));
+            moves.push(new BuildMove(playerId, { x: bx, y: by }, 'block', workerId));
           }
           if (height === 3) {
-            moves.push(new BuildMove(playerId, { x: bx, y: by }, 'dome'));
+            moves.push(new BuildMove(playerId, { x: bx, y: by }, 'dome', workerId));
           }
         }
       }
@@ -380,7 +381,7 @@ export class Game {
     player.setReady(ready);
     this._version++;
 
-    const events: GameEvent[] = [
+    return [
       new GameEvent('PlayerReadyChanged', {
         gameId: this.id,
         playerId,
@@ -388,13 +389,6 @@ export class Game {
         readyStatuses: this.getReadyStatuses()
       })
     ];
-
-    // Auto-start when all players are ready
-    if (ready && this.areAllPlayersReady()) {
-      events.push(...this.startGame());
-    }
-
-    return events;
   }
 
   /**

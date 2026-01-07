@@ -30,6 +30,7 @@ interface Board3DProps {
 
 /**
  * Convert server board format to our BoardState format
+ * Server sends: { cells: CellView[][] } where CellView = { height, hasDome, worker: { playerId, workerId } | null }
  */
 const parseServerBoard = (serverBoard: any): BoardState => {
   const boardState: BoardState = []
@@ -45,8 +46,25 @@ const parseServerBoard = (serverBoard: any): BoardState => {
     }
   }
 
-  // Parse the new server format: {spaces: [{x, y, height, workers}]}
-  if (serverBoard?.spaces && Array.isArray(serverBoard.spaces)) {
+  // Parse current server format: { cells: CellView[][] }
+  if (serverBoard?.cells && Array.isArray(serverBoard.cells)) {
+    for (let x = 0; x < BOARD_SIZE; x++) {
+      for (let y = 0; y < BOARD_SIZE; y++) {
+        const cell = serverBoard.cells[x]?.[y]
+        if (cell) {
+          boardState[x][y] = {
+            buildingLevel: cell.height || 0,
+            worker: cell.worker ? {
+              playerId: cell.worker.playerId,
+              workerId: cell.worker.workerId
+            } : null
+          }
+        }
+      }
+    }
+  }
+  // Legacy format: { spaces: [{x, y, height, workers}] }
+  else if (serverBoard?.spaces && Array.isArray(serverBoard.spaces)) {
     for (const space of serverBoard.spaces) {
       const { x, y, height, workers } = space
 
@@ -104,7 +122,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     if (!Array.isArray(moves)) return positions
 
     for (const move of moves) {
-      // For placement phase, show all positions
+      // For placement phase, show all positions (no worker selection needed)
       if (move.type === 'place_worker') {
         for (const pos of move.validPositions) {
           positions.push({
@@ -115,8 +133,9 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
           })
         }
       }
-      // For movement/building phase, only show positions for selected worker
-      else if (!selectedWorkerId || move.workerId === selectedWorkerId) {
+      // For movement/building phase, ONLY show positions for selected worker
+      // User must click a worker first to see available moves
+      else if (selectedWorkerId && move.workerId === selectedWorkerId) {
         for (const pos of move.validPositions) {
           const posWithBuilding = pos as any
           positions.push({
@@ -145,29 +164,29 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     return typeof currentPlayerObj === 'object' ? currentPlayerObj?.id : currentPlayerObj
   }, [appState.username, gameState?.players])
 
-  // Get movable workers manually to avoid unstable selector with parameters
-  const movableWorkers = useMemo(() => {
-    const store = useGameStore.getState()
-    const playerWorkers = store.workersByPlayer.get(Number(currentPlayerId) || 0) || []
-    const moveWorkerMoves = store.currentPlayerMoves.filter(move => move.type === 'move_worker')
-    return playerWorkers.filter(worker =>
-      moveWorkerMoves.some(move => move.workerId === worker.workerId)
-    )
-  }, [currentPlayerId, currentPlayerMoves])
-
   // Valid positions are now handled by Zustand selector (already computed above as 'validPositions')
 
   // Handle worker click for selection
-  const handleWorkerClick = (workerId: number, x: number, y: number) => {
-    console.log(`🎯 Worker ${workerId} clicked at (${x}, ${y})`)
+  const handleWorkerClick = (workerId: number, playerId: number, x: number, y: number) => {
+    console.log(`🎯 Worker ${workerId} (player ${playerId}) clicked at (${x}, ${y})`)
 
-    // Check if this worker can move (using Zustand selector)
-    console.log('🎯 Movable workers:', JSON.stringify(movableWorkers, null, 2))
-    const canMove = movableWorkers.some(w => w.workerId === workerId && w.x === x && w.y === y)
-    console.log(`🎯 Worker ${workerId} can move:`, canMove)
+    // Only allow selecting current player's workers
+    if (playerId !== gameState?.currentPlayerId) {
+      console.log(`🎯 Not current player's worker (current: ${gameState?.currentPlayerId})`)
+      return
+    }
 
-    if (canMove) {
-      if (selectedWorker && selectedWorker.workerId === workerId && selectedWorker.x === x && selectedWorker.y === y) {
+    // Check if this worker has any available moves (move_worker or build)
+    const moves = useGameStore.getState().currentPlayerMoves
+    const hasMovesForWorker = moves.some(move =>
+      (move.type === 'move_worker' || move.type === 'build_block' || move.type === 'build_dome') &&
+      move.workerId === workerId
+    )
+
+    console.log(`🎯 Worker ${workerId} has available moves:`, hasMovesForWorker)
+
+    if (hasMovesForWorker) {
+      if (selectedWorker && selectedWorker.workerId === workerId) {
         // Deselect if clicking the same worker
         console.log(`🎯 Deselecting worker ${workerId}`)
         setSelectedWorker(null)
@@ -177,7 +196,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
         setSelectedWorker({ workerId, x, y })
       }
     } else {
-      console.log(`🎯 Worker ${workerId} cannot move`)
+      console.log(`🎯 Worker ${workerId} has no available moves`)
     }
   }
 
@@ -218,9 +237,11 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     const store = useGameStore.getState()
     const gameId = store.gameId
     const moves = store.currentPlayerMoves
+    const currentSelectedWorker = selectedWorker
 
     console.log('🎯 Available moves:', moves)
     console.log('🎯 Game ID:', gameId)
+    console.log('🎯 Selected worker:', currentSelectedWorker)
 
     // Simple validation: find if clicked position matches any available move
     let validMove: any = null
@@ -229,6 +250,14 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     if (Array.isArray(moves)) {
       for (let i = 0; i < moves.length; i++) {
         const move: any = moves[i]
+
+        // For move_worker and build moves, require worker selection first
+        if (move.type === 'move_worker' || move.type === 'build_block' || move.type === 'build_dome') {
+          if (!currentSelectedWorker || currentSelectedWorker.workerId !== move.workerId) {
+            continue // Skip moves for unselected workers
+          }
+        }
+
         if (move.validPositions && Array.isArray(move.validPositions)) {
           const matchingPosition: any = move.validPositions.find((pos: any) =>
             pos.x === gridX && pos.y === gridZ
@@ -268,8 +297,11 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
         webSocketClient.send('make_move', moveData)
         console.log('✅ Move submitted successfully')
 
-        // Clear worker selection after successful move submission
-        setSelectedWorker(null)
+        // For move_worker, keep selection - building phase needs the same worker
+        // For place_worker and build moves, clear selection (turn segment complete)
+        if (validMove.type !== 'move_worker') {
+          setSelectedWorker(null)
+        }
 
         console.log('🧹 Move submitted - waiting for server response to update game state')
       } catch (error) {
@@ -278,9 +310,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     } else {
       console.log('❌ Invalid move at position:', { gridX, gridZ })
       console.log('❌ No game ID or no valid move found')
-
-      // Clear worker selection if clicking invalid position
-      setSelectedWorker(null)
+      // Don't clear selection on invalid click - user might just have misclicked
     }
 
     // Also call the original callback if provided
@@ -386,22 +416,24 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
 
               {/* Worker */}
               {cell.worker && (() => {
-                const canMove = movableWorkers.some(w =>
-                  w.workerId === cell.worker!.workerId && w.x === gridX && w.y === gridZ
+                // Check if this worker belongs to current player AND has available moves
+                const isCurrentPlayersWorker = cell.worker!.playerId === gameState?.currentPlayerId
+                const workerHasMoves = isCurrentPlayersWorker && currentPlayerMoves.some(move =>
+                  (move.type === 'move_worker' || move.type === 'build_block' || move.type === 'build_dome') &&
+                  move.workerId === cell.worker!.workerId
                 )
                 const isSelected = !!(selectedWorker &&
                   selectedWorker.workerId === cell.worker.workerId &&
-                  selectedWorker.x === gridX &&
-                  selectedWorker.y === gridZ)
+                  isCurrentPlayersWorker)
 
                 return (
                   <Worker
                     playerId={cell.worker.playerId}
                     position={[worldX, cell.buildingLevel * BUILDING_HEIGHT + WORKER_HEIGHT_OFFSET, worldZ]}
                     gameState={gameState}
-                    canMove={canMove}
+                    canMove={workerHasMoves}
                     isSelected={isSelected}
-                    onClick={() => handleWorkerClick(cell.worker!.workerId, gridX, gridZ)}
+                    onClick={() => handleWorkerClick(cell.worker!.workerId, cell.worker!.playerId, gridX, gridZ)}
                   />
                 )
               })()}

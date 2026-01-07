@@ -62,6 +62,7 @@ export class BuildMove extends Move {
     playerId: number,
     position: Position,
     public readonly buildingType: 'block' | 'dome',
+    public readonly workerId: number = 0,
     public readonly buildingLevel?: number
   ) {
     super(buildingType === 'block' ? 'build_block' : 'build_dome', playerId, position);

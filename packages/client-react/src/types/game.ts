@@ -107,6 +107,8 @@ export interface AvailableMove {
   type: 'place_worker' | 'move_worker' | 'build_block' | 'build_dome';
   workerId: number;
   validPositions: (Position | BuildPosition)[];
+  // For move_worker moves: the worker's current position (where they're moving FROM)
+  fromPosition?: Position;
 }
 
 // WebSocket message wrapper

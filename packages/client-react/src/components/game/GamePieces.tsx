@@ -70,18 +70,22 @@ export const Worker: React.FC<WorkerProps> = ({
 
   return (
     <group
-      onClick={canMove ? (e) => {
+      onClick={(e) => {
+        e.stopPropagation() // Always stop propagation so clicks don't fall through to cells
+        if (onClick) {
+          onClick()
+        }
+      }}
+      onPointerOver={(e) => {
         e.stopPropagation()
-        onClick?.()
-      } : undefined}
-      onPointerOver={canMove ? (e) => {
-        e.stopPropagation()
-        document.body.style.cursor = 'pointer'
-      } : undefined}
-      onPointerOut={canMove ? (e) => {
+        if (canMove || onClick) {
+          document.body.style.cursor = 'pointer'
+        }
+      }}
+      onPointerOut={(e) => {
         e.stopPropagation()
         document.body.style.cursor = 'default'
-      } : undefined}
+      }}
     >
       {/* Main worker piece */}
       <STLPiece
