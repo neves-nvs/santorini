@@ -38,6 +38,8 @@ export class GameService {
       throw new PlayerNotInGameError(gameId, userId);
     }
 
+    logger.debug(`Move validation: userId=${userId}, playerId=${playerId}, currentPlayerId=${game.currentPlayerId}`);
+
     // Create domain move object (playerId from authenticated user)
     const move = createMove(playerId, moveCommand);
 
@@ -91,8 +93,10 @@ export class GameService {
     }
 
     // Create player domain object
-    const seat = game.players.size; // Simple seat assignment
-    const player = new Player(game.players.size + 1, userId, seat);
+    // PlayerId is 1-indexed based on join order
+    const playerId = game.players.size + 1;
+    const seat = game.players.size;
+    const player = new Player(playerId, userId, seat);
 
     // Add player to game
     const events = game.addPlayer(player);
@@ -126,12 +130,7 @@ export class GameService {
 
   /**
    * Set player ready status.
-   * When all players confirm ready, game auto-starts.
-   *
-   * Flow:
-   * 1. Players join a game via WebSocket connection
-   * 2. Each player must confirm/accept the game (to verify opponents)
-   * 3. Once ALL players have confirmed, the game auto-starts
+   * Domain auto-starts game when all players are ready.
    */
   async setPlayerReady(gameId: number, userId: number, ready: boolean): Promise<{ game: Game; events: GameEvent[] }> {
     logger.info(`Setting player ${userId} ready status to ${ready} for game ${gameId}`);
@@ -149,14 +148,7 @@ export class GameService {
     const events = game.setPlayerReady(playerId, ready);
     await this.gameRepository.save(game);
 
-    // Broadcast ready status update to all players
     await this.gameBroadcaster.broadcastGameUpdate(game, events);
-
-    // Auto-start when all players are ready
-    if (ready && game.areAllPlayersReady()) {
-      const startResult = await this.startGame(gameId);
-      events.push(...startResult.events);
-    }
 
     return { game, events };
   }

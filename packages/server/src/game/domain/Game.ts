@@ -381,7 +381,7 @@ export class Game {
     player.setReady(ready);
     this._version++;
 
-    return [
+    const events: GameEvent[] = [
       new GameEvent('PlayerReadyChanged', {
         gameId: this.id,
         playerId,
@@ -389,6 +389,13 @@ export class Game {
         readyStatuses: this.getReadyStatuses()
       })
     ];
+
+    // Auto-start when all players are ready
+    if (ready && this.areAllPlayersReady()) {
+      events.push(...this.startGame());
+    }
+
+    return events;
   }
 
   /**

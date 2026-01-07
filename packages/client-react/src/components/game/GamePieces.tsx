@@ -71,14 +71,14 @@ export const Worker: React.FC<WorkerProps> = ({
   return (
     <group
       onClick={(e) => {
-        e.stopPropagation() // Always stop propagation so clicks don't fall through to cells
-        if (onClick) {
+        e.stopPropagation()
+        if (canMove && onClick) {
           onClick()
         }
       }}
       onPointerOver={(e) => {
         e.stopPropagation()
-        if (canMove || onClick) {
+        if (canMove) {
           document.body.style.cursor = 'pointer'
         }
       }}

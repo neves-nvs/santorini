@@ -12,6 +12,13 @@ import { findUserByUsername } from "../users/userRepository";
 import logger from "../logger";
 import passport from "passport";
 
+/**
+ * Get authenticated user from request. Only call after authenticate middleware.
+ */
+export function getUser(req: Request): User {
+  return req.user as User;
+}
+
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate("jwt", { session: false }, async (err: Error, user: unknown, info: VerifyErrors) => {
     if (info && info.message === "No auth token") {

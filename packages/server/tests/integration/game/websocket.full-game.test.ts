@@ -35,9 +35,10 @@ type WsMessage = Record<string, any>;
 describe("Full Game Integration Test", () => {
   let gameId: number;
   let players: TestPlayer[] = [];
+  let creator: { user: UserDTO; token: string };
 
   beforeEach(async () => {
-    const creator = await helpers.createTestUserWithLogin();
+    creator = await helpers.createTestUserWithLogin();
     gameId = await helpers.createTestGame(creator.token);
     players = [];
   });
@@ -171,9 +172,10 @@ describe("Full Game Integration Test", () => {
   }
 
   async function setupGame(): Promise<void> {
-    // Create and join 2 players
+    // Create and join 2 players (first is the creator, second is new)
     for (let i = 0; i < 2; i++) {
-      const { user, token } = await helpers.createTestUserWithLogin();
+      const isCreator = i === 0;
+      const { user, token } = isCreator ? creator : await helpers.createTestUserWithLogin();
       const ws = await createPlayerConnection(user, token);
       players.push({ user, token, ws });
 

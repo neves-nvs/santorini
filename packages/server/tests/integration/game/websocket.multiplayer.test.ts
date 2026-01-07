@@ -20,10 +20,11 @@ interface TestPlayer {
 describe("WebSocket Multiplayer Game Tests", () => {
   let gameId: number;
   let players: TestPlayer[] = [];
+  let creator: { user: UserDTO; token: string };
 
   beforeEach(async () => {
-    // Create test game
-    const creator = await helpers.createTestUserWithLogin();
+    // Create test game (creator is automatically added as player)
+    creator = await helpers.createTestUserWithLogin();
     gameId = await helpers.createTestGame(creator.token);
 
     // Clean up any existing connections
@@ -109,16 +110,18 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
   /**
    * Helper function to create multiple players and connect them to WebSocket
+   * First player is the creator (already in game), rest are new users
    */
   async function createMultiplePlayers(count: number): Promise<TestPlayer[]> {
     const testPlayers: TestPlayer[] = [];
-    
+
     for (let i = 0; i < count; i++) {
-      const { user, token } = await helpers.createTestUserWithLogin();
+      const isCreator = i === 0;
+      const { user, token } = isCreator ? creator : await helpers.createTestUserWithLogin();
       const ws = await createPlayerConnection(user, token);
       testPlayers.push({ user, token, ws });
     }
-    
+
     return testPlayers;
   }
 

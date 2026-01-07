@@ -8,7 +8,7 @@ describe('Game Domain', () => {
   let player1: Player;
   let player2: Player;
 
-  // Helper to start game with all players ready
+  // Helper to start game with all players ready (auto-starts when last player is ready)
   function startGameWithReadyPlayers(g: Game): void {
     for (const [playerId] of g.players) {
       g.setPlayerReady(playerId, true);
@@ -314,6 +314,38 @@ describe('Game Domain', () => {
 
       expect(game.board.getCell(0, 2)?.height).toBe(1);
       expect(game.board.getCell(1, 2)?.height).toBe(1);
+    });
+
+    it('should generate dome build move when height is 3', () => {
+      // Set up a level 3 tower adjacent to worker position
+      const snapshot = game.toSnapshot();
+      snapshot.board.cells[0][2].height = 3;
+      const testGame = Game.fromSnapshot(snapshot);
+
+      const moves = testGame.getAvailableMoves();
+      const domeMoves = moves.filter(m => m.type === 'build_dome');
+      const blockMoves = moves.filter(m => m.type === 'build_block');
+
+      // Should have dome move for height 3 cell, block moves for others
+      expect(domeMoves.length).toBeGreaterThan(0);
+      expect(domeMoves.some(m => m.position.x === 0 && m.position.y === 2)).toBe(true);
+      // Block moves should NOT include height 3 position
+      expect(blockMoves.every(m => !(m.position.x === 0 && m.position.y === 2))).toBe(true);
+    });
+
+    it('should allow placing dome on level 3 building', () => {
+      // Set up a level 3 tower adjacent to worker position
+      const snapshot = game.toSnapshot();
+      snapshot.board.cells[0][2].height = 3;
+      const testGame = Game.fromSnapshot(snapshot);
+
+      const buildMove = new BuildMove(1, { x: 0, y: 2 }, 'dome');
+      const events = testGame.applyMove(1, buildMove);
+
+      expect(events[0].type).toBe('MovePlayed');
+      const cell = testGame.board.getCell(0, 2);
+      expect(cell?.height).toBe(3);
+      expect(cell?.hasDome).toBe(true);
     });
   });
 

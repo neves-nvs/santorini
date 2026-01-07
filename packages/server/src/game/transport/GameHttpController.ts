@@ -1,122 +1,22 @@
-import { gameBroadcaster, gameService, lobbyService } from '../../composition-root';
+import { Response, Router } from 'express';
+import { authenticate, getUser } from '../../auth/authController';
 import { getHttpStatus, getUserMessage } from '../../errors/GameErrors';
 
-import { User } from '../../model';
-import { authenticate } from '../../auth/authController';
-import express from 'express';
+import { GameBroadcaster } from '../application/GameBroadcaster';
+import { GameService } from '../application/GameService';
+import { LobbyService } from '../application/LobbyService';
 import logger from '../../logger';
 
-/**
- * HTTP controller for game operations using clean architecture
- */
-export function createGameRouter(): express.Router {
-  const router = express.Router();
+export function createGameRoutes(
+  gameService: GameService,
+  lobbyService: LobbyService,
+  gameBroadcaster: GameBroadcaster
+): Router {
+  const router = Router();
 
-  /**
-   * Create a new game
-   */
-  router.post("/", authenticate, async (req, res) => {
-    try {
-      const { maxPlayers = 2 } = req.body;
-      const user = req.user;
-
-      if (!user) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      const userId = (user as User).id;
-      const game = await lobbyService.createGame(userId, maxPlayers);
-
-      // Add creator as first player
-      await gameService.addPlayer(game.id, userId);
-
-      res.json({ gameId: game.id });
-    } catch (error) {
-      logger.error("Error creating game:", error);
-      res.status(getHttpStatus(error)).json({ error: getUserMessage(error) });
-    }
-  });
-
-  /**
-   * Join a game
-   */
-  router.post("/:gameId/join", authenticate, async (req, res) => {
-    try {
-      const gameId = parseInt(req.params.gameId);
-      const user = req.user;
-
-      if (!user) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      const updatedGame = await lobbyService.joinGame(gameId, (user as User).id);
-
-      // Broadcast game update to all players in the game
-      await gameBroadcaster.broadcastGameUpdate(updatedGame, []);
-
-      res.json({ success: true });
-    } catch (error) {
-      logger.error("Error joining game:", error);
-      res.status(getHttpStatus(error)).json({ error: getUserMessage(error) });
-    }
-  });
-
-  /**
-   * Get game state
-   */
-  router.get("/:gameId", authenticate, async (req, res) => {
-    try {
-      const gameId = parseInt(req.params.gameId);
-      const user = req.user;
-
-      if (!user) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      const gameView = await gameService.getGameStateForPlayer(gameId, (user as User).id);
-
-      res.json(gameView);
-    } catch (error) {
-      logger.error("Error getting game state:", error);
-      res.status(getHttpStatus(error)).json({ error: getUserMessage(error) });
-    }
-  });
-
-  /**
-   * Execute a move
-   */
-  router.post("/:gameId/move", authenticate, async (req, res) => {
-    try {
-      const gameId = parseInt(req.params.gameId);
-      const { move } = req.body;
-      const user = req.user;
-
-      if (!user) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
-
-      const result = await gameService.applyMove(gameId, (user as User).id, move);
-
-      res.json({
-        success: true,
-        game: result.game,
-        events: result.events,
-        view: result.view
-      });
-    } catch (error) {
-      logger.error("Error executing move:", error);
-      res.status(getHttpStatus(error)).json({ error: getUserMessage(error) });
-    }
-  });
-
-  /**
-   * Get available games
-   */
-  router.get("/", authenticate, async (_req, res) => {
+  router.get('/', authenticate, async (_req, res) => {
     try {
       const games = await lobbyService.findAvailableGames();
-
-      // Convert Game domain objects to API-friendly format
       const gamesDto = games.map(game => ({
         id: game.id,
         creatorId: game.creatorId,
@@ -127,24 +27,62 @@ export function createGameRouter(): express.Router {
         turnNumber: game.turnNumber,
         version: game.version,
         playerCount: game.players.size,
-        players: Array.from(game.players.values()).map(player => ({
-          id: player.id,
-          userId: player.userId,
-          seat: player.seat,
-          status: player.status,
-          isReady: player.isReady
+        players: Array.from(game.players.values()).map(p => ({
+          id: p.id,
+          userId: p.userId,
+          seat: p.seat,
+          status: p.status,
+          isReady: p.isReady
         })),
         createdAt: game.createdAt,
         startedAt: game.startedAt,
         finishedAt: game.finishedAt
       }));
-
       res.json(gamesDto);
     } catch (error) {
-      logger.error("Error getting games:", error);
-      res.status(getHttpStatus(error)).json({ error: getUserMessage(error) });
+      handleError(res, error, 'Error getting games');
+    }
+  });
+
+  router.post('/', authenticate, async (req, res) => {
+    try {
+      const userId = getUser(req).id;
+      const { maxPlayers = 2 } = req.body;
+      const game = await lobbyService.createGame(userId, maxPlayers);
+      await gameService.addPlayer(game.id, userId);
+      res.json({ gameId: game.id });
+    } catch (error) {
+      handleError(res, error, 'Error creating game');
+    }
+  });
+
+  router.get('/:gameId', authenticate, async (req, res) => {
+    try {
+      const userId = getUser(req).id;
+      const gameId = parseInt(req.params.gameId);
+      const gameView = await gameService.getGameStateForPlayer(gameId, userId);
+      res.json(gameView);
+    } catch (error) {
+      handleError(res, error, 'Error getting game state');
+    }
+  });
+
+  router.post('/:gameId/join', authenticate, async (req, res) => {
+    try {
+      const userId = getUser(req).id;
+      const gameId = parseInt(req.params.gameId);
+      const game = await lobbyService.joinGame(gameId, userId);
+      await gameBroadcaster.broadcastGameUpdate(game, []);
+      res.json({ success: true });
+    } catch (error) {
+      handleError(res, error, 'Error joining game');
     }
   });
 
   return router;
+}
+
+function handleError(res: Response, error: unknown, context: string): void {
+  logger.error(`${context}:`, error);
+  res.status(getHttpStatus(error)).json({ error: getUserMessage(error) });
 }
