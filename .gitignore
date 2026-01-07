@@ -304,5 +304,9 @@ Temporary Items
 .idea/
 .vscode/
 
+# Playwright
+playwright-report/
+test-results/
+
 #
 .direnv

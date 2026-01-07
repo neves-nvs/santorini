@@ -1,4 +1,4 @@
-import { WebSocketMessage } from '../types/game'
+import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '../types/game'
 import { ErrorHandler, ErrorType } from '../utils/errorHandler'
 import { useGameStore } from '../store/gameStore'
 import { RECONNECTION_DELAY } from '../constants/gameConstants'
@@ -7,6 +7,16 @@ import { RECONNECTION_DELAY } from '../constants/gameConstants'
 import {
   WS_MESSAGE_TYPES
 } from '../../../shared/src/websocket-types'
+
+interface WebSocketMessage {
+  type: string;
+  payload: unknown;
+}
+
+// Type guard to check if view is PlayerGameView (has isCurrentPlayer)
+function isPlayerGameView(view: GameStateUpdatePayload['state']): view is PlayerGameView {
+  return 'isCurrentPlayer' in view
+}
 
 export type WebSocketEventHandler = (message: WebSocketMessage) => void
 
@@ -228,40 +238,7 @@ export class WebSocketService {
 
       case WS_MESSAGE_TYPES.GAME_STATE_UPDATE:
         console.log('🎮 Game state update:', payload)
-
-        // Extract the actual game state
-        const gameState = payload && payload.game ? payload.game : payload
-
-        if (gameState) {
-          // Create a hash to detect duplicate updates
-          const gameStateHash = JSON.stringify({
-            id: gameState.id,
-            phase: gameState.phase,
-            currentPlayer: gameState.currentPlayer,
-            players: gameState.players,
-            board: gameState.board
-          })
-
-          // Skip if this is a duplicate update
-          if (this.lastGameStateHash === gameStateHash) {
-            console.log('🔄 Skipping duplicate game state update')
-            return
-          }
-
-          this.lastGameStateHash = gameStateHash
-          console.log('👥 Players in game state:', gameState.players)
-          store.setGameState(gameState)
-
-          // Clear moves when game state updates - the server will send new ones if needed
-          console.log('🧹 Clearing moves on game state update - server will send new ones if needed')
-          store.setCurrentPlayerMoves([])
-
-          // Determine turn state from game state and current user
-          // This provides a fallback when available_moves messages are missed
-          this.updateTurnStateFromGameState(gameState)
-
-          // Note: available_moves message will override this if received
-        }
+        this.handleGameStateUpdate(payload as GameStateUpdatePayload, store)
         break
 
       case WS_MESSAGE_TYPES.PLAYERS_IN_GAME:
@@ -291,12 +268,12 @@ export class WebSocketService {
         console.log('👥 Player ready status update:', payload)
         // Update the game store with ready status information
         if (payload && Array.isArray(payload)) {
-          const readyCount = payload.filter((p: any) => p.isReady).length
+          const readyCount = payload.filter((p: { isReady: boolean }) => p.isReady).length
           const totalPlayers = payload.length
           console.log(`🎯 Ready status: ${readyCount}/${totalPlayers} players ready`)
 
           // Store ready status in game state for UI updates
-          const currentGameState = store.getGameState()
+          const currentGameState = store.gameState
           if (currentGameState) {
             store.setGameState({
               ...currentGameState,
@@ -416,6 +393,16 @@ export class WebSocketService {
     }
   }
 
+  setReady(gameId: string, isReady: boolean) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      console.log('🎯 Setting ready status:', { gameId, isReady })
+      this.send(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady })
+    } else {
+      console.warn('⚠️ WebSocket not ready for setting ready. State:', this.socket?.readyState)
+      throw new Error('WebSocket not connected')
+    }
+  }
+
   placeWorker(x: number, y: number) {
     this.send('place_worker', { x, y })
   }
@@ -433,34 +420,100 @@ export class WebSocketService {
     return this.socket?.readyState === WebSocket.OPEN
   }
 
-  private updateTurnStateFromGameState(gameState: any) {
-    // Get current user from localStorage or other source
-    const currentUserStr = localStorage.getItem('currentUser')
-    if (!currentUserStr) {
-      console.log('🔄 No current user found - cannot determine turn state')
+  /**
+   * Handle game_state_update messages from server
+   * Backend sends: { type: 'game_state_update', payload: { gameId, version, state: PlayerGameView } }
+   */
+  private handleGameStateUpdate(payload: GameStateUpdatePayload, store: ReturnType<typeof useGameStore.getState>) {
+    // Extract the actual game state from payload.state
+    const gameView = payload.state
+    if (!gameView) {
+      console.warn('🎮 Game state update missing state field:', payload)
       return
     }
 
-    try {
-      const currentUser = JSON.parse(currentUserStr)
-      const currentUserId = currentUser.id || currentUser.userId
-      const currentUsername = currentUser.username
+    // Create hash for deduplication
+    const gameStateHash = JSON.stringify({
+      gameId: gameView.gameId,
+      version: gameView.version,
+      phase: gameView.phase,
+      currentPlayerId: gameView.currentPlayerId,
+      turnNumber: gameView.turnNumber
+    })
 
-      // Check if it's my turn based on current_player_id
-      const isMyTurnNow = gameState.current_player_id && (
-        gameState.current_player_id === currentUserId ||
-        gameState.current_player_id.toString() === currentUserId?.toString() ||
-        gameState.current_player_id.toString() === currentUsername
-      )
-
-      console.log(`🎯 Turn check from game state: current_player_id=${gameState.current_player_id}, currentUserId=${currentUserId}, currentUsername=${currentUsername}, isMyTurn=${isMyTurnNow}`)
-
-      const store = useGameStore.getState()
-      store.setMyTurn(!!isMyTurnNow)
-
-    } catch (error) {
-      console.error('🔄 Error parsing current user for turn state:', error)
+    if (this.lastGameStateHash === gameStateHash) {
+      console.log('🔄 Skipping duplicate game state update')
+      return
     }
+    this.lastGameStateHash = gameStateHash
+
+    // Check if this is a PlayerGameView (has isCurrentPlayer) or SpectatorGameView
+    const isPlayer = isPlayerGameView(gameView)
+    const isCurrentPlayer = isPlayer ? gameView.isCurrentPlayer : false
+    const availableMoves = isPlayer ? gameView.availableMoves : undefined
+
+    console.log('👥 Players in game state:', gameView.players)
+    console.log('🎯 Is current player:', isCurrentPlayer)
+    console.log('🎯 Available moves:', availableMoves?.length || 0)
+
+    // Convert to GameState format expected by store
+    const gameState: GameState = {
+      gameId: gameView.gameId,
+      status: gameView.status,
+      phase: gameView.phase,
+      currentPlayerId: gameView.currentPlayerId,
+      turnNumber: gameView.turnNumber,
+      version: gameView.version,
+      board: gameView.board,
+      players: gameView.players,
+      availableMoves: availableMoves,
+      winnerId: gameView.winnerId ?? undefined,
+      winReason: gameView.winReason ?? undefined,
+      isCurrentPlayer: isCurrentPlayer,
+      isMyTurn: isCurrentPlayer
+    }
+
+    store.setGameState(gameState)
+
+    // Handle available moves - they come with the game state now
+    if (isCurrentPlayer && availableMoves && availableMoves.length > 0) {
+      // Transform moves to UI format
+      const transformedMoves = this.transformMovesToUIFormat(availableMoves)
+      console.log('🎯 Setting available moves for current player:', transformedMoves.length)
+      store.setCurrentPlayerMoves(transformedMoves)
+      store.setMyTurn(true)
+    } else {
+      console.log('🧹 Not current player or no moves - clearing moves')
+      store.setCurrentPlayerMoves([])
+      store.setMyTurn(false)
+    }
+  }
+
+  /**
+   * Transform server moves to UI format (grouped by worker with valid positions)
+   */
+  private transformMovesToUIFormat(moves: PlayerGameView['availableMoves']): AvailableMove[] {
+    if (!moves || moves.length === 0) return []
+
+    // Group moves by type and workerId
+    const grouped = new Map<string, AvailableMove>()
+
+    for (const move of moves) {
+      const key = `${move.type}-${move.workerId}`
+
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          type: move.type,
+          workerId: move.workerId,
+          validPositions: []
+        })
+      }
+
+      const group = grouped.get(key)!
+      group.validPositions.push(move.position)
+    }
+
+    return Array.from(grouped.values())
   }
 }
 

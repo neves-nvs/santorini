@@ -1,56 +1,53 @@
-import { Board, WorkerRef } from './Board';
+import {
+  BoardView,
+  CellView,
+  GamePhase,
+  GameStatus,
+  PlayerGameView,
+  PlayerView,
+  Move as SharedMove,
+  SpectatorGameView
+} from '../../../../shared/src/game-types';
+import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from './Move';
+import { Board } from './Board';
 import { Game } from './Game';
-import { Move } from './Move';
 import { Player } from './Player';
 import { VisibilityPolicy } from './VisibilityPolicy';
 
+// Re-export for backwards compatibility
+export type { BoardView, CellView, PlayerGameView, PlayerView, SpectatorGameView };
+
 /**
- * View models for different types of game consumers
+ * Convert domain Move to shared Move format
  */
-export interface CellView {
-  height: number;
-  hasDome: boolean;
-  worker: WorkerRef | null;
-}
-
-export interface BoardView {
-  cells: CellView[][];
-}
-
-export interface PlayerView {
-  id: number;
-  userId: number;
-  seat: number;
-  status: string;
-  isReady: boolean;
-}
-
-export interface PlayerGameView {
-  gameId: number;
-  status: string;
-  phase: string | null;
-  currentPlayerId: number | null;
-  turnNumber: number;
-  version: number;
-  board: BoardView;
-  players: PlayerView[];
-  availableMoves?: Move[];
-  winnerId?: number;
-  winReason?: string;
-  isCurrentPlayer: boolean;
-}
-
-export interface SpectatorGameView {
-  gameId: number;
-  status: string;
-  phase: string | null;
-  currentPlayerId: number | null;
-  turnNumber: number;
-  version: number;
-  board: BoardView;
-  players: PlayerView[];
-  winnerId?: number | null;
-  winReason?: string | null;
+function toSharedMove(move: Move): SharedMove {
+  if (move instanceof PlaceWorkerMove) {
+    return {
+      type: 'place_worker',
+      workerId: move.workerId,
+      position: move.position
+    };
+  } else if (move instanceof MoveWorkerMove) {
+    return {
+      type: 'move_worker',
+      workerId: move.workerId,
+      fromPosition: move.fromPosition,
+      position: move.position
+    };
+  } else if (move instanceof BuildMove) {
+    const buildType = move.type as 'build_block' | 'build_dome';
+    return {
+      type: buildType,
+      workerId: 0, // BuildMove doesn't have workerId in current domain
+      position: move.position
+    };
+  }
+  // Fallback - shouldn't reach here
+  return {
+    type: 'build_block',
+    workerId: 0,
+    position: move.position
+  };
 }
 
 /**
@@ -65,18 +62,21 @@ export class GameViewBuilder {
    */
   buildForPlayer(game: Game, userId: number, availableMoves?: Move[]): PlayerGameView {
     const filteredGameState = this.visibilityPolicy.filterGameState(game, userId);
-    const isCurrentPlayer = game.currentPlayerId === userId;
+
+    // Find the player ID for this user to check if it's their turn
+    const player = Array.from(game.players.values()).find(p => p.userId === userId);
+    const isCurrentPlayer = player ? game.currentPlayerId === player.id : false;
 
     return {
       gameId: game.id,
-      status: filteredGameState.status,
-      phase: filteredGameState.phase,
+      status: filteredGameState.status as GameStatus,
+      phase: filteredGameState.phase as GamePhase,
       currentPlayerId: filteredGameState.currentPlayerId,
       turnNumber: filteredGameState.turnNumber,
       version: filteredGameState.version,
       board: this.buildBoardView(filteredGameState.board),
       players: this.buildPlayersView(filteredGameState.players),
-      availableMoves: isCurrentPlayer ? availableMoves : undefined,
+      availableMoves: isCurrentPlayer && availableMoves ? availableMoves.map(toSharedMove) : undefined,
       winnerId: filteredGameState.winnerId ?? undefined,
       winReason: filteredGameState.winReason ?? undefined,
       isCurrentPlayer
@@ -89,8 +89,8 @@ export class GameViewBuilder {
   buildForSpectator(game: Game): SpectatorGameView {
     return {
       gameId: game.id,
-      status: game.status,
-      phase: game.phase,
+      status: game.status as GameStatus,
+      phase: game.phase as GamePhase,
       currentPlayerId: game.currentPlayerId,
       turnNumber: game.turnNumber,
       version: game.version,

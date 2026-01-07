@@ -59,12 +59,20 @@ export class GameBroadcaster {
       return;
     }
 
-    logger.info(`Broadcasting available moves to current player ${game.currentPlayerId} in game ${game.id}`);
+    // Get the current player's userId from their playerId
+    const currentPlayer = game.players.get(game.currentPlayerId);
+    if (!currentPlayer) {
+      logger.warn(`Current player ${game.currentPlayerId} not found in game ${game.id}`);
+      return;
+    }
+    const currentUserId = currentPlayer.userId;
+
+    logger.info(`Broadcasting available moves to current player ${game.currentPlayerId} (userId: ${currentUserId}) in game ${game.id}`);
 
     try {
-      const view = this.gameViewBuilder.buildForPlayer(game, game.currentPlayerId, availableMoves);
-      
-      this.wsConnectionManager.sendToPlayer(game.id, game.currentPlayerId, {
+      const view = this.gameViewBuilder.buildForPlayer(game, currentUserId, availableMoves);
+
+      this.wsConnectionManager.sendToPlayer(game.id, currentUserId, {
         type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
         payload: {
           gameId: game.id,

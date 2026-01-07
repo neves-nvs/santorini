@@ -1,4 +1,5 @@
 import { ErrorHandler, ErrorType } from '../utils/errorHandler'
+import type { GameInfo } from '../types/game'
 
 export interface LoginRequest {
   username: string
@@ -114,10 +115,10 @@ export class ApiService {
   }
 
   // Check if user is authenticated and get user info
-  async checkAuth(): Promise<{ username: string } | null> {
+  async checkAuth(): Promise<{ id: number; username: string } | null> {
     try {
       // This endpoint should return user info if authenticated, 401 if not
-      return await this.request<{ username: string }>('/me')
+      return await this.request<{ id: number; username: string }>('/me')
     } catch (error) {
       // If 401 or any auth error, user is not authenticated
       return null

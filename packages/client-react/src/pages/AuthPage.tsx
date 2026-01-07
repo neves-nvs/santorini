@@ -10,7 +10,7 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
-  const { setUsername } = useApp()
+  const { setUser } = useApp()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,14 +21,22 @@ const AuthPage = () => {
       if (isLogin) {
         // Login
         await apiService.login({ username: usernameInput, password })
-        setUsername(usernameInput)
+        // Get user info after login
+        const userInfo = await apiService.checkAuth()
+        if (userInfo) {
+          setUser(userInfo)
+        }
         navigate('/lobby')
       } else {
         // Register
         await apiService.createUser({ username: usernameInput, password })
         // After successful registration, automatically login
         await apiService.login({ username: usernameInput, password })
-        setUsername(usernameInput)
+        // Get user info after login
+        const userInfo = await apiService.checkAuth()
+        if (userInfo) {
+          setUser(userInfo)
+        }
         navigate('/lobby')
       }
     } catch (err) {

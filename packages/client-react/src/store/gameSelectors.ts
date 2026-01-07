@@ -1,5 +1,4 @@
 import { useGameStore } from './gameStore'
-import { AvailableMove } from '../types/game'
 
 // Optimized selectors for R3F components to prevent unnecessary re-renders
 
@@ -62,8 +61,8 @@ export const useGameState = () =>
 export const useCurrentPlayer = () => 
   useGameStore(state => state.gameState?.currentPlayer)
 
-export const useGamePhase = () => 
-  useGameStore(state => state.gameState?.game_phase)
+export const useGamePhase = () =>
+  useGameStore(state => state.gameState?.phase)
 
 // Connection selectors
 export const useIsConnected = () => 
@@ -83,18 +82,18 @@ export const useMovableWorkers = (currentPlayerId: number) =>
     )
   })
 
-export const useValidPositions = (selectedWorkerId?: number) => 
+export const useValidPositions = (selectedWorkerId?: number) =>
   useGameStore(state => {
     const moves = state.currentPlayerMoves
     const positions: Array<{
       x: number
       y: number
-      workerId: 1 | 2
+      workerId: number
       type: string
       buildingLevel?: number
       buildingType?: string
       moveType?: string
-      serverMoveObject?: any
+      serverMoveObject?: unknown
     }> = []
 
     if (!Array.isArray(moves)) return positions
@@ -186,15 +185,13 @@ export const useGameActions = () =>
   }))
 
 // Shallow comparison selectors for complex objects
-export const useGameStateShallow = () => 
-  useGameStore(state => state.gameState, (a, b) => {
-    if (!a && !b) return true
-    if (!a || !b) return false
-    return a.id === b.id && 
-           a.currentPlayer === b.currentPlayer && 
-           a.game_phase === b.game_phase &&
-           a.board?.spaces?.length === b.board?.spaces?.length
-  })
+export const useGameStateShallow = () =>
+  useGameStore(state => ({
+    id: state.gameState?.id,
+    currentPlayer: state.gameState?.currentPlayer,
+    phase: state.gameState?.phase,
+    cellCount: state.gameState?.board?.cells?.length
+  }))
 
 // Performance monitoring selector
 export const useStoreStats = () => 

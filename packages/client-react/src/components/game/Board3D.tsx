@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import DebugAxis from './DebugAxis'
 import { BoardBase, Block, Worker, Cell, BoundingBox, MovePreview, BuildingPreview } from './GamePieces'
 import { BoardState, createEmptyBoard, createSampleBoard, gridToWorldCoords } from './board-types'
-import { webSocketService } from '../../services/WebSocketService'
+import { webSocketClient } from '../../services/WebSocketClient'
 import { GameState as ServerGameState } from '../../types/game'
 import { useApp } from '../../store/AppContext'
 import {
@@ -93,12 +93,12 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     const positions: Array<{
       x: number
       y: number
-      workerId: 1 | 2
+      workerId: number
       type: string
       buildingLevel?: number
       buildingType?: string
       moveType?: string
-      serverMoveObject?: any
+      serverMoveObject?: unknown
     }> = []
 
     if (!Array.isArray(moves)) return positions
@@ -157,19 +157,6 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
 
   // Valid positions are now handled by Zustand selector (already computed above as 'validPositions')
 
-  // Find worker position from board state
-  const findWorkerPosition = (workerId: 1 | 2, playerId: number): { x: number, y: number } | undefined => {
-    for (let x = 0; x < 5; x++) {
-      for (let y = 0; y < 5; y++) {
-        const cell = boardState[x][y]
-        if (cell.worker && cell.worker.playerId === playerId && cell.worker.workerId === workerId) {
-          return { x, y }
-        }
-      }
-    }
-    return undefined
-  }
-
   // Handle worker click for selection
   const handleWorkerClick = (workerId: number, x: number, y: number) => {
     console.log(`🎯 Worker ${workerId} clicked at (${x}, ${y})`)
@@ -213,7 +200,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
         return createEmptyBoard()
       }
     }, {
-      boardSpaces: gameState?.board?.spaces?.length,
+      boardCells: gameState?.board?.cells?.length,
       debugMode: debugState?.useSampleBoard
     })
   }, [gameState?.board, debugState?.useSampleBoard]) // Only re-parse when board data or debug state changes
@@ -278,7 +265,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
 
       try {
         console.log('📤 Submitting move:', moveData)
-        webSocketService.send('make_move', moveData)
+        webSocketClient.send('make_move', moveData)
         console.log('✅ Move submitted successfully')
 
         // Clear worker selection after successful move submission

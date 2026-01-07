@@ -54,6 +54,7 @@ export class LobbyWsController {
   /**
    * Handle join game request.
    * Adds player to game roster and broadcasts to existing subscribers.
+   * Idempotent - if player already in game, just sends current state.
    */
   async handleJoinGame(ws: AuthenticatedWebSocket, userId: number, payload: GameIdPayload): Promise<void> {
     try {
@@ -66,28 +67,67 @@ export class LobbyWsController {
 
       logger.info(`User ${userId} joining game ${gameId}`);
 
-      // Add player to game
-      const { game } = await this.gameService.addPlayer(gameId, userId);
+      let game;
+      let isNewPlayer = false;
 
-      // Send game state to new player
+      try {
+        // Try to add player to game
+        const result = await this.gameService.addPlayer(gameId, userId);
+        game = result.game;
+        isNewPlayer = true;
+      } catch (error: any) {
+        // If player already in game, just get the game state
+        if (error.message?.includes('already in game')) {
+          logger.info(`User ${userId} already in game ${gameId}, sending current state`);
+          const gameState = await this.gameService.getGame(gameId);
+          if (!gameState) {
+            throw error; // Re-throw if game not found
+          }
+          game = gameState;
+        } else {
+          throw error; // Re-throw other errors
+        }
+      }
+
+      // Send game state to player
       const gameView = await this.gameService.getGameStateForPlayer(gameId, userId);
       send(ws, WS_MESSAGE_TYPES.GAME_JOINED, {
         gameId,
         gameState: gameView
       });
 
-      // Broadcast to other subscribed players that someone joined
-      this.wsConnectionManager.broadcastToGame(gameId, {
-        type: WS_MESSAGE_TYPES.PLAYER_JOINED,
-        payload: {
-          gameId,
-          userId,
-          playerCount: game.players.size,
-          maxPlayers: game.maxPlayers
-        }
-      });
+      // Only broadcast if this is a new player joining
+      if (isNewPlayer) {
+        // Broadcast player_joined event
+        this.wsConnectionManager.broadcastToGame(gameId, {
+          type: WS_MESSAGE_TYPES.PLAYER_JOINED,
+          payload: {
+            gameId,
+            userId,
+            playerCount: game.players.size,
+            maxPlayers: game.maxPlayers
+          }
+        });
 
-      logger.info(`User ${userId} joined game ${gameId} successfully`);
+        // Broadcast full game state to ALL players so UIs update
+        for (const player of game.players.values()) {
+          try {
+            const playerView = await this.gameService.getGameStateForPlayer(gameId, player.userId);
+            this.wsConnectionManager.sendToPlayer(gameId, player.userId, {
+              type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
+              payload: {
+                gameId,
+                version: game.version,
+                state: playerView
+              }
+            });
+          } catch (err) {
+            logger.error(`Failed to send state to player ${player.userId}:`, err);
+          }
+        }
+      }
+
+      logger.info(`User ${userId} ${isNewPlayer ? 'joined' : 'reconnected to'} game ${gameId} successfully`);
     } catch (error) {
       logger.error(`Error joining game for user ${userId}:`, error);
       sendError(ws, error instanceof Error ? error.message : 'Failed to join game');

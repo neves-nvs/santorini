@@ -214,6 +214,7 @@ export class GameRepositoryDb {
       .selectFrom('games')
       .where('game_status', '=', status)
       .selectAll()
+      .orderBy('id', 'desc')
       .execute();
 
     const games: Game[] = [];

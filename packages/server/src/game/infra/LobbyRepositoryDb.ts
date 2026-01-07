@@ -1,4 +1,4 @@
-import { Database, Game } from '../../model';
+import { Database, Game, GameStatus } from '../../model';
 
 import { Kysely } from 'kysely';
 import { db } from '../../database';
@@ -29,10 +29,10 @@ export class LobbyRepositoryDb {
    */
   async findGamesByStatus(status: string): Promise<Game[]> {
     logger.debug(`Loading games with status: ${status}`);
-    
+
     return this.database
       .selectFrom('games')
-      .where('status', '=', status)
+      .where('game_status', '=', status as GameStatus)
       .selectAll()
       .orderBy('created_at', 'desc')
       .execute();
@@ -43,10 +43,10 @@ export class LobbyRepositoryDb {
    */
   async findAvailableGames(): Promise<Game[]> {
     logger.debug('Loading available games');
-    
+
     return this.database
       .selectFrom('games')
-      .where('status', '=', 'waiting')
+      .where('game_status', '=', 'waiting')
       .selectAll()
       .orderBy('created_at', 'desc')
       .execute();
@@ -58,10 +58,10 @@ export class LobbyRepositoryDb {
   async getGameCountByStatus(status: string): Promise<number> {
     const result = await this.database
       .selectFrom('games')
-      .where('status', '=', status)
+      .where('game_status', '=', status as GameStatus)
       .select(({ fn }) => [fn.count<number>('id').as('count')])
       .executeTakeFirst();
-    
+
     return result?.count || 0;
   }
 
@@ -70,10 +70,10 @@ export class LobbyRepositoryDb {
    */
   async findGamesByCreator(creatorId: number): Promise<Game[]> {
     logger.debug(`Loading games created by user ${creatorId}`);
-    
+
     return this.database
       .selectFrom('games')
-      .where('creator_id', '=', creatorId)
+      .where('user_creator_id', '=', creatorId)
       .selectAll()
       .orderBy('created_at', 'desc')
       .execute();

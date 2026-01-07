@@ -1,83 +1,53 @@
-import React, { createContext, useContext, useReducer, ReactNode, useMemo, useCallback } from 'react'
+import React, { ReactNode } from 'react'
+import { create } from 'zustand'
 
-interface AppContextState {
+interface AppState {
+  userId: number | null
   username: string | null
   error: string | null
 }
 
-type AppAction =
-  | { type: 'SET_USERNAME'; payload: string | null }
-  | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'LOGOUT' }
-
-const initialState: AppContextState = {
-  username: null,
-  error: null,
-}
-
-const appReducer = (state: AppContextState, action: AppAction): AppContextState => {
-  switch (action.type) {
-    case 'SET_USERNAME':
-      return { ...state, username: action.payload }
-    case 'SET_ERROR':
-      return { ...state, error: action.payload }
-    case 'LOGOUT':
-      return {
-        ...initialState,
-        username: null,
-      }
-    default:
-      return state
-  }
-}
-
-interface AppContextType {
-  state: AppContextState
-  dispatch: React.Dispatch<AppAction>
-  setUsername: (username: string | null) => void
+interface AppStore extends AppState {
+  setUser: (user: { id: number; username: string } | null) => void
   setError: (error: string | null) => void
   logout: () => void
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined)
+export const useAppStore = create<AppStore>((set) => ({
+  userId: null,
+  username: null,
+  error: null,
 
-export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(appReducer, initialState)
+  setUser: (user) => set({
+    userId: user?.id ?? null,
+    username: user?.username ?? null
+  }),
 
-  const setUsername = useCallback((username: string | null) =>
-    dispatch({ type: 'SET_USERNAME', payload: username }), [])
+  setError: (error) => set({ error }),
 
-  const setError = useCallback((error: string | null) =>
-    dispatch({ type: 'SET_ERROR', payload: error }), [])
+  logout: () => set({
+    userId: null,
+    username: null,
+    error: null
+  })
+}))
 
-  const logout = useCallback(() => {
-    dispatch({ type: 'LOGOUT' })
-  }, [])
-
-  const contextValue = useMemo((): AppContextType => ({
-    state,
-    dispatch,
-    setUsername,
-    setError,
-    logout,
-  }), [
-    state,
-    setUsername,
-    setError,
-    logout
-  ])
-
-  return (
-    <AppContext.Provider value={contextValue}>
-      {children}
-    </AppContext.Provider>
-  )
+// Hook for React components (backwards compatible)
+export const useApp = () => {
+  const store = useAppStore()
+  return {
+    state: {
+      userId: store.userId,
+      username: store.username,
+      error: store.error
+    },
+    setUser: store.setUser,
+    setError: store.setError,
+    logout: store.logout
+  }
 }
 
-export const useApp = () => {
-  const context = useContext(AppContext)
-  if (context === undefined) {
-    throw new Error('useApp must be used within an AppProvider')
-  }
-  return context
+// Provider component for backwards compatibility (now just renders children)
+export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  return <>{children}</>
 }

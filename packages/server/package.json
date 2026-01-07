@@ -5,10 +5,9 @@
   "scripts": {
     "dev": "ts-node-dev ./src/main.ts",
     "test": "jest --detectOpenHandles",
-    "start": "node dist/main.js",
-    "clean": "rm -r dist",
+    "start": "node dist/server/src/main.js",
+    "clean": "rm -rf dist",
     "build": "tsc",
-    "postbuild": "rm -r dist/tests && mv dist/src/* dist && rm -r dist/src",
     "format": "prettier --write 'src/**/*.{js,ts,json}'",
     "lint": "eslint --fix",
     "migrate": "ts-node runMigrations.ts",

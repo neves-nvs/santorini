@@ -19,7 +19,7 @@ const GameUI = memo(() => {
   const { state: appState } = useApp()
 
   // Use clean lifecycle state management (statusMessage used by GameStatusBar)
-  const { statusMessage } = useGameLifecycle()
+  const { statusMessage: _statusMessage } = useGameLifecycle()
 
   // Use debug state hook
   const { debugState, handleDebugChange } = useDebugState()

@@ -1,6 +1,7 @@
 import { memo, useEffect } from 'react'
 import { useGameState } from '../../store/gameSelectors'
 import { PLAYER_COLORS } from '../../constants/gameConstants'
+import type { PlayerView } from '../../types/game'
 
 interface PlayerListProps {
   className?: string
@@ -31,20 +32,20 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
 
   return (
     <div className={className} style={style}>
-      <h3>Players ({players.length}/{gameState.player_count || 2})</h3>
+      <h3>Players ({players.length}/{gameState.totalPlayers || 2})</h3>
 
       {Array.isArray(players) ? (
         <ul style={{ listStyle: 'none', padding: 0 }}>
-          {players.map((player: any, index: number) => {
-            const playerId = player.id || player
-            const playerName = player.username || player.name || playerId
+          {players.map((player: PlayerView, index: number) => {
+            const playerId = player.id
+            const playerName = `Player ${player.seat + 1}`
             const playerColor = PLAYER_COLORS[index] || '#ffffff'
-            const isCurrentPlayer = playerId === gameState?.currentPlayer
+            const isCurrentPlayer = playerId === gameState?.currentPlayerId
 
             return (
-              <li 
-                key={playerId} 
-                style={{ 
+              <li
+                key={playerId}
+                style={{
                   marginBottom: '0.5rem',
                   padding: '0.5rem',
                   background: 'rgba(255, 255, 255, 0.1)',
@@ -52,9 +53,9 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
                   border: isCurrentPlayer ? '2px solid yellow' : '1px solid transparent'
                 }}
               >
-                <span 
-                  style={{ 
-                    color: playerColor, 
+                <span
+                  style={{
+                    color: playerColor,
                     fontWeight: 'bold',
                     marginRight: '0.5rem'
                   }}
