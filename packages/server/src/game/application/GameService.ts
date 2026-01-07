@@ -152,17 +152,17 @@ export class GameService {
     // Broadcast ready status update to all players
     await this.gameBroadcaster.broadcastGameUpdate(game, events);
 
-    // If game started (all ready), broadcast game start
-    if (game.status === 'in-progress') {
-      await this.gameBroadcaster.broadcastGameStart(game);
-      logger.info(`Game ${gameId} auto-started after all players confirmed ready`);
+    // Auto-start when all players are ready
+    if (ready && game.areAllPlayersReady()) {
+      const startResult = await this.startGame(gameId);
+      events.push(...startResult.events);
     }
 
     return { game, events };
   }
 
   /**
-   * Start a game (manual start - typically not used, prefer setPlayerReady flow)
+   * Start a game
    */
   async startGame(gameId: number): Promise<{ game: Game; events: GameEvent[] }> {
     logger.info(`Starting game ${gameId}`);
@@ -175,9 +175,9 @@ export class GameService {
     const events = game.startGame();
     await this.gameRepository.save(game);
 
-    // Broadcast game start to all players
-    await this.gameBroadcaster.broadcastGameStart(game);
-    await this.gameBroadcaster.broadcastGameUpdate(game, events);
+    // Broadcast game start to all players (active player gets availableMoves)
+    const availableMoves = game.getAvailableMoves();
+    await this.gameBroadcaster.broadcastGameStart(game, availableMoves);
 
     logger.info(`Game ${gameId} started successfully`);
     return { game, events };

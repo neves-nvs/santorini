@@ -41,12 +41,15 @@ export class GameWsController {
       logger.info(`Processing move for user ${userId} in game ${gameId}:`, move);
 
       const result = await this.gameService.applyMove(gameId, userId, move);
-      
-      // Send updated state to the player
-      send(ws, WS_MESSAGE_TYPES.GAME_STATE_UPDATE, result.view);
 
-      // TODO: Broadcast to other players in the game
-      // This would be handled by a GameBroadcaster service
+      // Send updated state to the player (wrapped in state field for consistency)
+      send(ws, WS_MESSAGE_TYPES.GAME_STATE_UPDATE, {
+        gameId,
+        version: result.game.version,
+        state: result.view
+      });
+
+      // Note: GameBroadcaster also sends updates to other players
 
       logger.info(`Move processed successfully for user ${userId} in game ${gameId}`);
     } catch (error) {
@@ -70,8 +73,13 @@ export class GameWsController {
       logger.info(`Getting game state for user ${userId} in game ${gameId}`);
 
       const gameView = await this.gameService.getGameStateForPlayer(gameId, userId);
+      const game = await this.gameService.getGame(gameId);
 
-      send(ws, WS_MESSAGE_TYPES.GAME_STATE_UPDATE, gameView);
+      send(ws, WS_MESSAGE_TYPES.GAME_STATE_UPDATE, {
+        gameId,
+        version: game?.version ?? 0,
+        state: gameView
+      });
 
       logger.info(`Game state sent to user ${userId} for game ${gameId}`);
     } catch (error) {
@@ -132,11 +140,8 @@ export class GameWsController {
 
       await this.gameService.startGame(gameId);
 
-      // Send updated state to the requesting player
-      const gameView = await this.gameService.getGameStateForPlayer(gameId, userId);
-      send(ws, WS_MESSAGE_TYPES.GAME_STATE_UPDATE, gameView);
-
-      // TODO: Broadcast to all players in the game
+      // Note: GameService.startGame already broadcasts to all players via GameBroadcaster
+      // No additional message needed here
 
       logger.info(`Game ${gameId} started successfully`);
     } catch (error) {
