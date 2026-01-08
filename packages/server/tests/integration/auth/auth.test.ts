@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { db } from "../../../src/database";
 import jwt from "jsonwebtoken";
 import request from "supertest";
-import { server } from "../../../src/main";
+// Removed server import - not needed for HTTP tests using supertest
 
 const password = "password";
 const userData = {
@@ -27,7 +27,6 @@ describe("Auth Controller Integration Tests", () => {
   });
 
   afterAll(async () => {
-    server.close();
     await db.destroy();
   });
 
@@ -90,7 +89,7 @@ describe("Auth Controller Integration Tests", () => {
 
   describe("GET /test-auth", () => {
     test("200 OK with valid token authentication", async () => {
-      const validToken = jwt.sign({ username: userData.username }, JWT_SECRET!, { expiresIn: "5h" });
+      const validToken = jwt.sign({ username: userData.username }, JWT_SECRET, { expiresIn: "5h" });
 
       const response = await request(app).get("/test-auth").set("Cookie", `token=${validToken}`).expect(200);
 

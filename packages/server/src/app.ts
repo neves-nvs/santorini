@@ -7,13 +7,16 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import errorHandler from "./middlewares/errorMiddleware";
 import express from "express";
-import gameController from "./game/gameController";
+import { gameRoutes } from "./composition-root";
 import passport from "passport";
 import userController from "./users/userController";
 
 const CORS_CONFIG = {
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5174"],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  optionsSuccessStatus: 200
 };
 
 const app = express();
@@ -29,7 +32,7 @@ app.use(cors(CORS_CONFIG));
 app.use(passport.initialize());
 
 app.use("/", authController);
-app.use("/games", gameController);
+app.use("/games", gameRoutes);
 app.use("/users", userController);
 
 app.use(errorHandler);

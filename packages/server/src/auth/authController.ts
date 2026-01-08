@@ -4,7 +4,7 @@ import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { JWT_SECRET } from "../configs/config";
 import { StatusCodes } from "http-status-codes";
 import { User } from "../model";
-import { UserDTO } from "../users/userDTO";
+
 import bcrypt from "bcryptjs";
 import { body } from "express-validator";
 import { checkValidation } from "../middlewares/middleware";
@@ -12,19 +12,31 @@ import { findUserByUsername } from "../users/userRepository";
 import logger from "../logger";
 import passport from "passport";
 
+/**
+ * Get authenticated user from request. Only call after authenticate middleware.
+ */
+export function getUser(req: Request): User {
+  return req.user as User;
+}
+
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   passport.authenticate("jwt", { session: false }, async (err: Error, user: unknown, info: VerifyErrors) => {
     if (info && info.message === "No auth token") {
-      logger.error("No auth token");
+      logger.debug("No auth token");
       return res.status(401).json({ message: "Unauthorized" });
     } else if (info) {
-      logger.error("Forbidden", info);
+      // Reduce spam for common token expiration errors
+      if (info.name === "TokenExpiredError") {
+        logger.debug("Token expired", info.message);
+      } else {
+        logger.error("Forbidden", info);
+      }
       return res.status(403).json({ message: "Forbidden" });
     } else if (err) {
       logger.error("Unauthorized", err);
       return res.status(401).json({ message: "Unauthorized" });
     } else if (!user) {
-      logger.error("Unauthorized");
+      logger.debug("No user found");
       return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -85,8 +97,9 @@ router.post(
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        // sameSite: 'Strict',
-        sameSite: "none",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/",
+        domain: "localhost"
       });
       res.status(200).send("OK");
     } catch (err) {
@@ -95,6 +108,18 @@ router.post(
     }
   },
 );
+
+// Logout endpoint to clear the authentication cookie
+router.post("/logout", (req: Request, res: Response) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
+    domain: "localhost"
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+});
 
 router.get(
   "/auth/google",
@@ -121,10 +146,43 @@ router.get("/auth/google/callback", passport.authenticate("google", { session: f
   res.redirect("http://localhost:5173");
 });
 
+// Endpoint to get JWT token for WebSocket authentication
+router.get("/token", authenticate, async (req, res) => {
+  try {
+    const user = req.user as User;
+    const token = jwt.sign({ username: user.username }, JWT_SECRET, {
+      expiresIn: "5h",
+    });
+    res.status(200).json({ token });
+  } catch (e: unknown) {
+    const error = e as Error;
+    logger.error(error.message);
+    res.status(400).send(error.message);
+  }
+});
+
+// Endpoint to check authentication status and get user info
+router.get("/me", authenticate, async (req, res) => {
+  try {
+    const user = req.user as User;
+    res.status(200).json({ id: user.id, username: user.username });
+  } catch (e: unknown) {
+    const error = e as Error;
+    logger.error(error.message);
+    res.status(400).send(error.message);
+  }
+});
+
+// Test endpoint for authentication testing
 router.get("/test-auth", authenticate, async (req, res) => {
   try {
-    logger.info("User authenticated", new UserDTO(req.user as User));
-    res.status(200).send(req.user);
+    const user = req.user as User;
+    res.status(200).json({
+      id: user.id,
+      username: user.username,
+      display_name: user.display_name,
+      created_at: user.created_at
+    });
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Auth Endpoint</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        input,
+        button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Test Authenticated Endpoint</h1>
+
+        <!-- <h2>Enter Authentication Token</h2>
+        <input type="text" id="auth-token" placeholder="Authentication Token"> -->
+        <button onclick="testAuth()">Test /test-auth</button>
+        <button onclick="goToHome()">Go to Home</button>
+
+        <div id="response" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        const apiUrl = 'http://localhost:3000'; // Replace with your API base URL
+
+        async function testAuth() {
+            // const token = document.getElementById('auth-token').value;
+
+            const response = await fetch(`${apiUrl}/test-auth`, {
+                method: 'GET',
+                headers: {
+                    // 'Authorization': `Bearer ${token}`, // Include the token in the Authorization header
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+
+            const data = await response.json();
+            const log = `Response: ${response.status} - ${JSON.stringify(data)}`;
+            console.log(log);
+
+            document.getElementById('response').innerText = log
+        }
+
+        async function goToHome() {
+            window.location.href = '/';
+        }
+    </script>
+
+</body>
+
+</html>
