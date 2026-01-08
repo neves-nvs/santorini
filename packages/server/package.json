@@ -8,7 +8,7 @@
     "start": "node dist/main.js",
     "clean": "rm -r dist",
     "build": "tsc",
-    "postbuild": "rm -r dist/tests && mv dist/src/* dist && rm -r dist/src",
+    "postbuild": "rm -rf dist/tests && cp -r dist/src/* dist && rm -rf dist/src",
     "format": "prettier --write 'src/**/*.{js,ts,json}'",
     "lint": "eslint --fix",
     "migrate": "ts-node runMigrations.ts",
@@ -20,6 +20,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@santorini/game-engine": "file:../game-engine",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",

@@ -1,6 +1,6 @@
 // Hermes: If your Workers do not move up or down, they may each move any number of times (even zero), and then either builds.
 
-import { GameHook, GameContext } from '../gameEngine';
+import { GameHook, GameContext } from '../types';
 
 export class HermesHook implements GameHook {
   name = "Hermes";

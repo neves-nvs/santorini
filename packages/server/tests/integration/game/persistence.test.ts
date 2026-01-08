@@ -1,4 +1,5 @@
-import { createEmptyBoard, saveBoardState, loadBoardState } from "../../../src/game/boardState";
+import { createEmptyBoard } from "@santorini/game-engine";
+import { saveBoardState, loadBoardState } from "../../../src/game/boardState";
 import { getCurrentTurnState } from "../../../src/game/turnManager";
 import * as gameRepository from "../../../src/game/gameRepository";
 import { db } from "../../../src/database";

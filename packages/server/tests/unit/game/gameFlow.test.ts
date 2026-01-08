@@ -5,7 +5,7 @@ import {
   checkWinningMove,
   checkGameState
 } from "../../../src/game/gameController";
-import { createEmptyBoard } from "../../../src/game/boardState";
+import { createEmptyBoard } from "@santorini/game-engine";
 
 describe("Game Flow Integration", () => {
   describe("Placing to Moving Phase Transition", () => {

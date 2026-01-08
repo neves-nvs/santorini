@@ -1,6 +1,6 @@
 // Hera: An opponent cannot win by moving into a perimeter space.
 
-import { GameHook, Play, GameContext } from '../gameEngine';
+import { GameHook, Play, GameContext } from '../types';
 
 export class HeraHook implements GameHook {
   name = "Hera";

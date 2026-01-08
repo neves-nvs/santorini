@@ -1,6 +1,6 @@
 // Example of a turn-changing power card
 
-import { GameHook, GameContext } from '../../gameEngine';
+import { GameHook, GameContext } from '../../types';
 
 export class ExtraTurnHook implements GameHook {
   name = "ExtraTurn";

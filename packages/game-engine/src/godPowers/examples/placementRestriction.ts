@@ -1,6 +1,6 @@
 // Example of a placement restriction power
 
-import { GameHook, GameContext, Play } from '../../gameEngine';
+import { GameHook, GameContext, Play } from '../../types';
 
 export class PlacementRestrictionHook implements GameHook {
   name = "PlacementRestriction";

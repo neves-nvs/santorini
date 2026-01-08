@@ -75,7 +75,7 @@ describe("Game Controller - Placing Phase", () => {
     it("should exclude occupied positions when board state is provided", async () => {
       // Arrange
       const gameId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place some workers on the board
@@ -106,7 +106,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Act
@@ -120,7 +120,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place worker at center
@@ -145,7 +145,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place worker at ground level
@@ -171,7 +171,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place workers for both players
@@ -198,7 +198,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Act
@@ -212,7 +212,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place worker at center
@@ -245,7 +245,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place worker at center
@@ -280,7 +280,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place workers for both players
@@ -347,7 +347,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place worker at center
@@ -374,7 +374,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place worker at center
@@ -397,7 +397,7 @@ describe("Game Controller - Placing Phase", () => {
       // Arrange
       const gameId = 1;
       const playerId = 1;
-      const { createEmptyBoard } = require('../../../src/game/boardState');
+      const { createEmptyBoard } = require('@santorini/game-engine');
       const boardState = createEmptyBoard();
 
       // Place worker at center
@@ -428,7 +428,7 @@ describe("Game Controller - Placing Phase", () => {
       it("should return true for winning move (level 2 to level 3)", async () => {
         // Arrange
         const gameId = 1;
-        const { createEmptyBoard } = require('../../../src/game/boardState');
+        const { createEmptyBoard } = require('@santorini/game-engine');
         const boardState = createEmptyBoard();
 
         // Set up positions: from level 2, to level 3
@@ -445,7 +445,7 @@ describe("Game Controller - Placing Phase", () => {
       it("should return false for non-winning move", async () => {
         // Arrange
         const gameId = 1;
-        const { createEmptyBoard } = require('../../../src/game/boardState');
+        const { createEmptyBoard } = require('@santorini/game-engine');
         const boardState = createEmptyBoard();
 
         // Set up positions: from level 1, to level 2 (not winning)
@@ -464,7 +464,7 @@ describe("Game Controller - Placing Phase", () => {
       it("should return game over with winner when player has won", async () => {
         // Arrange
         const gameId = 1;
-        const { createEmptyBoard } = require('../../../src/game/boardState');
+        const { createEmptyBoard } = require('@santorini/game-engine');
         const boardState = createEmptyBoard();
 
         // Player 1 has worker on level 3 (winning position)
@@ -486,7 +486,7 @@ describe("Game Controller - Placing Phase", () => {
       it("should return game continues when no winner", async () => {
         // Arrange
         const gameId = 1;
-        const { createEmptyBoard } = require('../../../src/game/boardState');
+        const { createEmptyBoard } = require('@santorini/game-engine');
         const boardState = createEmptyBoard();
 
         // Place workers for both players, but none winning
@@ -510,7 +510,7 @@ describe("Game Controller - Placing Phase", () => {
       it("should return game over when player is blocked", async () => {
         // Arrange
         const gameId = 1;
-        const { createEmptyBoard } = require('../../../src/game/boardState');
+        const { createEmptyBoard } = require('@santorini/game-engine');
         const boardState = createEmptyBoard();
 
         // Player 1 has worker at center, completely surrounded
@@ -545,7 +545,7 @@ describe("Game Controller - Placing Phase", () => {
         // Arrange
         const gameId = 1;
         const playerId = 1;
-        const { createEmptyBoard } = require('../../../src/game/boardState');
+        const { createEmptyBoard } = require('@santorini/game-engine');
         const boardState = createEmptyBoard();
 
         // Place worker with space to move and build
@@ -563,7 +563,7 @@ describe("Game Controller - Placing Phase", () => {
         // Arrange
         const gameId = 1;
         const playerId = 1;
-        const { createEmptyBoard } = require('../../../src/game/boardState');
+        const { createEmptyBoard } = require('@santorini/game-engine');
         const boardState = createEmptyBoard();
 
         // Place worker completely surrounded
@@ -592,7 +592,7 @@ describe("Game Controller - Placing Phase", () => {
         // Arrange
         const gameId = 1;
         const playerId = 1;
-        const { createEmptyBoard } = require('../../../src/game/boardState');
+        const { createEmptyBoard } = require('@santorini/game-engine');
         const boardState = createEmptyBoard();
 
         // Place worker at (1,1)

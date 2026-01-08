@@ -1,0 +1,39 @@
+{
+  "name": "@santorini/game-engine",
+  "version": "0.1.0",
+  "description": "Core game engine for Santorini board game",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "santorini",
+    "board-game",
+    "game-engine",
+    "typescript"
+  ],
+  "author": "Diogo Neves",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^18.15.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neves-nvs/Santorini.git",
+    "directory": "packages/game-engine"
+  }
+}

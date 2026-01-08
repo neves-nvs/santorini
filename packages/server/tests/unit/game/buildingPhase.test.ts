@@ -1,5 +1,5 @@
-import { GameEngine, GameContext } from "../../../src/game/gameEngine";
-import { createEmptyBoard, BoardState } from "../../../src/game/boardState";
+import { GameEngine, GameContext } from "@santorini/game-engine";
+import { createEmptyBoard, BoardState } from "@santorini/game-engine";
 
 describe("Building Phase", () => {
   let gameEngine: GameEngine;
@@ -135,6 +135,7 @@ describe("Building Phase", () => {
       expect(moves).toContainEqual({
         type: "build_block",
         workerId: 1,
+        playerId: 1,
         position: { x: 1, y: 1 },
         fromWorkerPosition: { x: 2, y: 2 },
         buildingLevel: 1
@@ -144,6 +145,7 @@ describe("Building Phase", () => {
       expect(moves).toContainEqual({
         type: "build_block",
         workerId: 1,
+        playerId: 1,
         position: { x: 1, y: 2 },
         fromWorkerPosition: { x: 2, y: 2 },
         buildingLevel: 2
@@ -153,6 +155,7 @@ describe("Building Phase", () => {
       expect(moves).toContainEqual({
         type: "build_block",
         workerId: 1,
+        playerId: 1,
         position: { x: 2, y: 1 },
         fromWorkerPosition: { x: 2, y: 2 },
         buildingLevel: 3
@@ -170,6 +173,7 @@ describe("Building Phase", () => {
       expect(moves).toContainEqual({
         type: "build_dome",
         workerId: 1,
+        playerId: 1,
         position: { x: 3, y: 3 },
         fromWorkerPosition: { x: 2, y: 2 },
         buildingType: "dome"
@@ -195,6 +199,7 @@ describe("Building Phase", () => {
         expect(moves).toContainEqual({
           type: "build_block",
           workerId: 1,
+          playerId: 1,
           position: expectedPos,
           fromWorkerPosition: { x: 0, y: 0 },
           buildingLevel: 1
@@ -204,6 +209,7 @@ describe("Building Phase", () => {
         expect(moves).toContainEqual({
           type: "build_dome",
           workerId: 1,
+          playerId: 1,
           position: expectedPos,
           fromWorkerPosition: { x: 0, y: 0 },
           buildingType: "dome"

@@ -7,7 +7,7 @@ import { checkValidation, validateUUIDParam, validateIntParam } from "../middlew
 import { Router } from "express";
 import { User } from "../model";
 import { authenticate } from "../auth/authController";
-import { GameEngine, GameContext } from "./gameEngine";
+import { GameEngine, GameContext } from "@santorini/game-engine";
 
 import logger from "../logger";
 
@@ -150,7 +150,7 @@ export async function checkWinningMove(gameId: number, fromX: number, fromY: num
     boardState = await loadBoardState(gameId);
   }
 
-  const { isWinningMove } = require('./boardState');
+  const { isWinningMove } = require('@santorini/game-engine');
   return isWinningMove(boardState, fromX, fromY, toX, toY);
 }
 
@@ -170,7 +170,7 @@ export async function checkGameState(gameId: number, providedBoardState?: any) {
     game = await gameRepository.findGameById(gameId);
   }
 
-  const { checkGameWinner } = require('./boardState');
+  const { checkGameWinner } = require('@santorini/game-engine');
 
   // Check for winner
   const winner = checkGameWinner(boardState, game?.player_count || 2);
@@ -285,7 +285,7 @@ export async function checkPlayerBlocked(gameId: number, playerId: number, provi
  * This allows dynamic addition of game rules
  */
 export function addGodPower(godPowerName: string): boolean {
-  const { createGodPowerHook } = require('./godPowers');
+  const { createGodPowerHook } = require('@santorini/game-engine');
   const hook = createGodPowerHook(godPowerName);
 
   if (hook) {

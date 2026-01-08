@@ -1,6 +1,6 @@
 // Factory function to create god power hooks
 
-import { GameHook } from '../gameEngine';
+import { GameHook } from '../types';
 
 // Import all god powers
 import { ApolloHook } from './apollo';

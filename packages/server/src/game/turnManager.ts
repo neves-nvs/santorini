@@ -1,5 +1,5 @@
-import { GameContext } from './gameEngine';
-import { BoardState, loadBoardState, saveBoardState } from './boardState';
+import { GameContext, BoardState } from '@santorini/game-engine';
+import { loadBoardState, saveBoardState } from './boardState';
 import * as gameRepository from './gameRepository';
 import { 
   generatePlacingPhaseAvailablePlays,
@@ -297,7 +297,7 @@ async function applyMoveWorker(gameId: number, boardState: BoardState, move: any
   }
 
   // Check if this move is a winning move (level 2 → level 3)
-  const { isWinningMove } = await import('./boardState');
+  const { isWinningMove } = await import('@santorini/game-engine');
   const isWin = isWinningMove(boardState, fromPosition.x, fromPosition.y, position.x, position.y);
 
   // Remove worker from old position

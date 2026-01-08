@@ -1,5 +1,5 @@
-import { GameEngine, GameContext } from "../../../src/game/gameEngine";
-import { createEmptyBoard, BoardState } from "../../../src/game/boardState";
+import { GameEngine, GameContext } from "@santorini/game-engine";
+import { createEmptyBoard, BoardState } from "@santorini/game-engine";
 
 describe("Moving Phase", () => {
   let gameEngine: GameEngine;

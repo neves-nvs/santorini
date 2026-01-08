@@ -1,0 +1,33 @@
+{
+  "name": "santorini-monorepo",
+  "version": "0.1.0",
+  "description": "Santorini board game online implementation",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build:game-engine && npm run build:server",
+    "build:game-engine": "cd packages/game-engine && npm run build",
+    "build:server": "cd packages/server && npm run build",
+    "dev:server": "cd packages/server && npm run dev",
+    "test": "npm run test:game-engine && npm run test:server",
+    "test:game-engine": "cd packages/game-engine && npm test",
+    "test:server": "cd packages/server && npm test",
+    "clean": "npm run clean:game-engine && npm run clean:server",
+    "clean:game-engine": "cd packages/game-engine && npm run clean",
+    "clean:server": "cd packages/server && npm run clean",
+    "install:all": "npm install && cd packages/game-engine && npm install && cd ../server && npm install"
+  },
+  "keywords": [
+    "santorini",
+    "board-game",
+    "typescript",
+    "nodejs"
+  ],
+  "author": "Diogo Neves",
+  "license": "AGPL-3.0",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

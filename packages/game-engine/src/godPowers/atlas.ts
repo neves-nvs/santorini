@@ -1,7 +1,7 @@
 // Atlas - Titan Shouldering the Heavens
 // Power: Your Worker may build a dome at any level.
 
-import { GameHook, GameContext, Play } from '../gameEngine';
+import { GameHook, GameContext, Play } from '../types';
 
 export class AtlasHook implements GameHook {
   name = "Atlas";

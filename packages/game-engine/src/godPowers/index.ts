@@ -1,7 +1,7 @@
 // God Powers - Main exports
 // This file exports all god powers and provides the factory function
 
-export { GameHook } from '../gameEngine';
+export { GameHook } from '../types';
 
 // Individual god power exports
 export { ArtemisHook } from './artemis';
