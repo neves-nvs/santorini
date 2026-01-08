@@ -41,13 +41,14 @@ jobs:
       - name: Cache node modules
         uses: actions/cache@v4
         with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          path: packages/server/node_modules
+          key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('packages/server/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-
+            ${{ runner.os }}-node-${{ matrix.node-version }}-
 
       - name: Install dependencies
-        run: npm install
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
         working-directory: packages/server
 
       - name: Setup environment variables
@@ -62,5 +63,5 @@ jobs:
         working-directory: packages/server
 
       - name: Run tests for the server package
-        run: npm run test:integration --verbose -- --detectOpenHandles
+        run: npm run test:integration --verbose -- --detectOpenHandles --ci
         working-directory: packages/server
