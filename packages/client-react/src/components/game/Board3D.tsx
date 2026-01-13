@@ -115,10 +115,6 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
       y: number
       workerId: number
       type: string
-      buildingLevel?: number
-      buildingType?: string
-      moveType?: string
-      serverMoveObject?: unknown
     }> = []
 
     if (!Array.isArray(moves)) return positions
@@ -139,16 +135,11 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
       // User must click a worker first to see available moves
       else if (selectedWorkerId && move.workerId === selectedWorkerId) {
         for (const pos of move.validPositions) {
-          const posWithBuilding = pos as any
           positions.push({
             x: pos.x,
             y: pos.y,
             workerId: move.workerId,
-            type: move.type,
-            buildingLevel: posWithBuilding.buildingLevel,
-            buildingType: posWithBuilding.buildingType,
-            moveType: posWithBuilding.moveType,
-            serverMoveObject: posWithBuilding.serverMoveObject
+            type: move.type
           })
         }
       }
@@ -348,22 +339,21 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
       {/* Move Previews - Show valid placement/movement/building positions */}
       {validPositions.map((validPos) => {
         const [worldX, worldZ] = gridToWorldCoords(validPos.x, validPos.y)
-        const boardHeight = boardState[validPos.x][validPos.y].buildingLevel * BUILDING_HEIGHT
+        const currentBuildingLevel = boardState[validPos.x][validPos.y].buildingLevel
+        const boardHeight = currentBuildingLevel * BUILDING_HEIGHT
 
-        // Check if this is a building move with building information
-        const isBuildingMove = validPos.type === 'build_block' &&
-          ('buildingLevel' in validPos || 'buildingType' in validPos || 'moveType' in validPos)
+        // Check if this is a building move based on move type
+        const isBuildingMove = validPos.type === 'build_block' || validPos.type === 'build_dome'
 
         if (isBuildingMove) {
-          // Use BuildingPreview for building moves
-          const buildPos = validPos as any // Type assertion for building properties
+          // Derive building level from current board state: next level = current + 1
+          const nextBuildingLevel = currentBuildingLevel + 1
           return (
             <BuildingPreview
               key={`build-preview-${validPos.x}-${validPos.y}-${validPos.workerId}`}
               position={[worldX, boardHeight + 0.1, worldZ]}
-              buildingLevel={buildPos.buildingLevel}
-              buildingType={buildPos.buildingType}
-              moveType={buildPos.moveType}
+              buildingLevel={nextBuildingLevel}
+              moveType={validPos.type as 'build_block' | 'build_dome'}
               visible={true}
               onClick={() => {
                 console.log(`🔧 Building preview onClick callback triggered at (${validPos.x}, ${validPos.y}) for worker ${validPos.workerId}`)
