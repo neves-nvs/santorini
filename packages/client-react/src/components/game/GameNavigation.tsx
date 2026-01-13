@@ -18,19 +18,19 @@ const GameNavigation = memo(({ className, style }: GameNavigationProps) => {
   const gameId = useGameId()
 
   return (
-    <div 
+    <div
       className={className}
       style={{
         position: 'absolute',
-        top: '20px',
-        left: '20px',
+        top: 'clamp(10px, 2vw, 20px)',
+        left: 'clamp(10px, 2vw, 20px)',
         background: 'rgba(0, 0, 0, 0.8)',
         color: 'white',
-        padding: '1rem',
+        padding: 'clamp(0.5rem, 2vw, 1rem)',
         borderRadius: '8px',
-        fontSize: '0.9rem',
+        fontSize: 'clamp(0.75rem, 2vw, 0.9rem)',
         zIndex: 1000,
-        minWidth: '200px',
+        maxWidth: 'calc(50vw - 20px)',
         pointerEvents: 'auto', // Allow clicks on this component
         ...style
       }}

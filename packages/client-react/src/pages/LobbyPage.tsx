@@ -118,28 +118,32 @@ const LobbyPage = () => {
     <div className="page" style={{
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       color: 'white',
-      padding: '2rem'
+      padding: 'clamp(1rem, 4vw, 2rem)',
+      overflowY: 'auto'
     }}>
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{
           display: 'flex',
+          flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '3rem'
+          gap: '1rem',
+          marginBottom: 'clamp(1.5rem, 4vw, 3rem)'
         }}>
-          <h1 style={{ fontSize: '2.5rem', margin: 0 }}>Game Lobby</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div>
+          <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', margin: 0 }}>Game Lobby</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 'clamp(0.85rem, 2.5vw, 1rem)' }}>
               <strong>Player:</strong> {state.username}
             </div>
             <button onClick={handleLogout} style={{
               background: 'rgba(255, 255, 255, 0.2)',
               border: '1px solid white',
               color: 'white',
-              padding: '0.5rem 1rem',
+              padding: '0.4rem 0.75rem',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontSize: 'clamp(0.8rem, 2vw, 1rem)'
             }}>
               Logout
             </button>
@@ -160,18 +164,22 @@ const LobbyPage = () => {
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 'clamp(1rem, 3vw, 2rem)'
+        }}>
           {/* Create Game Section */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.1)',
-            padding: '2rem',
+            padding: 'clamp(1rem, 3vw, 2rem)',
             borderRadius: '12px',
             backdropFilter: 'blur(10px)'
           }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1.5rem' }}>Create New Game</h2>
+            <h2 style={{ marginTop: 0, marginBottom: '1rem' }}>Create New Game</h2>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '1.1rem' }}>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
                 Number of Players:
               </label>
               <select
@@ -179,7 +187,7 @@ const LobbyPage = () => {
                 onChange={(e) => setPlayerCount(Number(e.target.value))}
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: '0.6rem',
                   fontSize: '1rem',
                   borderRadius: '4px',
                   border: '1px solid #ccc',
@@ -197,8 +205,8 @@ const LobbyPage = () => {
               disabled={loading}
               style={{
                 width: '100%',
-                padding: '1rem',
-                fontSize: '1.1rem',
+                padding: '0.75rem',
+                fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
                 background: loading ? '#666' : '#4CAF50',
                 color: 'white',
                 border: 'none',
@@ -214,39 +222,42 @@ const LobbyPage = () => {
           {/* Join Game Section */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.1)',
-            padding: '2rem',
+            padding: 'clamp(1rem, 3vw, 2rem)',
             borderRadius: '12px',
             backdropFilter: 'blur(10px)'
           }}>
             <div style={{
               display: 'flex',
+              flexWrap: 'wrap',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '1.5rem'
+              gap: '0.5rem',
+              marginBottom: '1rem'
             }}>
               <h2 style={{ margin: 0 }}>Available Games</h2>
               <button
                 onClick={handleRefreshGames}
                 disabled={loading}
                 style={{
-                  padding: '0.5rem 1rem',
+                  padding: '0.4rem 0.75rem',
                   background: 'rgba(255, 255, 255, 0.2)',
                   border: '1px solid white',
                   color: 'white',
                   borderRadius: '4px',
-                  cursor: loading ? 'not-allowed' : 'pointer'
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontSize: 'clamp(0.8rem, 2vw, 1rem)'
                 }}
               >
-                {loading ? 'Refreshing...' : 'Refresh'}
+                {loading ? '...' : 'Refresh'}
               </button>
             </div>
 
             <div style={{
-              maxHeight: '300px',
+              maxHeight: 'clamp(200px, 40vh, 300px)',
               overflowY: 'auto',
               border: '1px solid rgba(255, 255, 255, 0.3)',
               borderRadius: '8px',
-              padding: '1rem'
+              padding: '0.75rem'
             }}>
               {availableGames.length === 0 ? (
                 <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>

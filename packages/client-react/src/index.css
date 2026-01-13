@@ -71,9 +71,35 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
-  
+
   button {
     background-color: #f9f9f9;
     color: #213547;
+  }
+}
+
+/* Mobile-first responsive utilities */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  button {
+    padding: 0.5em 1em;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.1rem;
   }
 }
