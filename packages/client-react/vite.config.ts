@@ -20,6 +20,18 @@ export default defineConfig({
   server: {
     port: 5174, // Different port from the original client
     host: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/ws': {
+        target: 'ws://localhost:3000',
+        ws: true,
+        rewrite: (path) => path.replace(/^\/ws/, ''),
+      },
+    },
   },
   build: {
     outDir: 'dist',

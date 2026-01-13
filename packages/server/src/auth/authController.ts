@@ -99,7 +99,6 @@ router.post(
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
-        domain: "localhost"
       });
       res.status(200).send("OK");
     } catch (err) {
@@ -116,7 +115,6 @@ router.post("/logout", (req: Request, res: Response) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     path: "/",
-    domain: "localhost"
   });
   res.status(200).json({ message: "Logged out successfully" });
 });

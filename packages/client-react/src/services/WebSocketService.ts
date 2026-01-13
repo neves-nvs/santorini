@@ -20,9 +20,20 @@ function isPlayerGameView(view: GameStateUpdatePayload['state']): view is Player
 
 export type WebSocketEventHandler = (message: WebSocketMessage) => void
 
+function getWebSocketUrl(): string {
+  const envUrl = import.meta.env.VITE_WS_URL
+  if (envUrl && !envUrl.startsWith('/')) {
+    return envUrl
+  }
+  // Construct WebSocket URL from current host (for proxy setup)
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const path = envUrl || '/ws'
+  return `${protocol}//${window.location.host}${path}`
+}
+
 export class WebSocketService {
   private socket: WebSocket | null = null
-  private serverAddress = 'ws://localhost:3000'
+  private serverAddress = getWebSocketUrl()
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = RECONNECTION_DELAY
