@@ -30,7 +30,6 @@ Block.displayName = 'Block'
 interface WorkerProps {
   playerId: number
   position: [number, number, number]
-  gameState?: any // Add gameState to get player order
   canMove?: boolean // Whether this worker can move
   isSelected?: boolean // Whether this worker is selected
   onClick?: () => void // Click handler for worker selection
@@ -39,7 +38,6 @@ interface WorkerProps {
 export const Worker: React.FC<WorkerProps> = ({
   playerId,
   position,
-  gameState,
   canMove = false,
   isSelected = false,
   onClick
@@ -47,28 +45,9 @@ export const Worker: React.FC<WorkerProps> = ({
   // Use centralized player colors
   const colors = PLAYER_COLORS
 
-  // Get player order from game state to ensure consistent coloring
-  let colorIndex = 0
-  if (gameState?.players && Array.isArray(gameState.players)) {
-    // Players array contains objects, need to find by ID
-    colorIndex = gameState.players.findIndex((player: any) =>
-      (typeof player === 'object' ? player.id || player.userId : player) === playerId
-    )
-    if (colorIndex === -1) {
-      // Fallback: use playerId directly
-      colorIndex = (playerId - 1) % colors.length
-    }
-  } else {
-    // Fallback: use playerId directly
-    colorIndex = (playerId - 1) % colors.length
-  }
-
+  // Simple color mapping based on playerId
+  const colorIndex = (playerId - 1) % colors.length
   const selectedColor = colors[colorIndex] || colors[0]
-
-  // Debug logging (can be removed in production)
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`🎨 Rendering worker for playerId ${playerId}, colorIndex ${colorIndex}, color ${selectedColor}`)
-  }
 
   return (
     <group

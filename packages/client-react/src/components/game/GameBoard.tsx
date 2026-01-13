@@ -1,9 +1,8 @@
-import React, { Suspense, useEffect } from 'react'
+import React, { Suspense, useEffect, memo } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { PerspectiveCamera } from 'three'
 import Board3D from './Board3D'
-import { GameState } from '../../types/game'
 
 interface DebugState {
   showAxis: boolean
@@ -15,7 +14,6 @@ interface DebugState {
 }
 
 interface GameBoardProps {
-  gameState: GameState
   debugState?: DebugState
   onCellClick?: (x: number, y: number) => void
 }
@@ -71,7 +69,7 @@ const CameraResizer: React.FC = () => {
   return null
 }
 
-const GameBoard: React.FC<GameBoardProps> = ({ gameState, debugState, onCellClick }) => {
+const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick }) => {
   return (
     <div style={{
       width: '100vw',
@@ -119,7 +117,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, debugState, onCellClic
 
           {/* 3D Board */}
           <Board3D
-            gameState={gameState}
             debugState={debugState}
             onCellClick={onCellClick}
           />
@@ -137,6 +134,6 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, debugState, onCellClic
       </Canvas>
     </div>
   )
-}
+})
 
 export default GameBoard

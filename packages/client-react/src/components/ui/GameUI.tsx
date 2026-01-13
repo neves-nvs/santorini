@@ -30,13 +30,8 @@ const GameUI = memo(() => {
 
   return (
     <div style={{ pointerEvents: 'none' }}> {/* Don't block 3D board interactions */}
-      {/* Full-screen 3D Game Board */}
-      {gameState && (
-        <GameBoard
-          gameState={gameState}
-          debugState={debugState}
-        />
-      )}
+      {/* Full-screen 3D Game Board - always mounted, reads state from store */}
+      <GameBoard debugState={debugState} />
 
       {/* Persistent Navigation */}
       <GameNavigation />

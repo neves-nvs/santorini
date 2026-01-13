@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import DebugAxis from './DebugAxis'
 import { BoardBase, Block, Worker, Cell, BoundingBox, MovePreview, BuildingPreview } from './GamePieces'
-import { BoardState, createEmptyBoard, createSampleBoard, gridToWorldCoords } from './board-types'
+import { BoardState, createEmptyBoard, gridToWorldCoords } from './board-types'
 import { webSocketClient } from '../../services/WebSocketClient'
-import { GameState as ServerGameState } from '../../types/game'
-import { useApp } from '../../store/AppContext'
 import {
   useSelectedWorker,
   useSetSelectedWorker
 } from '../../store/gameSelectors'
 import { useGameStore } from '../../store/gameStore'
-import { BOARD_SIZE, BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '../../constants/gameConstants'
-import { measureOperation, useRenderTracker } from '../../utils/performanceMonitor'
+import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '../../constants/gameConstants'
+import { useRenderTracker } from '../../utils/performanceMonitor'
 
 interface DebugState {
   showAxis: boolean
@@ -23,66 +21,8 @@ interface DebugState {
 }
 
 interface Board3DProps {
-  gameState: ServerGameState
   debugState?: DebugState
   onCellClick?: (x: number, y: number) => void
-}
-
-/**
- * Convert server board format to our BoardState format
- * Server sends: { cells: CellView[][] } where CellView = { height, hasDome, worker: { playerId, workerId } | null }
- */
-const parseServerBoard = (serverBoard: any): BoardState => {
-  const boardState: BoardState = []
-
-  // Initialize board
-  for (let x = 0; x < BOARD_SIZE; x++) {
-    boardState[x] = []
-    for (let y = 0; y < BOARD_SIZE; y++) {
-      boardState[x][y] = {
-        buildingLevel: 0,
-        worker: null
-      }
-    }
-  }
-
-  // Parse current server format: { cells: CellView[][] }
-  if (serverBoard?.cells && Array.isArray(serverBoard.cells)) {
-    for (let x = 0; x < BOARD_SIZE; x++) {
-      for (let y = 0; y < BOARD_SIZE; y++) {
-        const cell = serverBoard.cells[x]?.[y]
-        if (cell) {
-          // Server sends height (0-3) + hasDome. Convert to buildingLevel 0-4
-          const height = cell.height || 0
-          boardState[x][y] = {
-            buildingLevel: cell.hasDome ? height + 1 : height,
-            worker: cell.worker ? {
-              playerId: cell.worker.playerId,
-              workerId: cell.worker.workerId
-            } : null
-          }
-        }
-      }
-    }
-  }
-  // Legacy format: { spaces: [{x, y, height, workers}] }
-  else if (serverBoard?.spaces && Array.isArray(serverBoard.spaces)) {
-    for (const space of serverBoard.spaces) {
-      const { x, y, height, workers } = space
-
-      if (x >= 0 && x < 5 && y >= 0 && y < 5) {
-        boardState[x][y] = {
-          buildingLevel: height || 0,
-          worker: workers && workers.length > 0 ? {
-            playerId: workers[0].playerId,
-            workerId: workers[0].workerId
-          } : null
-        }
-      }
-    }
-  }
-
-  return boardState
 }
 
 /**
@@ -90,18 +30,25 @@ const parseServerBoard = (serverBoard: any): BoardState => {
  * Renders the Santorini game board with STL models
  */
 const Board3D: React.FC<Board3DProps> = React.memo(({
-  gameState,
   debugState,
   onCellClick
 }) => {
 
-  const [boardState, setBoardState] = useState<BoardState>(() => createEmptyBoard())
+  // Subscribe to optimized board state from store (already parsed)
+  const storeBoardState = useGameStore(state => state.boardState)
+  const currentPlayerId = useGameStore(state => state.gameState?.currentPlayerId)
+
+  // Convert store board format to local BoardState format (or use sample/empty)
+  const boardState = useMemo<BoardState>(() => {
+    if (storeBoardState?.cells) {
+      return storeBoardState.cells
+    }
+    return createEmptyBoard()
+  }, [storeBoardState])
 
   // Zustand selectors for optimized re-renders (stable references)
   const selectedWorker = useSelectedWorker()
-
   const setSelectedWorker = useSetSelectedWorker()
-  const { state: appState } = useApp()
 
   // Get all current player moves and compute valid positions manually to avoid unstable selectors
   const currentPlayerMoves = useGameStore(state => state.currentPlayerMoves)
@@ -148,24 +95,13 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     return positions
   }, [currentPlayerMoves, selectedWorker?.workerId])
 
-  // Memoize current player ID to prevent unnecessary recalculations
-  const currentPlayerId = useMemo(() => {
-    const currentUsername = appState.username
-    const currentPlayerObj = gameState?.players?.find((player: any) =>
-      (player.username || player.name) === currentUsername
-    )
-    return typeof currentPlayerObj === 'object' ? currentPlayerObj?.id : currentPlayerObj
-  }, [appState.username, gameState?.players])
-
-  // Valid positions are now handled by Zustand selector (already computed above as 'validPositions')
-
   // Handle worker click for selection
   const handleWorkerClick = (workerId: number, playerId: number, x: number, y: number) => {
     console.log(`🎯 Worker ${workerId} (player ${playerId}) clicked at (${x}, ${y})`)
 
     // Only allow selecting current player's workers
-    if (playerId !== gameState?.currentPlayerId) {
-      console.log(`🎯 Not current player's worker (current: ${gameState?.currentPlayerId})`)
+    if (playerId !== currentPlayerId) {
+      console.log(`🎯 Not current player's worker (current: ${currentPlayerId})`)
       return
     }
 
@@ -194,33 +130,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
   }
 
   // Track component renders for performance monitoring
-  useRenderTracker('Board3D', [gameState?.board, debugState?.useSampleBoard])
-
-  // Memoize board state parsing to avoid expensive recalculations
-  const parsedBoardState = useMemo(() => {
-    return measureOperation('Board3D.parseServerBoard', () => {
-      // Check if debug option to use sample board is enabled
-      if (debugState?.useSampleBoard) {
-        console.log('Using sample board (debug mode)')
-        return createSampleBoard()
-      }
-
-      if (gameState?.board) {
-        // Convert server board format to our BoardState format
-        return parseServerBoard(gameState.board)
-      } else {
-        return createEmptyBoard()
-      }
-    }, {
-      boardCells: gameState?.board?.cells?.length,
-      debugMode: debugState?.useSampleBoard
-    })
-  }, [gameState?.board, debugState?.useSampleBoard]) // Only re-parse when board data or debug state changes
-
-  // Update board state when parsed state changes
-  useEffect(() => {
-    setBoardState(parsedBoardState)
-  }, [parsedBoardState])
+  useRenderTracker('Board3D', [storeBoardState, debugState?.useSampleBoard])
 
   const handleCellClick = (gridX: number, gridZ: number) => {
     console.log(`🔧 handleCellClick called: grid(${gridX}, ${gridZ})`)
@@ -409,7 +319,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
               {/* Worker */}
               {cell.worker && (() => {
                 // Check if this worker belongs to current player AND has available moves
-                const isCurrentPlayersWorker = cell.worker!.playerId === gameState?.currentPlayerId
+                const isCurrentPlayersWorker = cell.worker!.playerId === currentPlayerId
                 const workerHasMoves = isCurrentPlayersWorker && currentPlayerMoves.some(move =>
                   (move.type === 'move_worker' || move.type === 'build_block' || move.type === 'build_dome') &&
                   move.workerId === cell.worker!.workerId
@@ -422,7 +332,6 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
                   <Worker
                     playerId={cell.worker.playerId}
                     position={[worldX, cell.buildingLevel * BUILDING_HEIGHT + WORKER_HEIGHT_OFFSET, worldZ]}
-                    gameState={gameState}
                     canMove={workerHasMoves}
                     isSelected={isSelected}
                     onClick={() => handleWorkerClick(cell.worker!.workerId, cell.worker!.playerId, gridX, gridZ)}

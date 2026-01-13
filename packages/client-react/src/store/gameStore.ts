@@ -84,8 +84,10 @@ const parseServerBoardToOptimized = (serverBoard: BoardView): OptimizedBoardStat
       for (let y = 0; y < 5; y++) {
         const cell = serverBoard.cells[x]?.[y]
         if (cell) {
+          // Server sends height (0-3) + hasDome. Convert to buildingLevel 0-4
+          const height = cell.height || 0
           cells[x][y] = {
-            buildingLevel: cell.height || 0,
+            buildingLevel: cell.hasDome ? height + 1 : height,
             worker: cell.worker ? {
               playerId: cell.worker.playerId,
               workerId: cell.worker.workerId
@@ -158,12 +160,24 @@ export const useGameStore = create<GameStore>()(
         })
         return
       }
-      const optimizedBoard = gameState.board ? parseServerBoardToOptimized(gameState.board) : null
-      const indices = optimizedBoard ? buildWorkerIndices(optimizedBoard) : { workersByPosition: new Map(), workersByPlayer: new Map() }
+
+      const currentState = get()
+
+      // Only reparse board if it actually changed
+      let boardState = currentState.boardState
+      let indices = { workersByPosition: currentState.workersByPosition, workersByPlayer: currentState.workersByPlayer }
+
+      const boardChanged = !currentState.gameState?.board ||
+        JSON.stringify(currentState.gameState.board) !== JSON.stringify(gameState.board)
+
+      if (boardChanged && gameState.board) {
+        boardState = parseServerBoardToOptimized(gameState.board)
+        indices = buildWorkerIndices(boardState)
+      }
 
       set({
         gameState,
-        boardState: optimizedBoard,
+        boardState,
         workersByPosition: indices.workersByPosition,
         workersByPlayer: indices.workersByPlayer
       })
