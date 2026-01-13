@@ -10,7 +10,7 @@ interface BlockProps {
   isPreview?: boolean
 }
 
-export const Block: React.FC<BlockProps> = ({ type, position, isPreview = false }) => {
+export const Block: React.FC<BlockProps> = React.memo(({ type, position, isPreview = false }) => {
   return (
     <STLPiece
       type={type}
@@ -22,7 +22,9 @@ export const Block: React.FC<BlockProps> = ({ type, position, isPreview = false 
       receiveShadow={!isPreview}
     />
   )
-}
+})
+
+Block.displayName = 'Block'
 
 // Worker/Builder Component
 interface WorkerProps {
@@ -248,9 +250,8 @@ interface MovePreviewProps {
 // Building Preview Component - Shows what building will be constructed
 interface BuildingPreviewProps {
   position: [number, number, number]
-  buildingLevel?: number
-  buildingType?: string
-  moveType?: 'build_block' | 'build_dome'
+  buildingLevel: number  // 1-4: next level to be built (derived from board state)
+  moveType: 'build_block' | 'build_dome'
   visible: boolean
   onClick?: () => void
 }
@@ -314,23 +315,20 @@ export const MovePreview: React.FC<MovePreviewProps> = ({ position, workerId: _w
 export const BuildingPreview: React.FC<BuildingPreviewProps> = ({
   position,
   buildingLevel,
-  buildingType,
   moveType,
   visible,
   onClick
 }) => {
-  console.log('🔧 BuildingPreview rendering:', { position, buildingLevel, buildingType, moveType, visible })
-
   if (!visible) return null
 
-  const isDome = moveType === 'build_dome' || buildingType === 'dome'
-  const level = buildingLevel || 1
+  const isDome = moveType === 'build_dome'
+  // Map buildingLevel (1-4) to block type: 1=base, 2=mid, 3=top, 4=dome
+  const blockType = buildingLevel === 1 ? 'base' : buildingLevel === 2 ? 'mid' : 'top'
 
   return (
     <group
       position={position}
       onClick={(e) => {
-        console.log('🔧 BuildingPreview group clicked!')
         e.stopPropagation()
         onClick?.()
       }}
@@ -344,21 +342,11 @@ export const BuildingPreview: React.FC<BuildingPreviewProps> = ({
       }}
     >
       {/* Render actual building geometry as preview */}
-      {isDome ? (
-        // Dome preview - use actual dome geometry
-        <Block
-          type="dome"
-          position={[0, 0, 0]}
-          isPreview={true}
-        />
-      ) : (
-        // Block preview - use actual block geometry
-        <Block
-          type={level === 1 ? 'base' : level === 2 ? 'mid' : 'top'}
-          position={[0, 0, 0]}
-          isPreview={true}
-        />
-      )}
+      <Block
+        type={isDome ? 'dome' : blockType}
+        position={[0, 0, 0]}
+        isPreview={true}
+      />
 
       {/* Glowing base ring to indicate it's a preview */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>

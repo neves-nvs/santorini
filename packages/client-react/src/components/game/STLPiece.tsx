@@ -1,8 +1,8 @@
-import React, { useRef, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useLoader } from '@react-three/fiber'
 // @ts-expect-error - STLLoader types not available
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
-import { Mesh, Vector3 } from 'three'
+import { Vector3 } from 'three'
 import { configs, PieceType } from './stl-config'
 
 interface STLPieceProps {
@@ -18,8 +18,11 @@ interface STLPieceProps {
 /**
  * Base STL Piece component that handles loading and positioning of STL models
  * Applies the exact transformation settings from the original client
+ *
+ * IMPORTANT: All transformations (scale, rotation, position offset) are computed
+ * synchronously in useMemo to prevent flickering from post-render updates.
  */
-const STLPiece: React.FC<STLPieceProps> = ({
+const STLPiece: React.FC<STLPieceProps> = React.memo(({
   type,
   position,
   color = "white",
@@ -29,43 +32,41 @@ const STLPiece: React.FC<STLPieceProps> = ({
   receiveShadow = false
 }) => {
   const originalGeometry = useLoader(STLLoader, configs[type].file)
-  const meshRef = useRef<Mesh>(null)
 
-  // Clone geometry and center it to ensure each instance is independent and properly positioned
+  // Clone and transform geometry synchronously to prevent flickering
+  // Only re-compute when geometry or type changes (not position/color)
   const geometry = useMemo(() => {
     const clonedGeometry = originalGeometry.clone()
+    const config = configs[type]
 
-    // Center the geometry around the origin for consistent positioning
-    // Use computeBoundingBox instead of setFromObject for raw geometry
+    // Center the geometry around the origin
     clonedGeometry.computeBoundingBox()
     if (clonedGeometry.boundingBox) {
       const center = clonedGeometry.boundingBox.getCenter(new Vector3())
       clonedGeometry.translate(-center.x, -center.y, -center.z)
-
-      // Geometry centered for proper positioning
     }
+    clonedGeometry.center()
+
+    // Apply rotation directly to geometry (baked in)
+    clonedGeometry.rotateX(config.x_rotation)
+
+    // Apply scale directly to geometry (baked in)
+    clonedGeometry.scale(config.scale, config.scale, config.scale)
 
     return clonedGeometry
-  }, [originalGeometry, position, color, type]) // Re-clone when position or color changes
-  
-  useEffect(() => {
-    if (meshRef.current && meshRef.current.geometry) {
-      const config = configs[type]
+  }, [originalGeometry, type])
 
-      // Center the geometry first (like original client does)
-      meshRef.current.geometry.center()
-
-      // Apply settings exactly like original applyImportSettings function
-      meshRef.current.rotation.x = config.x_rotation
-      meshRef.current.position.y = position[1] + config.y_offset // Add offset to base position
-      meshRef.current.scale.set(config.scale, config.scale, config.scale)
-    }
-  }, [type, position])
+  // Compute final position with y_offset
+  const config = configs[type]
+  const finalPosition: [number, number, number] = [
+    position[0],
+    position[1] + config.y_offset,
+    position[2]
+  ]
 
   return (
     <mesh
-      ref={meshRef}
-      position={[position[0], position[1], position[2]]} // Base position
+      position={finalPosition}
       geometry={geometry}
       castShadow={castShadow}
       receiveShadow={receiveShadow}
@@ -74,12 +75,11 @@ const STLPiece: React.FC<STLPieceProps> = ({
         color={color}
         transparent={transparent}
         opacity={opacity}
-        onUpdate={() => {
-          // Material updated
-        }}
       />
     </mesh>
   )
-}
+})
+
+STLPiece.displayName = 'STLPiece'
 
 export default STLPiece
