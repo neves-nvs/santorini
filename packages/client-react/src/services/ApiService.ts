@@ -147,6 +147,11 @@ export class ApiService {
     return this.request<GameInfo[]>('/games')
   }
 
+  async getMyGames(): Promise<GameInfo[]> {
+    // Get games where the current user is a player
+    return this.request<GameInfo[]>('/games/my')
+  }
+
   async createGame(gameData: CreateGameRequest): Promise<any> {
     return this.request<any>('/games', {
       method: 'POST',

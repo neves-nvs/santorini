@@ -46,6 +46,18 @@ export class LobbyService {
   }
 
   /**
+   * Find games where the user is a player (any status - waiting, in_progress, finished)
+   */
+  async findMyGames(userId: number): Promise<Game[]> {
+    logger.info(`Finding games for user ${userId}`);
+
+    const games = await this.gameRepository.findByPlayer(userId);
+
+    logger.info(`Found ${games.length} games for user ${userId}`);
+    return games;
+  }
+
+  /**
    * Find a specific game by ID
    */
   async findGame(gameId: number): Promise<Game | null> {

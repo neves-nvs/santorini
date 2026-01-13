@@ -97,7 +97,7 @@ const GameNavigation = memo(({ className, style }: GameNavigationProps) => {
             e.currentTarget.style.backgroundColor = 'rgba(33, 150, 243, 0.1)'
           }}
         >
-          🏠 Home
+          Home
         </Link>
       </div>
     </div>

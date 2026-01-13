@@ -1,4 +1,5 @@
 import { useState, memo } from 'react'
+import type { CameraType } from '../game/GameBoard'
 
 // Debug state interface
 export interface DebugState {
@@ -14,6 +15,8 @@ export interface DebugState {
 interface DebugMenuProps {
   debugState: DebugState
   onDebugChange: (key: keyof DebugState, value: boolean) => void
+  cameraType: CameraType
+  onToggleCamera: () => void
   gameContext: any
   isConnected: boolean
 }
@@ -22,7 +25,7 @@ interface DebugMenuProps {
  * Debug menu for development - only shown in debug builds
  * Provides controls for various debug visualizations
  */
-const DebugMenu = memo(({ debugState, onDebugChange, gameContext, isConnected }: DebugMenuProps) => {
+const DebugMenu = memo(({ debugState, onDebugChange, cameraType, onToggleCamera, gameContext, isConnected }: DebugMenuProps) => {
   const [isOpen, setIsOpen] = useState(false)
 
   // Only show in development
@@ -30,27 +33,31 @@ const DebugMenu = memo(({ debugState, onDebugChange, gameContext, isConnected }:
     return null
   }
 
+  const panelWidth = 200
+
   return (
     <div style={{
       position: 'fixed',
-      left: isOpen ? '10px' : '-180px',
+      left: isOpen ? '0' : `-${panelWidth}px`,
       top: '50%',
       transform: 'translateY(-50%)',
-      background: 'rgba(0, 0, 0, 0.9)',
-      color: 'white',
-      borderRadius: '0 8px 8px 0',
-      fontSize: '12px',
+      display: 'flex',
+      alignItems: 'center',
       zIndex: 10000,
       transition: 'left 0.3s ease-in-out',
-      display: 'flex',
-      alignItems: 'center'
+      pointerEvents: 'auto'
     }}>
-      {/* Expandable content */}
+      {/* Panel */}
       <div style={{
+        width: `${panelWidth}px`,
         padding: '15px',
-        width: '180px',
         maxHeight: '80vh',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        background: 'rgba(0, 0, 0, 0.9)',
+        color: 'white',
+        fontSize: '12px',
+        boxSizing: 'border-box',
+        pointerEvents: 'auto'
       }}>
         <h4 style={{ margin: '0 0 10px 0', color: '#4CAF50' }}>Debug Menu</h4>
         
@@ -61,10 +68,29 @@ const DebugMenu = memo(({ debugState, onDebugChange, gameContext, isConnected }:
           </span>
         </div>
 
+        {/* Camera Toggle */}
+        <button
+          onClick={onToggleCamera}
+          style={{
+            width: '100%',
+            padding: '6px 8px',
+            marginBottom: '10px',
+            background: '#2196F3',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '11px',
+            pointerEvents: 'auto'
+          }}
+        >
+          Camera: {cameraType === 'orthographic' ? 'Ortho' : 'Persp'} (C)
+        </button>
+
         {/* Debug Controls */}
         {Object.entries(debugState).map(([key, value]) => (
-          <label key={key} style={{ 
-            display: 'block', 
+          <label key={key} style={{
+            display: 'block',
             marginBottom: '8px',
             cursor: 'pointer',
             fontSize: '11px'
@@ -110,7 +136,9 @@ const DebugMenu = memo(({ debugState, onDebugChange, gameContext, isConnected }:
           borderRadius: '0 8px 8px 0',
           fontSize: '12px',
           writingMode: 'vertical-rl',
-          textOrientation: 'mixed'
+          textOrientation: 'mixed',
+          pointerEvents: 'auto',
+          flexShrink: 0
         }}
       >
         DEBUG

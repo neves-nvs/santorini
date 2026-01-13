@@ -1,7 +1,9 @@
 import React from 'react'
-import * as THREE from 'three'
 import STLPiece from './STLPiece'
 import { PLAYER_COLORS } from '../../constants/gameConstants'
+
+// Building colors
+const DOME_COLOR = '#1E5F8A' // Marine blue
 
 // Building Block Component
 interface BlockProps {
@@ -11,11 +13,14 @@ interface BlockProps {
 }
 
 export const Block: React.FC<BlockProps> = React.memo(({ type, position, isPreview = false }) => {
+  // Dome gets marine blue, other blocks are white
+  const baseColor = type === 'dome' ? DOME_COLOR : 'white'
+
   return (
     <STLPiece
       type={type}
       position={position}
-      color={isPreview ? "#4A90E2" : "white"}
+      color={isPreview ? "#4A90E2" : baseColor}
       transparent={isPreview}
       opacity={isPreview ? 0.6 : 1.0}
       castShadow={!isPreview}
@@ -162,58 +167,68 @@ interface BoundingBoxProps {
   visible: boolean
 }
 
-export const BoundingBox: React.FC<BoundingBoxProps> = ({ position, blockLevel, visible }) => {
-  if (!visible) return null
-
-  // Calculate height based on block level (each level is 0.5 units apart)
+// Single block bounding box
+const SingleBlockBoundingBox: React.FC<{ yOffset: number; color: string }> = ({ yOffset, color }) => {
   const blockHeight = 0.5
-  const totalHeight = blockLevel * blockHeight
 
   return (
-    <group position={position}>
-      {/* Bottom surface (at ground level) */}
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial
-          color="yellow"
-          transparent
-          opacity={0.3}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Top surface (at calculated block height) */}
-      <mesh position={[0, totalHeight, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial
-          color="orange"
-          transparent
-          opacity={0.3}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Vertical edges of bounding box */}
+    <group position={[0, yOffset, 0]}>
+      {/* Vertical edges */}
       {[
-        [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]
+        [-0.475, -0.475], [0.475, -0.475], [0.475, 0.475], [-0.475, 0.475]
       ].map((corner, index) => (
-        <mesh key={index} position={[corner[0], totalHeight / 2, corner[1]]}>
-          <boxGeometry args={[0.02, totalHeight, 0.02]} />
-          <meshBasicMaterial color="red" transparent opacity={0.6} />
+        <mesh key={index} position={[corner[0], blockHeight / 2, corner[1]]}>
+          <boxGeometry args={[0.04, blockHeight, 0.04]} />
+          <meshBasicMaterial color={color} depthTest={false} />
         </mesh>
       ))}
 
-      {/* Horizontal outline at bottom */}
-      <lineSegments position={[0, 0.01, 0]}>
-        <edgesGeometry args={[new THREE.PlaneGeometry(1, 1)]} />
-        <lineBasicMaterial color="yellow" />
-      </lineSegments>
+      {/* Bottom edges */}
+      {[
+        { pos: [0, 0.02, -0.475], size: [0.95, 0.04, 0.04] },
+        { pos: [0, 0.02, 0.475], size: [0.95, 0.04, 0.04] },
+        { pos: [-0.475, 0.02, 0], size: [0.04, 0.04, 0.95] },
+        { pos: [0.475, 0.02, 0], size: [0.04, 0.04, 0.95] },
+      ].map((edge, index) => (
+        <mesh key={`bottom-${index}`} position={edge.pos as [number, number, number]}>
+          <boxGeometry args={edge.size as [number, number, number]} />
+          <meshBasicMaterial color={color} depthTest={false} />
+        </mesh>
+      ))}
 
-      {/* Horizontal outline at top */}
-      <lineSegments position={[0, totalHeight + 0.01, 0]}>
-        <edgesGeometry args={[new THREE.PlaneGeometry(1, 1)]} />
-        <lineBasicMaterial color="orange" />
-      </lineSegments>
+      {/* Top edges */}
+      {[
+        { pos: [0, blockHeight, -0.475], size: [0.95, 0.04, 0.04] },
+        { pos: [0, blockHeight, 0.475], size: [0.95, 0.04, 0.04] },
+        { pos: [-0.475, blockHeight, 0], size: [0.04, 0.04, 0.95] },
+        { pos: [0.475, blockHeight, 0], size: [0.04, 0.04, 0.95] },
+      ].map((edge, index) => (
+        <mesh key={`top-${index}`} position={edge.pos as [number, number, number]}>
+          <boxGeometry args={edge.size as [number, number, number]} />
+          <meshBasicMaterial color={color} depthTest={false} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+// Colors for each block level
+const BLOCK_COLORS = ['#00ff00', '#ffff00', '#ff8800', '#ff0000'] // green, yellow, orange, red
+
+export const BoundingBox: React.FC<BoundingBoxProps> = ({ position, blockLevel, visible }) => {
+  if (!visible) return null
+
+  const blockHeight = 0.5
+
+  return (
+    <group position={position}>
+      {Array.from({ length: blockLevel }, (_, i) => (
+        <SingleBlockBoundingBox
+          key={i}
+          yOffset={i * blockHeight}
+          color={BLOCK_COLORS[i] || BLOCK_COLORS[BLOCK_COLORS.length - 1]}
+        />
+      ))}
     </group>
   )
 }

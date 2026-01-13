@@ -4,6 +4,8 @@ import { useApp } from '../store/AppContext'
 import { apiService } from '../services/ApiService'
 import { GameInfo } from '../types/game'
 
+type GameTab = 'available' | 'my-games'
+
 const LobbyPage = () => {
   const { state, logout } = useApp()
   const navigate = useNavigate()
@@ -13,6 +15,8 @@ const LobbyPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false)
 
   const [availableGames, setAvailableGames] = useState<GameInfo[]>([])
+  const [myGames, setMyGames] = useState<GameInfo[]>([])
+  const [activeTab, setActiveTab] = useState<GameTab>('available')
   const [playerCount, setPlayerCount] = useState(2)
 
   useEffect(() => {
@@ -83,10 +87,14 @@ const LobbyPage = () => {
     setError('')
 
     try {
-      // Single request that returns games with player counts included
-      const games = await apiService.getGamesWithPlayerCounts()
-      setAvailableGames(games)
-      console.log('✅ Fetched', games.length, 'games')
+      // Fetch both available games and my games in parallel
+      const [available, mine] = await Promise.all([
+        apiService.getGamesWithPlayerCounts(),
+        apiService.getMyGames()
+      ])
+      setAvailableGames(available)
+      setMyGames(mine)
+      console.log('✅ Fetched', available.length, 'available games,', mine.length, 'my games')
     } catch (err) {
       console.error('Failed to fetch games:', err)
       setError('Failed to fetch games. Please try again.')
@@ -219,13 +227,14 @@ const LobbyPage = () => {
             </button>
           </div>
 
-          {/* Join Game Section */}
+          {/* Games Section with Tabs */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.1)',
             padding: 'clamp(1rem, 3vw, 2rem)',
             borderRadius: '12px',
             backdropFilter: 'blur(10px)'
           }}>
+            {/* Tabs and Refresh */}
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
@@ -234,7 +243,36 @@ const LobbyPage = () => {
               gap: '0.5rem',
               marginBottom: '1rem'
             }}>
-              <h2 style={{ margin: 0 }}>Available Games</h2>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={() => setActiveTab('available')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: activeTab === 'available' ? 'rgba(255, 255, 255, 0.3)' : 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    color: 'white',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === 'available' ? 'bold' : 'normal'
+                  }}
+                >
+                  Available ({availableGames.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('my-games')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: activeTab === 'my-games' ? 'rgba(255, 255, 255, 0.3)' : 'transparent',
+                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    color: 'white',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === 'my-games' ? 'bold' : 'normal'
+                  }}
+                >
+                  My Games ({myGames.length})
+                </button>
+              </div>
               <button
                 onClick={handleRefreshGames}
                 disabled={loading}
@@ -252,6 +290,7 @@ const LobbyPage = () => {
               </button>
             </div>
 
+            {/* Games List */}
             <div style={{
               maxHeight: 'clamp(200px, 40vh, 300px)',
               overflowY: 'auto',
@@ -259,17 +298,14 @@ const LobbyPage = () => {
               borderRadius: '8px',
               padding: '0.75rem'
             }}>
-              {availableGames.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>
-                  No games available. Create one to get started!
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {availableGames.map((game) => {
-                    const isPlayerInGame = false
-                    const canJoin = game.status === 'waiting' || isPlayerInGame
-
-                    return (
+              {activeTab === 'available' ? (
+                availableGames.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    No games available. Create one to get started!
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {availableGames.map((game) => (
                       <div key={game.id} style={{
                         display: 'flex',
                         justifyContent: 'space-between',
@@ -282,27 +318,64 @@ const LobbyPage = () => {
                           <div><strong>Game {game.id}</strong></div>
                           <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
                             {game.playerCount}/{game.maxPlayers} players • {game.status}
-                            {isPlayerInGame && <span style={{ color: 'lightgreen' }}> • You're in this game</span>}
                           </div>
                         </div>
                         <button
                           onClick={() => handleJoinGame(game)}
-                          disabled={!canJoin}
                           style={{
                             padding: '0.5rem 1rem',
-                            background: !canJoin ? '#666' : (isPlayerInGame ? '#FF9800' : '#2196F3'),
+                            background: '#2196F3',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: !canJoin ? 'not-allowed' : 'pointer'
+                            cursor: 'pointer'
                           }}
                         >
-                          {isPlayerInGame ? 'Rejoin' : (game.status === 'waiting' ? 'Join' : game.status)}
+                          Join
                         </button>
                       </div>
-                    )
-                  })}
-                </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                myGames.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>
+                    You haven't joined any games yet.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {myGames.map((game) => (
+                      <div key={game.id} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.75rem',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: '6px'
+                      }}>
+                        <div>
+                          <div><strong>Game {game.id}</strong></div>
+                          <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                            {game.playerCount}/{game.maxPlayers} players • {game.status}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleJoinGame(game)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            background: game.status === 'in-progress' ? '#FF9800' : '#4CAF50',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {game.status === 'in-progress' ? 'Resume' : (game.status === 'waiting' ? 'Enter' : 'View')}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           </div>

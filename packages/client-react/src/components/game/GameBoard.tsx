@@ -1,7 +1,8 @@
-import React, { Suspense, useEffect, memo } from 'react'
+import React, { Suspense, useRef, memo, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
-import { PerspectiveCamera } from 'three'
+import { OrbitControls, PerspectiveCamera, OrthographicCamera } from '@react-three/drei'
+import { OrthographicCamera as OrthoImpl, PerspectiveCamera as PerspImpl } from 'three'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import Board3D from './Board3D'
 
 interface DebugState {
@@ -13,63 +14,65 @@ interface DebugState {
   useSampleBoard: boolean
 }
 
+export type CameraType = 'perspective' | 'orthographic'
+
 interface GameBoardProps {
   debugState?: DebugState
   onCellClick?: (x: number, y: number) => void
+  cameraType?: CameraType
 }
 
-// Camera resize component - adjusts distance to keep board properly sized
-const CameraResizer: React.FC = () => {
-  const { camera, size } = useThree()
+// Camera settings
+const ORTHO_POSITION: [number, number, number] = [10, 10, 10]
+const PERSP_POSITION: [number, number, number] = [6, 6, 6] // Closer for perspective
+const ORTHO_ZOOM = 1
+const PERSP_FOV = 50
+const BOARD_EXTENT = 3.5 // How much world space to fit (smaller = board fills more screen)
+
+// Resize handler - adjusts cameras to fit board in viewport
+const CameraResizeHandler: React.FC<{
+  orthoRef: React.RefObject<OrthoImpl | null>
+  perspRef: React.RefObject<PerspImpl | null>
+  isOrtho: boolean
+}> = ({ orthoRef, perspRef, isOrtho }) => {
+  const { size } = useThree()
 
   useEffect(() => {
-    const calculateOptimalPosition = () => {
-      // Only handle PerspectiveCamera
-      if (camera.type !== 'PerspectiveCamera') return
+    const aspect = size.width / size.height
 
-      const perspectiveCamera = camera as PerspectiveCamera
-      const { width, height } = size
-      const aspect = width / height
-
-      // Update projection matrix
-      perspectiveCamera.aspect = aspect
-      perspectiveCamera.updateProjectionMatrix()
-
-      // Calculate optimal distance to keep board properly sized
-      const boardWidth = 5
-      const boardHeight = 5
-      const fov = perspectiveCamera.fov * (Math.PI / 180)
-
-      const calculatedDistance = Math.max(
-        boardHeight / (2 * Math.tan(fov / 2)),
-        boardWidth / (2 * aspect * Math.tan(fov / 2))
-      )
-
-      // Set minimum distance to prevent camera from being too close
-      const minDistance = 8
-      const optimalDistance = Math.max(calculatedDistance, minDistance)
-
-      // Adjust camera distance while preserving direction
-      const currentPosition = perspectiveCamera.position.clone()
-      const direction = currentPosition.clone().normalize()
-
-      // Set new position at optimal distance in the same direction
-      perspectiveCamera.position.copy(direction.multiplyScalar(optimalDistance))
+    // Adjust orthographic frustum
+    if (orthoRef.current) {
+      const cam = orthoRef.current
+      if (aspect >= 1) {
+        cam.top = BOARD_EXTENT
+        cam.bottom = -BOARD_EXTENT
+        cam.left = -BOARD_EXTENT * aspect
+        cam.right = BOARD_EXTENT * aspect
+      } else {
+        cam.left = -BOARD_EXTENT
+        cam.right = BOARD_EXTENT
+        cam.top = BOARD_EXTENT / aspect
+        cam.bottom = -BOARD_EXTENT / aspect
+      }
+      cam.updateProjectionMatrix()
     }
 
-    // Set initial position immediately
-    calculateOptimalPosition()
-
-    // Listen for resize events
-    const handleResize = calculateOptimalPosition
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [camera, size])
+    // Adjust perspective aspect
+    if (perspRef.current) {
+      perspRef.current.aspect = aspect
+      perspRef.current.updateProjectionMatrix()
+    }
+  }, [size, orthoRef, perspRef, isOrtho])
 
   return null
 }
 
-const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick }) => {
+const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cameraType = 'orthographic' }) => {
+  const controlsRef = useRef<OrbitControlsImpl | null>(null)
+  const orthoRef = useRef<OrthoImpl | null>(null)
+  const perspRef = useRef<PerspImpl | null>(null)
+  const isOrtho = cameraType === 'orthographic'
+
   return (
     <div style={{
       width: '100vw',
@@ -79,24 +82,37 @@ const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick }) =
       left: 0,
       zIndex: 0
     }}>
-      <Canvas
-        camera={{
-          position: [5.66, 5.66, 5.66], // Normalized direction * ~8 units distance
-          fov: 50,
-          near: 0.1,
-          far: 1000
-        }}
-        shadows
-        style={{ width: '100%', height: '100%' }}
-      >
+      <Canvas shadows style={{ width: '100%', height: '100%' }}>
         <Suspense fallback={
           <mesh position={[0, 1, 0]}>
             <boxGeometry args={[1, 1, 1]} />
             <meshStandardMaterial color="#888888" />
           </mesh>
         }>
-          {/* Camera resize handler */}
-          <CameraResizer />
+          {/* Resize handler */}
+          <CameraResizeHandler
+            orthoRef={orthoRef}
+            perspRef={perspRef}
+            isOrtho={isOrtho}
+          />
+
+          {/* Two cameras - only one is active via makeDefault */}
+          <OrthographicCamera
+            ref={orthoRef}
+            makeDefault={isOrtho}
+            position={ORTHO_POSITION}
+            zoom={ORTHO_ZOOM}
+            near={0.1}
+            far={1000}
+          />
+          <PerspectiveCamera
+            ref={perspRef}
+            makeDefault={!isOrtho}
+            position={PERSP_POSITION}
+            fov={PERSP_FOV}
+            near={0.1}
+            far={1000}
+          />
 
           {/* Lighting */}
           <ambientLight intensity={0.4} />
@@ -108,27 +124,26 @@ const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick }) =
             shadow-mapSize-height={2048}
           />
 
-          {/* Environment - Simple background without external HDR */}
+          {/* Environment */}
           <color attach="background" args={['#87CEEB']} />
-          <ambientLight intensity={0.4} />
-          <hemisphereLight
-            args={['#87CEEB', '#8B4513', 0.6]}
-          />
+          <hemisphereLight args={['#87CEEB', '#8B4513', 0.6]} />
 
           {/* 3D Board */}
-          <Board3D
-            debugState={debugState}
-            onCellClick={onCellClick}
-          />
+          <Board3D debugState={debugState} onCellClick={onCellClick} />
 
-          {/* Camera Controls - target set to board center */}
+          {/* Camera Controls */}
           <OrbitControls
-            enablePan={true}
-            enableZoom={false}
+            ref={controlsRef}
+            enablePan={false}
+            enableZoom={true}
             enableRotate={true}
             enableDamping={true}
             target={[0, 0, 0]}
-            maxPolarAngle={Math.PI / 2}
+            maxPolarAngle={Math.PI / 2.2}
+            minZoom={isOrtho ? 0.5 : undefined}
+            maxZoom={isOrtho ? 3 : undefined}
+            minDistance={isOrtho ? undefined : 6}
+            maxDistance={isOrtho ? undefined : 20}
           />
         </Suspense>
       </Canvas>
