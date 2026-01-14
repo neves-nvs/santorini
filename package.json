@@ -1,0 +1,20 @@
+{
+  "name": "santorini",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "nx run-many -t build",
+    "dev:server": "nx run server:dev",
+    "dev:client": "nx run client-react:dev",
+    "test": "nx run-many -t test",
+    "lint": "nx run-many -t lint",
+    "graph": "nx graph"
+  },
+  "devDependencies": {
+    "nx": "^20.8.0"
+  }
+}
+

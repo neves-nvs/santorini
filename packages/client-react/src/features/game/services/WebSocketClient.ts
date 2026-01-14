@@ -12,7 +12,7 @@
  * - Handle game-specific logic
  */
 
-import { WS_MESSAGE_TYPES } from '../../../../../shared/src/websocket-types'
+import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from './GameMessageHandler'
 import { RECONNECTION_DELAY } from '../../../constants/gameConstants'
 
@@ -44,17 +44,14 @@ class WebSocketClient {
   private isAuthenticated = false
 
   /**
-   * Connect after authentication - fetches JWT token first
+   * Connect after authentication - requires token provider to avoid circular deps
    */
-  async connectAfterAuth(): Promise<void> {
+  async connectAfterAuth(getToken: () => Promise<string>): Promise<void> {
     console.log('🔌 WebSocketClient.connectAfterAuth called')
     this.isAuthenticated = true
 
     try {
-      // Dynamic import to avoid circular dependency
-      const { apiService } = await import('../../../services/ApiService')
-      const tokenResponse = await apiService.getToken()
-      this.authToken = tokenResponse.token
+      this.authToken = await getToken()
       console.log('🔑 Got JWT token for WebSocket')
     } catch (error) {
       console.error('🚨 Failed to get JWT token:', error)
@@ -209,11 +206,19 @@ class WebSocketClient {
     }
 
     if (this.socket?.readyState === WebSocket.CONNECTING) {
+      // Socket is connecting - wait and retry
       setTimeout(() => action(), 500)
-    } else if (!this.socket) {
-      this.connectAfterAuth().then(() => {
-        setTimeout(() => action(), 1000)
-      })
+    } else if (this.socket?.readyState === WebSocket.OPEN) {
+      // Socket is ready - execute immediately
+      action()
+    } else if (this.authToken) {
+      // Socket closed but we have cached token - reconnect using cached token
+      console.log('🔄 Reconnecting with cached token...')
+      this.connect()
+      setTimeout(() => this.retryWhenReady(action, attempts + 1), 1000)
+    } else {
+      // No socket, no token - caller must re-authenticate
+      console.warn('⚠️ WebSocket not connected and no cached token. Re-authentication required.')
     }
   }
 }
@@ -232,8 +237,8 @@ export const webSocketClient = {
     return instance
   },
 
-  connectAfterAuth(): Promise<void> {
-    return this.getInstance().connectAfterAuth()
+  connectAfterAuth(getToken: () => Promise<string>): Promise<void> {
+    return this.getInstance().connectAfterAuth(getToken)
   },
 
   disconnect(): void {

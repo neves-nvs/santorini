@@ -1,5 +1,5 @@
 {
-  "name": "santorini-client-react",
+  "name": "@santorini/client-react",
   "version": "1.0.0",
   "description": "React + Three.js frontend for Santorini board game",
   "type": "module",
@@ -27,6 +27,7 @@
   "dependencies": {
     "@react-three/drei": "^10.5.2",
     "@react-three/fiber": "^9.2.0",
+    "@santorini/shared": "file:../shared",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-router-dom": "^5.3.3",

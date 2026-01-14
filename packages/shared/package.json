@@ -2,6 +2,7 @@
   "name": "@santorini/shared",
   "version": "1.0.0",
   "description": "Shared types and constants for Santorini game",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

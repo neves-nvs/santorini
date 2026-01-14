@@ -1,5 +1,5 @@
 {
-  "name": "santorini-backend",
+  "name": "@santorini/server",
   "version": "0.1.0",
   "main": "dist/main.js",
   "scripts": {

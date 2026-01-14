@@ -16,7 +16,7 @@
 import { useGameStore } from '../store/gameStore'
 import { useAppStore } from '../../../store/AppContext'
 import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '../types/game'
-import { WS_MESSAGE_TYPES } from '../../../../../shared/src/websocket-types'
+import { WS_MESSAGE_TYPES } from '@santorini/shared'
 
 // Type guard for PlayerGameView (has isCurrentPlayer field)
 function isPlayerGameView(view: GameStateUpdatePayload['state']): view is PlayerGameView {

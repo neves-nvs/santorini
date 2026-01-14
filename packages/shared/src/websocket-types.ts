@@ -1,18 +1,14 @@
 /**
  * Shared WebSocket Message Types
- * 
+ *
  * This file defines all WebSocket message types used between frontend and backend
  * to ensure type safety and prevent message type mismatches.
  */
 
-// ============================================================================
-// Base Types
-// ============================================================================
+import { Position } from './game-types';
 
-export interface Position {
-  x: number;
-  y: number;
-}
+// Re-export Position for convenience
+export type { Position };
 
 export interface PlayerReadyStatus {
   userId: number;
@@ -62,30 +58,31 @@ export const WS_MESSAGE_TYPES = {
 export type WSMessageType = typeof WS_MESSAGE_TYPES[keyof typeof WS_MESSAGE_TYPES];
 
 // ============================================================================
-// Move Types
+// Wire Protocol Move Types (used in WebSocket messages)
+// These differ from domain Move types - fields are optional for partial updates
 // ============================================================================
 
-export interface PlaceWorkerMove {
+export interface WsPlaceWorkerMove {
   type: 'place_worker';
   workerId?: number;
   position: Position;
 }
 
-export interface MoveWorkerMove {
+export interface WsMoveWorkerMove {
   type: 'move_worker';
   workerId?: number;
   fromPosition: Position;
   position: Position;
 }
 
-export interface BuildMove {
+export interface WsBuildMove {
   type: 'build_block' | 'build_dome';
   position: Position;
   buildingLevel?: number;
   buildingType?: string;
 }
 
-export type GameMove = PlaceWorkerMove | MoveWorkerMove | BuildMove;
+export type GameMove = WsPlaceWorkerMove | WsMoveWorkerMove | WsBuildMove;
 
 // ============================================================================
 // Client -> Server Messages

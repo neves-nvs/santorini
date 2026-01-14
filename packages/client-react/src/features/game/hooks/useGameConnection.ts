@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useApp } from '../../../store/AppContext'
+import { apiService } from '../../../services/ApiService'
 import { useIsConnected, useIsConnecting } from '../store/gameSelectors'
 import { webSocketClient } from '../services/WebSocketClient'
 
@@ -21,12 +22,18 @@ export function useGameConnection() {
   const isConnecting = useIsConnecting()
   const connectionAttemptedRef = useRef(false)
 
+  // Token provider for WebSocket authentication
+  const getToken = async () => {
+    const response = await apiService.getToken()
+    return response.token
+  }
+
   // Connect WebSocket when authenticated
   useEffect(() => {
     if (appState.username && !isConnected && !isConnecting && !connectionAttemptedRef.current) {
       console.log('🔌 Initiating WebSocket connection for user:', appState.username)
       connectionAttemptedRef.current = true
-      webSocketClient.connectAfterAuth()
+      webSocketClient.connectAfterAuth(getToken)
     }
   }, [appState.username, isConnected, isConnecting])
 
