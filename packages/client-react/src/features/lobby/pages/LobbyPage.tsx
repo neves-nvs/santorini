@@ -17,7 +17,6 @@ const LobbyPage = () => {
   const [availableGames, setAvailableGames] = useState<GameInfo[]>([])
   const [myGames, setMyGames] = useState<GameInfo[]>([])
   const [activeTab, setActiveTab] = useState<GameTab>('available')
-  const [playerCount, setPlayerCount] = useState(2)
 
   useEffect(() => {
     if (state.username) {
@@ -42,7 +41,7 @@ const LobbyPage = () => {
     setError('')
 
     try {
-      const result = await apiService.createGame({ maxPlayers: playerCount })
+      const result = await apiService.createGame({ maxPlayers: 2 })
       if (result.gameId) {
         const gameId = result.gameId.toString()
         navigate(`/game/${gameId}`)
@@ -186,27 +185,7 @@ const LobbyPage = () => {
           }}>
             <h2 style={{ marginTop: 0, marginBottom: '1rem' }}>Create New Game</h2>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
-                Number of Players:
-              </label>
-              <select
-                value={playerCount}
-                onChange={(e) => setPlayerCount(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '0.6rem',
-                  fontSize: '1rem',
-                  borderRadius: '4px',
-                  border: '1px solid #ccc',
-                  background: 'white'
-                }}
-              >
-                <option value={2}>2 Players</option>
-                <option value={3}>3 Players</option>
-                <option value={4}>4 Players</option>
-              </select>
-            </div>
+            {/* Player count selection hidden - only 2 players supported for now */}
 
             <button
               onClick={handleCreateGame}
