@@ -17,7 +17,7 @@ export type {
   GameStateUpdatePayload,
   GameEndPayload,
   GameStartPayload
-} from '../../../shared/src/game-types';
+} from '../../../../../shared/src/game-types';
 
 import type {
   Position,
@@ -26,7 +26,7 @@ import type {
   GameStatus,
   GamePhase,
   Move
-} from '../../../shared/src/game-types';
+} from '../../../../../shared/src/game-types';
 
 // ============================================================================
 // Extended Frontend Types

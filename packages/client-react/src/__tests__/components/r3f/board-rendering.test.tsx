@@ -6,12 +6,12 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { 
-  createEmptyBoard, 
+import {
+  createEmptyBoard,
   createSampleBoard,
   gridToWorldCoords,
-  worldToGridCoords 
-} from '../../../components/game/board-types'
+  worldToGridCoords
+} from '../../../features/game/components/board-types'
 import {
   createMockBoardState,
   addWorkerToBoardState,

@@ -1,5 +1,5 @@
 import { useState, memo } from 'react'
-import type { CameraType } from '../game/GameBoard'
+import type { CameraType } from '../../game/components/GameBoard'
 
 // Debug state interface
 export interface DebugState {

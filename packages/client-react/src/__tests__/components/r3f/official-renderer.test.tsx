@@ -8,8 +8,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createR3FRenderer, advanceR3FFrames, setupSTLMocks } from '../../helpers/r3f-test-utils'
 import { useState } from 'react'
-import Board3D from '../../../components/game/Board3D'
-import { Cell, Block, Worker, BoundingBox, BoardBase } from '../../../components/game/GamePieces'
+import Board3D from '../../../features/game/components/Board3D'
+import { Cell, Block, Worker, BoundingBox, BoardBase } from '../../../features/game/components/GamePieces'
 
 // ============================================================================
 // Example Component: Rotating Box

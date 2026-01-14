@@ -1,6 +1,6 @@
 import React from 'react'
 import STLPiece from './STLPiece'
-import { PLAYER_COLORS } from '../../constants/gameConstants'
+import { PLAYER_COLORS } from '../../../constants/gameConstants'
 
 // Building colors
 const DOME_COLOR = '#1E5F8A' // Marine blue

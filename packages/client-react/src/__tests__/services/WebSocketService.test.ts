@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { WebSocketService } from '../../services/WebSocketService'
-import { useGameStore } from '../../store/gameStore'
+import { WebSocketService } from '../../features/game/services/WebSocketService'
+import { useGameStore } from '../../features/game/store/gameStore'
 
 // Mock the game store
-vi.mock('../../store/gameStore', () => ({
+vi.mock('../../features/game/store/gameStore', () => ({
   useGameStore: {
     getState: vi.fn(() => ({
       setConnected: vi.fn(),

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useIsConnected } from '../../store/gameSelectors'
-import { webSocketClient } from '../../services/WebSocketClient'
+import { useIsConnected } from '../../features/game/store/gameSelectors'
+import { webSocketClient } from '../../features/game/services/WebSocketClient'
 import { apiService } from '../../services/ApiService'
 
 const ConnectionTest = () => {

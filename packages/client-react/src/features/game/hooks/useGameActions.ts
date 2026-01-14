@@ -11,9 +11,9 @@
  */
 
 import { useCallback, useRef } from 'react'
-import { apiService } from '../services/ApiService'
+import { apiService } from '../../../services/ApiService'
 import { webSocketClient } from '../services/WebSocketClient'
-import { WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types'
+import { WS_MESSAGE_TYPES } from '../../../../../shared/src/websocket-types'
 import { useSetGameState } from '../store/gameSelectors'
 import type { Move } from '../types/game'
 

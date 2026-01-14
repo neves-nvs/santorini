@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useGameStore } from '../../store/gameStore'
-import type { GameState } from '../../types/game'
+import { useGameStore } from '../../features/game/store/gameStore'
+import type { GameState } from '../../features/game/types/game'
 
 describe('gameStore', () => {
   beforeEach(() => {

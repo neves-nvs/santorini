@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useApp } from '../store/AppContext'
-import { apiService } from '../services/ApiService'
-import { GameInfo } from '../types/game'
+import { useApp } from '../../../store/AppContext'
+import { apiService } from '../../../services/ApiService'
+import { GameInfo } from '../../game/types/game'
 
 type GameTab = 'available' | 'my-games'
 

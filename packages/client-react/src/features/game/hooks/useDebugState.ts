@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { CameraType } from '../components/game/GameBoard'
+import type { CameraType } from '../components/GameBoard'
 
 export interface DebugState {
   showAxis: boolean

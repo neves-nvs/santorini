@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { apiService } from '../services/ApiService'
-import { useApp } from '../store/AppContext'
+import { apiService } from '../../../services/ApiService'
+import { useApp } from '../../../store/AppContext'
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true)

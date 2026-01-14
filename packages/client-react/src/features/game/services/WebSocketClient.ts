@@ -12,9 +12,9 @@
  * - Handle game-specific logic
  */
 
-import { WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types'
+import { WS_MESSAGE_TYPES } from '../../../../../shared/src/websocket-types'
 import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from './GameMessageHandler'
-import { RECONNECTION_DELAY } from '../constants/gameConstants'
+import { RECONNECTION_DELAY } from '../../../constants/gameConstants'
 
 interface WebSocketMessage {
   type: string
@@ -52,7 +52,7 @@ class WebSocketClient {
 
     try {
       // Dynamic import to avoid circular dependency
-      const { apiService } = await import('./ApiService')
+      const { apiService } = await import('../../../services/ApiService')
       const tokenResponse = await apiService.getToken()
       this.authToken = tokenResponse.token
       console.log('🔑 Got JWT token for WebSocket')

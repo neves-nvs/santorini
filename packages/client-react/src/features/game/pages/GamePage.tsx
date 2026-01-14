@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useGameSetup } from '../hooks/useGameSetup'
-import { GameLoadingState, GameErrorState, GameMainState } from '../components/game/GamePageStates'
-import GameUI from '../components/ui/GameUI'
+import { GameLoadingState, GameErrorState, GameMainState } from '../components/GamePageStates'
+import GameUI from '../components/GameUI'
 
 const GamePage = () => {
   const { gameId } = useParams<{ gameId?: string }>()

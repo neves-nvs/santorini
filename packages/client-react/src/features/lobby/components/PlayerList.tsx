@@ -1,7 +1,7 @@
 import { memo, useEffect } from 'react'
-import { useGameState } from '../../store/gameSelectors'
-import { PLAYER_COLORS } from '../../constants/gameConstants'
-import type { PlayerView } from '../../types/game'
+import { useGameState } from '../../game/store/gameSelectors'
+import { PLAYER_COLORS } from '../../../constants/gameConstants'
+import type { PlayerView } from '../../game/types/game'
 
 interface PlayerListProps {
   className?: string

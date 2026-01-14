@@ -1,5 +1,5 @@
 import { ErrorHandler, ErrorType } from '../utils/errorHandler'
-import type { GameInfo } from '../types/game'
+import type { GameInfo } from '../features/game/types/game'
 
 export interface LoginRequest {
   username: string

@@ -3,7 +3,7 @@ import {
   mapToGameLifecycle,
   getGameStatusMessage,
   getUIComponents,
-} from '../../types/gameLifecycle'
+} from '../../features/game/types/gameLifecycle'
 
 describe('mapToGameLifecycle', () => {
   describe('FINISHED state', () => {

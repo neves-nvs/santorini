@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { apiService } from '../../services/ApiService'
+import { apiService } from '../../../services/ApiService'
 
 const AuthTest = () => {
   const [result, setResult] = useState('')

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useApp } from '../store/AppContext'
+import { useApp } from '../../../store/AppContext'
 import { useIsConnected, useIsConnecting } from '../store/gameSelectors'
 import { webSocketClient } from '../services/WebSocketClient'
 

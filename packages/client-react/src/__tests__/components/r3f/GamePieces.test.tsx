@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { Cell, BoundingBox } from '../../../components/game/GamePieces'
+import { Cell, BoundingBox } from '../../../features/game/components/GamePieces'
 import { renderR3F, createMock3DClickEvent, mockWebGLContext } from '../../helpers/r3f-test-utils'
 
 // Setup WebGL mocks before tests

@@ -13,7 +13,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useGameConnection } from './useGameConnection'
 import { useGameActions } from './useGameActions'
-import { useApp } from '../store/AppContext'
+import { useApp } from '../../../store/AppContext'
 import { useSetGameId, useSetGameState } from '../store/gameSelectors'
 
 interface GameSetupResult {

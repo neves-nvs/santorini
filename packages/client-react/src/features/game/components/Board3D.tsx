@@ -1,15 +1,15 @@
 import React, { useMemo } from 'react'
-import DebugAxis from './DebugAxis'
+import DebugAxis from '../../debug/components/DebugAxis'
 import { BoardBase, Block, Worker, Cell, BoundingBox, MovePreview, BuildingPreview } from './GamePieces'
 import { BoardState, createEmptyBoard, gridToWorldCoords } from './board-types'
-import { webSocketClient } from '../../services/WebSocketClient'
+import { webSocketClient } from '../services/WebSocketClient'
 import {
   useSelectedWorker,
   useSetSelectedWorker
-} from '../../store/gameSelectors'
-import { useGameStore } from '../../store/gameStore'
-import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '../../constants/gameConstants'
-import { useRenderTracker } from '../../utils/performanceMonitor'
+} from '../store/gameSelectors'
+import { useGameStore } from '../store/gameStore'
+import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '../../../constants/gameConstants'
+import { useRenderTracker } from '../../../utils/performanceMonitor'
 
 interface DebugState {
   showAxis: boolean
