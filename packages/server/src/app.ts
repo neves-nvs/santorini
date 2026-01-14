@@ -12,7 +12,7 @@ import passport from "passport";
 import userController from "./users/userController";
 
 const CORS_CONFIG = {
-  origin: ["http://localhost:5174"],
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

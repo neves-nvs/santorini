@@ -21,8 +21,8 @@ const GameUI = memo(() => {
   // Use clean lifecycle state management (statusMessage used by GameStatusBar)
   const { statusMessage: _statusMessage } = useGameLifecycle()
 
-  // Use debug state hook
-  const { debugState, handleDebugChange } = useDebugState()
+  // Use debug state hook (includes camera type)
+  const { debugState, handleDebugChange, cameraType, toggleCameraType } = useDebugState()
 
   // All state management moved to custom hooks
 
@@ -30,13 +30,8 @@ const GameUI = memo(() => {
 
   return (
     <div style={{ pointerEvents: 'none' }}> {/* Don't block 3D board interactions */}
-      {/* Full-screen 3D Game Board */}
-      {gameState && (
-        <GameBoard
-          gameState={gameState}
-          debugState={debugState}
-        />
-      )}
+      {/* Full-screen 3D Game Board - always mounted, reads state from store */}
+      <GameBoard debugState={debugState} cameraType={cameraType} />
 
       {/* Persistent Navigation */}
       <GameNavigation />
@@ -68,6 +63,8 @@ const GameUI = memo(() => {
       <DebugMenu
         debugState={debugState}
         onDebugChange={handleDebugChange}
+        cameraType={cameraType}
+        onToggleCamera={toggleCameraType}
         gameContext={{
           state: {
             gameState,

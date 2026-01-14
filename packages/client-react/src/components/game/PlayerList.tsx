@@ -32,13 +32,15 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
 
   return (
     <div className={className} style={style}>
-      <h3>Players ({players.length}/{gameState.totalPlayers || 2})</h3>
+      <h3 style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)', margin: '0 0 0.5rem 0' }}>
+        Players ({players.length}/{gameState.totalPlayers || 2})
+      </h3>
 
       {Array.isArray(players) ? (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {players.map((player: PlayerView, index: number) => {
             const playerId = player.id
-            const playerName = `Player ${player.seat + 1}`
+            const playerName = `P${player.seat + 1}`
             const playerColor = PLAYER_COLORS[index] || '#ffffff'
             const isCurrentPlayer = playerId === gameState?.currentPlayerId
 
@@ -46,24 +48,25 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
               <li
                 key={playerId}
                 style={{
-                  marginBottom: '0.5rem',
-                  padding: '0.5rem',
+                  marginBottom: '0.25rem',
+                  padding: '0.35rem 0.5rem',
                   background: 'rgba(255, 255, 255, 0.1)',
                   borderRadius: '4px',
-                  border: isCurrentPlayer ? '2px solid yellow' : '1px solid transparent'
+                  border: isCurrentPlayer ? '2px solid yellow' : '1px solid transparent',
+                  fontSize: 'clamp(0.8rem, 2vw, 0.9rem)'
                 }}
               >
                 <span
                   style={{
                     color: playerColor,
                     fontWeight: 'bold',
-                    marginRight: '0.5rem'
+                    marginRight: '0.35rem'
                   }}
                 >
                   ●
                 </span>
                 {playerName}
-                {isCurrentPlayer && ' (Current)'}
+                {isCurrentPlayer && ' ★'}
               </li>
             )
           })}

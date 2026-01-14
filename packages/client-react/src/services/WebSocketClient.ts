@@ -23,9 +23,20 @@ interface WebSocketMessage {
 
 export type MessageHandler = (type: string, payload: unknown) => void
 
+function getWebSocketUrl(): string {
+  const envUrl = import.meta.env.VITE_WS_URL
+  if (envUrl && !envUrl.startsWith('/')) {
+    return envUrl
+  }
+  // Construct WebSocket URL from current host (for proxy setup)
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const path = envUrl || '/ws'
+  return `${protocol}//${window.location.host}${path}`
+}
+
 class WebSocketClient {
   private socket: WebSocket | null = null
-  private serverAddress = 'ws://localhost:3000'
+  private serverAddress = getWebSocketUrl()
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = RECONNECTION_DELAY

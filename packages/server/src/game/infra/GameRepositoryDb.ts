@@ -262,6 +262,29 @@ export class GameRepositoryDb {
   }
 
   /**
+   * Find games where a user is a player (any status)
+   */
+  async findByPlayer(userId: number): Promise<Game[]> {
+    const gameRecords = await this.database
+      .selectFrom('games')
+      .innerJoin('players', 'games.id', 'players.game_id')
+      .where('players.user_id', '=', userId)
+      .selectAll('games')
+      .orderBy('games.id', 'desc')
+      .execute();
+
+    const games: Game[] = [];
+    for (const record of gameRecords) {
+      const game = await this.findById(record.id);
+      if (game) {
+        games.push(game);
+      }
+    }
+
+    return games;
+  }
+
+  /**
    * Find player user IDs by game ID
    */
   async findPlayersByGameId(gameId: number): Promise<number[]> {

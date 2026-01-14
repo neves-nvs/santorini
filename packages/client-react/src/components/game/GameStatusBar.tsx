@@ -14,22 +14,23 @@ const GameStatusBar = memo(({ className, style }: GameStatusBarProps) => {
   const { statusMessage } = useGameLifecycle()
 
   return (
-    <div 
+    <div
       className={className}
       style={{
         position: 'absolute',
-        top: '20px',
+        top: 'clamp(10px, 2vw, 20px)',
         left: '50%',
         transform: 'translateX(-50%)',
         background: 'rgba(0, 0, 0, 0.8)',
         color: 'white',
-        padding: '0.75rem 1.5rem',
+        padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 3vw, 1.5rem)',
         borderRadius: '8px',
-        fontSize: '1.1rem',
+        fontSize: 'clamp(0.85rem, 2.5vw, 1.1rem)',
         fontWeight: 'bold',
         zIndex: 1000,
         textAlign: 'center',
-        minWidth: '300px',
+        width: 'max-content',
+        maxWidth: 'calc(100vw - 40px)',
         pointerEvents: 'none', // Don't block clicks - this is just text
         ...style
       }}

@@ -48,18 +48,20 @@ const AuthPage = () => {
   }
 
   return (
-    <div className="page" style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
+    <div className="page" style={{
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: '1rem'
     }}>
       <div style={{
         background: 'white',
-        padding: '3rem',
+        padding: 'clamp(1.5rem, 5vw, 3rem)',
         borderRadius: '12px',
         boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-        minWidth: '400px'
+        width: '100%',
+        maxWidth: '400px'
       }}>
         <h2 style={{ 
           textAlign: 'center', 

@@ -1,7 +1,9 @@
 import React from 'react'
-import * as THREE from 'three'
 import STLPiece from './STLPiece'
 import { PLAYER_COLORS } from '../../constants/gameConstants'
+
+// Building colors
+const DOME_COLOR = '#1E5F8A' // Marine blue
 
 // Building Block Component
 interface BlockProps {
@@ -10,25 +12,29 @@ interface BlockProps {
   isPreview?: boolean
 }
 
-export const Block: React.FC<BlockProps> = ({ type, position, isPreview = false }) => {
+export const Block: React.FC<BlockProps> = React.memo(({ type, position, isPreview = false }) => {
+  // Dome gets marine blue, other blocks are white
+  const baseColor = type === 'dome' ? DOME_COLOR : 'white'
+
   return (
     <STLPiece
       type={type}
       position={position}
-      color={isPreview ? "#4A90E2" : "white"}
+      color={isPreview ? "#4A90E2" : baseColor}
       transparent={isPreview}
       opacity={isPreview ? 0.6 : 1.0}
       castShadow={!isPreview}
       receiveShadow={!isPreview}
     />
   )
-}
+})
+
+Block.displayName = 'Block'
 
 // Worker/Builder Component
 interface WorkerProps {
   playerId: number
   position: [number, number, number]
-  gameState?: any // Add gameState to get player order
   canMove?: boolean // Whether this worker can move
   isSelected?: boolean // Whether this worker is selected
   onClick?: () => void // Click handler for worker selection
@@ -37,7 +43,6 @@ interface WorkerProps {
 export const Worker: React.FC<WorkerProps> = ({
   playerId,
   position,
-  gameState,
   canMove = false,
   isSelected = false,
   onClick
@@ -45,28 +50,9 @@ export const Worker: React.FC<WorkerProps> = ({
   // Use centralized player colors
   const colors = PLAYER_COLORS
 
-  // Get player order from game state to ensure consistent coloring
-  let colorIndex = 0
-  if (gameState?.players && Array.isArray(gameState.players)) {
-    // Players array contains objects, need to find by ID
-    colorIndex = gameState.players.findIndex((player: any) =>
-      (typeof player === 'object' ? player.id || player.userId : player) === playerId
-    )
-    if (colorIndex === -1) {
-      // Fallback: use playerId directly
-      colorIndex = (playerId - 1) % colors.length
-    }
-  } else {
-    // Fallback: use playerId directly
-    colorIndex = (playerId - 1) % colors.length
-  }
-
+  // Simple color mapping based on playerId
+  const colorIndex = (playerId - 1) % colors.length
   const selectedColor = colors[colorIndex] || colors[0]
-
-  // Debug logging (can be removed in production)
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`🎨 Rendering worker for playerId ${playerId}, colorIndex ${colorIndex}, color ${selectedColor}`)
-  }
 
   return (
     <group
@@ -181,58 +167,68 @@ interface BoundingBoxProps {
   visible: boolean
 }
 
-export const BoundingBox: React.FC<BoundingBoxProps> = ({ position, blockLevel, visible }) => {
-  if (!visible) return null
-
-  // Calculate height based on block level (each level is 0.5 units apart)
+// Single block bounding box
+const SingleBlockBoundingBox: React.FC<{ yOffset: number; color: string }> = ({ yOffset, color }) => {
   const blockHeight = 0.5
-  const totalHeight = blockLevel * blockHeight
 
   return (
-    <group position={position}>
-      {/* Bottom surface (at ground level) */}
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial
-          color="yellow"
-          transparent
-          opacity={0.3}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Top surface (at calculated block height) */}
-      <mesh position={[0, totalHeight, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial
-          color="orange"
-          transparent
-          opacity={0.3}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Vertical edges of bounding box */}
+    <group position={[0, yOffset, 0]}>
+      {/* Vertical edges */}
       {[
-        [-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]
+        [-0.475, -0.475], [0.475, -0.475], [0.475, 0.475], [-0.475, 0.475]
       ].map((corner, index) => (
-        <mesh key={index} position={[corner[0], totalHeight / 2, corner[1]]}>
-          <boxGeometry args={[0.02, totalHeight, 0.02]} />
-          <meshBasicMaterial color="red" transparent opacity={0.6} />
+        <mesh key={index} position={[corner[0], blockHeight / 2, corner[1]]}>
+          <boxGeometry args={[0.04, blockHeight, 0.04]} />
+          <meshBasicMaterial color={color} depthTest={false} />
         </mesh>
       ))}
 
-      {/* Horizontal outline at bottom */}
-      <lineSegments position={[0, 0.01, 0]}>
-        <edgesGeometry args={[new THREE.PlaneGeometry(1, 1)]} />
-        <lineBasicMaterial color="yellow" />
-      </lineSegments>
+      {/* Bottom edges */}
+      {[
+        { pos: [0, 0.02, -0.475], size: [0.95, 0.04, 0.04] },
+        { pos: [0, 0.02, 0.475], size: [0.95, 0.04, 0.04] },
+        { pos: [-0.475, 0.02, 0], size: [0.04, 0.04, 0.95] },
+        { pos: [0.475, 0.02, 0], size: [0.04, 0.04, 0.95] },
+      ].map((edge, index) => (
+        <mesh key={`bottom-${index}`} position={edge.pos as [number, number, number]}>
+          <boxGeometry args={edge.size as [number, number, number]} />
+          <meshBasicMaterial color={color} depthTest={false} />
+        </mesh>
+      ))}
 
-      {/* Horizontal outline at top */}
-      <lineSegments position={[0, totalHeight + 0.01, 0]}>
-        <edgesGeometry args={[new THREE.PlaneGeometry(1, 1)]} />
-        <lineBasicMaterial color="orange" />
-      </lineSegments>
+      {/* Top edges */}
+      {[
+        { pos: [0, blockHeight, -0.475], size: [0.95, 0.04, 0.04] },
+        { pos: [0, blockHeight, 0.475], size: [0.95, 0.04, 0.04] },
+        { pos: [-0.475, blockHeight, 0], size: [0.04, 0.04, 0.95] },
+        { pos: [0.475, blockHeight, 0], size: [0.04, 0.04, 0.95] },
+      ].map((edge, index) => (
+        <mesh key={`top-${index}`} position={edge.pos as [number, number, number]}>
+          <boxGeometry args={edge.size as [number, number, number]} />
+          <meshBasicMaterial color={color} depthTest={false} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+// Colors for each block level
+const BLOCK_COLORS = ['#00ff00', '#ffff00', '#ff8800', '#ff0000'] // green, yellow, orange, red
+
+export const BoundingBox: React.FC<BoundingBoxProps> = ({ position, blockLevel, visible }) => {
+  if (!visible) return null
+
+  const blockHeight = 0.5
+
+  return (
+    <group position={position}>
+      {Array.from({ length: blockLevel }, (_, i) => (
+        <SingleBlockBoundingBox
+          key={i}
+          yOffset={i * blockHeight}
+          color={BLOCK_COLORS[i] || BLOCK_COLORS[BLOCK_COLORS.length - 1]}
+        />
+      ))}
     </group>
   )
 }
@@ -248,9 +244,8 @@ interface MovePreviewProps {
 // Building Preview Component - Shows what building will be constructed
 interface BuildingPreviewProps {
   position: [number, number, number]
-  buildingLevel?: number
-  buildingType?: string
-  moveType?: 'build_block' | 'build_dome'
+  buildingLevel: number  // 1-4: next level to be built (derived from board state)
+  moveType: 'build_block' | 'build_dome'
   visible: boolean
   onClick?: () => void
 }
@@ -314,23 +309,20 @@ export const MovePreview: React.FC<MovePreviewProps> = ({ position, workerId: _w
 export const BuildingPreview: React.FC<BuildingPreviewProps> = ({
   position,
   buildingLevel,
-  buildingType,
   moveType,
   visible,
   onClick
 }) => {
-  console.log('🔧 BuildingPreview rendering:', { position, buildingLevel, buildingType, moveType, visible })
-
   if (!visible) return null
 
-  const isDome = moveType === 'build_dome' || buildingType === 'dome'
-  const level = buildingLevel || 1
+  const isDome = moveType === 'build_dome'
+  // Map buildingLevel (1-4) to block type: 1=base, 2=mid, 3=top, 4=dome
+  const blockType = buildingLevel === 1 ? 'base' : buildingLevel === 2 ? 'mid' : 'top'
 
   return (
     <group
       position={position}
       onClick={(e) => {
-        console.log('🔧 BuildingPreview group clicked!')
         e.stopPropagation()
         onClick?.()
       }}
@@ -344,21 +336,11 @@ export const BuildingPreview: React.FC<BuildingPreviewProps> = ({
       }}
     >
       {/* Render actual building geometry as preview */}
-      {isDome ? (
-        // Dome preview - use actual dome geometry
-        <Block
-          type="dome"
-          position={[0, 0, 0]}
-          isPreview={true}
-        />
-      ) : (
-        // Block preview - use actual block geometry
-        <Block
-          type={level === 1 ? 'base' : level === 2 ? 'mid' : 'top'}
-          position={[0, 0, 0]}
-          isPreview={true}
-        />
-      )}
+      <Block
+        type={isDome ? 'dome' : blockType}
+        position={[0, 0, 0]}
+        isPreview={true}
+      />
 
       {/* Glowing base ring to indicate it's a preview */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>

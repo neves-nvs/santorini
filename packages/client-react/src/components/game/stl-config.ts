@@ -14,7 +14,7 @@ export const configs = {
   base: { file: locations.base, y_offset: 0.281, x_rotation: -Math.PI / 2, scale: 0.028 },
   mid: { file: locations.mid, y_offset: 0.31, x_rotation: -Math.PI / 2, scale: 0.028 },
   top: { file: locations.top, y_offset: 0.20, x_rotation: Math.PI / 2, scale: 0.030 },
-  dome: { file: locations.dome, y_offset: 0.15, x_rotation: -Math.PI / 2, scale: 0.0165 },
+  dome: { file: locations.dome, y_offset: 0.0, x_rotation: -Math.PI / 2, scale: 0.0165 },
   board: { file: locations.board, y_offset: -0.067, x_rotation: -Math.PI / 2, scale: 0.031747 },
 }
 

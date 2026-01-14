@@ -21,7 +21,7 @@ export interface CreateUserRequest {
 }
 
 export class ApiService {
-  private baseUrl = 'http://localhost:3000'
+  private baseUrl = import.meta.env.VITE_API_URL || ''
 
   private async request<T>(
     endpoint: string,
@@ -145,6 +145,11 @@ export class ApiService {
   async getGamesWithPlayerCounts(): Promise<GameInfo[]> {
     // This now returns games with player counts included
     return this.request<GameInfo[]>('/games')
+  }
+
+  async getMyGames(): Promise<GameInfo[]> {
+    // Get games where the current user is a player
+    return this.request<GameInfo[]>('/games/my')
   }
 
   async createGame(gameData: CreateGameRequest): Promise<any> {

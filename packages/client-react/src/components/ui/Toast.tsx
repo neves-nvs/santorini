@@ -35,10 +35,10 @@ const Toast: React.FC<ToastProps> = ({
 
   const getIcon = () => {
     switch (type) {
-      case 'success': return '✅'
-      case 'warning': return '⚠️'
-      case 'error': return '❌'
-      default: return 'ℹ️'
+      case 'success': return '[OK]'
+      case 'warning': return '[!]'
+      case 'error': return '[X]'
+      default: return '[i]'
     }
   }
 

@@ -310,3 +310,5 @@ test-results/
 
 #
 .direnv
+
+.vite

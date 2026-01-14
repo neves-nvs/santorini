@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import type { CameraType } from '../components/game/GameBoard'
 
 export interface DebugState {
   showAxis: boolean
@@ -11,7 +12,7 @@ export interface DebugState {
 }
 
 const DEFAULT_DEBUG_STATE: DebugState = {
-  showAxis: true,
+  showAxis: false,
   showGrid: false,
   showWireframe: false,
   showStats: false,
@@ -26,8 +27,9 @@ const DEFAULT_DEBUG_STATE: DebugState = {
  */
 export function useDebugState() {
   const [debugState, setDebugState] = useState<DebugState>(DEFAULT_DEBUG_STATE)
+  const [cameraType, setCameraType] = useState<CameraType>('orthographic')
 
-  // Keyboard shortcut for performance dashboard (Ctrl+Shift+P)
+  // Keyboard shortcuts
   useEffect(() => {
     // Only enable in development
     if (process.env.NODE_ENV !== 'development') {
@@ -35,9 +37,17 @@ export function useDebugState() {
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+Shift+P: Toggle performance dashboard
       if (event.ctrlKey && event.shiftKey && event.key === 'P') {
         event.preventDefault()
         setDebugState(prev => ({ ...prev, showPerformance: !prev.showPerformance }))
+      }
+      // C: Toggle camera type
+      if (event.key === 'c' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        const target = event.target as HTMLElement
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          setCameraType(prev => prev === 'orthographic' ? 'perspective' : 'orthographic')
+        }
       }
     }
 
@@ -53,11 +63,18 @@ export function useDebugState() {
     setDebugState(DEFAULT_DEBUG_STATE)
   }, [])
 
+  const toggleCameraType = useCallback(() => {
+    setCameraType(prev => prev === 'orthographic' ? 'perspective' : 'orthographic')
+  }, [])
+
   return {
     debugState,
     handleDebugChange,
     resetDebugState,
-    
+    cameraType,
+    setCameraType,
+    toggleCameraType,
+
     // Convenience flags
     isDebugMode: process.env.NODE_ENV === 'development',
     hasAnyDebugEnabled: Object.values(debugState).some(Boolean)

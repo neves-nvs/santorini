@@ -26,57 +26,55 @@ const GameLobby = memo(({ className, style }: GameLobbyProps) => {
   }
 
   return (
-    <div 
+    <div
       className={className}
       style={{
         position: 'absolute',
-        top: '50%',
-        right: '20px',
-        transform: 'translateY(-50%)',
+        bottom: 'clamp(10px, 2vw, 20px)',
+        right: 'clamp(10px, 2vw, 20px)',
         background: 'rgba(0, 0, 0, 0.8)',
         color: 'white',
-        padding: '1.5rem',
+        padding: 'clamp(0.75rem, 2vw, 1.5rem)',
         borderRadius: '8px',
-        minWidth: '250px',
-        maxWidth: '300px',
+        width: 'clamp(200px, 50vw, 300px)',
+        maxHeight: 'calc(100vh - 100px)',
+        overflowY: 'auto',
         zIndex: 1000,
         pointerEvents: 'auto', // Allow clicks on lobby controls
         ...style
       }}
     >
-      {/* Navigation moved to persistent GameNavigation component */}
-
-      <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem' }}>
+      <h2 style={{ margin: '0 0 0.75rem 0', fontSize: 'clamp(1rem, 3vw, 1.2rem)' }}>
         Game Lobby
       </h2>
 
       {/* Player List */}
-      <PlayerList style={{ marginBottom: '1rem' }} />
+      <PlayerList style={{ marginBottom: '0.75rem' }} />
 
       {/* Waiting for players to join */}
       {gameInfo.currentPlayers < gameInfo.totalPlayers && (
-        <div style={{ color: 'orange', marginTop: '0.5rem' }}>
-          Waiting for players to join...
+        <div style={{ color: 'orange', marginTop: '0.5rem', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>
+          Waiting for players...
         </div>
       )}
 
       {/* Ready Button - only show when all players joined */}
       {ui.showReadyButton && (
         <div style={{ marginTop: '0.5rem' }}>
-          <div style={{ color: 'yellow', marginBottom: '0.5rem' }}>
-            All players joined! Ready to start?
+          <div style={{ color: 'yellow', marginBottom: '0.5rem', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>
+            Ready to start?
           </div>
           <button
             onClick={handleReadyToggle}
             disabled={isDisabled}
             style={{
-              padding: '0.5rem 1rem',
+              padding: '0.5rem 0.75rem',
               background: isDisabled ? '#666666' : '#4CAF50',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
               cursor: isDisabled ? 'not-allowed' : 'pointer',
-              fontSize: '1rem',
+              fontSize: 'clamp(0.85rem, 2vw, 1rem)',
               width: '100%'
             }}
           >
@@ -87,8 +85,8 @@ const GameLobby = memo(({ className, style }: GameLobbyProps) => {
 
       {/* Game starting message */}
       {ui.showGameControls && (
-        <div style={{ color: 'lightgreen', marginTop: '0.5rem' }}>
-          Game is active! Ready to play.
+        <div style={{ color: 'lightgreen', marginTop: '0.5rem', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>
+          Game active!
         </div>
       )}
     </div>
