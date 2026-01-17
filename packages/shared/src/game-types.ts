@@ -38,6 +38,7 @@ export type PlayerStatus = 'active' | 'disconnected' | 'blocked' | 'eliminated';
 export interface PlayerView {
   id: number;
   userId: number;
+  username: string;
   seat: number;
   status: PlayerStatus;
   isReady: boolean;

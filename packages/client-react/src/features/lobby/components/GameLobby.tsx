@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useGameLifecycle } from '../../game/hooks/useGameLifecycle'
 import { useReadyState } from '../../game/hooks/useReadyState'
 import PlayerList from './PlayerList'
@@ -10,14 +11,15 @@ interface GameLobbyProps {
 
 /**
  * Lobby component shown when game is in WAITING state
- * Handles player joining, ready checks, and game start
+ * Centered overlay with backdrop - handles player joining and ready checks
  */
 const GameLobby = memo(({ className, style }: GameLobbyProps) => {
+  const navigate = useNavigate()
   const { ui, gameInfo } = useGameLifecycle()
-  const { 
-    handleReadyToggle, 
-    readyButtonText, 
-    isDisabled 
+  const {
+    handleReadyToggle,
+    readyButtonText,
+    isDisabled
   } = useReadyState()
 
   // Only show lobby when in waiting state
@@ -25,70 +27,116 @@ const GameLobby = memo(({ className, style }: GameLobbyProps) => {
     return null
   }
 
+  const handleLeaveGame = () => {
+    navigate('/lobby')
+  }
+
   return (
+    // Backdrop overlay
     <div
-      className={className}
       style={{
-        position: 'absolute',
-        bottom: 'clamp(10px, 2vw, 20px)',
-        right: 'clamp(10px, 2vw, 20px)',
-        background: 'rgba(0, 0, 0, 0.8)',
-        color: 'white',
-        padding: 'clamp(0.75rem, 2vw, 1.5rem)',
-        borderRadius: '8px',
-        width: 'clamp(200px, 50vw, 300px)',
-        maxHeight: 'calc(100vh - 100px)',
-        overflowY: 'auto',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         zIndex: 1000,
-        pointerEvents: 'auto', // Allow clicks on lobby controls
-        ...style
+        pointerEvents: 'auto',
       }}
     >
-      <h2 style={{ margin: '0 0 0.75rem 0', fontSize: 'clamp(1rem, 3vw, 1.2rem)' }}>
-        Game Lobby
-      </h2>
+      {/* Centered lobby panel */}
+      <div
+        className={className}
+        style={{
+          background: 'rgba(0, 0, 0, 0.9)',
+          color: 'white',
+          padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+          borderRadius: '12px',
+          width: 'clamp(280px, 80vw, 400px)',
+          maxHeight: 'calc(100vh - 40px)',
+          overflowY: 'auto',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          ...style
+        }}
+      >
+        <h2 style={{
+          margin: '0 0 1.5rem 0',
+          fontSize: 'clamp(1.25rem, 4vw, 1.5rem)',
+          textAlign: 'center'
+        }}>
+          Game Lobby
+        </h2>
 
-      {/* Player List */}
-      <PlayerList style={{ marginBottom: '0.75rem' }} />
+        {/* Player List */}
+        <PlayerList style={{ marginBottom: '1.5rem' }} />
 
-      {/* Waiting for players to join */}
-      {gameInfo.currentPlayers < gameInfo.totalPlayers && (
-        <div style={{ color: 'orange', marginTop: '0.5rem', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>
-          Waiting for players...
-        </div>
-      )}
-
-      {/* Ready Button - only show when all players joined */}
-      {ui.showReadyButton && (
-        <div style={{ marginTop: '0.5rem' }}>
-          <div style={{ color: 'yellow', marginBottom: '0.5rem', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>
-            Ready to start?
+        {/* Waiting for players to join */}
+        {gameInfo.currentPlayers < gameInfo.totalPlayers && (
+          <div style={{
+            color: 'orange',
+            marginTop: '0.75rem',
+            fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+            textAlign: 'center'
+          }}>
+            Waiting for players to join ({gameInfo.currentPlayers}/{gameInfo.totalPlayers})...
           </div>
-          <button
-            onClick={handleReadyToggle}
-            disabled={isDisabled}
-            style={{
-              padding: '0.5rem 0.75rem',
-              background: isDisabled ? '#666666' : '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isDisabled ? 'not-allowed' : 'pointer',
-              fontSize: 'clamp(0.85rem, 2vw, 1rem)',
-              width: '100%'
-            }}
-          >
-            {readyButtonText}
-          </button>
-        </div>
-      )}
+        )}
 
-      {/* Game starting message */}
-      {ui.showGameControls && (
-        <div style={{ color: 'lightgreen', marginTop: '0.5rem', fontSize: 'clamp(0.8rem, 2vw, 1rem)' }}>
-          Game active!
-        </div>
-      )}
+        {/* Ready Button - only show when all players joined */}
+        {ui.showReadyButton && (
+          <div style={{ marginTop: '1rem' }}>
+            <div style={{
+              color: '#ffd700',
+              marginBottom: '0.75rem',
+              fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
+              textAlign: 'center'
+            }}>
+              All players joined. Ready to start?
+            </div>
+            <button
+              onClick={handleReadyToggle}
+              disabled={isDisabled}
+              style={{
+                padding: '0.75rem 1rem',
+                background: isDisabled ? '#666666' : '#4CAF50',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                fontSize: 'clamp(1rem, 2.5vw, 1.1rem)',
+                width: '100%',
+                fontWeight: 'bold',
+                transition: 'background-color 0.2s'
+              }}
+            >
+              {readyButtonText}
+            </button>
+          </div>
+        )}
+
+        {/* Leave game button */}
+        <button
+          onClick={handleLeaveGame}
+          style={{
+            marginTop: '1.5rem',
+            padding: '0.5rem 1rem',
+            background: 'transparent',
+            color: '#aaa',
+            border: '1px solid #555',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
+            width: '100%',
+            transition: 'all 0.2s'
+          }}
+        >
+          Leave Game
+        </button>
+      </div>
     </div>
   )
 })

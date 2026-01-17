@@ -294,7 +294,9 @@ const LobbyPage = () => {
                         borderRadius: '6px'
                       }}>
                         <div>
-                          <div><strong>Game {game.id}</strong></div>
+                          <div>
+                            <strong>Game {game.id}</strong>
+                            <span style={{ fontWeight: 'normal', opacity: 0.9 }}>by {game.creatorName}</span></div>
                           <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
                             {game.playerCount}/{game.maxPlayers} players • {game.status}
                           </div>
@@ -333,7 +335,7 @@ const LobbyPage = () => {
                         borderRadius: '6px'
                       }}>
                         <div>
-                          <div><strong>Game {game.id}</strong></div>
+                          <div><strong>Game {game.id}</strong> <span style={{ fontWeight: 'normal', opacity: 0.9 }}>by {game.creatorName}</span></div>
                           <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
                             {game.playerCount}/{game.maxPlayers} players • {game.status}
                           </div>

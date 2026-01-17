@@ -6,7 +6,21 @@ import { Game } from '../domain/Game';
 import { GameBroadcaster } from '../application/GameBroadcaster';
 import { GameService } from '../application/GameService';
 import { LobbyService } from '../application/LobbyService';
+import { db } from '../../database';
 import logger from '../../logger';
+
+// Batch fetch usernames by IDs
+async function getUsernameMap(userIds: number[]): Promise<Map<number, string>> {
+  if (userIds.length === 0) return new Map();
+
+  const users = await db
+    .selectFrom('users')
+    .where('id', 'in', userIds)
+    .select(['id', 'username'])
+    .execute();
+
+  return new Map(users.map(u => [u.id, u.username]));
+}
 
 // Convert Game domain object to DTO for API responses
 function gameToDto(game: Game) {
@@ -43,7 +57,17 @@ export function createGameRoutes(
   router.get('/', authenticate, async (_req, res) => {
     try {
       const games = await lobbyService.findAvailableGames();
-      res.json(games.map(gameToDto));
+
+      // Batch fetch creator names
+      const creatorIds = [...new Set(games.map(g => g.creatorId))];
+      const usernameMap = await getUsernameMap(creatorIds);
+
+      const gamesWithCreatorNames = games.map(game => ({
+        ...gameToDto(game),
+        creatorName: usernameMap.get(game.creatorId) ?? 'Unknown'
+      }));
+
+      res.json(gamesWithCreatorNames);
     } catch (error) {
       handleError(res, error, 'Error getting games');
     }
@@ -54,7 +78,17 @@ export function createGameRoutes(
     try {
       const userId = getUser(req).id;
       const games = await lobbyService.findMyGames(userId);
-      res.json(games.map(gameToDto));
+
+      // Batch fetch creator names
+      const creatorIds = [...new Set(games.map(g => g.creatorId))];
+      const usernameMap = await getUsernameMap(creatorIds);
+
+      const gamesWithCreatorNames = games.map(game => ({
+        ...gameToDto(game),
+        creatorName: usernameMap.get(game.creatorId) ?? 'Unknown'
+      }));
+
+      res.json(gamesWithCreatorNames);
     } catch (error) {
       handleError(res, error, 'Error getting my games');
     }

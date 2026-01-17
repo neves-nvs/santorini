@@ -40,9 +40,9 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {players.map((player: PlayerView, index: number) => {
             const playerId = player.id
-            const playerName = `P${player.seat + 1}`
             const playerColor = PLAYER_COLORS[index] || '#ffffff'
             const isCurrentPlayer = playerId === gameState?.currentPlayerId
+            const displayName = player.username || `Player ${player.seat + 1}`
 
             return (
               <li
@@ -53,20 +53,37 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
                   background: 'rgba(255, 255, 255, 0.1)',
                   borderRadius: '4px',
                   border: isCurrentPlayer ? '2px solid yellow' : '1px solid transparent',
-                  fontSize: 'clamp(0.8rem, 2vw, 0.9rem)'
+                  fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
                 }}
               >
-                <span
-                  style={{
-                    color: playerColor,
-                    fontWeight: 'bold',
-                    marginRight: '0.35rem'
-                  }}
-                >
-                  ●
+                <span>
+                  <span
+                    style={{
+                      color: playerColor,
+                      fontWeight: 'bold',
+                      marginRight: '0.35rem'
+                    }}
+                  >
+                    ●
+                  </span>
+                  {displayName}
+                  <span style={{ opacity: 0.6, marginLeft: '0.35rem' }}>
+                    (P{player.seat + 1})
+                  </span>
+                  {isCurrentPlayer && ' ★'}
                 </span>
-                {playerName}
-                {isCurrentPlayer && ' ★'}
+                {player.isReady && (
+                  <span style={{
+                    color: '#4CAF50',
+                    fontSize: '0.8em',
+                    fontWeight: 'bold'
+                  }}>
+                    Ready ✓
+                  </span>
+                )}
               </li>
             )
           })}

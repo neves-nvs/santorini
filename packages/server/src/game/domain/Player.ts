@@ -16,7 +16,8 @@ export class Player {
     public readonly userId: UserId,
     public readonly seat: number,
     private _status: PlayerStatus = 'active',
-    private _isReady: boolean = false
+    private _isReady: boolean = false,
+    public readonly username: string = ''
   ) {}
 
   get status(): PlayerStatus {

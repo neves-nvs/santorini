@@ -1,5 +1,5 @@
 import { BoardCellSnapshot, BoardSnapshot } from '../domain/Board';
-import { Database, NewPiece, Piece } from '../../model';
+import { Database, Game as GameRecord, NewPiece, Piece } from '../../model';
 import { Game, GameSnapshot } from '../domain/Game';
 import { GamePhase, GameStatus } from '../domain/types';
 import { Kysely, Transaction } from 'kysely';
@@ -77,9 +77,11 @@ export class GameRepositoryDb {
         const player = new Player(
           index + 1, // Player ID within game (1-indexed)
           p.user_id,
-          index // Seat (0-indexed)
+          index, // Seat (0-indexed)
+          'active',
+          p.is_ready,
+          p.username
         );
-        player.setReady(p.is_ready);
         return player;
       }),
       board: this.convertPiecesToBoardSnapshot(pieceRecords)
@@ -219,15 +221,7 @@ export class GameRepositoryDb {
       .orderBy('id', 'desc')
       .execute();
 
-    const games: Game[] = [];
-    for (const record of gameRecords) {
-      const game = await this.findById(record.id);
-      if (game) {
-        games.push(game);
-      }
-    }
-
-    return games;
+    return this.hydrateGames(gameRecords);
   }
 
   /**
@@ -240,15 +234,92 @@ export class GameRepositoryDb {
       .orderBy('id', 'desc')
       .execute();
 
-    const games: Game[] = [];
-    for (const record of gameRecords) {
-      const game = await this.findById(record.id);
-      if (game) {
-        games.push(game);
-      }
+    return this.hydrateGames(gameRecords);
+  }
+
+  /**
+   * Batch hydrate game records into domain objects
+   * 3 queries total: games (already done), players, pieces
+   */
+  private async hydrateGames(gameRecords: GameRecord[]): Promise<Game[]> {
+    if (gameRecords.length === 0) return [];
+
+    const gameIds = gameRecords.map(g => g.id);
+
+    // Batch load all players for all games
+    const allPlayers = await this.database
+      .selectFrom('players')
+      .innerJoin('users', 'players.user_id', 'users.id')
+      .where('players.game_id', 'in', gameIds)
+      .select([
+        'players.game_id',
+        'players.user_id',
+        'players.is_ready',
+        'users.username'
+      ])
+      .orderBy('players.game_id', 'asc')
+      .orderBy('players.user_id', 'asc')
+      .execute();
+
+    // Batch load all pieces for all games
+    const allPieces = await this.database
+      .selectFrom('pieces')
+      .where('game_id', 'in', gameIds)
+      .selectAll()
+      .execute();
+
+    // Group by game_id
+    const playersByGame = new Map<number, typeof allPlayers>();
+    for (const p of allPlayers) {
+      const list = playersByGame.get(p.game_id) || [];
+      list.push(p);
+      playersByGame.set(p.game_id, list);
     }
 
-    return games;
+    const piecesByGame = new Map<number, typeof allPieces>();
+    for (const p of allPieces) {
+      const list = piecesByGame.get(p.game_id) || [];
+      list.push(p);
+      piecesByGame.set(p.game_id, list);
+    }
+
+    // Build domain objects
+    return gameRecords.map(gameRecord => {
+      const playerRecords = playersByGame.get(gameRecord.id) || [];
+      const pieceRecords = piecesByGame.get(gameRecord.id) || [];
+
+      const snapshot: GameSnapshot = {
+        id: gameRecord.id,
+        creatorId: gameRecord.user_creator_id,
+        maxPlayers: gameRecord.player_count,
+        status: gameRecord.game_status as GameStatus,
+        phase: gameRecord.game_phase as GamePhase | null,
+        currentPlayerId: gameRecord.current_player_id,
+        turnNumber: gameRecord.turn_number || 0,
+        placingTurnsCompleted: gameRecord.placing_turns_completed || 0,
+        version: 1,
+        winnerId: gameRecord.winner_id,
+        winReason: gameRecord.win_reason,
+        createdAt: gameRecord.created_at ? new Date(gameRecord.created_at) : new Date(),
+        startedAt: gameRecord.started_at ? new Date(gameRecord.started_at) : null,
+        finishedAt: gameRecord.finished_at ? new Date(gameRecord.finished_at) : null,
+        lastMovedWorkerId: gameRecord.last_moved_worker_id,
+        lastMovedWorkerPosition: gameRecord.last_moved_worker_x !== null && gameRecord.last_moved_worker_y !== null
+          ? { x: gameRecord.last_moved_worker_x, y: gameRecord.last_moved_worker_y }
+          : null,
+        players: playerRecords.map((p, index) => new Player(
+          index + 1,
+          p.user_id,
+          index,
+          'active',
+          p.is_ready,
+          p.username
+        )),
+        board: this.convertPiecesToBoardSnapshot(pieceRecords)
+      };
+
+      return Game.fromSnapshot(snapshot);
+    });
   }
 
   /**

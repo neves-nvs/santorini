@@ -130,6 +130,7 @@ export class GameViewBuilder {
     return players.map(player => ({
       id: player.id,
       userId: player.userId,
+      username: player.username,
       seat: player.seat,
       status: player.status,
       isReady: player.isReady

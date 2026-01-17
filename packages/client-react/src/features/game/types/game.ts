@@ -55,8 +55,11 @@ export interface PlayerReadyStatus {
 
 // Games list from API
 export interface GameInfo {
+  // metadata
   id: number;
   creatorId: number;
+  creatorName: string;
+  // game state
   maxPlayers: number;
   status: GameStatus;
   phase: GamePhase;
@@ -65,6 +68,7 @@ export interface GameInfo {
   version: number;
   playerCount: number;
   players: PlayerView[];
+  // time
   createdAt: string;
   startedAt: string | null;
   finishedAt: string | null;
