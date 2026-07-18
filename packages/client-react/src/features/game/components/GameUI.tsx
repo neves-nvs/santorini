@@ -3,6 +3,8 @@ import { useApp } from '../../../store/AppContext'
 import { useGameState, useCurrentPlayerMoves, useIsMyTurn, useIsConnected } from '../store/gameSelectors'
 import GameBoard from './GameBoard'
 import GameStatusBar from './GameStatusBar'
+import TurnProgressBar from './TurnProgressBar'
+import OpponentCard from './OpponentCard'
 import GameLobby from '../../lobby/components/GameLobby'
 import GameNavigation from './GameNavigation'
 import DebugMenu from '../../debug/components/DebugMenu'
@@ -38,6 +40,12 @@ const GameUI = memo(() => {
 
       {/* Game Status Bar */}
       <GameStatusBar />
+
+      {/* Opponent Info Card */}
+      <OpponentCard />
+
+      {/* Turn Progress Bar */}
+      <TurnProgressBar />
 
       {/* Game Lobby (waiting/ready controls) */}
       <GameLobby />
