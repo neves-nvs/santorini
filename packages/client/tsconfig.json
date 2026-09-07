@@ -7,7 +7,7 @@
       "ESNext",
       "DOM"
     ],
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "sourceMap": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -25,13 +25,15 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "composite": true,
-    "baseUrl": ".",
     "paths": {
+      "src/*": [
+        "./src/*"
+      ],
       "@src/*": [
-        "src/pages/*"
+        "./src/pages/*"
       ],
       "@services/*": [
-        "src/services/*"
+        "./src/services/*"
       ],
     },
     "outDir": "./dist",

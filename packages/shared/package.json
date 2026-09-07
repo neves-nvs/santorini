@@ -13,9 +13,10 @@
     "dist"
   ],
   "devDependencies": {
-    "typescript": "^5.2.2"
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": ">=6.0.0 <8.0.0"
   }
 }

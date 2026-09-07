@@ -2,7 +2,7 @@ import { Object3D, Raycaster, Vector2 } from "three";
 
 import GameManager from "./GameManager";
 import Piece from "./components/Piece";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import SceneManager from "./SceneManager";
 
 const MOUSE_DELTA: number = 5;
