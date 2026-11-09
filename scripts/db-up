@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+container="${SANTORINI_DB_CONTAINER:-santorini-postgres}"
+image="${SANTORINI_DB_IMAGE:-postgres:13}"
+port="${DB_PORT:-5432}"
+database="${DB_DATABASE:-santorini}"
+user="${DB_USER:-postgres}"
+password="${DB_PASSWORD:-postgres}"
+
+if ! docker info >/dev/null 2>&1; then
+  echo "Docker daemon is not reachable." >&2
+  exit 1
+fi
+
+if docker container inspect "$container" >/dev/null 2>&1; then
+  if [ "$(docker inspect -f '{{.State.Running}}' "$container")" != "true" ]; then
+    docker start "$container" >/dev/null
+  fi
+else
+  docker run \
+    --name "$container" \
+    -e POSTGRES_USER="$user" \
+    -e POSTGRES_PASSWORD="$password" \
+    -e POSTGRES_DB="$database" \
+    -p "$port:5432" \
+    -d "$image" \
+    >/dev/null
+fi
+
+for _ in $(seq 1 60); do
+  if docker exec "$container" pg_isready -U "$user" -d "$database" >/dev/null 2>&1; then
+    echo "PostgreSQL ready: $container on 127.0.0.1:$port"
+    exit 0
+  fi
+  sleep 1
+done
+
+docker logs --tail=50 "$container" >&2 || true
+echo "PostgreSQL did not become ready." >&2
+exit 1

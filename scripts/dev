@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+"$root/scripts/db-up"
+"$root/scripts/migrate"
+
+pids=()
+cleanup() {
+  if [ "${#pids[@]}" -gt 0 ]; then
+    kill "${pids[@]}" >/dev/null 2>&1 || true
+    wait "${pids[@]}" >/dev/null 2>&1 || true
+  fi
+}
+trap cleanup EXIT INT TERM
+
+"$root/scripts/server" &
+pids+=("$!")
+
+"$root/scripts/client-react" &
+pids+=("$!")
+
+echo "Server:       http://localhost:${PORT:-3000}"
+echo "Client React: http://localhost:5174"
+echo "Database:     ${SANTORINI_DB_CONTAINER:-santorini-postgres} remains running; stop with santorini-db-down"
+
+wait -n "${pids[@]}"
