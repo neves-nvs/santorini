@@ -12,7 +12,7 @@
     "lint": "eslint --fix",
     "migrate": "ts-node runMigrations.ts",
     "test:unit": "jest --selectProjects unit",
-    "test:integration": "jest --selectProjects integration"
+    "test:integration": "jest --selectProjects integration --silent --verbose"
   },
   "keywords": [],
   "author": "",

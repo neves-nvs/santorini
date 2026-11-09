@@ -62,7 +62,6 @@ export async function addTestPlayerToGameViaWebSocket(gameId: number, jwtToken: 
   return new Promise((resolve, reject) => {
     // Use the PORT environment variable set by test setup, not the config default
     const testPort = process.env.PORT || '8081';
-    console.log(`WebSocket helper connecting to ws://localhost:${testPort} for game ${gameId}`);
 
     const ws = new WebSocket(`ws://localhost:${testPort}`, {
       headers: {

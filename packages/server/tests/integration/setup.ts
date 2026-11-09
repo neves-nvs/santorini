@@ -26,8 +26,6 @@ async function loadContainerInfoFromEnv(): Promise<ConnectionInfo> {
 // Set unique port for each Jest worker BEFORE any imports that might start the server
 // Use random port assignment since JEST_WORKER_ID seems to be always 1
 const randomPort = Math.floor(Math.random() * 1000) + 4000; // Random port between 4000-4999
-const workerId = process.env.JEST_WORKER_ID || '1';
-console.log(`Setting PORT to ${randomPort} for worker ${workerId}`);
 process.env.PORT = randomPort.toString();
 
 const newDbName = `test_db_${randomUUID().replace(/-/g, "_")}`;
@@ -53,7 +51,6 @@ async function setup() {
     await client.connect();
 
     await client.query(`CREATE DATABASE ${newDbName};`);
-    console.log("Database created", { newDbName });
     process.env.DB_DATABASE = newDbName;
 
     const result = await client.query(
@@ -62,8 +59,6 @@ async function setup() {
     if (!result.rows[0].can_create_db) {
       throw new Error("User does not have permission to create database");
     }
-  } catch (e) {
-    console.log("Error", e);
   } finally {
     await client.end();
   }
@@ -99,12 +94,8 @@ async function setup() {
     const { error } = await migrator.migrateToLatest();
 
     if (error) {
-      console.error("Migration failed", { error });
-      throw new Error("Migration failed");
+      throw new Error(`Migration failed: ${error instanceof Error ? error.message : String(error)}`);
     }
-  } catch (e) {
-    console.log(e);
-    throw e;
   } finally {
     await db.destroy();
   }
