@@ -68,6 +68,10 @@ jobs:
           echo "DB_DATABASE=postgres" >> .env
         working-directory: packages/server
 
-      - name: Run tests for the server package
+      - name: Run unit tests
+        run: npm run test:unit -- --ci
+        working-directory: packages/server
+
+      - name: Run integration tests
         run: npm run test:integration --verbose -- --detectOpenHandles --ci
         working-directory: packages/server
