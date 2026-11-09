@@ -51,11 +51,6 @@ web_modules/
 # Optional npm cache directory
 .npm
 
-# Devenv local state and local overrides
-.devenv/
-devenv.local.nix
-devenv.local.yaml
-
 # Optional eslint cache
 .eslintcache
 

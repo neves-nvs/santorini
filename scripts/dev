@@ -23,6 +23,6 @@ pids+=("$!")
 
 echo "Server:       http://localhost:${PORT:-3000}"
 echo "Client React: http://localhost:5174"
-echo "Database:     ${SANTORINI_DB_CONTAINER:-santorini-postgres} remains running; stop with santorini-db-down"
+echo "Database:     ${SANTORINI_DB_CONTAINER:-santorini-postgres} remains running; stop with scripts/db-down"
 
 wait -n "${pids[@]}"
