@@ -88,7 +88,7 @@ This project is licensed under the **AGPL-3.0 License**. See the [LICENSE](./LIC
 
 ## 📦 Running it locally
 
-You need [Docker](https://www.docker.com/) (for PostgreSQL) and either [Node.js](https://nodejs.org/) 26 or [Nix](https://nixos.org/). The scripts start the Nix shell from `packages/server` by themselves when `npm` is not on your `PATH`. With Nix and [direnv](https://direnv.net/), `direnv allow` in `packages/server` or `packages/client-react` also gives you the right Node version for running `npm` commands there.
+You need [Docker](https://www.docker.com/) (for PostgreSQL) and either [Node.js](https://nodejs.org/) 26 or [Nix](https://nixos.org/). The scripts start the Nix shell from `packages/server` by themselves when `npm` is not on your `PATH`. With [direnv](https://direnv.net/), run `direnv allow` in the repo root or in a package: it loads Node 26 from the Nix flake and prints the commands for that folder, or tells you what to install if Nix with flakes is not available.
 
 ```bash
 git clone https://github.com/neves-nvs/santorini.git
