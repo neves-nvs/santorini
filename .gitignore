@@ -312,3 +312,5 @@ test-results/
 .direnv
 
 .vite
+# curl cookie jars
+cookies*.txt
