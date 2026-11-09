@@ -74,6 +74,13 @@ describe("Users API Integration Tests", () => {
       await request(app).get("/users").expect(401);
     });
 
+    test("includes rate limit headers", async () => {
+      const response = await request(app).get("/users");
+
+      expect(response.headers).toHaveProperty("ratelimit-limit");
+      expect(response.headers).toHaveProperty("ratelimit-remaining");
+    });
+
     test("200 OK and returns users without password data", async () => {
       await request(app).post("/users").send(userData).expect(201);
       const agent = request.agent(app);
