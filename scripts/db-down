@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+container="${SANTORINI_DB_CONTAINER:-santorini-postgres}"
+
+if ! docker container inspect "$container" >/dev/null 2>&1; then
+  echo "PostgreSQL container not found: $container"
+  exit 0
+fi
+
+if [ "$(docker inspect -f '{{.State.Running}}' "$container")" = "true" ]; then
+  docker stop "$container" >/dev/null
+  echo "PostgreSQL stopped: $container"
+else
+  echo "PostgreSQL already stopped: $container"
+fi
