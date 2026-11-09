@@ -47,6 +47,8 @@ describe("Logging Integration Tests", () => {
     expect(output).not.toContain(password);
     expect(output).not.toContain(token as string);
     expect(output).not.toMatch(/\$2[aby]\$/);
-    expect(output).not.toMatch(/"password(_hash|_salt)?"\s*:/);
+    expect(output).not.toMatch(/"password(_hash|_salt)?"\s*:\s*"(?!\[REDACTED\])/);
+    expect(output).toContain("[REDACTED]");
+    expect(output).toContain(username);
   });
 });

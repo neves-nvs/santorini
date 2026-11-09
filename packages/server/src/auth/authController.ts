@@ -42,6 +42,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
     try {
       const validUser = await findUserByUsername((user as JwtPayload).username);
+      logger.debug("Checked if user exists", { user: validUser });
       if (!validUser) {
         return res.status(403).json({ message: "User not found or inactive" });
       }

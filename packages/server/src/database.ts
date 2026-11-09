@@ -23,7 +23,7 @@ const POOL_CONFIG: PoolConfig = {
   idleTimeoutMillis: 30000,   // Close idle connections after 30 seconds
   connectionTimeoutMillis: 5000 // Timeout when acquiring connection
 };
-logger.info("Database pool", { host, port: PORT, database, user });
+logger.info("POOL_CONFIG", POOL_CONFIG);
 
 const pool = new Pool(POOL_CONFIG);
 
