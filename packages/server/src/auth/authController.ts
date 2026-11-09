@@ -42,6 +42,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
     try {
       const validUser = await findUserByUsername((user as JwtPayload).username);
+      // TODO: debug-only, this logs secrets; never run with LOG_LEVEL=debug in production
       logger.debug(`Checked if user exists: ${JSON.stringify(validUser)}`);
       if (!validUser) {
         return res.status(403).json({ message: "User not found or inactive" });
@@ -69,7 +70,6 @@ router.post(
     try {
       const user = await findUserByUsername(username);
       logger.debug(`Checked if user exists: ${JSON.stringify(user?.username)}`);
-      logger.warn(JSON.stringify(user));
       if (!user) {
         logger.error("User not found");
         return res.status(400).json({ message: "User not found" });

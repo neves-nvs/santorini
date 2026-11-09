@@ -16,6 +16,7 @@ export const morganMiddleware = morgan(HTTP_LOG_FORMAT, {
   },
 });
 
+// TODO: debug-only, this logs secrets; never run with LOG_LEVEL=debug in production
 morgan.token("body", (req: Request) => JSON.stringify(req.body));
 
 export const morganBodyMiddleware = morgan("Request body: :body", {
