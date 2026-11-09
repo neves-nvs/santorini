@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Builds the image and runs it the way it is deployed: Postgres on a private
+# network, the compiled migrations run from inside the image, then the server.
+# Registers a user, logs in and calls /me over HTTP. Cleans up after itself.
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+image="${SANTORINI_IMAGE:-santorini:check}"
+name="santorini-docker-check"
+port="${CHECK_PORT:-13000}"
+cookies="$(mktemp)"
+
+cleanup() {
+  docker rm -f "$name-app" "$name-db" >/dev/null 2>&1 || true
+  docker network rm "$name" >/dev/null 2>&1 || true
+  rm -f "$cookies"
+}
+trap cleanup EXIT
+cleanup
+
+docker build -q -t "$image" "$root" >/dev/null
+
+docker network create "$name" >/dev/null
+docker run -d --name "$name-db" --network "$name" \
+  -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=santorini \
+  postgres:18 >/dev/null
+for _ in $(seq 1 60); do
+  if docker exec "$name-db" pg_isready -U postgres -d santorini >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+done
+
+env_args=(
+  -e JWT_SECRET=docker-check
+  -e DB_HOST="$name-db"
+  -e DB_USER=postgres
+  -e DB_PASSWORD=postgres
+  -e DB_DATABASE=santorini
+)
+
+echo "== migrations"
+docker run --rm --network "$name" "${env_args[@]}" "$image" node dist/server/runMigrations.js
+
+echo "== server"
+docker run -d --name "$name-app" --network "$name" -p "$port:3000" "${env_args[@]}" "$image" >/dev/null
+for _ in $(seq 1 30); do
+  if curl -s -o /dev/null "localhost:$port/games"; then
+    break
+  fi
+  sleep 1
+done
+
+expect_status() {
+  local expected=$1 label=$2
+  shift 2
+  local actual
+  actual="$(curl -s -o /dev/null -w '%{http_code}' "$@")"
+  if [ "$actual" != "$expected" ]; then
+    echo "FAIL $label: expected $expected, got $actual" >&2
+    docker logs "$name-app" >&2
+    exit 1
+  fi
+  echo "ok   $label ($actual)"
+}
+
+json='content-type: application/json'
+credentials='{"username":"docker-check","password":"docker-check-password"}'
+expect_status 401 "GET /games without a session" "localhost:$port/games"
+expect_status 201 "register" -X POST "localhost:$port/users" -H "$json" -d "$credentials"
+expect_status 200 "login" -c "$cookies" -X POST "localhost:$port/session" -H "$json" -d "$credentials"
+expect_status 200 "GET /me with the session" -b "$cookies" "localhost:$port/me"

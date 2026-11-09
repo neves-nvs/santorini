@@ -1,0 +1,11 @@
+.git
+.github
+**/node_modules
+**/dist
+**/.env
+**/.direnv
+packages/client-react
+assets
+blog
+scripts
+*.md

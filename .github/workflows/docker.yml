@@ -1,0 +1,37 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - scripts/docker-check
+      - packages/server/**
+      - packages/shared/**
+      - .github/workflows/docker.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - scripts/docker-check
+      - packages/server/**
+      - packages/shared/**
+      - .github/workflows/docker.yml
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the image and run it against Postgres
+        run: scripts/docker-check
