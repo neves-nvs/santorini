@@ -9,15 +9,13 @@
 
 ![Santorini Online Demo](./assets/images/preview.gif)
 
-> [!WARNING]
-> Unfortunately, due to a recent rework of the frontend and 3D rendering engine, the connection between the frontend and backend components is currently being redeveloped. As a result, there is no up-to-date video that showcases the current state of the project.
->
-> The previous video shown above demonstrates an earlier version of the frontend, as the frontend governance was removed to support planned future features like ranking and competition.
+> [!NOTE]
+> Work in progress. The preview above shows an earlier version of the frontend. The current frontend (`packages/client-react`, React + Three.js) talks to the backend over HTTP and WebSockets; the older `packages/client` is kept for reference.
 
 ## 📅 Roadmap (MVP)
 
 - [x] User authentication and authorization
-- [ ] Implement game persistency (database integration to save)
+- [x] Implement game persistency (PostgreSQL via Kysely)
 - [ ] Define and implement frontend graphical interface
   - Translate game state changes to 3D graphics
 - [ ] Ensure full rule enforcement and game logic
@@ -58,7 +56,7 @@ This is a personal portfolio project, and I'm the primary contributor. However, 
 
 1. Fork the repository.
 2. Create a new branch for your feature:
-3. Chommit your changes:
+3. Commit your changes:
 
    ```bash
    git commit -m 'feat: add YourFeatureName'
@@ -88,55 +86,23 @@ For a more detailed explanation of the rules, check out the [official Santorini 
 
 This project is licensed under the **AGPL-3.0 License**. See the [LICENSE](./LICENSE) file for more details.
 
-## 📦 Installation
+## 📦 Running it locally
+
+You need [Node.js](https://nodejs.org/) 26 and [Docker](https://www.docker.com/) (for PostgreSQL). If you use [Nix](https://nixos.org/) with [direnv](https://direnv.net/), run `direnv allow` in `packages/server` and `packages/client-react` to get the right Node version automatically.
 
 ```bash
 git clone https://github.com/neves-nvs/santorini.git
+cd santorini
+scripts/install   # npm ci in every package
+scripts/dev       # starts PostgreSQL in Docker, runs migrations, then the server and client
 ```
 
-### Backend
+- Server: <http://localhost:3000>
+- Client: <http://localhost:5174>
 
-1. Navigate to the backend directory:
-
-   ```bash
-   cd packages/server
-   ```
-
-2. Install the dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Start the backend server:
-
-   ```bash
-   npm run dev
-   ```
-
-### Frontend
-
-1. Navigate to the frontend directory:
-
-   ```bash
-   cd packages/client
-   ```
-
-2. Install the dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Run the frontend:
-
-```bash
-npm run dev
-```
-
-4 Open your browser and go to <http://localhost:5173> to view the application.
+`scripts/dev` uses local development defaults (see the scripts for the variables). The database container keeps running after you stop it; stop it with `scripts/db-down`.
 
 ## Acknowledgements
 
 - Thanks to the creators of the original **Santorini** board game.
-- The 3D models for the game pieces are not mine. **TODO: Credit the models designers**.
+- The 3D models for the game pieces are not mine; see [CREDITS.md](./CREDITS.md) for their sources.
