@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react'
-import { useApp } from '../store/AppContext'
-import { useIsConnected, useIsConnecting } from '../store/gameSelectors'
-import { webSocketClient } from '../services/WebSocketClient'
+import { useEffect, useRef } from "react";
+import { useApp } from "../store/AppContext";
+import { useIsConnected, useIsConnecting } from "../store/gameSelectors";
+import { webSocketClient } from "../services/WebSocketClient";
 
 /**
  * useGameConnection - WebSocket connection lifecycle only
@@ -16,39 +16,39 @@ import { webSocketClient } from '../services/WebSocketClient'
  * - Game state fetching (use useGameActions.fetchGameState)
  */
 export function useGameConnection() {
-  const { state: appState } = useApp()
-  const isConnected = useIsConnected()
-  const isConnecting = useIsConnecting()
-  const connectionAttemptedRef = useRef(false)
+  const { state: appState } = useApp();
+  const isConnected = useIsConnected();
+  const isConnecting = useIsConnecting();
+  const connectionAttemptedRef = useRef(false);
 
   // Connect WebSocket when authenticated
   useEffect(() => {
     if (appState.username && !isConnected && !isConnecting && !connectionAttemptedRef.current) {
-      console.log('🔌 Initiating WebSocket connection for user:', appState.username)
-      connectionAttemptedRef.current = true
-      webSocketClient.connectAfterAuth()
+      console.log("🔌 Initiating WebSocket connection for user:", appState.username);
+      connectionAttemptedRef.current = true;
+      webSocketClient.connectAfterAuth();
     }
-  }, [appState.username, isConnected, isConnecting])
+  }, [appState.username, isConnected, isConnecting]);
 
   // Reset connection attempt flag when user logs out
   useEffect(() => {
     if (!appState.username) {
-      connectionAttemptedRef.current = false
+      connectionAttemptedRef.current = false;
     }
-  }, [appState.username])
+  }, [appState.username]);
 
   // Disconnect on unmount (logout)
   useEffect(() => {
     return () => {
       // Only disconnect if no username (logged out)
       if (!appState.username) {
-        webSocketClient.disconnect()
+        webSocketClient.disconnect();
       }
-    }
-  }, [appState.username])
+    };
+  }, [appState.username]);
 
   return {
     isConnected,
-    isConnecting
-  }
+    isConnecting,
+  };
 }

@@ -1,13 +1,11 @@
-import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '../types/game'
-import { ErrorHandler, ErrorType } from '../utils/errorHandler'
-import { useGameStore } from '../store/gameStore'
-import { RECONNECTION_DELAY } from '../constants/gameConstants'
+import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from "../types/game";
+import { ErrorHandler, ErrorType } from "../utils/errorHandler";
+import { useGameStore } from "../store/gameStore";
+import { RECONNECTION_DELAY } from "../constants/gameConstants";
 
 // Import shared WebSocket types
-import {
-  WS_MESSAGE_TYPES
-} from '../../../shared/src/websocket-types'
-import { log, logError, logWarn } from '../utils/log'
+import { WS_MESSAGE_TYPES } from "../../../shared/src/websocket-types";
+import { log, logError, logWarn } from "../utils/log";
 
 interface WebSocketMessage {
   type: string;
@@ -15,32 +13,32 @@ interface WebSocketMessage {
 }
 
 // Type guard to check if view is PlayerGameView (has isCurrentPlayer)
-function isPlayerGameView(view: GameStateUpdatePayload['state']): view is PlayerGameView {
-  return 'isCurrentPlayer' in view
+function isPlayerGameView(view: GameStateUpdatePayload["state"]): view is PlayerGameView {
+  return "isCurrentPlayer" in view;
 }
 
-export type WebSocketEventHandler = (message: WebSocketMessage) => void
+export type WebSocketEventHandler = (message: WebSocketMessage) => void;
 
 function getWebSocketUrl(): string {
-  const envUrl = import.meta.env.VITE_WS_URL
-  if (envUrl && !envUrl.startsWith('/')) {
-    return envUrl
+  const envUrl = import.meta.env.VITE_WS_URL;
+  if (envUrl && !envUrl.startsWith("/")) {
+    return envUrl;
   }
   // Construct WebSocket URL from current host (for proxy setup)
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const path = envUrl || '/ws'
-  return `${protocol}//${window.location.host}${path}`
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const path = envUrl || "/ws";
+  return `${protocol}//${window.location.host}${path}`;
 }
 
 export class WebSocketService {
-  private socket: WebSocket | null = null
-  private serverAddress = getWebSocketUrl()
-  private reconnectAttempts = 0
-  private maxReconnectAttempts = 5
-  private reconnectDelay = RECONNECTION_DELAY
-  private eventHandlers: Map<string, WebSocketEventHandler[]> = new Map()
-  private isAuthenticated = false
-  private lastGameStateHash: string | null = null
+  private socket: WebSocket | null = null;
+  private serverAddress = getWebSocketUrl();
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = RECONNECTION_DELAY;
+  private eventHandlers: Map<string, WebSocketEventHandler[]> = new Map();
+  private isAuthenticated = false;
+  private lastGameStateHash: string | null = null;
 
   constructor() {
     // Don't auto-connect, wait for authentication
@@ -48,388 +46,391 @@ export class WebSocketService {
 
   // Call this after successful login
   public async connectAfterAuth() {
-    log('🔌 connectAfterAuth called')
-    this.isAuthenticated = true
+    log("🔌 connectAfterAuth called");
+    this.isAuthenticated = true;
 
     // Get JWT token from the server
     try {
-      const { apiService } = await import('./ApiService')
-      const tokenResponse = await apiService.getToken()
-      this.authToken = tokenResponse.token
-      log('🔑 Got JWT token for WebSocket:', this.authToken ? 'present' : 'missing')
+      const { apiService } = await import("./ApiService");
+      const tokenResponse = await apiService.getToken();
+      this.authToken = tokenResponse.token;
+      log("🔑 Got JWT token for WebSocket:", this.authToken ? "present" : "missing");
     } catch (error) {
-      logError('🚨 Failed to get JWT token:', error)
-      const authError = ErrorHandler.createError(
-        ErrorType.AUTHENTICATION,
-        error as Error,
-        undefined,
-        { context: 'JWT token retrieval' }
-      )
+      logError("🚨 Failed to get JWT token:", error);
+      const authError = ErrorHandler.createError(ErrorType.AUTHENTICATION, error as Error, undefined, {
+        context: "JWT token retrieval",
+      });
 
-      ErrorHandler.logError(authError, 'WebSocketService.connectAfterAuth')
-      this.isAuthenticated = false
-      return
+      ErrorHandler.logError(authError, "WebSocketService.connectAfterAuth");
+      this.isAuthenticated = false;
+      return;
     }
 
-    log('🔌 Calling connect()')
-    this.connect()
+    log("🔌 Calling connect()");
+    this.connect();
   }
 
-  private authToken: string | null = null
+  private authToken: string | null = null;
 
   // Call this on logout
   public disconnect() {
-    log('🔌 Disconnecting WebSocket service')
-    this.isAuthenticated = false
-    this.authToken = null
-    this.reconnectAttempts = 0
+    log("🔌 Disconnecting WebSocket service");
+    this.isAuthenticated = false;
+    this.authToken = null;
+    this.reconnectAttempts = 0;
 
     if (this.socket) {
-      this.socket.close()
-      this.socket = null
+      this.socket.close();
+      this.socket = null;
     }
 
     // Clear all event handlers
-    this.eventHandlers.clear()
+    this.eventHandlers.clear();
 
     // Update store directly
-    const store = useGameStore.getState()
-    store.setConnected(false)
-    store.setConnecting(false)
+    const store = useGameStore.getState();
+    store.setConnected(false);
+    store.setConnecting(false);
 
     // Emit disconnected event to update UI state
-    this.emit('disconnected', { connected: false })
+    this.emit("disconnected", { connected: false });
   }
 
   private connect() {
     // Prevent multiple simultaneous connections
     if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || this.socket.readyState === WebSocket.OPEN)) {
-      log('WebSocket already connecting or connected, skipping new connection')
-      return
+      log("WebSocket already connecting or connected, skipping new connection");
+      return;
     }
 
     try {
       // Add token as query parameter if available
-      let wsUrl = this.serverAddress
+      let wsUrl = this.serverAddress;
       if (this.authToken) {
-        wsUrl += `?token=${this.authToken}`
+        wsUrl += `?token=${this.authToken}`;
       }
 
-      log('🔌 Creating WebSocket connection')
-      this.socket = new WebSocket(wsUrl)
+      log("🔌 Creating WebSocket connection");
+      this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = () => {
-        log('✅ WebSocket connected')
-        this.reconnectAttempts = 0
+        log("✅ WebSocket connected");
+        this.reconnectAttempts = 0;
 
         // Update store directly
-        const store = useGameStore.getState()
-        log('🔧 Before setConnected - isConnected:', store.isConnected)
-        store.setConnected(true)
-        store.setConnecting(false)
-        log('🔧 After setConnected - isConnected:', store.isConnected)
+        const store = useGameStore.getState();
+        log("🔧 Before setConnected - isConnected:", store.isConnected);
+        store.setConnected(true);
+        store.setConnecting(false);
+        log("🔧 After setConnected - isConnected:", store.isConnected);
 
-        this.emit('connected', { connected: true })
-      }
+        this.emit("connected", { connected: true });
+      };
 
       this.socket.onmessage = (event) => {
         try {
-          const message: WebSocketMessage = JSON.parse(event.data)
-          this.handleMessage(message)
+          const message: WebSocketMessage = JSON.parse(event.data);
+          this.handleMessage(message);
         } catch (error) {
           const parseError = ErrorHandler.createError(
             ErrorType.WEBSOCKET,
             `Failed to parse WebSocket message: ${error}`,
             undefined,
-            { rawMessage: event.data }
-          )
-          ErrorHandler.logError(parseError, 'WebSocketService.onmessage')
+            { rawMessage: event.data },
+          );
+          ErrorHandler.logError(parseError, "WebSocketService.onmessage");
         }
-      }
+      };
 
       this.socket.onclose = (event) => {
-        log('🔌 WebSocket connection closed:', event.code, event.reason, 'wasCleanClose:', event.wasClean)
+        log("🔌 WebSocket connection closed:", event.code, event.reason, "wasCleanClose:", event.wasClean);
 
         // Update store directly
-        const store = useGameStore.getState()
-        store.setConnected(false)
-        store.setConnecting(false)
+        const store = useGameStore.getState();
+        store.setConnected(false);
+        store.setConnecting(false);
 
-        this.emit('disconnected', { connected: false })
-        this.attemptReconnect()
-      }
+        this.emit("disconnected", { connected: false });
+        this.attemptReconnect();
+      };
 
       this.socket.onerror = (error) => {
-        logError('🚨 WebSocket error occurred:', error)
-        const wsError = ErrorHandler.handleWebSocketError(error)
-        ErrorHandler.logError(wsError, 'WebSocketService.connect')
+        logError("🚨 WebSocket error occurred:", error);
+        const wsError = ErrorHandler.handleWebSocketError(error);
+        ErrorHandler.logError(wsError, "WebSocketService.connect");
 
-        this.emit('error', {
-          error: ErrorHandler.getUserMessage(wsError)
-        })
+        this.emit("error", {
+          error: ErrorHandler.getUserMessage(wsError),
+        });
 
         // Don't immediately try to reconnect on error - let onclose handle it
         // This prevents rapid reconnection attempts that can cause more errors
-      }
+      };
     } catch (error) {
-      logError('Failed to create WebSocket connection:', error)
-      this.attemptReconnect()
+      logError("Failed to create WebSocket connection:", error);
+      this.attemptReconnect();
     }
   }
 
   private attemptReconnect() {
     if (this.isAuthenticated && this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++
-      log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+      this.reconnectAttempts++;
+      log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
 
       setTimeout(() => {
-        this.connect()
-      }, this.reconnectDelay * this.reconnectAttempts)
+        this.connect();
+      }, this.reconnectDelay * this.reconnectAttempts);
     } else {
-      logError('Max reconnection attempts reached or not authenticated')
-      this.emit('maxReconnectAttemptsReached', { error: 'Failed to reconnect to server' })
+      logError("Max reconnection attempts reached or not authenticated");
+      this.emit("maxReconnectAttemptsReached", { error: "Failed to reconnect to server" });
     }
   }
 
   private handleMessage(message: WebSocketMessage) {
-    const { type, payload } = message
+    const { type, payload } = message;
 
     // Log important game flow messages
-    if (type === WS_MESSAGE_TYPES.GAME_START || type === WS_MESSAGE_TYPES.GAME_READY_FOR_START ||
-        type === WS_MESSAGE_TYPES.PLAYER_READY_STATUS || type === 'error') {
-      log('🔌 WebSocket message:', type, payload)
+    if (
+      type === WS_MESSAGE_TYPES.GAME_START ||
+      type === WS_MESSAGE_TYPES.GAME_READY_FOR_START ||
+      type === WS_MESSAGE_TYPES.PLAYER_READY_STATUS ||
+      type === "error"
+    ) {
+      log("🔌 WebSocket message:", type, payload);
     }
 
     // Handle error messages
-    if (type === 'error') {
-      logError('🚨 Server error received:', payload)
+    if (type === "error") {
+      logError("🚨 Server error received:", payload);
 
       // Just log errors - don't disconnect
       // Note: "Game is full" errors should no longer occur since we only subscribe, not join
-      this.emit('server_error', payload)
+      this.emit("server_error", payload);
     }
 
     // Handle game messages directly
-    this.handleGameMessage(type, payload)
+    this.handleGameMessage(type, payload);
 
     // Emit the specific message type
-    this.emit(type, payload)
+    this.emit(type, payload);
 
     // Also emit a general 'message' event
-    this.emit('message', message)
+    this.emit("message", message);
   }
 
   private handleGameMessage(type: string, payload: any) {
-    const store = useGameStore.getState()
+    const store = useGameStore.getState();
 
     switch (type) {
       // Note: connected/disconnected are now handled directly in socket event handlers
 
       case WS_MESSAGE_TYPES.AVAILABLE_MOVES:
-        log('🎯 Available moves:', payload)
+        log("🎯 Available moves:", payload);
 
         // Handle both formats: payload as array directly, or payload.moves as array
-        let moves: any[] = []
+        let moves: any[] = [];
         if (Array.isArray(payload)) {
-          moves = payload
+          moves = payload;
         } else if (payload && Array.isArray(payload.moves)) {
-          moves = payload.moves
+          moves = payload.moves;
         }
 
         // Transform moves to expected format
         const transformedMoves = moves.map((move: any) => ({
           type: move.type,
           workerId: move.workerId || 1,
-          validPositions: move.position ? [move.position] : (move.validPositions || [])
-        }))
+          validPositions: move.position ? [move.position] : move.validPositions || [],
+        }));
 
-        log('🎯 Setting new available moves and my turn = true')
-        store.setCurrentPlayerMoves(transformedMoves)
-        store.setMyTurn(true)
-        break
+        log("🎯 Setting new available moves and my turn = true");
+        store.setCurrentPlayerMoves(transformedMoves);
+        store.setMyTurn(true);
+        break;
 
       case WS_MESSAGE_TYPES.GAME_STATE_UPDATE:
-        log('🎮 Game state update:', payload)
-        this.handleGameStateUpdate(payload as GameStateUpdatePayload, store)
-        break
+        log("🎮 Game state update:", payload);
+        this.handleGameStateUpdate(payload as GameStateUpdatePayload, store);
+        break;
 
       case WS_MESSAGE_TYPES.PLAYERS_IN_GAME:
-        log('👥 Players in game update:', payload)
+        log("👥 Players in game update:", payload);
         // This message is sent when players join/leave the game
         // The server should also send a game_state_update message with the full updated state
         // So we just log this for now - the game_state_update will handle the actual update
-        break
+        break;
 
-      case 'move_acknowledged':
-        log('✅ Move acknowledged:', payload)
+      case "move_acknowledged":
+        log("✅ Move acknowledged:", payload);
         // Just acknowledge - don't clear moves here
-        break
+        break;
 
       case WS_MESSAGE_TYPES.GAME_START:
-        log('🎮 Game started:', payload)
+        log("🎮 Game started:", payload);
         // Game has started - the game_state_update message will follow with the new state
         // Just log this for now, the state update will handle the UI transition
-        break
+        break;
 
       case WS_MESSAGE_TYPES.GAME_READY_FOR_START:
-        log('🎮 Game ready for start:', payload)
+        log("🎮 Game ready for start:", payload);
         // All players have joined and game is ready to start
-        break
+        break;
 
       case WS_MESSAGE_TYPES.PLAYER_READY_STATUS:
-        log('👥 Player ready status update:', payload)
+        log("👥 Player ready status update:", payload);
         // Update the game store with ready status information
         if (payload && Array.isArray(payload)) {
-          const readyCount = payload.filter((p: { isReady: boolean }) => p.isReady).length
-          const totalPlayers = payload.length
-          log(`🎯 Ready status: ${readyCount}/${totalPlayers} players ready`)
+          const readyCount = payload.filter((p: { isReady: boolean }) => p.isReady).length;
+          const totalPlayers = payload.length;
+          log(`🎯 Ready status: ${readyCount}/${totalPlayers} players ready`);
 
           // Store ready status in game state for UI updates
-          const currentGameState = store.gameState
+          const currentGameState = store.gameState;
           if (currentGameState) {
             store.setGameState({
               ...currentGameState,
               playersReadyStatus: payload,
               readyCount,
-              totalPlayers
-            })
+              totalPlayers,
+            });
           }
         }
-        break
+        break;
 
       default:
         // Let other message types pass through to event handlers
-        break
+        break;
     }
   }
 
   // Event system
   on(event: string, handler: WebSocketEventHandler) {
     if (!this.eventHandlers.has(event)) {
-      this.eventHandlers.set(event, [])
+      this.eventHandlers.set(event, []);
     }
-    this.eventHandlers.get(event)!.push(handler)
+    this.eventHandlers.get(event)!.push(handler);
   }
 
   off(event: string, handler: WebSocketEventHandler) {
-    const handlers = this.eventHandlers.get(event)
+    const handlers = this.eventHandlers.get(event);
     if (handlers) {
-      const index = handlers.indexOf(handler)
+      const index = handlers.indexOf(handler);
       if (index > -1) {
-        handlers.splice(index, 1)
+        handlers.splice(index, 1);
       }
     }
   }
 
   private emit(event: string, data: any) {
-    const handlers = this.eventHandlers.get(event)
+    const handlers = this.eventHandlers.get(event);
     if (handlers) {
-      handlers.forEach(handler => {
+      handlers.forEach((handler) => {
         try {
-          handler({ type: event, payload: data })
+          handler({ type: event, payload: data });
         } catch (error) {
           const handlerError = ErrorHandler.createError(
             ErrorType.UNKNOWN,
             `Event handler error for ${event}: ${error}`,
             undefined,
-            { event, data }
-          )
-          ErrorHandler.logError(handlerError, 'WebSocketService.emit')
+            { event, data },
+          );
+          ErrorHandler.logError(handlerError, "WebSocketService.emit");
         }
-      })
+      });
     }
   }
 
   // Send message to server
   send(type: string, payload: any) {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      const error = new Error(`WebSocket is not connected. State: ${this.socket?.readyState || 'null'}`)
-      logError('WebSocket send failed:', error.message, { type, payload })
-      throw error
+      const error = new Error(`WebSocket is not connected. State: ${this.socket?.readyState || "null"}`);
+      logError("WebSocket send failed:", error.message, { type, payload });
+      throw error;
     }
 
     try {
-      const message = { type, payload }
-      this.socket.send(JSON.stringify(message))
-      log('📤 Sent:', type)
+      const message = { type, payload };
+      this.socket.send(JSON.stringify(message));
+      log("📤 Sent:", type);
     } catch (error) {
-      logError('Failed to send WebSocket message:', error, { type, payload })
-      throw error
+      logError("Failed to send WebSocket message:", error, { type, payload });
+      throw error;
     }
   }
 
   // Game-specific methods (backend extracts username from JWT token)
   subscribeToGame(gameId: string) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      log('📡 Subscribing to game:', gameId)
-      this.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId })
+      log("📡 Subscribing to game:", gameId);
+      this.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId });
     } else {
-      logWarn('⚠️ WebSocket not ready for subscription. State:', this.socket?.readyState)
+      logWarn("⚠️ WebSocket not ready for subscription. State:", this.socket?.readyState);
       // Retry with exponential backoff if connection is still connecting
       if (this.socket?.readyState === WebSocket.CONNECTING) {
-        log('🔄 WebSocket connecting, retrying subscription in 500ms...')
+        log("🔄 WebSocket connecting, retrying subscription in 500ms...");
         setTimeout(() => {
-          this.subscribeToGame(gameId)
-        }, 500)
+          this.subscribeToGame(gameId);
+        }, 500);
       } else if (!this.socket) {
-        log('🔄 No WebSocket instance, attempting to connect and retry...')
+        log("🔄 No WebSocket instance, attempting to connect and retry...");
         // Try to connect and then retry
-        this.connectAfterAuth().then(() => {
-          setTimeout(() => {
-            this.subscribeToGame(gameId)
-          }, 1000)
-        }).catch(error => {
-          logError('Failed to connect WebSocket for subscription:', error)
-        })
+        this.connectAfterAuth()
+          .then(() => {
+            setTimeout(() => {
+              this.subscribeToGame(gameId);
+            }, 1000);
+          })
+          .catch((error) => {
+            logError("Failed to connect WebSocket for subscription:", error);
+          });
       }
     }
   }
 
   unsubscribeFromGame(gameId: string) {
     // No longer needed - server automatically cleans up on connection close
-    log('📡 Unsubscribe from game requested (automatic cleanup on disconnect):', gameId)
+    log("📡 Unsubscribe from game requested (automatic cleanup on disconnect):", gameId);
   }
 
   joinGame(gameId: string) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      log('🎮 Joining game:', gameId)
-      this.send(WS_MESSAGE_TYPES.JOIN_GAME, { gameId: parseInt(gameId) })
+      log("🎮 Joining game:", gameId);
+      this.send(WS_MESSAGE_TYPES.JOIN_GAME, { gameId: parseInt(gameId) });
     } else {
-      logWarn('⚠️ WebSocket not ready for joining. State:', this.socket?.readyState)
+      logWarn("⚠️ WebSocket not ready for joining. State:", this.socket?.readyState);
       // Simple retry after a short delay if connection is still connecting
       if (this.socket?.readyState === WebSocket.CONNECTING) {
         setTimeout(() => {
-          this.joinGame(gameId)
-        }, 200)
+          this.joinGame(gameId);
+        }, 200);
       }
     }
   }
 
   setReady(gameId: string, isReady: boolean) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      log('🎯 Setting ready status:', { gameId, isReady })
-      this.send(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady })
+      log("🎯 Setting ready status:", { gameId, isReady });
+      this.send(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady });
     } else {
-      logWarn('⚠️ WebSocket not ready for setting ready. State:', this.socket?.readyState)
-      throw new Error('WebSocket not connected')
+      logWarn("⚠️ WebSocket not ready for setting ready. State:", this.socket?.readyState);
+      throw new Error("WebSocket not connected");
     }
   }
 
   placeWorker(x: number, y: number) {
-    this.send('place_worker', { x, y })
+    this.send("place_worker", { x, y });
   }
 
-  moveWorker(from: { x: number, y: number }, to: { x: number, y: number }) {
-    this.send('move_worker', { from, to })
+  moveWorker(from: { x: number; y: number }, to: { x: number; y: number }) {
+    this.send("move_worker", { from, to });
   }
 
-  buildBlock(x: number, y: number, blockType: string = 'BASE') {
-    this.send('build_block', { x, y, blockType })
+  buildBlock(x: number, y: number, blockType: string = "BASE") {
+    this.send("build_block", { x, y, blockType });
   }
 
   // Connection status
   isConnected(): boolean {
-    return this.socket?.readyState === WebSocket.OPEN
+    return this.socket?.readyState === WebSocket.OPEN;
   }
 
   /**
@@ -438,10 +439,10 @@ export class WebSocketService {
    */
   private handleGameStateUpdate(payload: GameStateUpdatePayload, store: ReturnType<typeof useGameStore.getState>) {
     // Extract the actual game state from payload.state
-    const gameView = payload.state
+    const gameView = payload.state;
     if (!gameView) {
-      logWarn('🎮 Game state update missing state field:', payload)
-      return
+      logWarn("🎮 Game state update missing state field:", payload);
+      return;
     }
 
     // Create hash for deduplication
@@ -450,23 +451,23 @@ export class WebSocketService {
       version: gameView.version,
       phase: gameView.phase,
       currentPlayerId: gameView.currentPlayerId,
-      turnNumber: gameView.turnNumber
-    })
+      turnNumber: gameView.turnNumber,
+    });
 
     if (this.lastGameStateHash === gameStateHash) {
-      log('🔄 Skipping duplicate game state update')
-      return
+      log("🔄 Skipping duplicate game state update");
+      return;
     }
-    this.lastGameStateHash = gameStateHash
+    this.lastGameStateHash = gameStateHash;
 
     // Check if this is a PlayerGameView (has isCurrentPlayer) or SpectatorGameView
-    const isPlayer = isPlayerGameView(gameView)
-    const isCurrentPlayer = isPlayer ? gameView.isCurrentPlayer : false
-    const availableMoves = isPlayer ? gameView.availableMoves : undefined
+    const isPlayer = isPlayerGameView(gameView);
+    const isCurrentPlayer = isPlayer ? gameView.isCurrentPlayer : false;
+    const availableMoves = isPlayer ? gameView.availableMoves : undefined;
 
-    log('👥 Players in game state:', gameView.players)
-    log('🎯 Is current player:', isCurrentPlayer)
-    log('🎯 Available moves:', availableMoves?.length || 0)
+    log("👥 Players in game state:", gameView.players);
+    log("🎯 Is current player:", isCurrentPlayer);
+    log("🎯 Available moves:", availableMoves?.length || 0);
 
     // Convert to GameState format expected by store
     const gameState: GameState = {
@@ -482,114 +483,114 @@ export class WebSocketService {
       winnerId: gameView.winnerId ?? undefined,
       winReason: gameView.winReason ?? undefined,
       isCurrentPlayer: isCurrentPlayer,
-      isMyTurn: isCurrentPlayer
-    }
+      isMyTurn: isCurrentPlayer,
+    };
 
-    store.setGameState(gameState)
+    store.setGameState(gameState);
 
     // Handle available moves - they come with the game state now
     if (isCurrentPlayer && availableMoves && availableMoves.length > 0) {
       // Transform moves to UI format
-      const transformedMoves = this.transformMovesToUIFormat(availableMoves)
-      log('🎯 Setting available moves for current player:', transformedMoves.length)
-      store.setCurrentPlayerMoves(transformedMoves)
-      store.setMyTurn(true)
+      const transformedMoves = this.transformMovesToUIFormat(availableMoves);
+      log("🎯 Setting available moves for current player:", transformedMoves.length);
+      store.setCurrentPlayerMoves(transformedMoves);
+      store.setMyTurn(true);
     } else {
-      log('🧹 Not current player or no moves - clearing moves')
-      store.setCurrentPlayerMoves([])
-      store.setMyTurn(false)
+      log("🧹 Not current player or no moves - clearing moves");
+      store.setCurrentPlayerMoves([]);
+      store.setMyTurn(false);
     }
   }
 
   /**
    * Transform server moves to UI format (grouped by worker with valid positions)
    */
-  private transformMovesToUIFormat(moves: PlayerGameView['availableMoves']): AvailableMove[] {
-    if (!moves || moves.length === 0) return []
+  private transformMovesToUIFormat(moves: PlayerGameView["availableMoves"]): AvailableMove[] {
+    if (!moves || moves.length === 0) return [];
 
     // Group moves by type and workerId
-    const grouped = new Map<string, AvailableMove>()
+    const grouped = new Map<string, AvailableMove>();
 
     for (const move of moves) {
-      const key = `${move.type}-${move.workerId}`
+      const key = `${move.type}-${move.workerId}`;
 
       if (!grouped.has(key)) {
         grouped.set(key, {
           type: move.type,
           workerId: move.workerId,
-          validPositions: []
-        })
+          validPositions: [],
+        });
       }
 
-      const group = grouped.get(key)!
-      group.validPositions.push(move.position)
+      const group = grouped.get(key)!;
+      group.validPositions.push(move.position);
     }
 
-    return Array.from(grouped.values())
+    return Array.from(grouped.values());
   }
 }
 
 // Singleton instance - don't auto-instantiate
-let webSocketServiceInstance: WebSocketService | null = null
+let webSocketServiceInstance: WebSocketService | null = null;
 
 export const webSocketService = {
   getInstance(): WebSocketService {
     if (!webSocketServiceInstance) {
-      webSocketServiceInstance = new WebSocketService()
+      webSocketServiceInstance = new WebSocketService();
     }
-    return webSocketServiceInstance
+    return webSocketServiceInstance;
   },
 
   // Proxy methods for convenience
   connectAfterAuth() {
-    this.getInstance().connectAfterAuth()
+    this.getInstance().connectAfterAuth();
   },
 
   disconnect() {
     if (webSocketServiceInstance) {
-      webSocketServiceInstance.disconnect()
+      webSocketServiceInstance.disconnect();
       // Don't set to null immediately - let the instance handle cleanup
       // webSocketServiceInstance = null
     }
   },
 
   isConnected(): boolean {
-    return webSocketServiceInstance?.isConnected() ?? false
+    return webSocketServiceInstance?.isConnected() ?? false;
   },
 
   on(event: string, handler: WebSocketEventHandler) {
-    this.getInstance().on(event, handler)
+    this.getInstance().on(event, handler);
   },
 
   off(event: string, handler: WebSocketEventHandler) {
-    this.getInstance().off(event, handler)
+    this.getInstance().off(event, handler);
   },
 
   send(type: string, payload: any) {
-    this.getInstance().send(type, payload)
+    this.getInstance().send(type, payload);
   },
 
   subscribeToGame(gameId: string) {
-    this.getInstance().subscribeToGame(gameId)
+    this.getInstance().subscribeToGame(gameId);
   },
 
   unsubscribeFromGame(gameId: string) {
-    this.getInstance().unsubscribeFromGame(gameId)
+    this.getInstance().unsubscribeFromGame(gameId);
   },
 
   joinGame(gameId: string) {
-    this.getInstance().joinGame(gameId)
+    this.getInstance().joinGame(gameId);
   },
 
   placeWorker(x: number, y: number) {
-    this.getInstance().placeWorker(x, y)
+    this.getInstance().placeWorker(x, y);
   },
 
-  moveWorker(from: { x: number, y: number }, to: { x: number, y: number }) {
-    this.getInstance().moveWorker(from, to)
+  moveWorker(from: { x: number; y: number }, to: { x: number; y: number }) {
+    this.getInstance().moveWorker(from, to);
   },
 
   buildBlock(x: number, y: number, blockType?: string) {
-    this.getInstance().buildBlock(x, y, blockType)
-  }
-}
+    this.getInstance().buildBlock(x, y, blockType);
+  },
+};

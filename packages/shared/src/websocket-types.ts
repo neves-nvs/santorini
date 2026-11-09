@@ -1,6 +1,6 @@
 /**
  * Shared WebSocket Message Types
- * 
+ *
  * This file defines all WebSocket message types used between frontend and backend
  * to ensure type safety and prevent message type mismatches.
  */
@@ -27,59 +27,59 @@ export interface PlayerReadyStatus {
 
 export const WS_MESSAGE_TYPES = {
   // Client -> Server
-  SUBSCRIBE_GAME: 'subscribe_game',
-  JOIN_GAME: 'join_game',
-  MAKE_MOVE: 'make_move',
-  SET_READY: 'set_ready',
-  CREATE_GAME: 'create_game',
-  LIST_GAMES: 'list_games',
-  LEAVE_GAME: 'leave_game',
-  START_GAME: 'start_game',
+  SUBSCRIBE_GAME: "subscribe_game",
+  JOIN_GAME: "join_game",
+  MAKE_MOVE: "make_move",
+  SET_READY: "set_ready",
+  CREATE_GAME: "create_game",
+  LIST_GAMES: "list_games",
+  LEAVE_GAME: "leave_game",
+  START_GAME: "start_game",
 
   // Server -> Client
-  GAME_STATE_UPDATE: 'game_state_update',
-  READY_STATUS_UPDATE: 'ready_status_update',
-  AVAILABLE_MOVES: 'available_moves',
-  PLAYERS_IN_GAME: 'players_in_game',
-  PLAYER_READY_STATUS: 'player_ready_status',
-  PLAYER_JOINED: 'player_joined',
-  PLAYER_LEFT: 'player_left',
-  GAME_START: 'game_start',
-  GAME_READY_FOR_START: 'game_ready_for_start',
-  GAME_CREATED: 'game_created',
-  GAME_JOINED: 'game_joined',
-  GAMES_LIST: 'games_list',
-  GAME_LEFT: 'game_left',
-  ERROR: 'error',
-  CONNECTED: 'connected',
-  DISCONNECTED: 'disconnected',
+  GAME_STATE_UPDATE: "game_state_update",
+  READY_STATUS_UPDATE: "ready_status_update",
+  AVAILABLE_MOVES: "available_moves",
+  PLAYERS_IN_GAME: "players_in_game",
+  PLAYER_READY_STATUS: "player_ready_status",
+  PLAYER_JOINED: "player_joined",
+  PLAYER_LEFT: "player_left",
+  GAME_START: "game_start",
+  GAME_READY_FOR_START: "game_ready_for_start",
+  GAME_CREATED: "game_created",
+  GAME_JOINED: "game_joined",
+  GAMES_LIST: "games_list",
+  GAME_LEFT: "game_left",
+  ERROR: "error",
+  CONNECTED: "connected",
+  DISCONNECTED: "disconnected",
 
   // Bidirectional
-  PING: 'ping',
-  PONG: 'pong'
+  PING: "ping",
+  PONG: "pong",
 } as const;
 
-export type WSMessageType = typeof WS_MESSAGE_TYPES[keyof typeof WS_MESSAGE_TYPES];
+export type WSMessageType = (typeof WS_MESSAGE_TYPES)[keyof typeof WS_MESSAGE_TYPES];
 
 // ============================================================================
 // Move Types
 // ============================================================================
 
 export interface PlaceWorkerMove {
-  type: 'place_worker';
+  type: "place_worker";
   workerId?: number;
   position: Position;
 }
 
 export interface MoveWorkerMove {
-  type: 'move_worker';
+  type: "move_worker";
   workerId?: number;
   fromPosition: Position;
   position: Position;
 }
 
 export interface BuildMove {
-  type: 'build_block' | 'build_dome';
+  type: "build_block" | "build_dome";
   position: Position;
   buildingLevel?: number;
   buildingType?: string;
@@ -97,8 +97,6 @@ export interface SubscribeGameMessage {
     gameId: number;
   };
 }
-
-
 
 export interface JoinGameMessage {
   type: typeof WS_MESSAGE_TYPES.JOIN_GAME;
@@ -124,7 +122,7 @@ export interface SetReadyMessage {
 }
 
 // ============================================================================
-// Server -> Client Messages  
+// Server -> Client Messages
 // ============================================================================
 
 export interface GameStateUpdateMessage {
@@ -166,10 +164,12 @@ export interface PlayersInGameMessage {
 
 export interface ErrorMessage {
   type: typeof WS_MESSAGE_TYPES.ERROR;
-  payload: string | {
-    message: string;
-    code?: string;
-  };
+  payload:
+    | string
+    | {
+        message: string;
+        code?: string;
+      };
 }
 
 export interface ConnectedMessage {
@@ -205,11 +205,7 @@ export interface GameReadyForStartMessage {
 // Union Types for Type Safety
 // ============================================================================
 
-export type ClientMessage =
-  | SubscribeGameMessage
-  | JoinGameMessage
-  | MakeMoveMessage
-  | SetReadyMessage;
+export type ClientMessage = SubscribeGameMessage | JoinGameMessage | MakeMoveMessage | SetReadyMessage;
 
 export type ServerMessage =
   | GameStateUpdateMessage
@@ -242,7 +238,7 @@ export function isClientMessage(message: GenericWSMessage): message is ClientMes
     WS_MESSAGE_TYPES.SUBSCRIBE_GAME,
     WS_MESSAGE_TYPES.JOIN_GAME,
     WS_MESSAGE_TYPES.MAKE_MOVE,
-    WS_MESSAGE_TYPES.SET_READY
+    WS_MESSAGE_TYPES.SET_READY,
   ];
   return clientTypes.includes(message.type);
 }
@@ -257,7 +253,7 @@ export function isServerMessage(message: GenericWSMessage): message is ServerMes
     WS_MESSAGE_TYPES.GAME_READY_FOR_START,
     WS_MESSAGE_TYPES.ERROR,
     WS_MESSAGE_TYPES.CONNECTED,
-    WS_MESSAGE_TYPES.DISCONNECTED
+    WS_MESSAGE_TYPES.DISCONNECTED,
   ];
   return serverTypes.includes(message.type);
 }
@@ -266,16 +262,13 @@ export function isServerMessage(message: GenericWSMessage): message is ServerMes
 // Helper Functions
 // ============================================================================
 
-export function createMessage<T extends WebSocketMessage>(
-  type: T['type'], 
-  payload: T['payload']
-): T {
+export function createMessage<T extends WebSocketMessage>(type: T["type"], payload: T["payload"]): T {
   return { type, payload } as T;
 }
 
 export function isMessageType<T extends WSMessageType>(
-  message: GenericWSMessage, 
-  type: T
+  message: GenericWSMessage,
+  type: T,
 ): message is Extract<WebSocketMessage, { type: T }> {
   return message.type === type;
 }
