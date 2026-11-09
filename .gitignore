@@ -314,6 +314,3 @@ test-results/
 .vite
 # curl cookie jars
 cookies*.txt
-
-# publisher rulebook (keep a local copy outside the repo)
-santorini_rulebook.pdf
