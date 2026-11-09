@@ -3,7 +3,6 @@ import request from "supertest";
 import { transports } from "winston";
 
 process.env.FORCE_LOGS = "true";
-process.env.LOG_LEVEL = "debug";
 
 const logged: string[] = [];
 const password = "correct-horse-battery-staple";
