@@ -3,12 +3,11 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Dev/test fall back to defaults and a generated JWT secret. Anywhere else (including
-// NODE_ENV unset) a missing required variable stops the boot, all listed at once.
-const REQUIRED = ["JWT_SECRET", "DB_PASSWORD"];
-const missing = REQUIRED.filter((name) => !process.env[name]);
-if (missing.length && !["development", "test"].includes(process.env.NODE_ENV ?? "")) {
-  throw new Error(`Missing env vars: ${missing.join(", ")} (or run with NODE_ENV=development)`);
+const isDevOrTest = ["development", "test"].includes(process.env.NODE_ENV ?? "");
+const REQUIRED_ENV_VARS = ["JWT_SECRET", "DB_PASSWORD"];
+const missingEnvVars = REQUIRED_ENV_VARS.filter((name) => !process.env[name]);
+if (missingEnvVars.length && !isDevOrTest) {
+  throw new Error(`Missing env vars: ${missingEnvVars.join(", ")} (or run with NODE_ENV=development)`);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -21,13 +20,12 @@ export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT
 /* -------------------------------------------------------------------------- */
 /*                                  SECURITY                                  */
 /* -------------------------------------------------------------------------- */
-let secret = process.env.JWT_SECRET;
-if (!secret) {
-  // shortcut: a generated secret is per process (logins reset on restart), fine for dev/test only
+function generateDevSecret() {
   console.warn("WARNING: JWT_SECRET is not set, using a random one; logins reset on restart");
-  secret = randomBytes(32).toString("hex");
+  return randomBytes(32).toString("hex");
 }
-export const JWT_SECRET = secret;
+
+export const JWT_SECRET = process.env.JWT_SECRET || generateDevSecret();
 
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
