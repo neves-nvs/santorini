@@ -4,7 +4,7 @@ Santorini is a board game designed by Gordon Hamilton and published by Roxley Ga
 
 ## 3D models
 
-The models in `packages/client*/public/assets/` are STL files used to render the board and pieces.
+The models in `packages/client-react/public/assets/` are STL files used to render the board and pieces.
 
 | File | Source |
 |---|---|

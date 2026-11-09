@@ -6,7 +6,7 @@
             "name": "/"
         },
         {
-            "path": "./packages/client"
+            "path": "./packages/client-react"
         },
         {
             "path": "./packages/server"
