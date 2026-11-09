@@ -1,4 +1,3 @@
-import { randomBytes } from "crypto";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -13,12 +12,12 @@ export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT
 /* -------------------------------------------------------------------------- */
 /*                                  SECURITY                                  */
 /* -------------------------------------------------------------------------- */
-function generateSecret() {
-  console.warn("WARNING: JWT_SECRET is not set, using a random one; logins reset on restart");
-  return randomBytes(32).toString("hex");
+const ENV_JWT_SECRET = process.env.JWT_SECRET;
+if (!ENV_JWT_SECRET) {
+  throw new Error("JWT_SECRET is not set");
 }
 
-export const JWT_SECRET = process.env.JWT_SECRET || generateSecret();
+export const JWT_SECRET = ENV_JWT_SECRET;
 
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
