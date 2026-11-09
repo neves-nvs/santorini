@@ -13,7 +13,7 @@
       in {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            nodejs_22 # includes npm
+            nodejs_26 # includes npm
           ];
 
           shellHook = ''
