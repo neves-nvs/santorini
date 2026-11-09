@@ -38,16 +38,18 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: 22
 
       - name: Cache node modules
         id: node-modules-cache
-        uses: actions/cache@v6
+        uses: actions/cache@v6.1.0
         with:
           path: packages/server/node_modules
           key: ${{ runner.os }}-node-22-${{ hashFiles('packages/server/package-lock.json') }}
