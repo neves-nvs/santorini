@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+export VITE_API_URL="${VITE_API_URL:-http://localhost:3000}"
+export VITE_WS_URL="${VITE_WS_URL:-ws://localhost:3000}"
+
+cd "$root/packages/client-react"
+npm run dev -- --host 0.0.0.0

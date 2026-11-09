@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+export NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-$root/.npm}"
+export npm_config_audit="${npm_config_audit:-false}"
+export npm_config_fund="${npm_config_fund:-false}"
+export npm_config_update_notifier="${npm_config_update_notifier:-false}"
+
+for package in shared server client client-react; do
+  echo "npm ci: packages/$package"
+  cd "$root/packages/$package"
+  npm ci
+done
