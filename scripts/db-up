@@ -2,7 +2,7 @@
 set -euo pipefail
 
 container="${SANTORINI_DB_CONTAINER:-santorini-postgres}"
-image="${SANTORINI_DB_IMAGE:-postgres:13}"
+image="${SANTORINI_DB_IMAGE:-postgres:18}"
 port="${DB_PORT:-5432}"
 database="${DB_DATABASE:-santorini}"
 user="${DB_USER:-postgres}"
