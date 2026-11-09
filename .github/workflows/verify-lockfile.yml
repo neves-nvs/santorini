@@ -2,9 +2,13 @@ name: Verify lockfile
 
 on:
   pull_request:
+    paths:
+      - .github/workflows/**
   push:
     branches:
       - main
+    paths:
+      - .github/workflows/**
 
 permissions:
   contents: read
