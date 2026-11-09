@@ -52,10 +52,6 @@ export async function deleteUser(id: number): Promise<void> {
   await db.deleteFrom("users").where("id", "=", id).execute();
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                   GOOGLE                                   */
-/* -------------------------------------------------------------------------- */
-
 export async function findUserByGoogleId(googleId: string): Promise<User | undefined> {
   return await db.selectFrom("users").where("google_id", "=", googleId).selectAll().executeTakeFirst();
 }
