@@ -1,5 +1,4 @@
 import { FORCE_LOGS, LOG_LEVEL } from "./configs/config";
-import { REDACTED, isSensitiveKey, redact } from "./redact";
 import { createLogger, format, transports } from "winston";
 
 const { combine, timestamp, colorize, printf } = format;
@@ -7,15 +6,6 @@ const { combine, timestamp, colorize, printf } = format;
 // https://github.com/winstonjs/winston/issues/1345
 const uppercaseLevel = format((info) => {
   info.level = info.level.toUpperCase();
-  return info;
-});
-
-const redactSecrets = format((info) => {
-  for (const key of Object.keys(info)) {
-    if (key !== "level" && key !== "message") {
-      info[key] = isSensitiveKey(key) ? REDACTED : redact(info[key]);
-    }
-  }
   return info;
 });
 
@@ -34,7 +24,7 @@ if (FORCE_LOGS === true) {
 
 const logger = createLogger({
   level: LOG_LEVEL,
-  format: combine(redactSecrets(), uppercaseLevel(), colorize(), timestamp({ format: "HH:mm:ss" }), logFormat),
+  format: combine(uppercaseLevel(), colorize(), timestamp({ format: "HH:mm:ss" }), logFormat),
   transports: [
     new transports.Console({
       silent: silence,

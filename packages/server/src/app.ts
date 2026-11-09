@@ -1,6 +1,6 @@
 import "./auth/passport";
 
-import { morganBodyMiddleware, morganMiddleware } from "./middlewares/morganMiddleware";
+import { morganMiddleware } from "./middlewares/morganMiddleware";
 
 import authController from "./auth/authController";
 import cookieParser from "cookie-parser";
@@ -22,7 +22,6 @@ const CORS_CONFIG = {
 const app = express();
 
 app.use(morganMiddleware);
-app.use(morganBodyMiddleware);
 
 app.use(express.json());
 app.use(cookieParser());
