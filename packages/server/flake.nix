@@ -18,7 +18,7 @@
           ];
 
           shellHook = ''
-            if [ -z "$SANTORINI_QUIET" ]; then
+            if [[ $- == *i* ]]; then
               echo "Santorini server development environment"
               echo "node: $(node --version), npm: $(npm --version)"
               echo ""

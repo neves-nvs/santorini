@@ -17,7 +17,7 @@
           ];
 
           shellHook = ''
-            if [ -z "$SANTORINI_QUIET" ]; then
+            if [[ $- == *i* ]]; then
               echo "Santorini React client development environment"
               echo "node: $(node --version), npm: $(npm --version)"
               echo ""
