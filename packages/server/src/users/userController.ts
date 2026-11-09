@@ -1,4 +1,5 @@
 import { body, param } from "express-validator";
+import { authenticate } from "../auth/authController";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository";
 
 import { NewUser } from "../model";
@@ -11,10 +12,10 @@ import logger from "../logger";
 
 export const router = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", authenticate, async (req, res) => {
   try {
     const users = await findAllUsers();
-    return res.status(200).json(users);
+    return res.status(200).json(users.map((user) => new UserDTO(user)));
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);

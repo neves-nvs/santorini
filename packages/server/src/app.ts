@@ -9,6 +9,7 @@ import errorHandler from "./middlewares/errorMiddleware";
 import express from "express";
 import { gameRoutes } from "./composition-root";
 import passport from "passport";
+import { rateLimitMiddleware } from "./middlewares/rateLimitMiddleware";
 import userController from "./users/userController";
 
 const CORS_CONFIG = {
@@ -24,6 +25,8 @@ const app = express();
 app.use(morganMiddleware);
 app.use(morganBodyMiddleware);
 app.use(morganResBodyMiddleware);
+
+app.use(rateLimitMiddleware);
 
 app.use(express.json());
 app.use(cookieParser());

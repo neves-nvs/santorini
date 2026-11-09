@@ -67,6 +67,33 @@ describe("Users API Integration Tests", () => {
     // });
   });
 
+  describe("GET /users", () => {
+    test("401 Unauthorized if token is missing", async () => {
+      await request(app).post("/users").send(userData).expect(201);
+
+      await request(app).get("/users").expect(401);
+    });
+
+    test("includes rate limit headers", async () => {
+      const response = await request(app).get("/users");
+
+      expect(response.headers).toHaveProperty("ratelimit-limit");
+      expect(response.headers).toHaveProperty("ratelimit-remaining");
+    });
+
+    test("200 OK and returns users without password data", async () => {
+      await request(app).post("/users").send(userData).expect(201);
+      const agent = request.agent(app);
+      await agent.post("/session").send(userData).expect(200);
+
+      const response = await agent.get("/users").expect(200);
+
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0]).toHaveProperty("username", userData.username);
+      expect(JSON.stringify(response.body)).not.toMatch(/password|salt|hash/i);
+    });
+  });
+
   describe("GET /users/:username", () => {
     test("201 Created and returns user data for valid username", async () => {
       await request(app).post("/users").send(userData).expect(201);
