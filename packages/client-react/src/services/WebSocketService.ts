@@ -21,7 +21,7 @@ function isPlayerGameView(view: GameStateUpdatePayload['state']): view is Player
 export type WebSocketEventHandler = (message: WebSocketMessage) => void
 
 function getWebSocketUrl(): string {
-  const envUrl = import.meta.env.VITE_WS_URL
+  const envUrl = import.meta.env.VITE_WS_URL ?? (import.meta.env.DEV ? 'ws://localhost:3000' : undefined)
   if (envUrl && !envUrl.startsWith('/')) {
     return envUrl
   }

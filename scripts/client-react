@@ -2,6 +2,9 @@
 set -euo pipefail
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if ! command -v npm >/dev/null 2>&1; then
+  SANTORINI_QUIET=1 exec nix develop "$root/packages/server" --command "$0" "$@"
+fi
 export VITE_API_URL="${VITE_API_URL:-http://localhost:3000}"
 export VITE_WS_URL="${VITE_WS_URL:-ws://localhost:3000}"
 

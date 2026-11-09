@@ -18,15 +18,17 @@
           ];
 
           shellHook = ''
-            echo "Santorini server development environment"
-            echo "node: $(node --version), npm: $(npm --version)"
-            echo ""
-            echo "Available commands:"
-            echo "  npm run dev              - Start development server"
-            echo "  npm run test             - Run all tests"
-            echo "  npm run test:unit        - Run unit tests"
-            echo "  npm run test:integration - Run integration tests"
-            echo ""
+            if [ -z "$SANTORINI_QUIET" ]; then
+              echo "Santorini server development environment"
+              echo "node: $(node --version), npm: $(npm --version)"
+              echo ""
+              echo "Available commands:"
+              echo "  npm run dev              - Start development server"
+              echo "  npm run test             - Run all tests"
+              echo "  npm run test:unit        - Run unit tests"
+              echo "  npm run test:integration - Run integration tests"
+              echo ""
+            fi
           '';
         };
       });

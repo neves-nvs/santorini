@@ -24,7 +24,7 @@ interface WebSocketMessage {
 export type MessageHandler = (type: string, payload: unknown) => void
 
 function getWebSocketUrl(): string {
-  const envUrl = import.meta.env.VITE_WS_URL
+  const envUrl = import.meta.env.VITE_WS_URL ?? (import.meta.env.DEV ? 'ws://localhost:3000' : undefined)
   if (envUrl && !envUrl.startsWith('/')) {
     return envUrl
   }

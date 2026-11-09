@@ -88,7 +88,7 @@ This project is licensed under the **AGPL-3.0 License**. See the [LICENSE](./LIC
 
 ## 📦 Running it locally
 
-You need [Node.js](https://nodejs.org/) 26 and [Docker](https://www.docker.com/) (for PostgreSQL). If you use [Nix](https://nixos.org/) with [direnv](https://direnv.net/), run `direnv allow` in `packages/server` and `packages/client-react` to get the right Node version automatically.
+You need [Docker](https://www.docker.com/) (for PostgreSQL) and either [Node.js](https://nodejs.org/) 26 or [Nix](https://nixos.org/). The scripts start the Nix shell from `packages/server` by themselves when `npm` is not on your `PATH`. With Nix and [direnv](https://direnv.net/), `direnv allow` in `packages/server` or `packages/client-react` also gives you the right Node version for running `npm` commands there.
 
 ```bash
 git clone https://github.com/neves-nvs/santorini.git
@@ -100,7 +100,7 @@ scripts/dev       # starts PostgreSQL in Docker, runs migrations, then the serve
 - Server: <http://localhost:3000>
 - Client: <http://localhost:5174>
 
-`scripts/dev` uses local development defaults (see the scripts for the variables). The database container keeps running after you stop it; stop it with `scripts/db-down`.
+`scripts/dev` uses local development defaults (see the scripts for the variables). Running `npm run dev` yourself in `packages/server` and `packages/client-react` works without any setup too: the server listens on port 3000 and the client talks to `localhost:3000` in development. The database container keeps running after you stop it; stop it with `scripts/db-down`.
 
 ## Acknowledgements
 
