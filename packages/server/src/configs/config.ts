@@ -2,16 +2,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-/* -------------------------------------------------------------------------- */
-/*                                   PROGRAM                                  */
-/* -------------------------------------------------------------------------- */
 const DEFAULT_PORT = 8081;
 
 export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT;
 
-/* -------------------------------------------------------------------------- */
-/*                                  SECURITY                                  */
-/* -------------------------------------------------------------------------- */
 const ENV_JWT_SECRET = process.env.JWT_SECRET;
 if (!ENV_JWT_SECRET) {
   throw new Error("JWT_SECRET is not set");
@@ -22,9 +16,6 @@ export const JWT_SECRET = ENV_JWT_SECRET;
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-/* -------------------------------------------------------------------------- */
-/*                                  DATABASE                                  */
-/* -------------------------------------------------------------------------- */
 const DEFAULT_DB_HOST = "localhost";
 const DEFAULT_DB_PORT = 5432;
 const DEFAULT_DB_USER = "postgres";
@@ -43,9 +34,6 @@ if (!DB_PASSWORD) {
   console.log("DB_PASSWORD is not set");
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                   LOGGING                                  */
-/* -------------------------------------------------------------------------- */
 const DEFAULT_LOG_LEVEL = "http";
 
 export const LOG_LEVEL = process.env.LOG_LEVEL ?? DEFAULT_LOG_LEVEL; // winston
