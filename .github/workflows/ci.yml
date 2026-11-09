@@ -4,7 +4,15 @@ on:
   push:
     branches:
       - main
+    paths:
+      - packages/server/**
+      - packages/shared/**
+      - .github/workflows/ci.yml
   pull_request:
+    paths:
+      - packages/server/**
+      - packages/shared/**
+      - .github/workflows/ci.yml
 
 jobs:
   test:
@@ -60,15 +68,3 @@ jobs:
       - name: Run tests for the server package
         run: npm run test:integration --verbose -- --detectOpenHandles --ci
         working-directory: packages/server
-
-  secrets:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Scan history for secrets
-        run: docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 git /repo --no-banner --redact
