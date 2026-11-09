@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# Build from the repository root: docker build -t santorini .
+# Build from the repository root: docker build -f packages/server/Dockerfile -t santorini-server .
 ARG NODE_VERSION=26
 
 FROM node:${NODE_VERSION}-slim AS build

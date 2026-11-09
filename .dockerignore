@@ -4,7 +4,6 @@
 **/dist
 **/.env
 **/.direnv
-packages/client-react
 assets
 blog
 scripts

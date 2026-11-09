@@ -5,18 +5,18 @@ on:
     branches:
       - main
     paths:
-      - Dockerfile
       - .dockerignore
       - scripts/docker-check
       - packages/server/**
+      - packages/client-react/**
       - packages/shared/**
       - .github/workflows/docker.yml
   pull_request:
     paths:
-      - Dockerfile
       - .dockerignore
       - scripts/docker-check
       - packages/server/**
+      - packages/client-react/**
       - packages/shared/**
       - .github/workflows/docker.yml
 
@@ -33,5 +33,5 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Build the image and run it against Postgres
+      - name: Build the images and run them against Postgres
         run: scripts/docker-check
