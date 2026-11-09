@@ -1,0 +1,48 @@
+name: Lint
+
+on:
+  pull_request:
+    paths:
+      - packages/server/**
+      - .prettierrc
+      - .github/workflows/lint.yml
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: List changed server files
+        id: changed
+        run: |
+          git diff --name-only --diff-filter=d HEAD^1 HEAD -- 'packages/server/**/*.ts' > "$RUNNER_TEMP/changed.txt"
+          if [ -s "$RUNNER_TEMP/changed.txt" ]; then echo "any=true" >> "$GITHUB_OUTPUT"; else echo "any=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Set up Node.js
+        if: steps.changed.outputs.any == 'true'
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 26
+
+      - name: Install dependencies
+        if: steps.changed.outputs.any == 'true'
+        run: npm ci
+        working-directory: packages/server
+
+      - name: Check formatting
+        if: steps.changed.outputs.any == 'true'
+        run: xargs packages/server/node_modules/.bin/prettier --check < "$RUNNER_TEMP/changed.txt"
+
+      - name: Lint
+        if: steps.changed.outputs.any == 'true'
+        run: sed 's|^packages/server/||' "$RUNNER_TEMP/changed.txt" | xargs npx eslint
+        working-directory: packages/server
