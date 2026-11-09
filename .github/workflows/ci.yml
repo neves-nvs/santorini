@@ -4,7 +4,15 @@ on:
   push:
     branches:
       - main
+    paths:
+      - packages/server/**
+      - packages/shared/**
+      - .github/workflows/ci.yml
   pull_request:
+    paths:
+      - packages/server/**
+      - packages/shared/**
+      - .github/workflows/ci.yml
 
 jobs:
   test:

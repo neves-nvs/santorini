@@ -1,0 +1,7 @@
+# Expired localhost dev session tokens in the removed cookie jars (see PR removing cookies*.txt)
+1c47ef0b7066f868f7924f4ec68ee1b9a51be84b:packages/server/cookies.txt:jwt:5
+1c47ef0b7066f868f7924f4ec68ee1b9a51be84b:packages/server/cookies2.txt:jwt:5
+b0d9711b4547041ba5383b7b2670297bb5e590ef:cookies.txt:jwt:5
+c1031ded1383dd5b8a8029580a28d914459f97de:cookies.txt:jwt:5
+c1031ded1383dd5b8a8029580a28d914459f97de:packages/server/cookies.txt:jwt:5
+c1031ded1383dd5b8a8029580a28d914459f97de:packages/server/cookies2.txt:jwt:5
