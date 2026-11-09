@@ -15,11 +15,21 @@ export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT
 /* -------------------------------------------------------------------------- */
 const ENV_JWT_SECRET = process.env.JWT_SECRET;
 
-// Without a configured secret, generate a random one for this process. Tokens signed
-// with it stop being valid on restart, and it is not shared between server instances.
+// In development and test, generate a random secret when none is configured. It only lives
+// for this process: tokens stop being valid on restart and it is not shared between
+// instances. In any other environment (including NODE_ENV unset) refuse to start.
+const GENERATE_SECRET_ENVS = ["development", "test"];
+
 function resolveJwtSecret(): string {
   if (ENV_JWT_SECRET) {
     return ENV_JWT_SECRET;
+  }
+  const env = process.env.NODE_ENV;
+  if (!env || !GENERATE_SECRET_ENVS.includes(env)) {
+    throw new Error(
+      `JWT_SECRET is not set (NODE_ENV=${env || "unset"}). Set JWT_SECRET, or run with ` +
+        "NODE_ENV=development to use a generated secret.",
+    );
   }
   console.warn(
     "WARNING: JWT_SECRET is not set. Generated a random secret for this run; " +
