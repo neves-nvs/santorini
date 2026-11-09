@@ -10,7 +10,7 @@
 ![Santorini Online Demo](./assets/images/preview.gif)
 
 > [!NOTE]
-> Work in progress. The preview above shows an earlier version of the frontend. The current frontend (`packages/client-react`, React + Three.js) talks to the backend over HTTP and WebSockets; the older `packages/client` is kept for reference.
+> Work in progress. The preview above shows an earlier version of the frontend. The current frontend (`packages/client-react`, React + Three.js) talks to the backend over HTTP and WebSockets.
 
 ## 📅 Roadmap (MVP)
 
