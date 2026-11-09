@@ -312,3 +312,12 @@ test-results/
 .direnv
 
 .vite
+# curl cookie jars
+cookies*.txt
+
+# secrets and keys
+.env
+.env.*
+!.env.example
+*.pem
+*.key

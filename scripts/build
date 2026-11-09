@@ -3,7 +3,7 @@ set -euo pipefail
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
-for package in shared server client client-react; do
+for package in shared server client-react; do
   echo "build: packages/$package"
   cd "$root/packages/$package"
   npm run build
