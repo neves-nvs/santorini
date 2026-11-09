@@ -9,7 +9,7 @@ const logged: string[] = [];
 const password = "correct-horse-battery-staple";
 const username = "log-check";
 
-describe("logging", () => {
+describe("Logging Integration Tests", () => {
   let app: typeof import("../../../src/app").app;
   let db: typeof import("../../../src/database").db;
 
@@ -32,7 +32,7 @@ describe("logging", () => {
     await db.destroy();
   });
 
-  test("never writes passwords, hashes or tokens to the log", async () => {
+  test("does not write passwords, hashes or tokens to the log", async () => {
     await request(app).post("/users").send({ username, password }).expect(201);
 
     const agent = request.agent(app);
