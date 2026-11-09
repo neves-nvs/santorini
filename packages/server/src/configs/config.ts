@@ -11,16 +11,10 @@ if (missing.length && !["development", "test"].includes(process.env.NODE_ENV ?? 
   throw new Error(`Missing env vars: ${missing.join(", ")} (or run with NODE_ENV=development)`);
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                   PROGRAM                                  */
-/* -------------------------------------------------------------------------- */
 const DEFAULT_PORT = 8081;
 
 export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT;
 
-/* -------------------------------------------------------------------------- */
-/*                                  SECURITY                                  */
-/* -------------------------------------------------------------------------- */
 let secret = process.env.JWT_SECRET;
 if (!secret) {
   // shortcut: a generated secret is per process (logins reset on restart), fine for dev/test only
@@ -32,9 +26,6 @@ export const JWT_SECRET = secret;
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-/* -------------------------------------------------------------------------- */
-/*                                  DATABASE                                  */
-/* -------------------------------------------------------------------------- */
 const DEFAULT_DB_HOST = "localhost";
 const DEFAULT_DB_PORT = 5432;
 const DEFAULT_DB_USER = "postgres";
@@ -50,9 +41,6 @@ export const DB_USER = process.env.DB_USER ?? DEFAULT_DB_USER;
 
 export const DB_PASSWORD = process.env.DB_PASSWORD;
 
-/* -------------------------------------------------------------------------- */
-/*                                   LOGGING                                  */
-/* -------------------------------------------------------------------------- */
 const DEFAULT_LOG_LEVEL = "http";
 
 export const LOG_LEVEL = process.env.LOG_LEVEL ?? DEFAULT_LOG_LEVEL; // winston
