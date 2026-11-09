@@ -13,32 +13,16 @@ export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT
 /* -------------------------------------------------------------------------- */
 /*                                  SECURITY                                  */
 /* -------------------------------------------------------------------------- */
-const ENV_JWT_SECRET = process.env.JWT_SECRET;
-
-// In development and test, generate a random secret when none is configured. It only lives
-// for this process: tokens stop being valid on restart and it is not shared between
-// instances. In any other environment (including NODE_ENV unset) refuse to start.
-const GENERATE_SECRET_ENVS = ["development", "test"];
-
-function resolveJwtSecret(): string {
-  if (ENV_JWT_SECRET) {
-    return ENV_JWT_SECRET;
+let secret = process.env.JWT_SECRET;
+if (!secret) {
+  // shortcut: a generated secret is per process (logins reset on restart), so dev/test only
+  if (!["development", "test"].includes(process.env.NODE_ENV ?? "")) {
+    throw new Error("JWT_SECRET is not set (use NODE_ENV=development for a generated one)");
   }
-  const env = process.env.NODE_ENV;
-  if (!env || !GENERATE_SECRET_ENVS.includes(env)) {
-    throw new Error(
-      `JWT_SECRET is not set (NODE_ENV=${env || "unset"}). Set JWT_SECRET, or run with ` +
-        "NODE_ENV=development to use a generated secret.",
-    );
-  }
-  console.warn(
-    "WARNING: JWT_SECRET is not set. Generated a random secret for this run; " +
-      "logins will be invalidated on every restart. Set JWT_SECRET to persist sessions.",
-  );
-  return randomBytes(32).toString("hex");
+  console.warn("WARNING: JWT_SECRET is not set, using a random one; logins reset on restart");
+  secret = randomBytes(32).toString("hex");
 }
-
-export const JWT_SECRET = resolveJwtSecret();
+export const JWT_SECRET = secret;
 
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
