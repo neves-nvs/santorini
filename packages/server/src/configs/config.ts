@@ -3,13 +3,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const isDevOrTest = ["development", "test"].includes(process.env.NODE_ENV ?? "");
-const REQUIRED_ENV_VARS = ["JWT_SECRET", "DB_HOST", "DB_DATABASE", "DB_USER", "DB_PASSWORD"];
-const missingEnvVars = REQUIRED_ENV_VARS.filter((name) => !process.env[name]);
-if (missingEnvVars.length && !isDevOrTest) {
-  throw new Error(`Missing env vars: ${missingEnvVars.join(", ")} (or run with NODE_ENV=development)`);
-}
-
 /* -------------------------------------------------------------------------- */
 /*                                   PROGRAM                                  */
 /* -------------------------------------------------------------------------- */
@@ -20,12 +13,12 @@ export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT
 /* -------------------------------------------------------------------------- */
 /*                                  SECURITY                                  */
 /* -------------------------------------------------------------------------- */
-function generateDevSecret() {
+function generateSecret() {
   console.warn("WARNING: JWT_SECRET is not set, using a random one; logins reset on restart");
   return randomBytes(32).toString("hex");
 }
 
-export const JWT_SECRET = process.env.JWT_SECRET || generateDevSecret();
+export const JWT_SECRET = process.env.JWT_SECRET || generateSecret();
 
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -47,6 +40,9 @@ export const DB_PORT = process.env.DB_PORT ? parseInt(process.env.DB_PORT) : DEF
 export const DB_USER = process.env.DB_USER ?? DEFAULT_DB_USER;
 
 export const DB_PASSWORD = process.env.DB_PASSWORD;
+if (!DB_PASSWORD) {
+  console.log("DB_PASSWORD is not set");
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                   LOGGING                                  */
