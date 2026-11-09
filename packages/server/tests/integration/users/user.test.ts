@@ -68,13 +68,13 @@ describe("Users API Integration Tests", () => {
   });
 
   describe("GET /users", () => {
-    test("401 Unauthorized without a session", async () => {
+    test("401 Unauthorized if token is missing", async () => {
       await request(app).post("/users").send(userData).expect(201);
 
       await request(app).get("/users").expect(401);
     });
 
-    test("lists users without password data when authenticated", async () => {
+    test("200 OK and returns users without password data", async () => {
       await request(app).post("/users").send(userData).expect(201);
       const agent = request.agent(app);
       await agent.post("/session").send(userData).expect(200);
