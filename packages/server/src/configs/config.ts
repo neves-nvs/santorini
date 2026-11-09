@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -13,12 +14,21 @@ export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT
 /*                                  SECURITY                                  */
 /* -------------------------------------------------------------------------- */
 const ENV_JWT_SECRET = process.env.JWT_SECRET;
-if (ENV_JWT_SECRET === undefined) {
-  console.log("JWT_SECRET is not set");
-  throw new Error("JWT_SECRET is not set");
+
+// Without a configured secret, generate a random one for this process. Tokens signed
+// with it stop being valid on restart, and it is not shared between server instances.
+function resolveJwtSecret(): string {
+  if (ENV_JWT_SECRET) {
+    return ENV_JWT_SECRET;
+  }
+  console.warn(
+    "WARNING: JWT_SECRET is not set. Generated a random secret for this run; " +
+      "logins will be invalidated on every restart. Set JWT_SECRET to persist sessions.",
+  );
+  return randomBytes(32).toString("hex");
 }
 
-export const JWT_SECRET = ENV_JWT_SECRET;
+export const JWT_SECRET = resolveJwtSecret();
 
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
