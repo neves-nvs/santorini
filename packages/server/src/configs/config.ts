@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const isDevOrTest = ["development", "test"].includes(process.env.NODE_ENV ?? "");
-const REQUIRED_ENV_VARS = ["JWT_SECRET", "DB_PASSWORD"];
+const REQUIRED_ENV_VARS = ["JWT_SECRET", "DB_HOST", "DB_DATABASE", "DB_USER", "DB_PASSWORD"];
 const missingEnvVars = REQUIRED_ENV_VARS.filter((name) => !process.env[name]);
 if (missingEnvVars.length && !isDevOrTest) {
   throw new Error(`Missing env vars: ${missingEnvVars.join(", ")} (or run with NODE_ENV=development)`);
