@@ -2,6 +2,7 @@ import "./auth/passport";
 
 import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./middlewares/morganMiddleware";
 
+import { ALLOWED_ORIGINS } from "./configs/config";
 import authController from "./auth/authController";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -13,7 +14,7 @@ import { rateLimitMiddleware } from "./middlewares/rateLimitMiddleware";
 import userController from "./users/userController";
 
 const CORS_CONFIG = {
-  origin: true,
+  origin: ALLOWED_ORIGINS,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

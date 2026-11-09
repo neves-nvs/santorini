@@ -24,6 +24,69 @@ describe("WebSocket Authentication Integration Tests", () => {
     await db.destroy();
   });
 
+  describe("WebSocket Origin", () => {
+    test("rejects connection from an unknown origin", (done) => {
+      const ws = new WebSocket(`ws://localhost:${PORT}`, {
+        origin: "https://evil.example",
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        perMessageDeflate: false,
+      });
+
+      ws.once("open", () => {
+        ws.close();
+        done(new Error("Connection from an unknown origin was accepted"));
+      });
+
+      ws.once("error", (err) => {
+        expect(err).toBeTruthy();
+        ws.close();
+        done();
+      });
+    });
+
+    test("authenticates connection from an allowed origin", (done) => {
+      const ws = new WebSocket(`ws://localhost:${PORT}`, {
+        origin: "http://localhost:5174",
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        perMessageDeflate: false,
+      });
+
+      ws.once("open", () => {
+        expect(ws.readyState).toBe(WebSocket.OPEN);
+        ws.close();
+        done();
+      });
+
+      ws.once("error", (err) => {
+        done(new Error(`WebSocket connection failed: ${err}`));
+      });
+    });
+
+    test("authenticates connection from the same origin", (done) => {
+      const ws = new WebSocket(`ws://localhost:${PORT}`, {
+        origin: `http://localhost:${PORT}`,
+        headers: {
+          Authorization: `Bearer ${jwtToken}`,
+        },
+        perMessageDeflate: false,
+      });
+
+      ws.once("open", () => {
+        expect(ws.readyState).toBe(WebSocket.OPEN);
+        ws.close();
+        done();
+      });
+
+      ws.once("error", (err) => {
+        done(new Error(`WebSocket connection failed: ${err}`));
+      });
+    });
+  });
+
   describe("WebSocket Authentication", () => {
     test("authenticates WebSocket connection with valid JWT", (done) => {
       const ws = new WebSocket(`ws://localhost:${PORT}`, {

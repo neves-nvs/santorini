@@ -2,17 +2,39 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 import { AuthenticatedWebSocket } from "../websockets/authenticatedWebsocket";
 import { IncomingMessage } from "http";
-import { JWT_SECRET } from "../configs/config";
+import { ALLOWED_ORIGINS, JWT_SECRET } from "../configs/config";
 import WebSocket from "ws";
 import { findUserByUsername } from "../users/userRepository";
 import internal from "stream";
 import logger from "../logger";
+
+function isAllowedOrigin(request: IncomingMessage): boolean {
+  const origin = request.headers.origin;
+  if (!origin) {
+    return true;
+  }
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    return true;
+  }
+  try {
+    return new URL(origin).host === request.headers.host;
+  } catch {
+    return false;
+  }
+}
 
 export async function webSocketAuthUpgrade(request: IncomingMessage, socket: internal.Duplex, head: Buffer, wss: WebSocket.Server) {
   const authHeader = request.headers["authorization"];
   let token: string | null = null;
 
   logger.info("WebSocket upgrade request received");
+
+  if (!isAllowedOrigin(request)) {
+    logger.warn(`WebSocket upgrade rejected for origin ${request.headers.origin}`);
+    socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
+    socket.destroy();
+    return;
+  }
 
   // Try to get token from Authorization header first
   if (authHeader?.startsWith("Bearer ")) {
