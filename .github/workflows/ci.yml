@@ -21,21 +21,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: testdb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -59,13 +44,7 @@ jobs:
         working-directory: packages/server
 
       - name: Setup environment variables
-        run: |
-          echo "JWT_SECRET=secret" >> .env
-          echo "DB_HOST=127.0.0.1" >> .env
-          echo "DB_PORT=5432" >> .env
-          echo "DB_USER=user" >> .env
-          echo "DB_PASSWORD=password" >> .env
-          echo "DB_DATABASE=postgres" >> .env
+        run: echo "JWT_SECRET=secret" >> .env
         working-directory: packages/server
 
       - name: Run unit tests

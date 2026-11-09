@@ -20,7 +20,7 @@ async function exportPostgresInfoToEnv(containerInfo: ConnectionInfo) {
 export default async function globalSetup() {
   console.log("Starting PostgreSQL container...");
 
-  global.container = await new PostgreSqlContainer("postgres:13").withExposedPorts(5432).start();
+  global.container = await new PostgreSqlContainer("postgres:18").withExposedPorts(5432).start();
 
   const container = global.container;
 
