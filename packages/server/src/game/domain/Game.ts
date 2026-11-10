@@ -1,9 +1,6 @@
-import type { BoardSnapshot, MoveResult } from './Board.ts';
-import { Board } from './Board.ts';
-import type { Move} from './Move.ts';
-import { BuildMove, MoveWorkerMove, PlaceWorkerMove } from './Move.ts';
-import type { TurnPolicy } from './TurnPolicy.ts';
-import { DefaultTurnPolicy } from './TurnPolicy.ts';
+import { Board, type BoardSnapshot, type MoveResult } from './Board.ts';
+import { BuildMove, type Move, MoveWorkerMove, PlaceWorkerMove } from './Move.ts';
+import { DefaultTurnPolicy, type TurnPolicy } from './TurnPolicy.ts';
 import type { GamePhase, GameStatus } from './types.ts';
 import type { Player, PlayerId } from './Player.ts';
 

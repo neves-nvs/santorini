@@ -1,7 +1,5 @@
-import type { VerifiedCallback } from "passport-jwt";
-import { ExtractJwt, Strategy as JwtStrategy } from "passport-jwt";
-import type { JwtPayload } from "jsonwebtoken";
-import jwt from "jsonwebtoken";
+import { ExtractJwt, Strategy as JwtStrategy, type VerifiedCallback } from "passport-jwt";
+import jwt, { type JwtPayload } from "jsonwebtoken";
 
 const { JsonWebTokenError, NotBeforeError, TokenExpiredError } = jwt;
 

@@ -1,5 +1,4 @@
-import type { Response} from 'express';
-import { Router } from 'express';
+import { type Response, Router } from 'express';
 import { authenticate, getUser } from '../../auth/authController.ts';
 import { getHttpStatus, getUserMessage } from '../../errors/GameErrors.ts';
 

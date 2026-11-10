@@ -1,5 +1,4 @@
-import type { ClientMessage, GameMove} from '../../../shared/src/websocket-types.ts';
-import { WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types.ts';
+import { type ClientMessage, type GameMove, WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types.ts';
 import { send, sendError } from './utils.ts';
 
 import type { AuthenticatedWebSocket } from './authenticatedWebsocket.ts';

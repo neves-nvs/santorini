@@ -1,5 +1,4 @@
-import type { JwtPayload } from "jsonwebtoken";
-import jwt from "jsonwebtoken";
+import jwt, { type JwtPayload } from "jsonwebtoken";
 
 import type { AuthenticatedWebSocket } from "../websockets/authenticatedWebsocket.ts";
 import type { IncomingMessage } from "http";

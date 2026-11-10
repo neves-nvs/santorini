@@ -8,8 +8,7 @@ import type {
   Move as SharedMove,
   SpectatorGameView
 } from '../../../../shared/src/game-types.ts';
-import type { Move} from './Move.ts';
-import { BuildMove, MoveWorkerMove, PlaceWorkerMove } from './Move.ts';
+import { BuildMove, type Move, MoveWorkerMove, PlaceWorkerMove } from './Move.ts';
 import type { Board } from './Board.ts';
 import type { Game } from './Game.ts';
 import type { Player } from './Player.ts';

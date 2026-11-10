@@ -1,7 +1,5 @@
-import type { NextFunction, Request, Response} from "express";
-import { Router } from "express";
-import type { JwtPayload, VerifyErrors } from "jsonwebtoken";
-import jwt from "jsonwebtoken";
+import { type NextFunction, type Request, type Response, Router } from "express";
+import jwt, { type JwtPayload, type VerifyErrors } from "jsonwebtoken";
 
 import { JWT_SECRET } from "../configs/config.ts";
 import { StatusCodes } from "http-status-codes";

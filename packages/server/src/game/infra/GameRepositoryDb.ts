@@ -1,7 +1,6 @@
 import type { BoardCellSnapshot, BoardSnapshot } from '../domain/Board.ts';
 import type { Database, NewPiece, Piece } from '../../model.ts';
-import type { GameSnapshot } from '../domain/Game.ts';
-import { Game } from '../domain/Game.ts';
+import { Game, type GameSnapshot } from '../domain/Game.ts';
 import type { GamePhase, GameStatus } from '../domain/types.ts';
 import type { Kysely, Transaction } from 'kysely';
 import { Player } from '../domain/Player.ts';

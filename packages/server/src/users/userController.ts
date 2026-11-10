@@ -1,11 +1,11 @@
 import { body, param } from "express-validator";
-import { authenticate } from "../auth/authController.ts";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository.ts";
 
 import type { NewUser } from "../model.ts";
 import { Router } from "express";
 import { StatusCodes } from "http-status-codes";
 import { UserDTO } from "./userDTO.ts";
+import { authenticate } from "../auth/authController.ts";
 import bcrypt from "bcryptjs";
 import { checkValidation } from "../middlewares/middleware.ts";
 import logger from "../logger.ts";

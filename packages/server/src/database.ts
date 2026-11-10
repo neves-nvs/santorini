@@ -1,6 +1,5 @@
 import { Kysely, PostgresDialect } from "kysely";
-import type { PoolConfig } from "pg";
-import { Pool } from "pg";
+import { Pool, type PoolConfig } from "pg";
 
 import { DB_PORT } from "./configs/config.ts";
 import type { Database } from "./model.ts";
