@@ -75,7 +75,7 @@ expect_status() {
 base="localhost:$port"
 json='content-type: application/json'
 credentials='{"username":"docker-check","password":"docker-check-password"}'
-websocket=(-H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==')
+websocket=(-H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H "Sec-WebSocket-Key: $(head -c 16 /dev/urandom | base64)")
 
 expect_status 200 "GET / serves the client" "$base/"
 expect_status 200 "GET /auth falls back to the client" "$base/auth"
