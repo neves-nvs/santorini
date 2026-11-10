@@ -1,8 +1,8 @@
-import { Game } from './Game';
-import { GamePhase } from './types';
-import { Move } from './Move';
-import { MoveResult } from './Board';
-import { PlayerId } from './Player';
+import type { Game } from './Game.ts';
+import type { GamePhase } from './types.ts';
+import type { Move } from './Move.ts';
+import type { MoveResult } from './Board.ts';
+import type { PlayerId } from './Player.ts';
 
 /**
  * Turn Policy Interface

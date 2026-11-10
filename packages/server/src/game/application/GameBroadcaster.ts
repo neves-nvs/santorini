@@ -1,11 +1,11 @@
-import { GameViewBuilder, toSharedMove } from '../domain/GameViewBuilder';
+import { GameViewBuilder, toSharedMove } from '../domain/GameViewBuilder.ts';
 
-import { Game } from '../domain/Game';
-import { GameEvent } from '../domain/GameEvent';
-import { Move } from '../domain/Move';
-import { WS_MESSAGE_TYPES } from '../../../../shared/src/websocket-types';
-import { WebSocketConnectionManager } from '../infra/WebSocketConnectionManager';
-import logger from '../../logger';
+import type { Game } from '../domain/Game.ts';
+import type { GameEvent } from '../domain/GameEvent.ts';
+import type { Move } from '../domain/Move.ts';
+import { WS_MESSAGE_TYPES } from '../../../../shared/src/websocket-types.ts';
+import { WebSocketConnectionManager } from '../infra/WebSocketConnectionManager.ts';
+import logger from '../../logger.ts';
 
 /**
  * Application service responsible for broadcasting game updates to players

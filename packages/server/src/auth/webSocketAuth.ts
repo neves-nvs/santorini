@@ -1,14 +1,15 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
-import { AuthenticatedWebSocket } from "../websockets/authenticatedWebsocket";
-import { IncomingMessage } from "http";
-import { JWT_SECRET } from "../configs/config";
-import WebSocket from "ws";
-import { findUserByUsername } from "../users/userRepository";
-import internal from "stream";
-import logger from "../logger";
+import type { AuthenticatedWebSocket } from "../websockets/authenticatedWebsocket.ts";
+import type { IncomingMessage } from "http";
+import { JWT_SECRET } from "../configs/config.ts";
+import type { WebSocketServer } from "ws";
+import { findUserByUsername } from "../users/userRepository.ts";
+import type internal from "stream";
+import logger from "../logger.ts";
 
-export async function webSocketAuthUpgrade(request: IncomingMessage, socket: internal.Duplex, head: Buffer, wss: WebSocket.Server) {
+export async function webSocketAuthUpgrade(request: IncomingMessage, socket: internal.Duplex, head: Buffer, wss: WebSocketServer) {
   const authHeader = request.headers["authorization"];
   let token: string | null = null;
 

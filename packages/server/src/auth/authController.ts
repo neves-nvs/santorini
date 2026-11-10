@@ -1,15 +1,17 @@
-import { NextFunction, Request, Response, Router } from "express";
-import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
+import type { NextFunction, Request, Response} from "express";
+import { Router } from "express";
+import type { JwtPayload, VerifyErrors } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
-import { JWT_SECRET } from "../configs/config";
+import { JWT_SECRET } from "../configs/config.ts";
 import { StatusCodes } from "http-status-codes";
-import { User } from "../model";
+import type { User } from "../model.ts";
 
 import bcrypt from "bcryptjs";
 import { body } from "express-validator";
-import { checkValidation } from "../middlewares/middleware";
-import { findUserByUsername } from "../users/userRepository";
-import logger from "../logger";
+import { checkValidation } from "../middlewares/middleware.ts";
+import { findUserByUsername } from "../users/userRepository.ts";
+import logger from "../logger.ts";
 import passport from "passport";
 
 /**

@@ -1,9 +1,10 @@
 import { Kysely, PostgresDialect } from "kysely";
-import { Pool, PoolConfig } from "pg";
+import type { PoolConfig } from "pg";
+import { Pool } from "pg";
 
-import { DB_PORT } from "./configs/config";
-import { Database } from "./model";
-import logger from "./logger";
+import { DB_PORT } from "./configs/config.ts";
+import type { Database } from "./model.ts";
+import logger from "./logger.ts";
 
 const database = process.env.DB_DATABASE;
 const host = process.env.DB_HOST;

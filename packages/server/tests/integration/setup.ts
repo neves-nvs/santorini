@@ -1,15 +1,20 @@
 import * as path from "path";
 
-import { Client, ClientConfig, Pool } from "pg";
+import type { ClientConfig} from "pg";
+import { Client, Pool } from "pg";
 import {
-  FileMigrationProvider,
   Kysely,
-  Migrator,
   PostgresDialect,
 } from "kysely";
 
-import { ConnectionInfo } from "./globalSetup";
+import {
+  FileMigrationProvider,
+  Migrator,
+} from "kysely/migration";
+
+import type { ConnectionInfo } from "./globalSetup.ts";
 import { promises as fs } from "fs";
+import { fileURLToPath } from "url";
 import { randomUUID } from "crypto";
 
 
@@ -91,7 +96,7 @@ async function setup() {
     provider: new FileMigrationProvider({
       fs,
       path,
-      migrationFolder: path.resolve(__dirname, "../../migrations"),
+      migrationFolder: fileURLToPath(new URL("../../migrations", import.meta.url)),
     }),
   });
 
@@ -110,6 +115,4 @@ async function setup() {
   }
 }
 
-module.exports = async () => {
-  await setup();
-};
+await setup();

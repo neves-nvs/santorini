@@ -4,12 +4,12 @@
  */
 
 import WebSocket from 'ws';
-import * as helpers from '../helper/helpers';
-import { UserDTO } from '../../../src/users/userDTO';
-import { server, wss } from '../../../src/main';
-import { PORT } from '../../../src/configs/config';
-import { cleanupTestData } from '../helper/testDb';
-import { db } from '../../../src/database';
+import * as helpers from '../helper/helpers.ts';
+import type { UserDTO } from '../../../src/users/userDTO.ts';
+import { server, wss } from '../../../src/main.ts';
+import { PORT } from '../../../src/configs/config.ts';
+import { cleanupTestData } from '../helper/testDb.ts';
+import { db } from '../../../src/database.ts';
 
 type WsMessage = Record<string, any>;
 

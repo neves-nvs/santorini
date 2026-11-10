@@ -1,12 +1,13 @@
-import { Response, Router } from 'express';
-import { authenticate, getUser } from '../../auth/authController';
-import { getHttpStatus, getUserMessage } from '../../errors/GameErrors';
+import type { Response} from 'express';
+import { Router } from 'express';
+import { authenticate, getUser } from '../../auth/authController.ts';
+import { getHttpStatus, getUserMessage } from '../../errors/GameErrors.ts';
 
-import { Game } from '../domain/Game';
-import { GameBroadcaster } from '../application/GameBroadcaster';
-import { GameService } from '../application/GameService';
-import { LobbyService } from '../application/LobbyService';
-import logger from '../../logger';
+import type { Game } from '../domain/Game.ts';
+import type { GameBroadcaster } from '../application/GameBroadcaster.ts';
+import type { GameService } from '../application/GameService.ts';
+import type { LobbyService } from '../application/LobbyService.ts';
+import logger from '../../logger.ts';
 
 // Convert Game domain object to DTO for API responses
 function gameToDto(game: Game) {

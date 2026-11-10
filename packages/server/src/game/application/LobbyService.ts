@@ -1,9 +1,9 @@
-import { GameFullError, GameNotFoundError, PlayerAlreadyInGameError } from '../../errors/GameErrors';
+import { GameFullError, GameNotFoundError, PlayerAlreadyInGameError } from '../../errors/GameErrors.ts';
 
-import { Game } from '../domain/Game';
-import { GameRepositoryDb } from '../infra/GameRepositoryDb';
-import { Player } from '../domain/Player';
-import logger from '../../logger';
+import type { Game } from '../domain/Game.ts';
+import type { GameRepositoryDb } from '../infra/GameRepositoryDb.ts';
+import { Player } from '../domain/Player.ts';
+import logger from '../../logger.ts';
 
 /**
  * Application service for lobby operations

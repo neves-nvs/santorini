@@ -1,11 +1,11 @@
-import * as helpers from "../helper/helpers";
+import * as helpers from "../helper/helpers.ts";
 
-import { server, wss } from "../../../src/main";
-import { PORT } from "../../../src/configs/config";
-import { UserDTO } from "../../../src/users/userDTO";
+import { server, wss } from "../../../src/main.ts";
+import { PORT } from "../../../src/configs/config.ts";
+import type { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
-import { cleanupTestData } from "../helper/testDb";
-import { db } from "../../../src/database";
+import { cleanupTestData } from "../helper/testDb.ts";
+import { db } from "../../../src/database.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WsMessage = Record<string, any>;

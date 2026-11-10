@@ -1,7 +1,7 @@
-import { Database, NewUser, User, UserUpdate } from "../model";
-import { Kysely, Transaction } from "kysely";
+import type { Database, NewUser, User, UserUpdate } from "../model.ts";
+import type { Kysely, Transaction } from "kysely";
 
-import { db } from "../database";
+import { db } from "../database.ts";
 
 export async function findUser(criteria: Partial<User>): Promise<User | undefined> {
   let query = db.selectFrom("users");

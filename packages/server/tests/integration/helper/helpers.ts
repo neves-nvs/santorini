@@ -1,7 +1,7 @@
-import { NewGame } from "../../../src/model";
-import { UserDTO } from "../../../src/users/userDTO";
+import type { NewGame } from "../../../src/model.ts";
+import type { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
-import { app } from "../../../src/app";
+import { app } from "../../../src/app.ts";
 import request from "supertest";
 
 export async function generateTestUser() {

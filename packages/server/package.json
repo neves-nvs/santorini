@@ -4,15 +4,15 @@
   "main": "dist/main.js",
   "scripts": {
     "dev": "tsx watch ./src/main.ts",
-    "test": "jest --detectOpenHandles",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles",
     "start": "node dist/server/src/main.js",
     "clean": "rm -rf dist",
     "build": "tsc",
     "format": "prettier --write 'src/**/*.{js,ts,json}'",
     "lint": "eslint --fix",
     "migrate": "tsx runMigrations.ts",
-    "test:unit": "jest --selectProjects unit",
-    "test:integration": "jest --selectProjects integration"
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --selectProjects unit",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --selectProjects integration"
   },
   "keywords": [],
   "author": "",
@@ -67,5 +67,6 @@
     "tsx": "^4.23.15",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.72.1"
-  }
+  },
+  "type": "module"
 }

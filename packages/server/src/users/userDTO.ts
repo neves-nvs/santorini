@@ -1,4 +1,4 @@
-import { User } from "../model";
+import type { User } from "../model.ts";
 
 export class UserDTO {
   id: number;

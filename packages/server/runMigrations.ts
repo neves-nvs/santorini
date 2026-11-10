@@ -1,5 +1,5 @@
-import { FileMigrationProvider, Migrator } from "kysely";
-import { db } from "./src/database";
+import { FileMigrationProvider, Migrator } from "kysely/migration";
+import { db } from "./src/database.ts";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -9,7 +9,7 @@ async function migrateToLatest() {
     provider: new FileMigrationProvider({
       fs,
       path,
-      migrationFolder: path.join(__dirname, "./migrations"),
+      migrationFolder: path.join(import.meta.dirname, "./migrations"),
     }),
   });
 

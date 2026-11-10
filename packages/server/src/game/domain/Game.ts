@@ -1,10 +1,13 @@
-import { Board, BoardSnapshot, MoveResult } from './Board';
-import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from './Move';
-import { DefaultTurnPolicy, TurnPolicy } from './TurnPolicy';
-import { GamePhase, GameStatus } from './types';
-import { Player, PlayerId } from './Player';
+import type { BoardSnapshot, MoveResult } from './Board.ts';
+import { Board } from './Board.ts';
+import type { Move} from './Move.ts';
+import { BuildMove, MoveWorkerMove, PlaceWorkerMove } from './Move.ts';
+import type { TurnPolicy } from './TurnPolicy.ts';
+import { DefaultTurnPolicy } from './TurnPolicy.ts';
+import type { GamePhase, GameStatus } from './types.ts';
+import type { Player, PlayerId } from './Player.ts';
 
-import { GameEvent } from './GameEvent';
+import { GameEvent } from './GameEvent.ts';
 
 /**
  * Game Aggregate Root

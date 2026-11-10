@@ -1,11 +1,12 @@
-import { ClientMessage, GameMove, WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types';
-import { send, sendError } from './utils';
+import type { ClientMessage, GameMove} from '../../../shared/src/websocket-types.ts';
+import { WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types.ts';
+import { send, sendError } from './utils.ts';
 
-import { AuthenticatedWebSocket } from './authenticatedWebsocket';
-import { GameService } from '../game/application/GameService';
-import { LobbyService } from '../game/application/LobbyService';
-import { WebSocketConnectionManager } from '../game/infra/WebSocketConnectionManager';
-import logger from '../logger';
+import type { AuthenticatedWebSocket } from './authenticatedWebsocket.ts';
+import type { GameService } from '../game/application/GameService.ts';
+import type { LobbyService } from '../game/application/LobbyService.ts';
+import type { WebSocketConnectionManager } from '../game/infra/WebSocketConnectionManager.ts';
+import logger from '../logger.ts';
 
 /**
  * WebSocket message router.

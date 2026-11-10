@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 
-import logger from '../../logger';
+import logger from '../../logger.ts';
 
 /**
  * WebSocket Connection Manager - Infrastructure Layer

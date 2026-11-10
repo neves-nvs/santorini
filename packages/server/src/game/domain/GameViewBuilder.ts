@@ -1,4 +1,4 @@
-import {
+import type {
   BoardView,
   CellView,
   GamePhase,
@@ -7,12 +7,13 @@ import {
   PlayerView,
   Move as SharedMove,
   SpectatorGameView
-} from '../../../../shared/src/game-types';
-import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from './Move';
-import { Board } from './Board';
-import { Game } from './Game';
-import { Player } from './Player';
-import { VisibilityPolicy } from './VisibilityPolicy';
+} from '../../../../shared/src/game-types.ts';
+import type { Move} from './Move.ts';
+import { BuildMove, MoveWorkerMove, PlaceWorkerMove } from './Move.ts';
+import type { Board } from './Board.ts';
+import type { Game } from './Game.ts';
+import type { Player } from './Player.ts';
+import { VisibilityPolicy } from './VisibilityPolicy.ts';
 
 // Re-export for backwards compatibility
 export type { BoardView, CellView, PlayerGameView, PlayerView, SpectatorGameView };

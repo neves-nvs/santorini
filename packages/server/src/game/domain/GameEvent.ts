@@ -1,4 +1,4 @@
-import { Move } from './Move';
+import type { Move } from './Move.ts';
 
 /**
  * Domain Events

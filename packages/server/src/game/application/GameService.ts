@@ -1,13 +1,15 @@
-import { GameNotFoundError, PlayerNotInGameError } from '../../errors/GameErrors';
-import { GameViewBuilder, PlayerGameView } from '../domain/GameViewBuilder';
-import { MoveCommand, createMove } from '../domain/Move';
+import { GameNotFoundError, PlayerNotInGameError } from '../../errors/GameErrors.ts';
+import type { PlayerGameView } from '../domain/GameViewBuilder.ts';
+import { GameViewBuilder } from '../domain/GameViewBuilder.ts';
+import type { MoveCommand} from '../domain/Move.ts';
+import { createMove } from '../domain/Move.ts';
 
-import { Game } from '../domain/Game';
-import { GameBroadcaster } from './GameBroadcaster';
-import { GameEvent } from '../domain/GameEvent';
-import { GameRepositoryDb } from '../infra/GameRepositoryDb';
-import { Player } from '../domain/Player';
-import logger from '../../logger';
+import type { Game } from '../domain/Game.ts';
+import { GameBroadcaster } from './GameBroadcaster.ts';
+import type { GameEvent } from '../domain/GameEvent.ts';
+import type { GameRepositoryDb } from '../infra/GameRepositoryDb.ts';
+import { Player } from '../domain/Player.ts';
+import logger from '../../logger.ts';
 
 /**
  * Application service for game operations

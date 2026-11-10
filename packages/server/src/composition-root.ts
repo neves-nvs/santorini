@@ -8,15 +8,15 @@
  *   Infrastructure → Domain → Application → Transport
  */
 
-import { GameBroadcaster } from './game/application/GameBroadcaster';
-import { GameRepositoryDb } from './game/infra/GameRepositoryDb';
-import { GameService } from './game/application/GameService';
-import { GameViewBuilder } from './game/domain/GameViewBuilder';
-import { LobbyService } from './game/application/LobbyService';
-import { WsRouter } from './websockets/WsRouter';
-import { createGameRoutes } from './game/transport/GameHttpController';
-import { db } from './database';
-import { webSocketConnectionManager } from './game/infra/WebSocketConnectionManager';
+import { GameBroadcaster } from './game/application/GameBroadcaster.ts';
+import { GameRepositoryDb } from './game/infra/GameRepositoryDb.ts';
+import { GameService } from './game/application/GameService.ts';
+import { GameViewBuilder } from './game/domain/GameViewBuilder.ts';
+import { LobbyService } from './game/application/LobbyService.ts';
+import { WsRouter } from './websockets/WsRouter.ts';
+import { createGameRoutes } from './game/transport/GameHttpController.ts';
+import { db } from './database.ts';
+import { webSocketConnectionManager } from './game/infra/WebSocketConnectionManager.ts';
 
 // Infrastructure
 const gameRepository = new GameRepositoryDb(db);

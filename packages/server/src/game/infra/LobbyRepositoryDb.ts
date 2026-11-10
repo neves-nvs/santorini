@@ -1,8 +1,8 @@
-import { Database, Game, GameStatus } from '../../model';
+import type { Database, Game, GameStatus } from '../../model.ts';
 
-import { Kysely } from 'kysely';
-import { db } from '../../database';
-import logger from '../../logger';
+import type { Kysely } from 'kysely';
+import { db } from '../../database.ts';
+import logger from '../../logger.ts';
 
 /**
  * Database adapter for lobby operations

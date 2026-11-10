@@ -26,7 +26,8 @@ export default [
       },
     },
     rules: {
-      "sort-imports": "error",
+      "sort-imports": ["error", { ignoreDeclarationSort: true }],
+      "@typescript-eslint/consistent-type-imports": ["error", { disallowTypeAnnotations: false }],
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "off",
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
