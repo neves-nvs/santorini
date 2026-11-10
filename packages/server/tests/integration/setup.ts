@@ -1,17 +1,11 @@
 import * as path from "path";
 
 import { Client, ClientConfig, Pool } from "pg";
-import {
-  FileMigrationProvider,
-  Kysely,
-  Migrator,
-  PostgresDialect,
-} from "kysely";
+import { FileMigrationProvider, Kysely, Migrator, PostgresDialect } from "kysely";
 
 import { ConnectionInfo } from "./globalSetup";
 import { promises as fs } from "fs";
 import { randomUUID } from "crypto";
-
 
 async function loadContainerInfoFromEnv(): Promise<ConnectionInfo> {
   return {
@@ -25,7 +19,7 @@ async function loadContainerInfoFromEnv(): Promise<ConnectionInfo> {
 
 // Set a random port for each test file BEFORE any imports that might start the server, so files running in parallel do not collide
 const randomPort = Math.floor(Math.random() * 1000) + 4000; // Random port between 4000-4999
-const workerId = process.env.VITEST_POOL_ID || '1';
+const workerId = process.env.VITEST_POOL_ID || "1";
 console.log(`Setting PORT to ${randomPort} for worker ${workerId}`);
 process.env.PORT = randomPort.toString();
 
@@ -33,7 +27,6 @@ const newDbName = `test_db_${randomUUID().replace(/-/g, "_")}`;
 process.env.DB_DATABASE = newDbName;
 
 async function setup() {
-  
   // const containerInfo = await loadContainerInfoFromFile();
   const containerInfo = await loadContainerInfoFromEnv();
   const { port, host, database, user, password } = containerInfo;
