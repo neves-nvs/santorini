@@ -23,10 +23,9 @@ async function loadContainerInfoFromEnv(): Promise<ConnectionInfo> {
   };
 }
 
-// Set unique port for each Jest worker BEFORE any imports that might start the server
-// Use random port assignment since JEST_WORKER_ID seems to be always 1
+// Set a random port for each test file BEFORE any imports that might start the server, so files running in parallel do not collide
 const randomPort = Math.floor(Math.random() * 1000) + 4000; // Random port between 4000-4999
-const workerId = process.env.JEST_WORKER_ID || '1';
+const workerId = process.env.VITEST_POOL_ID || '1';
 console.log(`Setting PORT to ${randomPort} for worker ${workerId}`);
 process.env.PORT = randomPort.toString();
 
@@ -34,8 +33,7 @@ const newDbName = `test_db_${randomUUID().replace(/-/g, "_")}`;
 process.env.DB_DATABASE = newDbName;
 
 async function setup() {
-  // console.log(`JEST_WORKER_ID: ${process.env.JEST_WORKER_ID}`);
-
+  
   // const containerInfo = await loadContainerInfoFromFile();
   const containerInfo = await loadContainerInfoFromEnv();
   const { port, host, database, user, password } = containerInfo;
@@ -110,6 +108,4 @@ async function setup() {
   }
 }
 
-module.exports = async () => {
-  await setup();
-};
+beforeAll(setup);

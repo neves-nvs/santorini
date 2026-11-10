@@ -1,6 +1,6 @@
 import { AuthenticatedWebSocket } from './authenticatedWebsocket';
 import { Server } from 'http';
-import WebSocket from 'ws';
+import { WebSocketServer } from 'ws';
 import logger from '../logger';
 import { webSocketAuthUpgrade } from '../auth/webSocketAuth';
 import { wsRouter } from '../composition-root';
@@ -9,8 +9,8 @@ import { wsRouter } from '../composition-root';
  * Creates and configures a WebSocket server attached to an HTTP server.
  * Handles connection lifecycle and delegates message routing to WsRouter.
  */
-export function createWebSocketServer(httpServer: Server): WebSocket.Server {
-  const wss = new WebSocket.Server({ perMessageDeflate: false, noServer: true });
+export function createWebSocketServer(httpServer: Server): WebSocketServer {
+  const wss = new WebSocketServer({ perMessageDeflate: false, noServer: true });
 
   wss.on('connection', (ws: AuthenticatedWebSocket) => {
     logger.debug('[WS] New connection');

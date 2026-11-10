@@ -50,9 +50,9 @@ jobs:
         working-directory: packages/server
 
       - name: Run unit tests
-        run: npm run test:unit -- --ci
+        run: npm run test:unit
         working-directory: packages/server
 
       - name: Run integration tests
-        run: npm run test:integration --verbose -- --detectOpenHandles --ci
+        run: npm run test:integration -- --reporter=verbose
         working-directory: packages/server
