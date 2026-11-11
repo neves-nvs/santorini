@@ -1,4 +1,4 @@
-import { User } from "../model";
+import { User } from "../model.ts";
 import WebSocket from "ws";
 
 export class AuthenticatedWebSocket extends WebSocket {

@@ -1,12 +1,12 @@
-import { Game } from './Game';
-import { GamePhase } from './types';
-import { Move } from './Move';
-import { MoveResult } from './Board';
-import { PlayerId } from './Player';
+import { Game } from "./Game.ts";
+import { GamePhase } from "./types.ts";
+import { Move } from "./Move.ts";
+import { MoveResult } from "./Board.ts";
+import { PlayerId } from "./Player.ts";
 
 /**
  * Turn Policy Interface
- * 
+ *
  * Defines how turns advance in the game.
  * Can be swapped for different game variants or god powers that affect turn order.
  */
@@ -46,7 +46,7 @@ export interface TurnAdvancement {
 
 /**
  * Default Santorini Turn Policy
- * 
+ *
  * Implements standard Santorini turn rules:
  * - Placing phase: players alternate placing workers
  * - Moving/Building phases: players alternate full turns (move + build)
@@ -55,11 +55,11 @@ export class DefaultTurnPolicy implements TurnPolicy {
   advanceTurn(game: Game, _move: Move, moveResult: MoveResult): TurnAdvancement {
     const currentPhase = game.phase!;
 
-    if (currentPhase === 'placing') {
+    if (currentPhase === "placing") {
       return this.advancePlacingTurn(game);
-    } else if (currentPhase === 'moving') {
+    } else if (currentPhase === "moving") {
       return this.advanceMovingTurn(game, moveResult);
-    } else if (currentPhase === 'building') {
+    } else if (currentPhase === "building") {
       return this.advanceBuildingTurn(game);
     }
 
@@ -76,12 +76,12 @@ export class DefaultTurnPolicy implements TurnPolicy {
   getNextPhase(game: Game, _move: Move, _moveResult: MoveResult): GamePhase {
     const currentPhase = game.phase!;
 
-    if (currentPhase === 'placing') {
-      return this.isPlacingPhaseComplete(game) ? 'moving' : 'placing';
-    } else if (currentPhase === 'moving') {
-      return 'building';
-    } else if (currentPhase === 'building') {
-      return 'moving';
+    if (currentPhase === "placing") {
+      return this.isPlacingPhaseComplete(game) ? "moving" : "placing";
+    } else if (currentPhase === "moving") {
+      return "building";
+    } else if (currentPhase === "building") {
+      return "moving";
     }
 
     return currentPhase;
@@ -99,24 +99,24 @@ export class DefaultTurnPolicy implements TurnPolicy {
 
     // Check if placing phase is complete after this move
     const isComplete = newPlacingTurnsCompleted >= game.players.size * 2;
-    const nextPhase: GamePhase = isComplete ? 'moving' : 'placing';
+    const nextPhase: GamePhase = isComplete ? "moving" : "placing";
 
     return {
       nextPlayerId: isComplete ? Array.from(game.players.keys())[0] : nextPlayerId,
       nextPhase,
       turnNumber: isComplete ? game.turnNumber + 1 : game.turnNumber,
-      placingTurnsCompleted: newPlacingTurnsCompleted
+      placingTurnsCompleted: newPlacingTurnsCompleted,
     };
   }
 
   private advanceMovingTurn(game: Game, moveResult: MoveResult): TurnAdvancement {
     return {
       nextPlayerId: game.currentPlayerId!, // Same player continues to building
-      nextPhase: 'building',
+      nextPhase: "building",
       turnNumber: game.turnNumber,
       placingTurnsCompleted: game.placingTurnsCompleted,
       lastMovedWorkerId: moveResult.lastMovedWorkerId,
-      lastMovedWorkerPosition: moveResult.lastMovedWorkerPosition
+      lastMovedWorkerPosition: moveResult.lastMovedWorkerPosition,
     };
   }
 
@@ -125,11 +125,11 @@ export class DefaultTurnPolicy implements TurnPolicy {
 
     return {
       nextPlayerId,
-      nextPhase: 'moving',
+      nextPhase: "moving",
       turnNumber: game.turnNumber + 1,
       placingTurnsCompleted: game.placingTurnsCompleted,
       lastMovedWorkerId: undefined,
-      lastMovedWorkerPosition: undefined
+      lastMovedWorkerPosition: undefined,
     };
   }
 }

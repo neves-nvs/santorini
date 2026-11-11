@@ -1,14 +1,14 @@
-import { Board, BoardSnapshot, MoveResult } from './Board';
-import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from './Move';
-import { DefaultTurnPolicy, TurnPolicy } from './TurnPolicy';
-import { GamePhase, GameStatus } from './types';
-import { Player, PlayerId } from './Player';
+import { Board, BoardSnapshot, MoveResult } from "./Board.ts";
+import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "./Move.ts";
+import { DefaultTurnPolicy, TurnPolicy } from "./TurnPolicy.ts";
+import { GamePhase, GameStatus } from "./types.ts";
+import { Player, PlayerId } from "./Player.ts";
 
-import { GameEvent } from './GameEvent';
+import { GameEvent } from "./GameEvent.ts";
 
 /**
  * Game Aggregate Root
- * 
+ *
  * Holds full game state and encapsulates all game rules.
  * Pure domain logic with no external dependencies.
  */
@@ -32,29 +32,17 @@ export class Game {
     private _createdAt: Date = new Date(),
     private _startedAt: Date | null = null,
     private _finishedAt: Date | null = null,
-    private _turnPolicy: TurnPolicy = new DefaultTurnPolicy()
+    private _turnPolicy: TurnPolicy = new DefaultTurnPolicy(),
   ) {}
 
   // Factory methods
   static create(id: number, creatorId: number, maxPlayers: number): Game {
-    return new Game(
-      id,
-      creatorId,
-      maxPlayers,
-      'waiting',
-      null,
-      null,
-      0,
-      0,
-      Board.createEmpty(),
-      new Map(),
-      1
-    );
+    return new Game(id, creatorId, maxPlayers, "waiting", null, null, 0, 0, Board.createEmpty(), new Map(), 1);
   }
 
   static fromSnapshot(snapshot: GameSnapshot, turnPolicy?: TurnPolicy): Game {
     const players = new Map();
-    snapshot.players.forEach(p => players.set(p.id, p));
+    snapshot.players.forEach((p) => players.set(p.id, p));
 
     return new Game(
       snapshot.id,
@@ -75,7 +63,7 @@ export class Game {
       snapshot.createdAt,
       snapshot.startedAt,
       snapshot.finishedAt,
-      turnPolicy
+      turnPolicy,
     );
   }
 
@@ -97,24 +85,24 @@ export class Game {
 
     // Check if move was successful
     if (!moveResult.success) {
-      throw new Error(moveResult.error || 'Move failed');
+      throw new Error(moveResult.error || "Move failed");
     }
 
     // Update game state based on move result
     if (moveResult.isWin) {
-      this._status = 'completed';
+      this._status = "completed";
       this._winnerId = playerId;
-      this._winReason = 'win_condition';
+      this._winReason = "win_condition";
       this._finishedAt = new Date();
       this._version++;
       this.assertInvariants();
-      events.push(new GameEvent('GameFinished', { winnerId: playerId, reason: 'win_condition' }));
+      events.push(new GameEvent("GameFinished", { winnerId: playerId, reason: "win_condition" }));
     } else {
       // Advance turn state
       this.advanceTurn(move, moveResult);
       this._version++;
       this.assertInvariants();
-      events.push(new GameEvent('MovePlayed', { playerId, move, turnNumber: this._turnNumber }));
+      events.push(new GameEvent("MovePlayed", { playerId, move, turnNumber: this._turnNumber }));
     }
     return events;
   }
@@ -124,16 +112,16 @@ export class Game {
    * Pure domain logic - no external dependencies.
    */
   getAvailableMoves(): Move[] {
-    if (this._status !== 'in-progress' || !this._currentPlayerId) {
+    if (this._status !== "in-progress" || !this._currentPlayerId) {
       return [];
     }
 
     switch (this._phase) {
-      case 'placing':
+      case "placing":
         return this.generatePlacementMoves(this._currentPlayerId);
-      case 'moving':
+      case "moving":
         return this.generateMovementMoves(this._currentPlayerId);
-      case 'building':
+      case "building":
         return this.generateBuildMoves(this._currentPlayerId);
       default:
         return [];
@@ -162,7 +150,7 @@ export class Game {
     const moves: Move[] = [];
 
     for (const [key, workerPos] of this._board.workers) {
-      const [ownerIdStr, workerIdStr] = key.split('-');
+      const [ownerIdStr, workerIdStr] = key.split("-");
       const ownerId = parseInt(ownerIdStr);
       const workerId = parseInt(workerIdStr);
 
@@ -176,12 +164,7 @@ export class Game {
           const toY = workerPos.y + dy;
 
           if (this.isValidMove(workerPos.x, workerPos.y, toX, toY)) {
-            moves.push(new MoveWorkerMove(
-              playerId,
-              { x: toX, y: toY },
-              workerId,
-              { x: workerPos.x, y: workerPos.y }
-            ));
+            moves.push(new MoveWorkerMove(playerId, { x: toX, y: toY }, workerId, { x: workerPos.x, y: workerPos.y }));
           }
         }
       }
@@ -211,10 +194,10 @@ export class Game {
           const height = cell?.height ?? 0;
 
           if (height < 3) {
-            moves.push(new BuildMove(playerId, { x: bx, y: by }, 'block', workerId));
+            moves.push(new BuildMove(playerId, { x: bx, y: by }, "block", workerId));
           }
           if (height === 3) {
-            moves.push(new BuildMove(playerId, { x: bx, y: by }, 'dome', workerId));
+            moves.push(new BuildMove(playerId, { x: bx, y: by }, "dome", workerId));
           }
         }
       }
@@ -225,7 +208,7 @@ export class Game {
   private countWorkersForPlayer(playerId: PlayerId): number {
     let count = 0;
     for (const [key] of this._board.workers) {
-      const [ownerIdStr] = key.split('-');
+      const [ownerIdStr] = key.split("-");
       if (parseInt(ownerIdStr) === playerId) count++;
     }
     return count;
@@ -256,28 +239,58 @@ export class Game {
   }
 
   // Getters
-  get status(): GameStatus { return this._status; }
-  get phase(): GamePhase | null { return this._phase; }
-  get currentPlayerId(): PlayerId | null { return this._currentPlayerId; }
-  get turnNumber(): number { return this._turnNumber; }
-  get placingTurnsCompleted(): number { return this._placingTurnsCompleted; }
-  get version(): number { return this._version; }
-  get board(): Board { return this._board; }
-  get players(): ReadonlyMap<PlayerId, Player> { return this._players; }
-  get winnerId(): PlayerId | null { return this._winnerId; }
-  get winReason(): string | null { return this._winReason; }
-  get lastMovedWorkerId(): number | null { return this._lastMovedWorkerId; }
-  get lastMovedWorkerPosition(): { x: number; y: number } | null { return this._lastMovedWorkerPosition; }
-  get createdAt(): Date { return this._createdAt; }
-  get startedAt(): Date | null { return this._startedAt; }
-  get finishedAt(): Date | null { return this._finishedAt; }
+  get status(): GameStatus {
+    return this._status;
+  }
+  get phase(): GamePhase | null {
+    return this._phase;
+  }
+  get currentPlayerId(): PlayerId | null {
+    return this._currentPlayerId;
+  }
+  get turnNumber(): number {
+    return this._turnNumber;
+  }
+  get placingTurnsCompleted(): number {
+    return this._placingTurnsCompleted;
+  }
+  get version(): number {
+    return this._version;
+  }
+  get board(): Board {
+    return this._board;
+  }
+  get players(): ReadonlyMap<PlayerId, Player> {
+    return this._players;
+  }
+  get winnerId(): PlayerId | null {
+    return this._winnerId;
+  }
+  get winReason(): string | null {
+    return this._winReason;
+  }
+  get lastMovedWorkerId(): number | null {
+    return this._lastMovedWorkerId;
+  }
+  get lastMovedWorkerPosition(): { x: number; y: number } | null {
+    return this._lastMovedWorkerPosition;
+  }
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+  get startedAt(): Date | null {
+    return this._startedAt;
+  }
+  get finishedAt(): Date | null {
+    return this._finishedAt;
+  }
 
   /**
    * Check if the current player is trapped (has no valid moves).
    * Only applicable during moving phase.
    */
   isCurrentPlayerTrapped(): boolean {
-    if (this._status !== 'in-progress' || this._phase !== 'moving' || !this._currentPlayerId) {
+    if (this._status !== "in-progress" || this._phase !== "moving" || !this._currentPlayerId) {
       return false;
     }
     return this.getAvailableMoves().length === 0;
@@ -295,33 +308,35 @@ export class Game {
 
     // Find opponent (winner)
     const playerIds = Array.from(this._players.keys());
-    const winnerId = playerIds.find(id => id !== this._currentPlayerId)!;
+    const winnerId = playerIds.find((id) => id !== this._currentPlayerId)!;
 
-    this._status = 'completed';
+    this._status = "completed";
     this._winnerId = winnerId;
-    this._winReason = 'opponent_trapped';
+    this._winReason = "opponent_trapped";
     this._finishedAt = new Date();
     this._version++;
     this.assertInvariants();
 
-    return [new GameEvent('GameFinished', {
-      winnerId,
-      reason: 'opponent_trapped',
-      trappedPlayerId: this._currentPlayerId
-    })];
+    return [
+      new GameEvent("GameFinished", {
+        winnerId,
+        reason: "opponent_trapped",
+        trappedPlayerId: this._currentPlayerId,
+      }),
+    ];
   }
 
   // Game lifecycle
   addPlayer(player: Player): GameEvent[] {
     if (this._players.size >= this.maxPlayers) {
-      throw new Error('Game is full');
+      throw new Error("Game is full");
     }
 
     this._players.set(player.id, player);
     const events: GameEvent[] = [];
 
     if (this._players.size === this.maxPlayers) {
-      events.push(new GameEvent('GameReady', { gameId: this.id }));
+      events.push(new GameEvent("GameReady", { gameId: this.id }));
     }
 
     return events;
@@ -332,8 +347,8 @@ export class Game {
    * Only allowed if game is in 'waiting' status and player hasn't readied.
    */
   removePlayer(userId: number): GameEvent[] {
-    if (this._status !== 'waiting') {
-      throw new Error('Cannot remove player - game is not waiting');
+    if (this._status !== "waiting") {
+      throw new Error("Cannot remove player - game is not waiting");
     }
 
     // Find player by userId
@@ -346,17 +361,17 @@ export class Game {
     }
 
     if (!playerToRemove) {
-      throw new Error('Player not found in game');
+      throw new Error("Player not found in game");
     }
 
     if (playerToRemove.isReady) {
-      throw new Error('Cannot remove player who has already confirmed ready');
+      throw new Error("Cannot remove player who has already confirmed ready");
     }
 
     this._players.delete(playerToRemove.id);
     this._version++;
 
-    return [new GameEvent('PlayerLeft', { gameId: this.id, userId })];
+    return [new GameEvent("PlayerLeft", { gameId: this.id, userId })];
   }
 
   /**
@@ -369,25 +384,25 @@ export class Game {
    * 3. Once ALL players have confirmed, the game auto-starts
    */
   setPlayerReady(playerId: PlayerId, ready: boolean): GameEvent[] {
-    if (this._status !== 'waiting') {
-      throw new Error('Cannot change ready status - game is not waiting');
+    if (this._status !== "waiting") {
+      throw new Error("Cannot change ready status - game is not waiting");
     }
 
     const player = this._players.get(playerId);
     if (!player) {
-      throw new Error('Player not found in game');
+      throw new Error("Player not found in game");
     }
 
     player.setReady(ready);
     this._version++;
 
     const events: GameEvent[] = [
-      new GameEvent('PlayerReadyChanged', {
+      new GameEvent("PlayerReadyChanged", {
         gameId: this.id,
         playerId,
         ready,
-        readyStatuses: this.getReadyStatuses()
-      })
+        readyStatuses: this.getReadyStatuses(),
+      }),
     ];
 
     // Auto-start when all players are ready
@@ -417,31 +432,31 @@ export class Game {
    * Get ready status for all players
    */
   getReadyStatuses(): Array<{ playerId: number; ready: boolean }> {
-    return Array.from(this._players.values()).map(p => ({
+    return Array.from(this._players.values()).map((p) => ({
       playerId: p.id,
-      ready: p.isReady
+      ready: p.isReady,
     }));
   }
 
   startGame(): GameEvent[] {
-    if (this._status !== 'waiting') {
-      throw new Error('Game cannot be started');
+    if (this._status !== "waiting") {
+      throw new Error("Game cannot be started");
     }
     if (this._players.size !== this.maxPlayers) {
       throw new Error(`Cannot start: need ${this.maxPlayers} players, have ${this._players.size}`);
     }
     if (!this.areAllPlayersReady()) {
-      throw new Error('Cannot start: not all players are ready');
+      throw new Error("Cannot start: not all players are ready");
     }
 
-    this._status = 'in-progress';
-    this._phase = 'placing';
+    this._status = "in-progress";
+    this._phase = "placing";
     this._currentPlayerId = Array.from(this._players.keys())[0];
     this._startedAt = new Date();
     this._version++;
 
     this.assertInvariants();
-    return [new GameEvent('GameStarted', { gameId: this.id, firstPlayerId: this._currentPlayerId })];
+    return [new GameEvent("GameStarted", { gameId: this.id, firstPlayerId: this._currentPlayerId })];
   }
 
   // Private methods
@@ -452,51 +467,51 @@ export class Game {
    */
   private assertInvariants(): void {
     // Invariant: in-progress requires full player count, all ready, valid current player
-    if (this._status === 'in-progress') {
+    if (this._status === "in-progress") {
       if (this._players.size !== this.maxPlayers) {
         throw new Error(`Invariant violated: in-progress game has ${this._players.size}/${this.maxPlayers} players`);
       }
       if (!this._currentPlayerId || !this._players.has(this._currentPlayerId)) {
-        throw new Error('Invariant violated: in-progress game has no valid current player');
+        throw new Error("Invariant violated: in-progress game has no valid current player");
       }
       if (!this._phase) {
-        throw new Error('Invariant violated: in-progress game has no phase');
+        throw new Error("Invariant violated: in-progress game has no phase");
       }
       if (!this._startedAt) {
-        throw new Error('Invariant violated: in-progress game has no startedAt');
+        throw new Error("Invariant violated: in-progress game has no startedAt");
       }
     }
 
     // Invariant: completed requires winnerId or abort reason
-    if (this._status === 'completed') {
+    if (this._status === "completed") {
       if (!this._finishedAt) {
-        throw new Error('Invariant violated: completed game has no finishedAt');
+        throw new Error("Invariant violated: completed game has no finishedAt");
       }
       // winnerId can be null for aborted games, but winReason should indicate why
     }
 
     // Invariant: waiting cannot have currentPlayer or phase
-    if (this._status === 'waiting') {
+    if (this._status === "waiting") {
       if (this._currentPlayerId !== null) {
-        throw new Error('Invariant violated: waiting game has currentPlayerId set');
+        throw new Error("Invariant violated: waiting game has currentPlayerId set");
       }
       if (this._phase !== null) {
-        throw new Error('Invariant violated: waiting game has phase set');
+        throw new Error("Invariant violated: waiting game has phase set");
       }
     }
   }
 
   private validateMove(playerId: PlayerId, move: Move): void {
-    if (this._status !== 'in-progress') {
-      throw new Error('Game is not in progress');
+    if (this._status !== "in-progress") {
+      throw new Error("Game is not in progress");
     }
 
     if (this._currentPlayerId !== playerId) {
-      throw new Error('Not your turn');
+      throw new Error("Not your turn");
     }
 
     if (!move) {
-      throw new Error('Move is required');
+      throw new Error("Move is required");
     }
 
     // Additional move validation would go here
@@ -504,7 +519,7 @@ export class Game {
 
   private advanceTurn(move: Move, moveResult: MoveResult): void {
     if (!this._phase) {
-      throw new Error('Cannot advance turn: game phase not set');
+      throw new Error("Cannot advance turn: game phase not set");
     }
 
     const advancement = this._turnPolicy.advanceTurn(this, move, moveResult);
@@ -537,10 +552,9 @@ export class Game {
       lastMovedWorkerPosition: this._lastMovedWorkerPosition,
       createdAt: this._createdAt,
       startedAt: this._startedAt,
-      finishedAt: this._finishedAt
+      finishedAt: this._finishedAt,
     };
   }
-
 }
 
 export interface GameSnapshot {

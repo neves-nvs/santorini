@@ -1,23 +1,23 @@
-import "./auth/passport";
+import "./auth/passport.ts";
 
-import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./middlewares/morganMiddleware";
+import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./middlewares/morganMiddleware.ts";
 
-import authController from "./auth/authController";
+import authController from "./auth/authController.ts";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import errorHandler from "./middlewares/errorMiddleware";
+import errorHandler from "./middlewares/errorMiddleware.ts";
 import express from "express";
-import { gameRoutes } from "./composition-root";
+import { gameRoutes } from "./composition-root.ts";
 import passport from "passport";
-import { rateLimitMiddleware } from "./middlewares/rateLimitMiddleware";
-import userController from "./users/userController";
+import { rateLimitMiddleware } from "./middlewares/rateLimitMiddleware.ts";
+import userController from "./users/userController.ts";
 
 const CORS_CONFIG = {
   origin: true,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  optionsSuccessStatus: 200
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  optionsSuccessStatus: 200,
 };
 
 const app = express();
