@@ -6,7 +6,6 @@ import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { db } from "../../../src/database.ts";
 
-
 interface TestPlayer {
   user: UserDTO;
   token: string;
@@ -24,7 +23,7 @@ type WsMessage = Record<string, any>;
 
 /**
  * Integration test for a complete game from start to finish.
- * 
+ *
  * Flow:
  * 1. Create game, players join
  * 2. Players confirm ready, game auto-starts
@@ -44,7 +43,7 @@ describe("Full Game Integration Test", () => {
   });
 
   afterEach(async () => {
-    players.forEach(player => {
+    players.forEach((player) => {
       if (player.ws.readyState === WebSocket.OPEN) {
         player.ws.close();
       }
@@ -156,10 +155,12 @@ describe("Full Game Integration Test", () => {
     const queue = messageQueues.get(ws) || [];
     const startIdx = queue.length;
 
-    ws.send(JSON.stringify({
-      type: "make_move",
-      payload: { gameId, move }
-    }));
+    ws.send(
+      JSON.stringify({
+        type: "make_move",
+        payload: { gameId, move },
+      }),
+    );
 
     // Wait for a game_state_update or error that arrives AFTER we sent the move
     return waitForCondition(ws, (msg) => {
@@ -182,18 +183,18 @@ describe("Full Game Integration Test", () => {
       const joinPromise = waitForMessage(ws, "game_joined");
       ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
       const joinResponse = await joinPromise;
-      players[i].playerId = joinResponse.payload?.gameState?.players?.find(
-        (p: GamePlayer) => p.userId === user.id
-      )?.id;
+      players[i].playerId = joinResponse.payload?.gameState?.players?.find((p: GamePlayer) => p.userId === user.id)?.id;
     }
 
     // Both players set ready - game auto-starts
     for (const player of players) {
       const readyPromise = waitForMessage(player.ws, "ready_status_update");
-      player.ws.send(JSON.stringify({
-        type: "set_ready",
-        payload: { gameId, isReady: true }
-      }));
+      player.ws.send(
+        JSON.stringify({
+          type: "set_ready",
+          payload: { gameId, isReady: true },
+        }),
+      );
       await readyPromise;
     }
   }
@@ -222,7 +223,7 @@ describe("Full Game Integration Test", () => {
       type: "place_worker",
       playerId: players[0].playerId,
       position: { x: 2, y: 2 },
-      workerId: 1
+      workerId: 1,
     });
     state = getState(response);
     expect(state.phase).toBe("placing");
@@ -233,7 +234,7 @@ describe("Full Game Integration Test", () => {
       type: "place_worker",
       playerId: players[1].playerId,
       position: { x: 4, y: 4 },
-      workerId: 1
+      workerId: 1,
     });
     state = getState(response);
     expect(state.phase).toBe("placing");
@@ -244,7 +245,7 @@ describe("Full Game Integration Test", () => {
       type: "place_worker",
       playerId: players[0].playerId,
       position: { x: 2, y: 3 },
-      workerId: 2
+      workerId: 2,
     });
     state = getState(response);
     expect(state.phase).toBe("placing");
@@ -255,7 +256,7 @@ describe("Full Game Integration Test", () => {
       type: "place_worker",
       playerId: players[1].playerId,
       position: { x: 4, y: 3 },
-      workerId: 2
+      workerId: 2,
     });
     state = getState(response);
     expect(state.phase).toBe("moving");
@@ -289,7 +290,7 @@ describe("Full Game Integration Test", () => {
       playerId: players[0].playerId,
       position: { x: 1, y: 2 },
       workerId: 1,
-      fromPosition: { x: 2, y: 2 }
+      fromPosition: { x: 2, y: 2 },
     });
     state = getState(response);
     expect(state.phase).toBe("building");
@@ -297,7 +298,7 @@ describe("Full Game Integration Test", () => {
     await sendMove(players[0].ws, {
       type: "build_block",
       playerId: players[0].playerId,
-      position: { x: 2, y: 2 }
+      position: { x: 2, y: 2 },
     });
 
     // Turn 2: B1 moves (4,4)->(3,4), builds at (4,4)
@@ -307,12 +308,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[1].playerId,
       position: { x: 3, y: 4 },
       workerId: 1,
-      fromPosition: { x: 4, y: 4 }
+      fromPosition: { x: 4, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
       playerId: players[1].playerId,
-      position: { x: 4, y: 4 }
+      position: { x: 4, y: 4 },
     });
 
     // Turn 3: A1 moves (1,2)->(2,2) climbing to h=1, builds at (1,2)
@@ -322,12 +323,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[0].playerId,
       position: { x: 2, y: 2 },
       workerId: 1,
-      fromPosition: { x: 1, y: 2 }
+      fromPosition: { x: 1, y: 2 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
       playerId: players[0].playerId,
-      position: { x: 1, y: 2 }
+      position: { x: 1, y: 2 },
     });
 
     // Turn 4: B1 moves (3,4)->(4,4) climbing to h=1, builds at (3,4)
@@ -337,12 +338,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[1].playerId,
       position: { x: 4, y: 4 },
       workerId: 1,
-      fromPosition: { x: 3, y: 4 }
+      fromPosition: { x: 3, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
       playerId: players[1].playerId,
-      position: { x: 3, y: 4 }
+      position: { x: 3, y: 4 },
     });
 
     // Turn 5: A1 moves (2,2)->(1,2) staying at h=1, builds at (2,2)
@@ -352,12 +353,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[0].playerId,
       position: { x: 1, y: 2 },
       workerId: 1,
-      fromPosition: { x: 2, y: 2 }
+      fromPosition: { x: 2, y: 2 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
       playerId: players[0].playerId,
-      position: { x: 2, y: 2 }
+      position: { x: 2, y: 2 },
     });
 
     // Turn 6: B1 moves (4,4)->(3,4) staying at h=1, builds at (4,4)
@@ -367,12 +368,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[1].playerId,
       position: { x: 3, y: 4 },
       workerId: 1,
-      fromPosition: { x: 4, y: 4 }
+      fromPosition: { x: 4, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
       playerId: players[1].playerId,
-      position: { x: 4, y: 4 }
+      position: { x: 4, y: 4 },
     });
 
     // Turn 7: A1 moves (1,2)->(2,2) climbing to h=2, builds at (1,2)
@@ -382,12 +383,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[0].playerId,
       position: { x: 2, y: 2 },
       workerId: 1,
-      fromPosition: { x: 1, y: 2 }
+      fromPosition: { x: 1, y: 2 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
       playerId: players[0].playerId,
-      position: { x: 1, y: 2 }
+      position: { x: 1, y: 2 },
     });
 
     // Turn 8: B1 moves (3,4)->(4,4) climbing to h=2, builds at (3,4)
@@ -397,12 +398,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[1].playerId,
       position: { x: 4, y: 4 },
       workerId: 1,
-      fromPosition: { x: 3, y: 4 }
+      fromPosition: { x: 3, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
       playerId: players[1].playerId,
-      position: { x: 3, y: 4 }
+      position: { x: 3, y: 4 },
     });
 
     // Turn 9: A1 moves (2,2)->(1,2) staying at h=2, builds at (2,2)
@@ -412,12 +413,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[0].playerId,
       position: { x: 1, y: 2 },
       workerId: 1,
-      fromPosition: { x: 2, y: 2 }
+      fromPosition: { x: 2, y: 2 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
       playerId: players[0].playerId,
-      position: { x: 2, y: 2 }
+      position: { x: 2, y: 2 },
     });
 
     // Turn 10: B1 moves (4,4)->(3,4) staying at h=2, builds at (4,4)
@@ -427,12 +428,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[1].playerId,
       position: { x: 3, y: 4 },
       workerId: 1,
-      fromPosition: { x: 4, y: 4 }
+      fromPosition: { x: 4, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
       playerId: players[1].playerId,
-      position: { x: 4, y: 4 }
+      position: { x: 4, y: 4 },
     });
 
     // Turn 11: A1 moves (1,2) h=2 -> (2,2) h=3 - WIN!
@@ -450,7 +451,7 @@ describe("Full Game Integration Test", () => {
       playerId: players[0].playerId,
       position: { x: 2, y: 2 },
       workerId: 1,
-      fromPosition: { x: 1, y: 2 }
+      fromPosition: { x: 1, y: 2 },
     });
     state = getState(response);
 
@@ -474,28 +475,28 @@ describe("Full Game Integration Test", () => {
       type: "place_worker",
       playerId: players[0].playerId,
       position: { x: 0, y: 0 },
-      workerId: 1
+      workerId: 1,
     });
 
     await sendMove(players[1].ws, {
       type: "place_worker",
       playerId: players[1].playerId,
       position: { x: 2, y: 1 },
-      workerId: 1
+      workerId: 1,
     });
 
     await sendMove(players[0].ws, {
       type: "place_worker",
       playerId: players[0].playerId,
       position: { x: 1, y: 0 },
-      workerId: 2
+      workerId: 2,
     });
 
     await sendMove(players[1].ws, {
       type: "place_worker",
       playerId: players[1].playerId,
       position: { x: 1, y: 1 },
-      workerId: 2
+      workerId: 2,
     });
 
     // === TRAP BUILDING ===
@@ -517,12 +518,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[0].playerId,
       position: { x: 0, y: 1 },
       workerId: 1,
-      fromPosition: { x: 0, y: 0 }
+      fromPosition: { x: 0, y: 0 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
       playerId: players[0].playerId,
-      position: { x: 0, y: 0 }
+      position: { x: 0, y: 0 },
     });
     // (0,0)=1, A1@(0,1)
 
@@ -533,12 +534,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[1].playerId,
       position: { x: 0, y: 0 },
       workerId: 2,
-      fromPosition: { x: 1, y: 1 }
+      fromPosition: { x: 1, y: 1 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
       playerId: players[1].playerId,
-      position: { x: 1, y: 1 }
+      position: { x: 1, y: 1 },
     });
     // (0,0)=1 w/B2, (1,1)=1
 
@@ -548,12 +549,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[0].playerId,
       position: { x: 2, y: 0 },
       workerId: 2,
-      fromPosition: { x: 1, y: 0 }
+      fromPosition: { x: 1, y: 0 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
       playerId: players[0].playerId,
-      position: { x: 1, y: 0 }
+      position: { x: 1, y: 0 },
     });
     // (1,0)=1, A2@(2,0)
 
@@ -563,12 +564,12 @@ describe("Full Game Integration Test", () => {
       playerId: players[1].playerId,
       position: { x: 1, y: 1 },
       workerId: 2,
-      fromPosition: { x: 0, y: 0 }
+      fromPosition: { x: 0, y: 0 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
       playerId: players[1].playerId,
-      position: { x: 0, y: 0 }
+      position: { x: 0, y: 0 },
     });
     // (0,0)=2, (1,1)=1 w/B2
 
@@ -593,18 +594,20 @@ describe("Full Game Integration Test", () => {
     const queue = messageQueues.get(players[1].ws) || [];
     const startIdx = queue.length;
 
-    players[1].ws.send(JSON.stringify({
-      type: "make_move",
-      payload: {
-        gameId,
-        move: {
-          type: "place_worker",
-          playerId: players[1].playerId,
-          position: { x: 0, y: 0 },
-          workerId: 1
-        }
-      }
-    }));
+    players[1].ws.send(
+      JSON.stringify({
+        type: "make_move",
+        payload: {
+          gameId,
+          move: {
+            type: "place_worker",
+            playerId: players[1].playerId,
+            position: { x: 0, y: 0 },
+            workerId: 1,
+          },
+        },
+      }),
+    );
 
     // Wait for error response
     const errorMsg = await waitForCondition(players[1].ws, (msg) => {
@@ -626,25 +629,27 @@ describe("Full Game Integration Test", () => {
       type: "place_worker",
       playerId: players[0].playerId,
       position: { x: 2, y: 2 },
-      workerId: 1
+      workerId: 1,
     });
 
     // Player 2's turn - try to place on occupied cell
     const queue = messageQueues.get(players[1].ws) || [];
     const startIdx = queue.length;
 
-    players[1].ws.send(JSON.stringify({
-      type: "make_move",
-      payload: {
-        gameId,
-        move: {
-          type: "place_worker",
-          playerId: players[1].playerId,
-          position: { x: 2, y: 2 }, // Already occupied
-          workerId: 1
-        }
-      }
-    }));
+    players[1].ws.send(
+      JSON.stringify({
+        type: "make_move",
+        payload: {
+          gameId,
+          move: {
+            type: "place_worker",
+            playerId: players[1].playerId,
+            position: { x: 2, y: 2 }, // Already occupied
+            workerId: 1,
+          },
+        },
+      }),
+    );
 
     // Wait for error response
     const errorMsg = await waitForCondition(players[1].ws, (msg) => {
@@ -658,4 +663,3 @@ describe("Full Game Integration Test", () => {
     expect(errMessage.length).toBeGreaterThan(0);
   }, 30000);
 });
-
