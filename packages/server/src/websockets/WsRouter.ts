@@ -1,11 +1,11 @@
-import { ClientMessage, GameMove, WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types.ts';
-import { send, sendError } from './utils.ts';
+import { ClientMessage, GameMove, WS_MESSAGE_TYPES } from "../../../shared/src/websocket-types.ts";
+import { send, sendError } from "./utils.ts";
 
-import { AuthenticatedWebSocket } from './authenticatedWebsocket.ts';
-import { GameService } from '../game/application/GameService.ts';
-import { LobbyService } from '../game/application/LobbyService.ts';
-import { WebSocketConnectionManager } from '../game/infra/WebSocketConnectionManager.ts';
-import logger from '../logger.ts';
+import { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
+import { GameService } from "../game/application/GameService.ts";
+import { LobbyService } from "../game/application/LobbyService.ts";
+import { WebSocketConnectionManager } from "../game/infra/WebSocketConnectionManager.ts";
+import logger from "../logger.ts";
 
 /**
  * WebSocket message router.
@@ -18,13 +18,13 @@ export class WsRouter {
   constructor(
     private gameService: GameService,
     private lobbyService: LobbyService,
-    private connectionManager: WebSocketConnectionManager
+    private connectionManager: WebSocketConnectionManager,
   ) {}
 
   async handleMessage(ws: AuthenticatedWebSocket, raw: string): Promise<void> {
     const user = ws.user;
     if (!user) {
-      sendError(ws, 'Not authenticated');
+      sendError(ws, "Not authenticated");
       return;
     }
 
@@ -32,7 +32,7 @@ export class WsRouter {
     try {
       message = JSON.parse(raw) as ClientMessage;
     } catch {
-      sendError(ws, 'Invalid message format');
+      sendError(ws, "Invalid message format");
       return;
     }
 
@@ -43,7 +43,7 @@ export class WsRouter {
       await this.route(ws, user.id, type, payload);
     } catch (error) {
       logger.error(`[WS] Error handling ${type}:`, error);
-      sendError(ws, error instanceof Error ? error.message : 'Request failed');
+      sendError(ws, error instanceof Error ? error.message : "Request failed");
     }
   }
 
@@ -65,7 +65,7 @@ export class WsRouter {
     ws: AuthenticatedWebSocket,
     userId: number,
     type: string,
-    payload: Record<string, unknown> | undefined
+    payload: Record<string, unknown> | undefined,
   ): Promise<void> {
     const gameId = payload?.gameId as number | undefined;
 
@@ -106,7 +106,7 @@ export class WsRouter {
   }
 
   private requireGameId(gameId: number | undefined): asserts gameId is number {
-    if (!gameId) throw new Error('Game ID required');
+    if (!gameId) throw new Error("Game ID required");
   }
 
   private async createGame(ws: AuthenticatedWebSocket, userId: number, maxPlayers = 2): Promise<void> {
@@ -129,18 +129,18 @@ export class WsRouter {
       await this.broadcastPlayerJoined(game, userId);
     }
 
-    logger.info(`User ${userId} ${isNewPlayer ? 'joined' : 'reconnected to'} game ${gameId}`);
+    logger.info(`User ${userId} ${isNewPlayer ? "joined" : "reconnected to"} game ${gameId}`);
   }
 
   private async listGames(ws: AuthenticatedWebSocket): Promise<void> {
     const games = await this.lobbyService.findAvailableGames();
 
-    const gamesList = games.map(g => ({
+    const gamesList = games.map((g) => ({
       id: g.id,
       status: g.status,
       playerCount: g.players.size,
       maxPlayers: g.maxPlayers,
-      createdAt: g.createdAt
+      createdAt: g.createdAt,
     }));
 
     send(ws, WS_MESSAGE_TYPES.GAMES_LIST, { games: gamesList });
@@ -152,7 +152,7 @@ export class WsRouter {
 
     this.connectionManager.broadcastToGame(gameId, {
       type: WS_MESSAGE_TYPES.PLAYER_LEFT,
-      payload: { gameId, userId, playerCount: game.players.size, maxPlayers: game.maxPlayers }
+      payload: { gameId, userId, playerCount: game.players.size, maxPlayers: game.maxPlayers },
     });
 
     logger.info(`User ${userId} left game ${gameId}`);
@@ -166,7 +166,7 @@ export class WsRouter {
 
       this.connectionManager.broadcastToGame(gameId, {
         type: WS_MESSAGE_TYPES.PLAYER_LEFT,
-        payload: { gameId, userId, playerCount: game.players.size, maxPlayers: game.maxPlayers }
+        payload: { gameId, userId, playerCount: game.players.size, maxPlayers: game.maxPlayers },
       });
 
       logger.info(`Player ${userId} auto-removed from game ${gameId}`);
@@ -178,13 +178,13 @@ export class WsRouter {
   private async getGameState(ws: AuthenticatedWebSocket, userId: number, gameId: number): Promise<void> {
     const [gameView, game] = await Promise.all([
       this.gameService.getGameStateForPlayer(gameId, userId),
-      this.gameService.getGame(gameId)
+      this.gameService.getGame(gameId),
     ]);
 
     send(ws, WS_MESSAGE_TYPES.GAME_STATE_UPDATE, {
       gameId,
       version: game?.version ?? 0,
-      state: gameView
+      state: gameView,
     });
   }
 
@@ -194,7 +194,7 @@ export class WsRouter {
     send(ws, WS_MESSAGE_TYPES.READY_STATUS_UPDATE, {
       ready,
       allReady: game.areAllPlayersReady(),
-      gameStarted: game.status === 'in-progress'
+      gameStarted: game.status === "in-progress",
     });
 
     logger.info(`Ready status: user ${userId} in game ${gameId} = ${ready}`);
@@ -206,7 +206,7 @@ export class WsRouter {
     send(ws, WS_MESSAGE_TYPES.GAME_STATE_UPDATE, {
       gameId,
       version: result.game.version,
-      state: result.view
+      state: result.view,
     });
 
     logger.info(`Move processed for user ${userId} in game ${gameId}`);
@@ -217,7 +217,7 @@ export class WsRouter {
       const result = await this.gameService.addPlayer(gameId, userId);
       return { game: result.game, isNewPlayer: true };
     } catch (error: unknown) {
-      if (error instanceof Error && error.message.includes('already in game')) {
+      if (error instanceof Error && error.message.includes("already in game")) {
         const game = await this.gameService.getGame(gameId);
         if (!game) throw error;
         return { game, isNewPlayer: false };
@@ -226,12 +226,15 @@ export class WsRouter {
     }
   }
 
-  private async broadcastPlayerJoined(game: { id: number; version: number; maxPlayers: number; players: ReadonlyMap<number, { userId: number }> }, joinedUserId: number): Promise<void> {
+  private async broadcastPlayerJoined(
+    game: { id: number; version: number; maxPlayers: number; players: ReadonlyMap<number, { userId: number }> },
+    joinedUserId: number,
+  ): Promise<void> {
     const gameId = game.id;
 
     this.connectionManager.broadcastToGame(gameId, {
       type: WS_MESSAGE_TYPES.PLAYER_JOINED,
-      payload: { gameId, userId: joinedUserId, playerCount: game.players.size, maxPlayers: game.maxPlayers }
+      payload: { gameId, userId: joinedUserId, playerCount: game.players.size, maxPlayers: game.maxPlayers },
     });
 
     for (const player of game.players.values()) {
@@ -239,7 +242,7 @@ export class WsRouter {
         const playerView = await this.gameService.getGameStateForPlayer(gameId, player.userId);
         this.connectionManager.sendToPlayer(gameId, player.userId, {
           type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
-          payload: { gameId, version: game.version, state: playerView }
+          payload: { gameId, version: game.version, state: playerView },
         });
       } catch (err) {
         logger.error(`Failed to send state to player ${player.userId}:`, err);
@@ -247,4 +250,3 @@ export class WsRouter {
     }
   }
 }
-

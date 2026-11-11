@@ -8,7 +8,12 @@ import { findUserByUsername } from "../users/userRepository.ts";
 import internal from "stream";
 import logger from "../logger.ts";
 
-export async function webSocketAuthUpgrade(request: IncomingMessage, socket: internal.Duplex, head: Buffer, wss: WebSocketServer) {
+export async function webSocketAuthUpgrade(
+  request: IncomingMessage,
+  socket: internal.Duplex,
+  head: Buffer,
+  wss: WebSocketServer,
+) {
   const authHeader = request.headers["authorization"];
   let token: string | null = null;
 
@@ -21,7 +26,7 @@ export async function webSocketAuthUpgrade(request: IncomingMessage, socket: int
     // Try to get token from query parameters
     if (request.url) {
       const url = new URL(request.url, `http://${request.headers.host}`);
-      const queryToken = url.searchParams.get('token');
+      const queryToken = url.searchParams.get("token");
       if (queryToken) {
         token = queryToken;
       }
@@ -31,11 +36,14 @@ export async function webSocketAuthUpgrade(request: IncomingMessage, socket: int
     if (!token) {
       const cookieHeader = request.headers.cookie;
       if (cookieHeader) {
-        const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
-          const [key, value] = cookie.trim().split('=');
-          acc[key] = value;
-          return acc;
-        }, {} as Record<string, string>);
+        const cookies = cookieHeader.split(";").reduce(
+          (acc, cookie) => {
+            const [key, value] = cookie.trim().split("=");
+            acc[key] = value;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
 
         token = cookies.token;
       }

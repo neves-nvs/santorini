@@ -179,7 +179,7 @@ router.get("/test-auth", authenticate, async (req, res) => {
       id: user.id,
       username: user.username,
       display_name: user.display_name,
-      created_at: user.created_at
+      created_at: user.created_at,
     });
   } catch (e: unknown) {
     const error = e as Error;

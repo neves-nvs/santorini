@@ -1,4 +1,4 @@
-import { Move } from './Move.ts';
+import { Move } from "./Move.ts";
 
 /**
  * Domain Events
@@ -8,15 +8,15 @@ import { Move } from './Move.ts';
  */
 
 export type GameEventType =
-  | 'GameStarted'
-  | 'GameFinished'
-  | 'GameReady'
-  | 'MovePlayed'
-  | 'PlayerJoined'
-  | 'PlayerLeft'
-  | 'PlayerBlocked'
-  | 'PlayerReadyChanged'
-  | 'TurnAdvanced';
+  | "GameStarted"
+  | "GameFinished"
+  | "GameReady"
+  | "MovePlayed"
+  | "PlayerJoined"
+  | "PlayerLeft"
+  | "PlayerBlocked"
+  | "PlayerReadyChanged"
+  | "TurnAdvanced";
 
 export interface GameStartedPayload {
   gameId: number;
@@ -80,7 +80,7 @@ export class GameEvent {
   constructor(
     public readonly type: GameEventType,
     public readonly payload: GameEventPayload,
-    public readonly aggregateId?: number
+    public readonly aggregateId?: number,
   ) {
     this.occurredAt = new Date();
   }
@@ -89,36 +89,36 @@ export class GameEvent {
 // Specific event classes for type safety
 export class GameStartedEvent extends GameEvent {
   constructor(gameId: number, firstPlayerId: number) {
-    super('GameStarted', { gameId, firstPlayerId }, gameId);
+    super("GameStarted", { gameId, firstPlayerId }, gameId);
   }
 }
 
 export class GameFinishedEvent extends GameEvent {
   constructor(gameId: number, winnerId: number, reason: string) {
-    super('GameFinished', { gameId, winnerId, reason }, gameId);
+    super("GameFinished", { gameId, winnerId, reason }, gameId);
   }
 }
 
 export class MovePlayedEvent extends GameEvent {
   constructor(gameId: number, playerId: number, move: Move, turnNumber: number) {
-    super('MovePlayed', { gameId, playerId, move, turnNumber }, gameId);
+    super("MovePlayed", { gameId, playerId, move, turnNumber }, gameId);
   }
 }
 
 export class PlayerJoinedEvent extends GameEvent {
   constructor(gameId: number, playerId: number) {
-    super('PlayerJoined', { gameId, playerId }, gameId);
+    super("PlayerJoined", { gameId, playerId }, gameId);
   }
 }
 
 export class TurnAdvancedEvent extends GameEvent {
   constructor(gameId: number, newCurrentPlayerId: number, phase: string) {
-    super('TurnAdvanced', { gameId, newCurrentPlayerId, phase }, gameId);
+    super("TurnAdvanced", { gameId, newCurrentPlayerId, phase }, gameId);
   }
 }
 
 export class PlayerLeftEvent extends GameEvent {
   constructor(gameId: number, userId: number) {
-    super('PlayerLeft', { gameId, userId }, gameId);
+    super("PlayerLeft", { gameId, userId }, gameId);
   }
 }

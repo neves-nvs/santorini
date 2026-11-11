@@ -1,6 +1,6 @@
-import WebSocket from 'ws';
+import WebSocket from "ws";
 
-import logger from '../../logger.ts';
+import logger from "../../logger.ts";
 
 /**
  * WebSocket Connection Manager - Infrastructure Layer
@@ -22,13 +22,13 @@ interface WebSocketMessage {
 export class WebSocketConnectionManager {
   // Primary: WebSocket -> context (for cleanup on disconnect)
   private connections = new Map<WebSocket, ConnectionContext>();
-  
+
   // Index 1: gameId -> Set<WebSocket> (for broadcasting)
   private gameConnections = new Map<number, Set<WebSocket>>();
-  
+
   // Index 2: gameId -> userId -> Set<WebSocket> (for user-specific messages)
   private userGameConnections = new Map<number, Map<number, Set<WebSocket>>>();
-  
+
   // Map to store player ready status for each game
   private playerReadyStatus = new Map<number, Set<number>>();
 
@@ -53,7 +53,7 @@ export class WebSocketConnectionManager {
    */
   addClient(gameId: number, userId: number, ws: WebSocket): void {
     let gameConnection = this.gameConnections.get(gameId);
-    
+
     if (!gameConnection) {
       this.addGameConnection(gameId);
       gameConnection = this.gameConnections.get(gameId)!;
@@ -200,7 +200,7 @@ export class WebSocketConnectionManager {
       }
     }
 
-    logger.info(`Client ${userId} removed from games: [${results.map(r => r.gameId).join(', ')}]`);
+    logger.info(`Client ${userId} removed from games: [${results.map((r) => r.gameId).join(", ")}]`);
     return results;
   }
 
@@ -217,7 +217,7 @@ export class WebSocketConnectionManager {
     const messageStr = JSON.stringify(message);
     let sentCount = 0;
 
-    gameConnection.forEach(ws => {
+    gameConnection.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(messageStr);
         sentCount++;
@@ -246,7 +246,7 @@ export class WebSocketConnectionManager {
     const messageStr = JSON.stringify(message);
     let sentCount = 0;
 
-    userConnections.forEach(ws => {
+    userConnections.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(messageStr);
         sentCount++;
@@ -267,7 +267,7 @@ export class WebSocketConnectionManager {
     }
 
     readyPlayers.add(userId);
-    logger.info(`Player ${userId} is ready in game ${gameId}. Ready players: ${Array.from(readyPlayers).join(', ')}`);
+    logger.info(`Player ${userId} is ready in game ${gameId}. Ready players: ${Array.from(readyPlayers).join(", ")}`);
   }
 
   /**
@@ -277,7 +277,9 @@ export class WebSocketConnectionManager {
     const readyPlayers = this.playerReadyStatus.get(gameId);
     if (readyPlayers) {
       readyPlayers.delete(userId);
-      logger.info(`Player ${userId} is no longer ready in game ${gameId}. Ready players: ${Array.from(readyPlayers).join(', ')}`);
+      logger.info(
+        `Player ${userId} is no longer ready in game ${gameId}. Ready players: ${Array.from(readyPlayers).join(", ")}`,
+      );
     }
   }
 

@@ -1,13 +1,13 @@
-import { GameNotFoundError, PlayerNotInGameError } from '../../errors/GameErrors.ts';
-import { GameViewBuilder, PlayerGameView } from '../domain/GameViewBuilder.ts';
-import { MoveCommand, createMove } from '../domain/Move.ts';
+import { GameNotFoundError, PlayerNotInGameError } from "../../errors/GameErrors.ts";
+import { GameViewBuilder, PlayerGameView } from "../domain/GameViewBuilder.ts";
+import { MoveCommand, createMove } from "../domain/Move.ts";
 
-import { Game } from '../domain/Game.ts';
-import { GameBroadcaster } from './GameBroadcaster.ts';
-import { GameEvent } from '../domain/GameEvent.ts';
-import { GameRepositoryDb } from '../infra/GameRepositoryDb.ts';
-import { Player } from '../domain/Player.ts';
-import logger from '../../logger.ts';
+import { Game } from "../domain/Game.ts";
+import { GameBroadcaster } from "./GameBroadcaster.ts";
+import { GameEvent } from "../domain/GameEvent.ts";
+import { GameRepositoryDb } from "../infra/GameRepositoryDb.ts";
+import { Player } from "../domain/Player.ts";
+import logger from "../../logger.ts";
 
 /**
  * Application service for game operations
@@ -17,13 +17,17 @@ export class GameService {
   constructor(
     private gameRepository: GameRepositoryDb,
     private gameViewBuilder: GameViewBuilder = new GameViewBuilder(),
-    private gameBroadcaster: GameBroadcaster = new GameBroadcaster()
+    private gameBroadcaster: GameBroadcaster = new GameBroadcaster(),
   ) {}
 
   /**
    * Apply a move to a game
    */
-  async applyMove(gameId: number, userId: number, moveCommand: MoveCommand): Promise<{ game: Game; events: GameEvent[]; view: PlayerGameView }> {
+  async applyMove(
+    gameId: number,
+    userId: number,
+    moveCommand: MoveCommand,
+  ): Promise<{ game: Game; events: GameEvent[]; view: PlayerGameView }> {
     logger.info(`Processing move for game ${gameId}, user ${userId}:`, moveCommand);
 
     // Load game from repository
@@ -47,7 +51,7 @@ export class GameService {
     const events = game.applyMove(playerId, move);
 
     // Check if next player is trapped (no valid moves) - only on their turn start
-    if (game.status === 'in-progress' && game.phase === 'moving') {
+    if (game.status === "in-progress" && game.phase === "moving") {
       const trappedEvents = game.checkAndHandleNoMoves();
       events.push(...trappedEvents);
     }
@@ -87,7 +91,7 @@ export class GameService {
     for (const player of game.players.values()) {
       if (player.userId === userId) {
         const error = new Error(`Player ${userId} is already in game ${gameId}`);
-        error.name = 'PlayerAlreadyInGameError';
+        error.name = "PlayerAlreadyInGameError";
         throw error;
       }
     }
@@ -188,9 +192,7 @@ export class GameService {
     const playerId = this.findPlayerIdByUserId(game, userId);
 
     // Generate available moves if it's the player's turn
-    const availableMoves = playerId && game.currentPlayerId === playerId
-      ? game.getAvailableMoves()
-      : undefined;
+    const availableMoves = playerId && game.currentPlayerId === playerId ? game.getAvailableMoves() : undefined;
 
     return this.gameViewBuilder.buildForPlayer(game, userId, availableMoves);
   }

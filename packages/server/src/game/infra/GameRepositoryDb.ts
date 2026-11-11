@@ -1,12 +1,12 @@
-import { BoardCellSnapshot, BoardSnapshot } from '../domain/Board.ts';
-import { Database, NewPiece, Piece } from '../../model.ts';
-import { Game, GameSnapshot } from '../domain/Game.ts';
-import { GamePhase, GameStatus } from '../domain/types.ts';
-import { Kysely, Transaction } from 'kysely';
-import { Player } from '../domain/Player.ts';
-import { db } from '../../database.ts';
+import { BoardCellSnapshot, BoardSnapshot } from "../domain/Board.ts";
+import { Database, NewPiece, Piece } from "../../model.ts";
+import { Game, GameSnapshot } from "../domain/Game.ts";
+import { GamePhase, GameStatus } from "../domain/types.ts";
+import { Kysely, Transaction } from "kysely";
+import { Player } from "../domain/Player.ts";
+import { db } from "../../database.ts";
 
-import logger from '../../logger.ts';
+import logger from "../../logger.ts";
 
 /**
  * Database adapter for Game aggregate
@@ -22,11 +22,7 @@ export class GameRepositoryDb {
     logger.debug(`Loading game ${gameId} from database`);
 
     // Load game record
-    const gameRecord = await this.database
-      .selectFrom('games')
-      .where('id', '=', gameId)
-      .selectAll()
-      .executeTakeFirst();
+    const gameRecord = await this.database.selectFrom("games").where("id", "=", gameId).selectAll().executeTakeFirst();
 
     if (!gameRecord) {
       return null;
@@ -34,23 +30,15 @@ export class GameRepositoryDb {
 
     // Load players
     const playerRecords = await this.database
-      .selectFrom('players')
-      .innerJoin('users', 'players.user_id', 'users.id')
-      .where('players.game_id', '=', gameId)
-      .select([
-        'players.user_id',
-        'players.is_ready',
-        'users.username'
-      ])
-      .orderBy('players.user_id', 'asc') // Stable ordering by user_id
+      .selectFrom("players")
+      .innerJoin("users", "players.user_id", "users.id")
+      .where("players.game_id", "=", gameId)
+      .select(["players.user_id", "players.is_ready", "users.username"])
+      .orderBy("players.user_id", "asc") // Stable ordering by user_id
       .execute();
 
     // Load board state (pieces)
-    const pieceRecords = await this.database
-      .selectFrom('pieces')
-      .where('game_id', '=', gameId)
-      .selectAll()
-      .execute();
+    const pieceRecords = await this.database.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
 
     // Convert to domain snapshot
     // Player IDs and seats are derived from stable array order
@@ -70,19 +58,20 @@ export class GameRepositoryDb {
       startedAt: gameRecord.started_at ? new Date(gameRecord.started_at) : null,
       finishedAt: gameRecord.finished_at ? new Date(gameRecord.finished_at) : null,
       lastMovedWorkerId: gameRecord.last_moved_worker_id,
-      lastMovedWorkerPosition: gameRecord.last_moved_worker_x !== null && gameRecord.last_moved_worker_y !== null
-        ? { x: gameRecord.last_moved_worker_x, y: gameRecord.last_moved_worker_y }
-        : null,
+      lastMovedWorkerPosition:
+        gameRecord.last_moved_worker_x !== null && gameRecord.last_moved_worker_y !== null
+          ? { x: gameRecord.last_moved_worker_x, y: gameRecord.last_moved_worker_y }
+          : null,
       players: playerRecords.map((p, index) => {
         const player = new Player(
           index + 1, // Player ID within game (1-indexed)
           p.user_id,
-          index // Seat (0-indexed)
+          index, // Seat (0-indexed)
         );
         player.setReady(p.is_ready);
         return player;
       }),
-      board: this.convertPiecesToBoardSnapshot(pieceRecords)
+      board: this.convertPiecesToBoardSnapshot(pieceRecords),
     };
 
     // Restore domain aggregate from snapshot
@@ -96,16 +85,16 @@ export class GameRepositoryDb {
     logger.debug(`Creating new game for user ${creatorId}, max players: ${maxPlayers}`);
 
     const gameRecord = await this.database
-      .insertInto('games')
+      .insertInto("games")
       .values({
         user_creator_id: creatorId,
         player_count: maxPlayers,
-        game_status: 'waiting',
+        game_status: "waiting",
         turn_number: 0,
         placing_turns_completed: 0,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       })
-      .returning('id')
+      .returning("id")
       .executeTakeFirstOrThrow();
 
     // Create domain aggregate with the database-generated ID
@@ -125,16 +114,12 @@ export class GameRepositoryDb {
 
     await this.database.transaction().execute(async (trx) => {
       // Check if game exists, create if not
-      const existingGame = await trx
-        .selectFrom('games')
-        .where('id', '=', game.id)
-        .selectAll()
-        .executeTakeFirst();
+      const existingGame = await trx.selectFrom("games").where("id", "=", game.id).selectAll().executeTakeFirst();
 
       if (existingGame) {
         // Update existing game
         await trx
-          .updateTable('games')
+          .updateTable("games")
           .set({
             game_status: snapshot.status,
             game_phase: snapshot.phase,
@@ -147,27 +132,27 @@ export class GameRepositoryDb {
             winner_id: snapshot.winnerId,
             win_reason: snapshot.winReason,
             started_at: snapshot.startedAt ? snapshot.startedAt.toISOString() : null,
-            finished_at: snapshot.finishedAt ? snapshot.finishedAt.toISOString() : null
+            finished_at: snapshot.finishedAt ? snapshot.finishedAt.toISOString() : null,
           })
-          .where('id', '=', game.id)
+          .where("id", "=", game.id)
           .execute();
 
         // Update players - clear existing and re-insert
-        await trx.deleteFrom('players').where('game_id', '=', game.id).execute();
+        await trx.deleteFrom("players").where("game_id", "=", game.id).execute();
         for (const player of snapshot.players) {
           await trx
-            .insertInto('players')
+            .insertInto("players")
             .values({
               game_id: game.id,
               user_id: player.userId,
-              is_ready: player.isReady
+              is_ready: player.isReady,
             })
             .execute();
         }
       } else {
         // Create new game
         await trx
-          .insertInto('games')
+          .insertInto("games")
           .values({
             id: snapshot.id,
             user_creator_id: snapshot.creatorId,
@@ -184,18 +169,18 @@ export class GameRepositoryDb {
             win_reason: snapshot.winReason,
             created_at: snapshot.createdAt.toISOString(),
             started_at: snapshot.startedAt ? snapshot.startedAt.toISOString() : undefined,
-            finished_at: snapshot.finishedAt ? snapshot.finishedAt.toISOString() : undefined
+            finished_at: snapshot.finishedAt ? snapshot.finishedAt.toISOString() : undefined,
           })
           .execute();
 
         // Add players
         for (const player of snapshot.players) {
           await trx
-            .insertInto('players')
+            .insertInto("players")
             .values({
               game_id: game.id,
               user_id: player.userId,
-              is_ready: player.isReady
+              is_ready: player.isReady,
             })
             .execute();
         }
@@ -213,10 +198,10 @@ export class GameRepositoryDb {
    */
   async findByStatus(status: GameStatus): Promise<Game[]> {
     const gameRecords = await this.database
-      .selectFrom('games')
-      .where('game_status', '=', status)
+      .selectFrom("games")
+      .where("game_status", "=", status)
       .selectAll()
-      .orderBy('id', 'desc')
+      .orderBy("id", "desc")
       .execute();
 
     const games: Game[] = [];
@@ -234,11 +219,7 @@ export class GameRepositoryDb {
    * Find all games
    */
   async findAll(): Promise<Game[]> {
-    const gameRecords = await this.database
-      .selectFrom('games')
-      .selectAll()
-      .orderBy('id', 'desc')
-      .execute();
+    const gameRecords = await this.database.selectFrom("games").selectAll().orderBy("id", "desc").execute();
 
     const games: Game[] = [];
     for (const record of gameRecords) {
@@ -255,10 +236,7 @@ export class GameRepositoryDb {
    * Delete a game
    */
   async delete(gameId: number): Promise<void> {
-    await this.database
-      .deleteFrom('games')
-      .where('id', '=', gameId)
-      .execute();
+    await this.database.deleteFrom("games").where("id", "=", gameId).execute();
   }
 
   /**
@@ -266,11 +244,11 @@ export class GameRepositoryDb {
    */
   async findByPlayer(userId: number): Promise<Game[]> {
     const gameRecords = await this.database
-      .selectFrom('games')
-      .innerJoin('players', 'games.id', 'players.game_id')
-      .where('players.user_id', '=', userId)
-      .selectAll('games')
-      .orderBy('games.id', 'desc')
+      .selectFrom("games")
+      .innerJoin("players", "games.id", "players.game_id")
+      .where("players.user_id", "=", userId)
+      .selectAll("games")
+      .orderBy("games.id", "desc")
       .execute();
 
     const games: Game[] = [];
@@ -291,12 +269,12 @@ export class GameRepositoryDb {
     logger.debug(`Loading players for game ${gameId}`);
 
     const players = await this.database
-      .selectFrom('players')
-      .where('game_id', '=', gameId)
-      .select(['user_id'])
+      .selectFrom("players")
+      .where("game_id", "=", gameId)
+      .select(["user_id"])
       .execute();
 
-    return players.map(player => player.user_id);
+    return players.map((player) => player.user_id);
   }
 
   /**
@@ -305,11 +283,7 @@ export class GameRepositoryDb {
   async getPiecesByGame(gameId: number): Promise<Piece[]> {
     logger.debug(`Loading pieces for game ${gameId}`);
 
-    return this.database
-      .selectFrom('pieces')
-      .where('game_id', '=', gameId)
-      .selectAll()
-      .execute();
+    return this.database.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
   }
 
   /**
@@ -319,9 +293,13 @@ export class GameRepositoryDb {
     logger.debug(`Converting ${pieces.length} pieces to board snapshot`);
 
     // Create empty 5x5 board
-    const cells: BoardCellSnapshot[][] = Array(5).fill(null).map(() =>
-      Array(5).fill(null).map(() => ({ height: 0, hasDome: false, worker: null }))
-    );
+    const cells: BoardCellSnapshot[][] = Array(5)
+      .fill(null)
+      .map(() =>
+        Array(5)
+          .fill(null)
+          .map(() => ({ height: 0, hasDome: false, worker: null })),
+      );
 
     // Process each piece
     for (const piece of pieces) {
@@ -340,7 +318,7 @@ export class GameRepositoryDb {
         // Place worker on the board
         cells[x][y].worker = {
           playerId,
-          workerId
+          workerId,
         };
       } else if (type === "building") {
         // Set building height
@@ -357,14 +335,18 @@ export class GameRepositoryDb {
   /**
    * Save board state to pieces table
    */
-  private async saveBoardState(trx: Transaction<Database>, gameId: number, boardSnapshot: BoardSnapshot): Promise<void> {
+  private async saveBoardState(
+    trx: Transaction<Database>,
+    gameId: number,
+    boardSnapshot: BoardSnapshot,
+  ): Promise<void> {
     logger.debug(`Saving board state for game ${gameId}`);
 
     // Clear existing pieces
-    await trx.deleteFrom('pieces').where('game_id', '=', gameId).execute();
+    await trx.deleteFrom("pieces").where("game_id", "=", gameId).execute();
 
     if (!boardSnapshot || !boardSnapshot.cells) {
-      logger.debug('No board state to save');
+      logger.debug("No board state to save");
       return;
     }
 
@@ -385,8 +367,8 @@ export class GameRepositoryDb {
             x,
             y,
             height: cell.height,
-            type: 'building',
-            owner: 'none'
+            type: "building",
+            owner: "none",
           });
         }
 
@@ -398,8 +380,8 @@ export class GameRepositoryDb {
             x,
             y,
             height: cell.height,
-            type: 'dome',
-            owner: 'none'
+            type: "dome",
+            owner: "none",
           });
         }
 
@@ -411,8 +393,8 @@ export class GameRepositoryDb {
             x,
             y,
             height: cell.height,
-            type: 'worker',
-            owner: cell.worker.playerId.toString() // Save as string number
+            type: "worker",
+            owner: cell.worker.playerId.toString(), // Save as string number
           });
         }
       }
@@ -420,7 +402,7 @@ export class GameRepositoryDb {
 
     // Insert all pieces
     if (pieces.length > 0) {
-      await trx.insertInto('pieces').values(pieces).execute();
+      await trx.insertInto("pieces").values(pieces).execute();
       logger.debug(`Saved ${pieces.length} pieces for game ${gameId}`);
     }
   }

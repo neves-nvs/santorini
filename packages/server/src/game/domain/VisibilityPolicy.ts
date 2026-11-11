@@ -1,6 +1,6 @@
-import { Board } from './Board.ts';
-import { Game } from './Game.ts';
-import { Player } from './Player.ts';
+import { Board } from "./Board.ts";
+import { Game } from "./Game.ts";
+import { Player } from "./Player.ts";
 
 export interface FilteredGameState {
   id: number;
@@ -74,7 +74,7 @@ export class VisibilityPolicy {
       winReason: game.winReason,
       createdAt: game.createdAt,
       startedAt: game.startedAt,
-      finishedAt: game.finishedAt
+      finishedAt: game.finishedAt,
     };
   }
 }
