@@ -6,23 +6,23 @@
 import * as helpers from "../helper/helpers.ts";
 import { server, wss } from "../../../src/main.ts";
 import { PORT } from "../../../src/configs/config.ts";
+import { PlayerGameView } from "../../../../shared/src/game-types.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
+import { WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { db } from "../../../src/database.ts";
 
-type WsPlayer = { userId: number };
-
-type WsMessage = {
-  type: string;
-  payload: {
-    gameId: number;
-    userId: number;
-    playerCount: number;
-    gameState: { players: WsPlayer[] };
-    state: { players: WsPlayer[] };
-  };
+// TODO: move to packages/shared; its ServerMessage lacks game_joined and player_joined, and its GameStateUpdateMessage payload differs from what WsRouter sends
+type ServerPayloads = {
+  [WS_MESSAGE_TYPES.GAME_JOINED]: { gameId: number; gameState: PlayerGameView };
+  [WS_MESSAGE_TYPES.PLAYER_JOINED]: { gameId: number; userId: number; playerCount: number; maxPlayers: number };
+  [WS_MESSAGE_TYPES.GAME_STATE_UPDATE]: { gameId: number; version: number; state: PlayerGameView };
 };
+
+type ServerMessageType = keyof ServerPayloads;
+
+type WsMessage<K extends ServerMessageType> = { type: K; payload: ServerPayloads[K] };
 
 interface TestPlayer {
   user: UserDTO;
@@ -48,7 +48,11 @@ async function createPlayerConnection(token: string): Promise<WebSocket> {
   });
 }
 
-function waitForMessage(ws: WebSocket, messageType: string, timeout = 5000): Promise<WsMessage> {
+function waitForMessage<K extends ServerMessageType>(
+  ws: WebSocket,
+  messageType: K,
+  timeout = 5000,
+): Promise<WsMessage<K>> {
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       reject(new Error(`Timeout waiting for message type: ${messageType}`));
@@ -149,7 +153,7 @@ describe("Player Join Broadcast Integration Test", () => {
 
     // Set up listener for game_state_update with 2 players
     const ws1 = player1.ws;
-    const stateUpdatePromise = new Promise<WsMessage>((resolve, reject) => {
+    const stateUpdatePromise = new Promise<WsMessage<"game_state_update">>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error("Timeout waiting for game_state_update with 2 players"));
       }, 5000);
