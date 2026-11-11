@@ -1,4 +1,4 @@
-import type { NextFunction, Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { param, validationResult } from "express-validator";
 
 import logger from "../logger.ts";

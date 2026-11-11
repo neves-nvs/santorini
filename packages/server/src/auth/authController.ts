@@ -1,9 +1,9 @@
-import { type NextFunction, type Request, type Response, Router } from "express";
-import jwt, { type JwtPayload, type VerifyErrors } from "jsonwebtoken";
+import { NextFunction, Request, Response, Router } from "express";
+import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 
 import { JWT_SECRET } from "../configs/config.ts";
 import { StatusCodes } from "http-status-codes";
-import type { User } from "../model.ts";
+import { User } from "../model.ts";
 
 import bcrypt from "bcryptjs";
 import { body } from "express-validator";

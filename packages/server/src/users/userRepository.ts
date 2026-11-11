@@ -1,5 +1,5 @@
-import type { Database, NewUser, User, UserUpdate } from "../model.ts";
-import type { Kysely, Transaction } from "kysely";
+import { Database, NewUser, User, UserUpdate } from "../model.ts";
+import { Kysely, Transaction } from "kysely";
 
 import { db } from "../database.ts";
 

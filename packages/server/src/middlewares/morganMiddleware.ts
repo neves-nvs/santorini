@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import { Request, Response } from "express";
 
 import { HTTP_LOG_FORMAT } from "../configs/config.ts";
 import logger from "../logger.ts";

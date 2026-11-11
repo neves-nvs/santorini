@@ -1,10 +1,10 @@
-import { ExtractJwt, Strategy as JwtStrategy, type VerifiedCallback } from "passport-jwt";
-import jwt, { type JwtPayload } from "jsonwebtoken";
+import { ExtractJwt, Strategy as JwtStrategy, VerifiedCallback } from "passport-jwt";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
 const { JsonWebTokenError, NotBeforeError, TokenExpiredError } = jwt;
 
 import { JWT_SECRET } from "../configs/config.ts";
-import type express from "express";
+import express from "express";
 import { findUserByUsername } from "../users/userRepository.ts";
 import logger from "../logger.ts";
 import passport from "passport";

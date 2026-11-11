@@ -1,10 +1,10 @@
-import { type ClientMessage, type GameMove, WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types.ts';
+import { ClientMessage, GameMove, WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types.ts';
 import { send, sendError } from './utils.ts';
 
-import type { AuthenticatedWebSocket } from './authenticatedWebsocket.ts';
-import type { GameService } from '../game/application/GameService.ts';
-import type { LobbyService } from '../game/application/LobbyService.ts';
-import type { WebSocketConnectionManager } from '../game/infra/WebSocketConnectionManager.ts';
+import { AuthenticatedWebSocket } from './authenticatedWebsocket.ts';
+import { GameService } from '../game/application/GameService.ts';
+import { LobbyService } from '../game/application/LobbyService.ts';
+import { WebSocketConnectionManager } from '../game/infra/WebSocketConnectionManager.ts';
 import logger from '../logger.ts';
 
 /**

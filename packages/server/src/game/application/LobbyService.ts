@@ -1,7 +1,7 @@
 import { GameFullError, GameNotFoundError, PlayerAlreadyInGameError } from '../../errors/GameErrors.ts';
 
-import type { Game } from '../domain/Game.ts';
-import type { GameRepositoryDb } from '../infra/GameRepositoryDb.ts';
+import { Game } from '../domain/Game.ts';
+import { GameRepositoryDb } from '../infra/GameRepositoryDb.ts';
 import { Player } from '../domain/Player.ts';
 import logger from '../../logger.ts';
 

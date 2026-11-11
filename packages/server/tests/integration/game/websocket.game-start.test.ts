@@ -2,7 +2,7 @@ import * as helpers from "../helper/helpers.ts";
 
 import { server, wss } from "../../../src/main.ts";
 import { PORT } from "../../../src/configs/config.ts";
-import type { UserDTO } from "../../../src/users/userDTO.ts";
+import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { db } from "../../../src/database.ts";

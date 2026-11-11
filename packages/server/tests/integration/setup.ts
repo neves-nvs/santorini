@@ -1,10 +1,10 @@
 import * as path from "path";
 
-import { Client, type ClientConfig, Pool } from "pg";
+import { Client, ClientConfig, Pool } from "pg";
 import { FileMigrationProvider, Migrator } from "kysely/migration";
 import { Kysely, PostgresDialect } from "kysely";
 
-import type { ConnectionInfo } from "./globalSetup.ts";
+import { ConnectionInfo } from "./globalSetup.ts";
 import { fileURLToPath } from "url";
 import { promises as fs } from "fs";
 import { randomUUID } from "crypto";

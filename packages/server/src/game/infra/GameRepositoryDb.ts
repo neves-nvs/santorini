@@ -1,8 +1,8 @@
-import type { BoardCellSnapshot, BoardSnapshot } from '../domain/Board.ts';
-import type { Database, NewPiece, Piece } from '../../model.ts';
-import { Game, type GameSnapshot } from '../domain/Game.ts';
-import type { GamePhase, GameStatus } from '../domain/types.ts';
-import type { Kysely, Transaction } from 'kysely';
+import { BoardCellSnapshot, BoardSnapshot } from '../domain/Board.ts';
+import { Database, NewPiece, Piece } from '../../model.ts';
+import { Game, GameSnapshot } from '../domain/Game.ts';
+import { GamePhase, GameStatus } from '../domain/types.ts';
+import { Kysely, Transaction } from 'kysely';
 import { Player } from '../domain/Player.ts';
 import { db } from '../../database.ts';
 

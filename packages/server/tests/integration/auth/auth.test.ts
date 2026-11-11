@@ -1,4 +1,4 @@
-import type { NewUser, User } from "../../../src/model.ts";
+import { NewUser, User } from "../../../src/model.ts";
 
 import { JWT_SECRET } from "../../../src/configs/config.ts";
 import { app } from "../../../src/app.ts";

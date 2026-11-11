@@ -1,8 +1,8 @@
 import { GameViewBuilder, toSharedMove } from '../domain/GameViewBuilder.ts';
 
-import type { Game } from '../domain/Game.ts';
-import type { GameEvent } from '../domain/GameEvent.ts';
-import type { Move } from '../domain/Move.ts';
+import { Game } from '../domain/Game.ts';
+import { GameEvent } from '../domain/GameEvent.ts';
+import { Move } from '../domain/Move.ts';
 import { WS_MESSAGE_TYPES } from '../../../../shared/src/websocket-types.ts';
 import { WebSocketConnectionManager } from '../infra/WebSocketConnectionManager.ts';
 import logger from '../../logger.ts';

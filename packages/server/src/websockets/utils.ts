@@ -1,4 +1,4 @@
-import type { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
+import { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
 import { WS_MESSAGE_TYPES } from "../../../shared/src/websocket-types.ts";
 
 /**

@@ -1,7 +1,7 @@
 import { body, param } from "express-validator";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository.ts";
 
-import type { NewUser } from "../model.ts";
+import { NewUser } from "../model.ts";
 import { Router } from "express";
 import { StatusCodes } from "http-status-codes";
 import { UserDTO } from "./userDTO.ts";

@@ -1,6 +1,6 @@
-import type { Database, Game, GameStatus } from '../../model.ts';
+import { Database, Game, GameStatus } from '../../model.ts';
 
-import type { Kysely } from 'kysely';
+import { Kysely } from 'kysely';
 import { db } from '../../database.ts';
 import logger from '../../logger.ts';
 

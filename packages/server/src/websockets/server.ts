@@ -1,5 +1,5 @@
-import type { AuthenticatedWebSocket } from './authenticatedWebsocket.ts';
-import type { Server } from 'http';
+import { AuthenticatedWebSocket } from './authenticatedWebsocket.ts';
+import { Server } from 'http';
 import { WebSocketServer } from 'ws';
 import logger from '../logger.ts';
 import { webSocketAuthUpgrade } from '../auth/webSocketAuth.ts';

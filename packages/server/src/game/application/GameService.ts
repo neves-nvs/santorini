@@ -1,11 +1,11 @@
 import { GameNotFoundError, PlayerNotInGameError } from '../../errors/GameErrors.ts';
-import { GameViewBuilder, type PlayerGameView } from '../domain/GameViewBuilder.ts';
-import { type MoveCommand, createMove } from '../domain/Move.ts';
+import { GameViewBuilder, PlayerGameView } from '../domain/GameViewBuilder.ts';
+import { MoveCommand, createMove } from '../domain/Move.ts';
 
-import type { Game } from '../domain/Game.ts';
+import { Game } from '../domain/Game.ts';
 import { GameBroadcaster } from './GameBroadcaster.ts';
-import type { GameEvent } from '../domain/GameEvent.ts';
-import type { GameRepositoryDb } from '../infra/GameRepositoryDb.ts';
+import { GameEvent } from '../domain/GameEvent.ts';
+import { GameRepositoryDb } from '../infra/GameRepositoryDb.ts';
 import { Player } from '../domain/Player.ts';
 import logger from '../../logger.ts';
 

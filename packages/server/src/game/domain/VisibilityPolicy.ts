@@ -1,6 +1,6 @@
-import type { Board } from './Board.ts';
-import type { Game } from './Game.ts';
-import type { Player } from './Player.ts';
+import { Board } from './Board.ts';
+import { Game } from './Game.ts';
+import { Player } from './Player.ts';
 
 export interface FilteredGameState {
   id: number;

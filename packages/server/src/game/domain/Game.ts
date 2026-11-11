@@ -1,8 +1,8 @@
-import { Board, type BoardSnapshot, type MoveResult } from './Board.ts';
-import { BuildMove, type Move, MoveWorkerMove, PlaceWorkerMove } from './Move.ts';
-import { DefaultTurnPolicy, type TurnPolicy } from './TurnPolicy.ts';
-import type { GamePhase, GameStatus } from './types.ts';
-import type { Player, PlayerId } from './Player.ts';
+import { Board, BoardSnapshot, MoveResult } from './Board.ts';
+import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from './Move.ts';
+import { DefaultTurnPolicy, TurnPolicy } from './TurnPolicy.ts';
+import { GamePhase, GameStatus } from './types.ts';
+import { Player, PlayerId } from './Player.ts';
 
 import { GameEvent } from './GameEvent.ts';
 
