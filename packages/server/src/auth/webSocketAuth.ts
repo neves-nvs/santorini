@@ -1,9 +1,8 @@
-import { ALLOWED_ORIGINS, JWT_SECRET } from "../configs/config.ts";
 import jwt, { JwtPayload } from "jsonwebtoken";
-
 import { AuthenticatedWebSocket } from "../websockets/authenticatedWebsocket.ts";
 import { IncomingMessage } from "http";
 import { WebSocketServer } from "ws";
+import { config } from "../configs/config.ts";
 import { findUserByUsername } from "../users/userRepository.ts";
 import internal from "stream";
 import logger from "../logger.ts";
@@ -21,7 +20,7 @@ function isAllowedOrigin(request: IncomingMessage): boolean {
   if (!origin) {
     return true;
   }
-  if (ALLOWED_ORIGINS.includes(origin)) {
+  if (config.allowedOrigins.includes(origin)) {
     return true;
   }
   try {
@@ -89,7 +88,7 @@ export async function webSocketAuthUpgrade(
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
 
     const user = await findUserByUsername(decoded.username);
     if (!user) {

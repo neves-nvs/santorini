@@ -1,10 +1,9 @@
 import * as helpers from "../helper/helpers.ts";
-
 import { server, wss } from "../../../src/main.ts";
-import { PORT } from "../../../src/configs/config.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
+import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,7 +57,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
    */
   async function createPlayerConnection(user: UserDTO, token: string): Promise<WebSocket> {
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket(`ws://localhost:${PORT}`, {
+      const ws = new WebSocket(`ws://localhost:${config.port}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
