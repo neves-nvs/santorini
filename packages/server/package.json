@@ -14,7 +14,8 @@
     "migrate:prod": "node dist/server/src/runMigrations.js",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "typecheck": "tsc -p tests/tsconfig.json"
+    "typecheck": "tsc -p tests/tsconfig.json",
+    "knip": "knip --dependencies"
   },
   "keywords": [],
   "author": "",
@@ -41,7 +42,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@testcontainers/postgresql": "^12.2.1",
-    "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.6",
@@ -54,10 +54,10 @@
     "@types/ws": "^8.18.2",
     "eslint": "^10.15.0",
     "globals": "^17.14.0",
+    "knip": "^6.45.1",
     "kysely-ctl": "^0.22.0",
     "prettier": "^3.9.10",
     "supertest": "^7.3.2",
-    "testcontainers": "^12.2.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
