@@ -11,6 +11,13 @@ export default [
   reactHooks.configs.flat.recommended,
   reactRefresh.configs.vite,
   {
+    files: ["src/__tests__/**/*.ts", "src/__tests__/**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "react-refresh/only-export-components": "off",
+    },
+  },
+  {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       globals: globals.browser,

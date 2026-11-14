@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AppProvider } from './store/AppContext'
 import { ToastProvider } from './store/ToastContext'
 import { useEffect, useState } from 'react'
-import { useApp } from './store/AppContext'
+import { useApp } from './store/appStore'
 import { apiService } from './services/ApiService'
 import HomePage from './pages/HomePage'
 import GamePage from './pages/GamePage'

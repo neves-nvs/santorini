@@ -1,4 +1,4 @@
-import React, { createContext, use, useState, ReactNode } from 'react'
+import React, { createContext, useState, ReactNode } from 'react'
 import Toast from '../components/ui/Toast'
 
 interface ToastMessage {
@@ -13,14 +13,6 @@ interface ToastContextType {
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
-
-export const useToast = () => {
-  const context = use(ToastContext)
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider')
-  }
-  return context
-}
 
 interface ToastProviderProps {
   children: ReactNode
