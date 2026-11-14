@@ -16,17 +16,10 @@ export type {
   SpectatorGameView,
   GameStateUpdatePayload,
   GameEndPayload,
-  GameStartPayload
-} from '../../../shared/src/game-types';
+  GameStartPayload,
+} from "../../../shared/src/game-types";
 
-import type {
-  Position,
-  BoardView,
-  PlayerView,
-  GameStatus,
-  GamePhase,
-  Move
-} from '../../../shared/src/game-types';
+import type { Position, BoardView, PlayerView, GameStatus, GamePhase, Move } from "../../../shared/src/game-types";
 
 // ============================================================================
 // Extended Frontend Types
@@ -35,12 +28,12 @@ import type {
 export interface BuildPosition extends Position {
   buildingLevel?: number;
   buildingType?: string;
-  moveType?: 'build_block' | 'build_dome';
+  moveType?: "build_block" | "build_dome";
   serverMoveObject?: Move;
 }
 
-export type BlockType = 'BASE' | 'MID' | 'TOP' | 'DOME';
-export type PieceType = BlockType | 'WORKER';
+export type BlockType = "BASE" | "MID" | "TOP" | "DOME";
+export type PieceType = BlockType | "WORKER";
 
 export interface GamePiece {
   type: PieceType;
@@ -104,7 +97,7 @@ export interface GameState {
 
 // Available move format for UI (transformed from server moves)
 export interface AvailableMove {
-  type: 'place_worker' | 'move_worker' | 'build_block' | 'build_dome';
+  type: "place_worker" | "move_worker" | "build_block" | "build_dome";
   workerId: number;
   validPositions: (Position | BuildPosition)[];
   // For move_worker moves: the worker's current position (where they're moving FROM)

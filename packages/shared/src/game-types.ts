@@ -1,6 +1,6 @@
 /**
  * Shared Game Types
- * 
+ *
  * Type definitions for game state views shared between frontend and backend.
  * These types define the structure of data sent over WebSocket.
  */
@@ -33,7 +33,7 @@ export interface BoardView {
 // Player Types
 // ============================================================================
 
-export type PlayerStatus = 'active' | 'disconnected' | 'blocked' | 'eliminated';
+export type PlayerStatus = "active" | "disconnected" | "blocked" | "eliminated";
 
 export interface PlayerView {
   id: number;
@@ -47,28 +47,28 @@ export interface PlayerView {
 // Game State Types
 // ============================================================================
 
-export type GameStatus = 'waiting' | 'in-progress' | 'completed';
-export type GamePhase = 'placing' | 'moving' | 'building' | null;
+export type GameStatus = "waiting" | "in-progress" | "completed";
+export type GamePhase = "placing" | "moving" | "building" | null;
 
 // ============================================================================
 // Move Types
 // ============================================================================
 
 export interface PlaceWorkerMove {
-  type: 'place_worker';
+  type: "place_worker";
   workerId: number;
   position: Position;
 }
 
 export interface MoveWorkerMove {
-  type: 'move_worker';
+  type: "move_worker";
   workerId: number;
   fromPosition: Position;
   position: Position;
 }
 
 export interface BuildMove {
-  type: 'build_block' | 'build_dome';
+  type: "build_block" | "build_dome";
   workerId: number;
   position: Position;
 }
@@ -148,4 +148,3 @@ export interface GameStartPayload {
   startedAt: Date | null;
   currentPlayerId: number | null;
 }
-

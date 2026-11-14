@@ -7,64 +7,57 @@
  * @see https://r3f.docs.pmnd.rs/api/testing
  */
 
-import React, { ReactNode } from 'react'
-import { render, RenderOptions } from '@testing-library/react'
-import { Canvas } from '@react-three/fiber'
-import ReactThreeTestRenderer from '@react-three/test-renderer'
-import * as THREE from 'three'
-import { vi } from 'vitest'
+import React, { ReactNode } from "react";
+import { render, RenderOptions } from "@testing-library/react";
+import { Canvas } from "@react-three/fiber";
+import ReactThreeTestRenderer from "@react-three/test-renderer";
+import * as THREE from "three";
+import { vi } from "vitest";
 
 // Create a simple box geometry as a mock (shared across all mocks)
-const mockGeometry = new THREE.BoxGeometry(1, 1, 1)
+const mockGeometry = new THREE.BoxGeometry(1, 1, 1);
 
 /**
  * Mock STL Loader to avoid loading actual STL files in tests
  */
 export const mockSTLLoader = () => {
   // Mock the STLLoader
-  vi.mock('three/examples/jsm/loaders/STLLoader', () => ({
+  vi.mock("three/examples/jsm/loaders/STLLoader", () => ({
     STLLoader: vi.fn().mockImplementation(() => ({
       load: vi.fn((url, onLoad) => {
-        onLoad(mockGeometry)
+        onLoad(mockGeometry);
       }),
     })),
-  }))
+  }));
 
   // Mock useLoader hook from @react-three/fiber
-  vi.mock('@react-three/fiber', async () => {
-    const actual = await vi.importActual('@react-three/fiber')
+  vi.mock("@react-three/fiber", async () => {
+    const actual = await vi.importActual("@react-three/fiber");
     return {
       ...actual,
       useLoader: vi.fn(() => mockGeometry),
-    }
-  })
-}
+    };
+  });
+};
 
 /**
  * Wrapper component that provides Canvas context for R3F components
  */
 interface R3FWrapperProps {
-  children: ReactNode
-  cameraPosition?: [number, number, number]
-  cameraFov?: number
+  children: ReactNode;
+  cameraPosition?: [number, number, number];
+  cameraFov?: number;
 }
 
-export const R3FWrapper: React.FC<R3FWrapperProps> = ({ 
-  children, 
-  cameraPosition = [0, 5, 10],
-  cameraFov = 50 
-}) => {
+export const R3FWrapper: React.FC<R3FWrapperProps> = ({ children, cameraPosition = [0, 5, 10], cameraFov = 50 }) => {
   return (
-    <Canvas
-      camera={{ position: cameraPosition, fov: cameraFov }}
-      gl={{ preserveDrawingBuffer: true }}
-    >
+    <Canvas camera={{ position: cameraPosition, fov: cameraFov }} gl={{ preserveDrawingBuffer: true }}>
       <ambientLight intensity={0.5} />
       <directionalLight position={[10, 10, 5]} intensity={1} />
       {children}
     </Canvas>
-  )
-}
+  );
+};
 
 /**
  * Custom render function for R3F components
@@ -72,13 +65,13 @@ export const R3FWrapper: React.FC<R3FWrapperProps> = ({
  */
 export const renderR3F = (
   ui: ReactNode,
-  options?: Omit<RenderOptions, 'wrapper'> & {
-    cameraPosition?: [number, number, number]
-    cameraFov?: number
-  }
+  options?: Omit<RenderOptions, "wrapper"> & {
+    cameraPosition?: [number, number, number];
+    cameraFov?: number;
+  },
 ) => {
-  const { cameraPosition, cameraFov, ...renderOptions } = options || {}
-  
+  const { cameraPosition, cameraFov, ...renderOptions } = options || {};
+
   return render(ui, {
     wrapper: ({ children }) => (
       <R3FWrapper cameraPosition={cameraPosition} cameraFov={cameraFov}>
@@ -86,42 +79,50 @@ export const renderR3F = (
       </R3FWrapper>
     ),
     ...renderOptions,
-  })
-}
+  });
+};
 
 /**
  * Create mock game state for testing
  */
 export const createMockGameState = (overrides = {}) => ({
   id: 1,
-  status: 'in-progress',
+  status: "in-progress",
   currentPlayer: 1,
   players: [
-    { id: 1, username: 'player1', ready: true },
-    { id: 2, username: 'player2', ready: true },
+    { id: 1, username: "player1", ready: true },
+    { id: 2, username: "player2", ready: true },
   ],
   board: {
-    spaces: Array(5).fill(null).map(() => 
-      Array(5).fill(null).map(() => ({
-        buildingLevel: 0,
-        worker: null,
-      }))
-    ),
+    spaces: Array(5)
+      .fill(null)
+      .map(() =>
+        Array(5)
+          .fill(null)
+          .map(() => ({
+            buildingLevel: 0,
+            worker: null,
+          })),
+      ),
   },
   ...overrides,
-})
+});
 
 /**
  * Create mock board state for testing
  */
 export const createMockBoardState = () => {
-  return Array(5).fill(null).map(() =>
-    Array(5).fill(null).map(() => ({
-      buildingLevel: 0,
-      worker: null,
-    }))
-  )
-}
+  return Array(5)
+    .fill(null)
+    .map(() =>
+      Array(5)
+        .fill(null)
+        .map(() => ({
+          buildingLevel: 0,
+          worker: null,
+        })),
+    );
+};
 
 /**
  * Add a worker to a board state at specific position
@@ -131,33 +132,28 @@ export const addWorkerToBoardState = (
   x: number,
   y: number,
   playerId: number,
-  workerId: number
+  workerId: number,
 ) => {
-  const newBoard = JSON.parse(JSON.stringify(boardState))
-  newBoard[x][y].worker = { playerId, workerId }
-  return newBoard
-}
+  const newBoard = JSON.parse(JSON.stringify(boardState));
+  newBoard[x][y].worker = { playerId, workerId };
+  return newBoard;
+};
 
 /**
  * Add a building to a board state at specific position
  */
-export const addBuildingToBoardState = (
-  boardState: any[][],
-  x: number,
-  y: number,
-  level: number
-) => {
-  const newBoard = JSON.parse(JSON.stringify(boardState))
-  newBoard[x][y].buildingLevel = level
-  return newBoard
-}
+export const addBuildingToBoardState = (boardState: any[][], x: number, y: number, level: number) => {
+  const newBoard = JSON.parse(JSON.stringify(boardState));
+  newBoard[x][y].buildingLevel = level;
+  return newBoard;
+};
 
 /**
  * Mock WebGL context for headless testing
  * Call this in test setup if you get WebGL errors
  */
 export const mockWebGLContext = () => {
-  const canvas = document.createElement('canvas')
+  const canvas = document.createElement("canvas");
   const gl = {
     getExtension: () => ({}),
     getParameter: () => ({}),
@@ -195,15 +191,15 @@ export const mockWebGLContext = () => {
     uniform3f: () => {},
     uniform4f: () => {},
     uniformMatrix4fv: () => {},
-  }
+  };
 
   HTMLCanvasElement.prototype.getContext = vi.fn((contextType) => {
-    if (contextType === 'webgl' || contextType === 'webgl2') {
-      return gl
+    if (contextType === "webgl" || contextType === "webgl2") {
+      return gl;
     }
-    return null
-  }) as any
-}
+    return null;
+  }) as any;
+};
 
 /**
  * Wait for R3F to render frames
@@ -211,18 +207,18 @@ export const mockWebGLContext = () => {
  */
 export const waitForR3FFrames = (frames = 1) => {
   return new Promise((resolve) => {
-    let count = 0
+    let count = 0;
     const check = () => {
-      count++
+      count++;
       if (count >= frames) {
-        resolve(true)
+        resolve(true);
       } else {
-        requestAnimationFrame(check)
+        requestAnimationFrame(check);
       }
-    }
-    requestAnimationFrame(check)
-  })
-}
+    };
+    requestAnimationFrame(check);
+  });
+};
 
 /**
  * Create a mock click event for 3D objects
@@ -236,7 +232,7 @@ export const createMock3DClickEvent = (position: [number, number, number] = [0, 
   face: null,
   faceIndex: 0,
   uv: new THREE.Vector2(0, 0),
-})
+});
 
 /**
  * Mock the entire STL loading system
@@ -244,18 +240,18 @@ export const createMock3DClickEvent = (position: [number, number, number] = [0, 
 export const setupSTLMocks = () => {
   // Mock STL files
   global.fetch = vi.fn((url) => {
-    if (typeof url === 'string' && url.includes('.stl')) {
+    if (typeof url === "string" && url.includes(".stl")) {
       return Promise.resolve({
         ok: true,
         arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-      })
+      });
     }
-    return Promise.reject(new Error('Not found'))
-  }) as any
+    return Promise.reject(new Error("Not found"));
+  }) as any;
 
   // Mock STLLoader
-  mockSTLLoader()
-}
+  mockSTLLoader();
+};
 
 // ============================================================================
 // Official @react-three/test-renderer Utilities
@@ -286,8 +282,8 @@ export const setupSTLMocks = () => {
  * @see https://r3f.docs.pmnd.rs/api/testing
  */
 export const createR3FRenderer = async (element: React.ReactElement) => {
-  return await ReactThreeTestRenderer.create(element)
-}
+  return await ReactThreeTestRenderer.create(element);
+};
 
 /**
  * Wait for R3F frames to complete using the test renderer
@@ -304,8 +300,7 @@ export const createR3FRenderer = async (element: React.ReactElement) => {
 export const advanceR3FFrames = async (
   renderer: Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>,
   frames: number = 1,
-  delta: number = 1/60
+  delta: number = 1 / 60,
 ) => {
-  await renderer.advanceFrames(frames, delta)
-}
-
+  await renderer.advanceFrames(frames, delta);
+};
