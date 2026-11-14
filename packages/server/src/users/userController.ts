@@ -65,7 +65,7 @@ router.post(
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Database connection error");
       } else if (e instanceof Error) {
         logger.error(e.message);
-        res.status(500).send(e.message);
+        res.status(500).send("Internal server error");
       } else {
         logger.error("Unknown error", { error: e });
         return res.status(500).json({ message: "Unknown error occurred" });
@@ -95,7 +95,7 @@ router.get(
         res.status(409).send("Database connection error");
       } else if (e instanceof Error) {
         logger.error(e.message);
-        res.status(500).send(e.message);
+        res.status(500).send("Internal server error");
       } else {
         logger.error("Unknown error", { error: e });
         return res.status(500).json({ message: "Unknown error occurred" });

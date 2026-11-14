@@ -10,8 +10,6 @@ import logger from "../logger.ts";
 import passport from "passport";
 
 function extractJwtFromCookies(req: express.Request): string | null {
-  // TODO: debug-only, this logs secrets; never run with LOG_LEVEL=debug in production
-  logger.debug("Extracting JWT from cookies", req.cookies);
   return req.cookies.token;
 }
 

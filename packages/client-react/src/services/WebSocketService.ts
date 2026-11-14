@@ -7,6 +7,7 @@ import { RECONNECTION_DELAY } from '../constants/gameConstants'
 import {
   WS_MESSAGE_TYPES
 } from '../../../shared/src/websocket-types'
+import { log, logError, logWarn } from '../utils/log'
 
 interface WebSocketMessage {
   type: string;
@@ -47,7 +48,7 @@ export class WebSocketService {
 
   // Call this after successful login
   public async connectAfterAuth() {
-    console.log('🔌 connectAfterAuth called')
+    log('🔌 connectAfterAuth called')
     this.isAuthenticated = true
 
     // Get JWT token from the server
@@ -55,9 +56,9 @@ export class WebSocketService {
       const { apiService } = await import('./ApiService')
       const tokenResponse = await apiService.getToken()
       this.authToken = tokenResponse.token
-      console.log('🔑 Got JWT token for WebSocket:', this.authToken ? 'present' : 'missing')
+      log('🔑 Got JWT token for WebSocket:', this.authToken ? 'present' : 'missing')
     } catch (error) {
-      console.error('🚨 Failed to get JWT token:', error)
+      logError('🚨 Failed to get JWT token:', error)
       const authError = ErrorHandler.createError(
         ErrorType.AUTHENTICATION,
         error as Error,
@@ -70,7 +71,7 @@ export class WebSocketService {
       return
     }
 
-    console.log('🔌 Calling connect()')
+    log('🔌 Calling connect()')
     this.connect()
   }
 
@@ -78,7 +79,7 @@ export class WebSocketService {
 
   // Call this on logout
   public disconnect() {
-    console.log('🔌 Disconnecting WebSocket service')
+    log('🔌 Disconnecting WebSocket service')
     this.isAuthenticated = false
     this.authToken = null
     this.reconnectAttempts = 0
@@ -103,7 +104,7 @@ export class WebSocketService {
   private connect() {
     // Prevent multiple simultaneous connections
     if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || this.socket.readyState === WebSocket.OPEN)) {
-      console.log('WebSocket already connecting or connected, skipping new connection')
+      log('WebSocket already connecting or connected, skipping new connection')
       return
     }
 
@@ -114,19 +115,19 @@ export class WebSocketService {
         wsUrl += `?token=${this.authToken}`
       }
 
-      console.log('🔌 Creating WebSocket connection')
+      log('🔌 Creating WebSocket connection')
       this.socket = new WebSocket(wsUrl)
 
       this.socket.onopen = () => {
-        console.log('✅ WebSocket connected')
+        log('✅ WebSocket connected')
         this.reconnectAttempts = 0
 
         // Update store directly
         const store = useGameStore.getState()
-        console.log('🔧 Before setConnected - isConnected:', store.isConnected)
+        log('🔧 Before setConnected - isConnected:', store.isConnected)
         store.setConnected(true)
         store.setConnecting(false)
-        console.log('🔧 After setConnected - isConnected:', store.isConnected)
+        log('🔧 After setConnected - isConnected:', store.isConnected)
 
         this.emit('connected', { connected: true })
       }
@@ -147,7 +148,7 @@ export class WebSocketService {
       }
 
       this.socket.onclose = (event) => {
-        console.log('🔌 WebSocket connection closed:', event.code, event.reason, 'wasCleanClose:', event.wasClean)
+        log('🔌 WebSocket connection closed:', event.code, event.reason, 'wasCleanClose:', event.wasClean)
 
         // Update store directly
         const store = useGameStore.getState()
@@ -159,7 +160,7 @@ export class WebSocketService {
       }
 
       this.socket.onerror = (error) => {
-        console.error('🚨 WebSocket error occurred:', error)
+        logError('🚨 WebSocket error occurred:', error)
         const wsError = ErrorHandler.handleWebSocketError(error)
         ErrorHandler.logError(wsError, 'WebSocketService.connect')
 
@@ -171,7 +172,7 @@ export class WebSocketService {
         // This prevents rapid reconnection attempts that can cause more errors
       }
     } catch (error) {
-      console.error('Failed to create WebSocket connection:', error)
+      logError('Failed to create WebSocket connection:', error)
       this.attemptReconnect()
     }
   }
@@ -179,13 +180,13 @@ export class WebSocketService {
   private attemptReconnect() {
     if (this.isAuthenticated && this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++
-      console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+      log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
 
       setTimeout(() => {
         this.connect()
       }, this.reconnectDelay * this.reconnectAttempts)
     } else {
-      console.error('Max reconnection attempts reached or not authenticated')
+      logError('Max reconnection attempts reached or not authenticated')
       this.emit('maxReconnectAttemptsReached', { error: 'Failed to reconnect to server' })
     }
   }
@@ -196,12 +197,12 @@ export class WebSocketService {
     // Log important game flow messages
     if (type === WS_MESSAGE_TYPES.GAME_START || type === WS_MESSAGE_TYPES.GAME_READY_FOR_START ||
         type === WS_MESSAGE_TYPES.PLAYER_READY_STATUS || type === 'error') {
-      console.log('🔌 WebSocket message:', type, payload)
+      log('🔌 WebSocket message:', type, payload)
     }
 
     // Handle error messages
     if (type === 'error') {
-      console.error('🚨 Server error received:', payload)
+      logError('🚨 Server error received:', payload)
 
       // Just log errors - don't disconnect
       // Note: "Game is full" errors should no longer occur since we only subscribe, not join
@@ -225,7 +226,7 @@ export class WebSocketService {
       // Note: connected/disconnected are now handled directly in socket event handlers
 
       case WS_MESSAGE_TYPES.AVAILABLE_MOVES:
-        console.log('🎯 Available moves:', payload)
+        log('🎯 Available moves:', payload)
 
         // Handle both formats: payload as array directly, or payload.moves as array
         let moves: any[] = []
@@ -242,46 +243,46 @@ export class WebSocketService {
           validPositions: move.position ? [move.position] : (move.validPositions || [])
         }))
 
-        console.log('🎯 Setting new available moves and my turn = true')
+        log('🎯 Setting new available moves and my turn = true')
         store.setCurrentPlayerMoves(transformedMoves)
         store.setMyTurn(true)
         break
 
       case WS_MESSAGE_TYPES.GAME_STATE_UPDATE:
-        console.log('🎮 Game state update:', payload)
+        log('🎮 Game state update:', payload)
         this.handleGameStateUpdate(payload as GameStateUpdatePayload, store)
         break
 
       case WS_MESSAGE_TYPES.PLAYERS_IN_GAME:
-        console.log('👥 Players in game update:', payload)
+        log('👥 Players in game update:', payload)
         // This message is sent when players join/leave the game
         // The server should also send a game_state_update message with the full updated state
         // So we just log this for now - the game_state_update will handle the actual update
         break
 
       case 'move_acknowledged':
-        console.log('✅ Move acknowledged:', payload)
+        log('✅ Move acknowledged:', payload)
         // Just acknowledge - don't clear moves here
         break
 
       case WS_MESSAGE_TYPES.GAME_START:
-        console.log('🎮 Game started:', payload)
+        log('🎮 Game started:', payload)
         // Game has started - the game_state_update message will follow with the new state
         // Just log this for now, the state update will handle the UI transition
         break
 
       case WS_MESSAGE_TYPES.GAME_READY_FOR_START:
-        console.log('🎮 Game ready for start:', payload)
+        log('🎮 Game ready for start:', payload)
         // All players have joined and game is ready to start
         break
 
       case WS_MESSAGE_TYPES.PLAYER_READY_STATUS:
-        console.log('👥 Player ready status update:', payload)
+        log('👥 Player ready status update:', payload)
         // Update the game store with ready status information
         if (payload && Array.isArray(payload)) {
           const readyCount = payload.filter((p: { isReady: boolean }) => p.isReady).length
           const totalPlayers = payload.length
-          console.log(`🎯 Ready status: ${readyCount}/${totalPlayers} players ready`)
+          log(`🎯 Ready status: ${readyCount}/${totalPlayers} players ready`)
 
           // Store ready status in game state for UI updates
           const currentGameState = store.gameState
@@ -343,16 +344,16 @@ export class WebSocketService {
   send(type: string, payload: any) {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       const error = new Error(`WebSocket is not connected. State: ${this.socket?.readyState || 'null'}`)
-      console.error('WebSocket send failed:', error.message, { type, payload })
+      logError('WebSocket send failed:', error.message, { type, payload })
       throw error
     }
 
     try {
       const message = { type, payload }
       this.socket.send(JSON.stringify(message))
-      console.log('📤 Sent:', type)
+      log('📤 Sent:', type)
     } catch (error) {
-      console.error('Failed to send WebSocket message:', error, { type, payload })
+      logError('Failed to send WebSocket message:', error, { type, payload })
       throw error
     }
   }
@@ -360,25 +361,25 @@ export class WebSocketService {
   // Game-specific methods (backend extracts username from JWT token)
   subscribeToGame(gameId: string) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      console.log('📡 Subscribing to game:', gameId)
+      log('📡 Subscribing to game:', gameId)
       this.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId })
     } else {
-      console.warn('⚠️ WebSocket not ready for subscription. State:', this.socket?.readyState)
+      logWarn('⚠️ WebSocket not ready for subscription. State:', this.socket?.readyState)
       // Retry with exponential backoff if connection is still connecting
       if (this.socket?.readyState === WebSocket.CONNECTING) {
-        console.log('🔄 WebSocket connecting, retrying subscription in 500ms...')
+        log('🔄 WebSocket connecting, retrying subscription in 500ms...')
         setTimeout(() => {
           this.subscribeToGame(gameId)
         }, 500)
       } else if (!this.socket) {
-        console.log('🔄 No WebSocket instance, attempting to connect and retry...')
+        log('🔄 No WebSocket instance, attempting to connect and retry...')
         // Try to connect and then retry
         this.connectAfterAuth().then(() => {
           setTimeout(() => {
             this.subscribeToGame(gameId)
           }, 1000)
         }).catch(error => {
-          console.error('Failed to connect WebSocket for subscription:', error)
+          logError('Failed to connect WebSocket for subscription:', error)
         })
       }
     }
@@ -386,15 +387,15 @@ export class WebSocketService {
 
   unsubscribeFromGame(gameId: string) {
     // No longer needed - server automatically cleans up on connection close
-    console.log('📡 Unsubscribe from game requested (automatic cleanup on disconnect):', gameId)
+    log('📡 Unsubscribe from game requested (automatic cleanup on disconnect):', gameId)
   }
 
   joinGame(gameId: string) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      console.log('🎮 Joining game:', gameId)
+      log('🎮 Joining game:', gameId)
       this.send(WS_MESSAGE_TYPES.JOIN_GAME, { gameId: parseInt(gameId) })
     } else {
-      console.warn('⚠️ WebSocket not ready for joining. State:', this.socket?.readyState)
+      logWarn('⚠️ WebSocket not ready for joining. State:', this.socket?.readyState)
       // Simple retry after a short delay if connection is still connecting
       if (this.socket?.readyState === WebSocket.CONNECTING) {
         setTimeout(() => {
@@ -406,10 +407,10 @@ export class WebSocketService {
 
   setReady(gameId: string, isReady: boolean) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      console.log('🎯 Setting ready status:', { gameId, isReady })
+      log('🎯 Setting ready status:', { gameId, isReady })
       this.send(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady })
     } else {
-      console.warn('⚠️ WebSocket not ready for setting ready. State:', this.socket?.readyState)
+      logWarn('⚠️ WebSocket not ready for setting ready. State:', this.socket?.readyState)
       throw new Error('WebSocket not connected')
     }
   }
@@ -439,7 +440,7 @@ export class WebSocketService {
     // Extract the actual game state from payload.state
     const gameView = payload.state
     if (!gameView) {
-      console.warn('🎮 Game state update missing state field:', payload)
+      logWarn('🎮 Game state update missing state field:', payload)
       return
     }
 
@@ -453,7 +454,7 @@ export class WebSocketService {
     })
 
     if (this.lastGameStateHash === gameStateHash) {
-      console.log('🔄 Skipping duplicate game state update')
+      log('🔄 Skipping duplicate game state update')
       return
     }
     this.lastGameStateHash = gameStateHash
@@ -463,9 +464,9 @@ export class WebSocketService {
     const isCurrentPlayer = isPlayer ? gameView.isCurrentPlayer : false
     const availableMoves = isPlayer ? gameView.availableMoves : undefined
 
-    console.log('👥 Players in game state:', gameView.players)
-    console.log('🎯 Is current player:', isCurrentPlayer)
-    console.log('🎯 Available moves:', availableMoves?.length || 0)
+    log('👥 Players in game state:', gameView.players)
+    log('🎯 Is current player:', isCurrentPlayer)
+    log('🎯 Available moves:', availableMoves?.length || 0)
 
     // Convert to GameState format expected by store
     const gameState: GameState = {
@@ -490,11 +491,11 @@ export class WebSocketService {
     if (isCurrentPlayer && availableMoves && availableMoves.length > 0) {
       // Transform moves to UI format
       const transformedMoves = this.transformMovesToUIFormat(availableMoves)
-      console.log('🎯 Setting available moves for current player:', transformedMoves.length)
+      log('🎯 Setting available moves for current player:', transformedMoves.length)
       store.setCurrentPlayerMoves(transformedMoves)
       store.setMyTurn(true)
     } else {
-      console.log('🧹 Not current player or no moves - clearing moves')
+      log('🧹 Not current player or no moves - clearing moves')
       store.setCurrentPlayerMoves([])
       store.setMyTurn(false)
     }

@@ -4,6 +4,7 @@ import { Game } from "../domain/Game.ts";
 import { GameRepositoryDb } from "../infra/GameRepositoryDb.ts";
 import { Player } from "../domain/Player.ts";
 import logger from "../../logger.ts";
+import { sanitizeForLog } from "../../logSanitizer.ts";
 
 /**
  * Application service for lobby operations
@@ -16,7 +17,7 @@ export class LobbyService {
    * Create a new game
    */
   async createGame(creatorId: number, maxPlayers: number = 2): Promise<Game> {
-    logger.info(`Creating new game for user ${creatorId}, max players: ${maxPlayers}`);
+    logger.info(`Creating new game for user ${sanitizeForLog(creatorId)}, max players: ${sanitizeForLog(maxPlayers)}`);
 
     // Let the repository generate the ID and create the game
     const game = await this.gameRepository.createNew(creatorId, maxPlayers);

@@ -7,6 +7,7 @@ import { Player } from "../domain/Player.ts";
 import { db } from "../../database.ts";
 
 import logger from "../../logger.ts";
+import { sanitizeForLog } from "../../logSanitizer.ts";
 
 /**
  * Database adapter for Game aggregate
@@ -82,7 +83,7 @@ export class GameRepositoryDb {
    * Create a new game with database-generated ID
    */
   async createNew(creatorId: number, maxPlayers: number): Promise<Game> {
-    logger.debug(`Creating new game for user ${creatorId}, max players: ${maxPlayers}`);
+    logger.debug(`Creating new game for user ${sanitizeForLog(creatorId)}, max players: ${sanitizeForLog(maxPlayers)}`);
 
     const gameRecord = await this.database
       .insertInto("games")
