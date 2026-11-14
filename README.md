@@ -1,26 +1,14 @@
-# 🏛️ Santorini Online
+# Santorini Online
 
-> [!IMPORTANT]
-> After taking a **Graphical Computation** course and developing a growing interest in board games, I came across an online version of the game **Santorini**. However, I found that the website didn’t enforce the game’s rules—pieces were free to move anywhere on the board, which detracted from the strategy and experience. This frustration, combined with an inevitable childhood desire to develop games, sparked an idea: I decided it would be a fun and fulfilling challenge to create my own online version of **Santorini**, one that fully enforces the game rules and provides an enjoyable and seamless experience for players.
-
-## 🚀 About the Project
+## About the Project
 
 **Santorini Online** is a web-based version of the popular board game **Santorini**. This project brings the gameplay experience online, allowing users to compete against friends or AI, with full rule enforcement and game persistency. It’s designed to capture the strategy of the original board game while ensuring a seamless experience in the digital world.
 
 ![Santorini Online Demo](./assets/images/preview.gif)
 
-> [!NOTE]
-> Work in progress. The preview above shows an earlier version of the frontend. The current frontend (`packages/client-react`, React + Three.js) talks to the backend over HTTP and WebSockets.
 
-## 📅 Roadmap (MVP)
 
-- [x] User authentication and authorization
-- [x] Implement game persistency (PostgreSQL via Kysely)
-- [ ] Define and implement frontend graphical interface
-  - Translate game state changes to 3D graphics
-- [ ] Ensure full rule enforcement and game logic
-
-## 🛠️ Technologies Used
+## Technologies Used
 
 Here are the key technologies and libraries used in this project:
 
@@ -45,7 +33,7 @@ Here are the key technologies and libraries used in this project:
   </a>
 </p>
 
-## 🤝 Contributing
+## Contributing
 
 This is a personal portfolio project, and I'm the primary contributor. However, if you'd like to contribute, feel free to:
 
