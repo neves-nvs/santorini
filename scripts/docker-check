@@ -46,7 +46,7 @@ env_args=(
   -e DB_DATABASE=santorini
 )
 
-echo "== server image contents"
+echo "== image contents"
 unwanted="$(docker run --rm --entrypoint sh "$server_image" -c '
   find . -path ./node_modules -prune -o \( -name "*.test.*" -o -name tests \) -print
   ls -d node_modules/typescript node_modules/jest 2>/dev/null || true
@@ -57,18 +57,20 @@ if [ -n "$unwanted" ]; then
   exit 1
 fi
 echo "ok   no test files or dev dependencies"
-if [ "$(docker run --rm --entrypoint id "$server_image" -u)" = 0 ]; then
-  echo "FAIL the server image runs as root" >&2
-  exit 1
-fi
-echo "ok   runs as a non-root user"
+for image in "$server_image" "$client_image"; do
+  if [ "$(docker run --rm --entrypoint id "$image" -u)" = 0 ]; then
+    echo "FAIL $image runs as root" >&2
+    exit 1
+  fi
+done
+echo "ok   both images run as a non-root user"
 
 echo "== migrations"
 docker run --rm --network "$name" "${env_args[@]}" "$server_image" node dist/server/src/runMigrations.js
 
 echo "== server and frontend"
 docker run -d --name "$name-app" --network "$name" "${env_args[@]}" "$server_image" >/dev/null
-docker run -d --name "$name-web" --network "$name" -p "$port:80" \
+docker run -d --name "$name-web" --network "$name" -p "$port:8080" \
   -e BACKEND_URL="http://$name-app:3000" "$client_image" >/dev/null
 for _ in $(seq 1 30); do
   if [ "$(curl -s -o /dev/null -w '%{http_code}' "localhost:$port/api/games")" = 401 ]; then
