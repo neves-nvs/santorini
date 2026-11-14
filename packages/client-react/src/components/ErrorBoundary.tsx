@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
+import { Component, ErrorInfo, ReactNode } from 'react'
 import { ErrorHandler, ErrorType } from '../utils/errorHandler'
 
 interface Props {
@@ -101,43 +101,4 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return this.props.children
   }
-}
-
-// Higher-order component for wrapping components with error boundary
-export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
-  fallback?: ReactNode
-) {
-  return function WrappedComponent(props: P) {
-    return (
-      <ErrorBoundary fallback={fallback}>
-        <Component {...props} />
-      </ErrorBoundary>
-    )
-  }
-}
-
-// Hook for handling async errors in functional components
-export function useErrorHandler() {
-  const [error, setError] = React.useState<Error | null>(null)
-
-  const handleError = React.useCallback((error: Error | string) => {
-    const gameError = typeof error === 'string' 
-      ? ErrorHandler.createError(ErrorType.UNKNOWN, error)
-      : ErrorHandler.createError(ErrorType.UNKNOWN, error)
-
-    ErrorHandler.logError(gameError, 'useErrorHandler')
-    setError(gameError)
-  }, [])
-
-  const clearError = React.useCallback(() => {
-    setError(null)
-  }, [])
-
-  // Throw error to be caught by error boundary
-  if (error) {
-    throw error
-  }
-
-  return { handleError, clearError }
 }

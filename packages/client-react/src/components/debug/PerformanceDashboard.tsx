@@ -142,12 +142,3 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ visi
     </div>
   )
 }
-
-// Hook for easy integration
-export const usePerformanceDashboard = () => {
-  const [visible, setVisible] = useState(false)
-  
-  const toggle = () => setVisible(!visible)
-  
-  return { visible, toggle }
-}

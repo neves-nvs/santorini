@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useGameState, useGameId } from '../store/gameSelectors'
-import { useApp } from '../store/AppContext'
+import { useApp } from '../store/appStore'
 import { webSocketClient } from '../services/WebSocketClient'
 
 /**

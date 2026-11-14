@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useApp } from '../store/AppContext'
+import { useApp } from '../store/appStore'
 import { apiService } from '../services/ApiService'
 import { GameInfo } from '../types/game'
 

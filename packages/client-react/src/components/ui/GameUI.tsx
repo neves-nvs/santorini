@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { useApp } from '../../store/AppContext'
+import { useApp } from '../../store/appStore'
 import { useGameState, useCurrentPlayerMoves, useIsMyTurn, useIsConnected } from '../../store/gameSelectors'
 import GameBoard from '../game/GameBoard'
 import GameStatusBar from '../game/GameStatusBar'
