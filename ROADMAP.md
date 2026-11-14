@@ -40,6 +40,8 @@ These items will improve the architecture, performance, and scalability of the g
 - **Real-time Performance**: Ensure low-latency communication between clients in real-time multiplayer games.
 - **Database Optimization**: Improve database structure to handle larger user bases and game histories.
 - **CI/CD Pipeline**: Set up a continuous integration/continuous deployment pipeline for automatic testing and deployment.
+- **API Documentation**: Write an OpenAPI spec for the HTTP API and serve it with Swagger UI (or a lighter viewer).
+- **Package Management**: Move the three packages to one workspace with a single lockfile and no dependency hoisting (pnpm workspaces, or Yarn with the pnpm linker), so the packages stop drifting on shared versions like TypeScript and `@types/node` and undeclared dependencies cannot resolve by accident.
 
 ## 📝 Wishlist
 
