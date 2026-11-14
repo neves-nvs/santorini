@@ -63,7 +63,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ visi
         alignItems: 'center',
         marginBottom: '10px'
       }}>
-        <h3 style={{ margin: 0, fontSize: '14px' }}>📊 Performance Monitor</h3>
+        <h3 style={{ margin: 0, fontSize: '14px' }}>Performance Monitor</h3>
         <div>
           <button
             onClick={resetStats}

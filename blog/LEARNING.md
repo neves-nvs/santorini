@@ -1,4 +1,4 @@
-# 🧠 Learning and Technical Decisions
+# Learning and Technical Decisions
 
 This document outlines the technical decisions made during the development of **Santorini Online**. As this project is a learning journey, several decisions were made deliberately to gain a deeper understanding of core technologies and their challenges.
 

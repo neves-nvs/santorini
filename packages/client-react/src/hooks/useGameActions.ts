@@ -30,11 +30,11 @@ export function useGameActions() {
    */
   const joinGame = useCallback((gameId: string): void => {
     if (joinedGamesRef.current.has(gameId)) {
-      console.log('✅ Already joined game:', gameId)
+      console.log('Already joined game:', gameId)
       return
     }
 
-    console.log('🎮 Joining game via WebSocket:', gameId)
+    console.log('Joining game via WebSocket:', gameId)
     webSocketClient.joinGame(gameId)
     joinedGamesRef.current.add(gameId)
   }, [])
@@ -44,11 +44,11 @@ export function useGameActions() {
    */
   const subscribeToGame = useCallback((gameId: string): void => {
     if (subscribedGamesRef.current.has(gameId)) {
-      console.log('✅ Already subscribed to game:', gameId)
+      console.log('Already subscribed to game:', gameId)
       return
     }
 
-    console.log('📡 Subscribing to game:', gameId)
+    console.log('Subscribing to game:', gameId)
     webSocketClient.subscribeToGame(gameId)
     subscribedGamesRef.current.add(gameId)
   }, [])
@@ -61,7 +61,7 @@ export function useGameActions() {
       return
     }
 
-    console.log('📡 Unsubscribing from game:', gameId)
+    console.log('Unsubscribing from game:', gameId)
     webSocketClient.unsubscribeFromGame(gameId)
     subscribedGamesRef.current.delete(gameId)
   }, [])
@@ -71,11 +71,11 @@ export function useGameActions() {
    */
   const fetchGameState = useCallback(async (gameId: string): Promise<void> => {
     try {
-      console.log('🔍 Fetching game state:', gameId)
+      console.log('Fetching game state:', gameId)
       const state = await apiService.getGameState(gameId)
       setGameState(state)
     } catch (error) {
-      console.error('❌ Failed to fetch game state:', error)
+      console.error('Failed to fetch game state:', error)
       throw error
     }
   }, [setGameState])
@@ -84,7 +84,7 @@ export function useGameActions() {
    * Set player ready status
    */
   const setReady = useCallback((gameId: string, isReady: boolean): void => {
-    console.log(`🎯 Setting ready status for game ${gameId}: ${isReady}`)
+    console.log(`Setting ready status for game ${gameId}: ${isReady}`)
     webSocketClient.send(WS_MESSAGE_TYPES.SET_READY, {
       gameId: parseInt(gameId),
       isReady
@@ -95,7 +95,7 @@ export function useGameActions() {
    * Make a game move
    */
   const makeMove = useCallback((moveType: string, data: Move | { workerId: number; position: { x: number; y: number } }): void => {
-    console.log('🎮 Making move:', moveType, data)
+    console.log('Making move:', moveType, data)
     webSocketClient.makeMove(moveType, data)
   }, [])
 

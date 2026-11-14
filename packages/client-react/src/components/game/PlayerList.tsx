@@ -16,7 +16,7 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
 
   // Debug: Log when player list changes
   useEffect(() => {
-    console.log('🎭 PlayerList re-rendered with players:', gameState?.players)
+    console.log('PlayerList re-rendered with players:', gameState?.players)
   }, [gameState?.players])
 
   // Handle undefined/null players gracefully

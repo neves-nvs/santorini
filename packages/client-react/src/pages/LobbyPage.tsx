@@ -78,7 +78,7 @@ const LobbyPage = () => {
   const handleRefreshGames = async () => {
     // Prevent multiple simultaneous requests
     if (isRefreshing) {
-      console.log('🚫 Refresh already in progress, skipping...')
+      console.log('Refresh already in progress, skipping...')
       return
     }
 
@@ -94,7 +94,7 @@ const LobbyPage = () => {
       ])
       setAvailableGames(available)
       setMyGames(mine)
-      console.log('✅ Fetched', available.length, 'available games,', mine.length, 'my games')
+      console.log('Fetched', available.length, 'available games,', mine.length, 'my games')
     } catch (err) {
       console.error('Failed to fetch games:', err)
       setError('Failed to fetch games. Please try again.')
