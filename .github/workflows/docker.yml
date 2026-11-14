@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - .dockerignore
+      - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
       - packages/server/**
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - .dockerignore
+      - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
       - packages/server/**
@@ -35,8 +37,23 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Build the images and run them against Postgres
+      - name: Build the server image
+        id: build-server
+        run: scripts/docker-build server
+        background: true
+
+      - name: Build the frontend image
+        id: build-client
+        run: scripts/docker-build client
+        background: true
+
+      - name: Wait for the image builds
+        wait: [build-server, build-client]
+
+      - name: Run the images against Postgres
         run: scripts/docker-check
+        env:
+          SANTORINI_SKIP_BUILD: "1"
 
       - name: Summarize the images
         if: always()

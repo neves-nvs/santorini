@@ -5,7 +5,8 @@ set -euo pipefail
 # Postgres on a private network, the compiled migrations from inside the server
 # image, the server, and the frontend container in front of it. Everything is
 # checked through the frontend, like a browser would: the page, the API and the
-# WebSocket. Cleans up after itself.
+# WebSocket. Cleans up after itself. Set SANTORINI_SKIP_BUILD to use images that
+# are already built.
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 server_image="${SANTORINI_SERVER_IMAGE:-santorini-server:check}"
@@ -13,7 +14,6 @@ client_image="${SANTORINI_CLIENT_IMAGE:-santorini-client:check}"
 name="santorini-docker-check"
 port="${CHECK_PORT:-13000}"
 cookies="$(mktemp)"
-revision="$(git -C "$root" rev-parse HEAD 2>/dev/null || echo unknown)"
 
 cleanup() {
   docker rm -f "$name-web" "$name-app" "$name-db" >/dev/null 2>&1 || true
@@ -23,8 +23,10 @@ cleanup() {
 trap cleanup EXIT
 cleanup
 
-docker build -q -f "$root/packages/server/Dockerfile" --label "org.opencontainers.image.revision=$revision" -t "$server_image" "$root" >/dev/null
-docker build -q -f "$root/packages/client-react/Dockerfile" --label "org.opencontainers.image.revision=$revision" -t "$client_image" "$root" >/dev/null
+if [ -z "${SANTORINI_SKIP_BUILD:-}" ]; then
+  "$root/scripts/docker-build" server
+  "$root/scripts/docker-build" client
+fi
 
 docker network create "$name" >/dev/null
 docker run -d --name "$name-db" --network "$name" \
