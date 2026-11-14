@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "rewriteRelativeImportExtensions": false,
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "isolatedModules": true
-  }
-}

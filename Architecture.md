@@ -12,7 +12,7 @@ Santorini Online is a real-time multiplayer board game built with a Node.js back
 - **WebSocket**: Native WebSocket (ws library) for real-time communication
 - **Database**: PostgreSQL with Kysely query builder
 - **Authentication**: JWT tokens (HTTP-only cookies + Bearer tokens)
-- **Testing**: Jest with Testcontainers for integration tests
+- **Testing**: Vitest with Testcontainers for integration tests
 
 ### Frontend
 - **Framework**: React 18 with TypeScript

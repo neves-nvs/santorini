@@ -7,6 +7,28 @@ import { db } from "../../../src/database.ts";
 
 let jwtToken: string;
 
+function expectConnectionRejected(ws: WebSocket): Promise<void> {
+  return new Promise((resolve, reject) => {
+    ws.once("error", (err) => {
+      try {
+        expect(err).toBeTruthy();
+        expect(ws.readyState).toBe(WebSocket.CLOSING);
+      } catch (assertion) {
+        reject(assertion);
+      }
+    });
+
+    ws.once("close", () => {
+      try {
+        expect(ws.readyState).toBe(WebSocket.CLOSED);
+        resolve();
+      } catch (assertion) {
+        reject(assertion);
+      }
+    });
+  });
+}
+
 describe("WebSocket Authentication Integration Tests", () => {
   beforeEach(async () => {
     jwtToken = (await createTestUserWithLogin()).token;
@@ -25,7 +47,7 @@ describe("WebSocket Authentication Integration Tests", () => {
   });
 
   describe("WebSocket Authentication", () => {
-    test("authenticates WebSocket connection with valid JWT", (done) => {
+    test("authenticates WebSocket connection with valid JWT", async () => {
       const ws = new WebSocket(`ws://localhost:${PORT}`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
@@ -33,49 +55,33 @@ describe("WebSocket Authentication Integration Tests", () => {
         perMessageDeflate: false,
       });
 
-      ws.on("open", () => {
-        expect(ws.readyState).toBe(WebSocket.OPEN);
-        ws.close();
-        done();
-      });
+      await new Promise<void>((resolve, reject) => {
+        ws.on("open", () => {
+          expect(ws.readyState).toBe(WebSocket.OPEN);
+          ws.close();
+          resolve();
+        });
 
-      ws.on("error", (err) => {
-        done(new Error(`WebSocket connection failed: ${err}`));
+        ws.on("error", (err) => {
+          reject(new Error(`WebSocket connection failed: ${err}`));
+        });
       });
     });
 
-    test("rejects connection for invalid JWT", (done) => {
+    test("rejects connection for invalid JWT", async () => {
       const ws = new WebSocket(`ws://localhost:${PORT}`, {
         headers: {
           Authorization: `Bearer invalidToken`,
         },
       });
 
-      ws.on("error", (err) => {
-        expect(err).toBeTruthy();
-        expect(ws.readyState).toBe(WebSocket.CLOSING);
-        ws.close();
-        done();
-      });
-
-      ws.on("close", () => {
-        expect(ws.readyState).toBe(WebSocket.CLOSED);
-      });
+      await expectConnectionRejected(ws);
     });
 
-    test("rejects connection when JWT token is missing", (done) => {
+    test("rejects connection when JWT token is missing", async () => {
       const ws = new WebSocket(`ws://localhost:${PORT}`);
 
-      ws.once("error", (err) => {
-        expect(err).toBeTruthy();
-        expect(ws.readyState).toBe(WebSocket.CLOSING);
-        ws.close();
-        done();
-      });
-
-      ws.once("close", () => {
-        expect(ws.readyState).toBe(WebSocket.CLOSED);
-      });
+      await expectConnectionRejected(ws);
     });
   });
 });

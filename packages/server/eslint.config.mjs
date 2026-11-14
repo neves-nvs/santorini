@@ -12,7 +12,6 @@ export default [
       ".config/**/*",
       "src/migrations/**/*",
       "src/runMigrations.ts",
-      "jest.*.js",
     ],
   },
   {
