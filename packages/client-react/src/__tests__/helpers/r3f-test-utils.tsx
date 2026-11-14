@@ -157,7 +157,6 @@ export const addBuildingToBoardState = (
  * Call this in test setup if you get WebGL errors
  */
 export const mockWebGLContext = () => {
-  const canvas = document.createElement('canvas')
   const gl = {
     getExtension: () => ({}),
     getParameter: () => ({}),

@@ -5,11 +5,10 @@
  * @see https://r3f.docs.pmnd.rs/api/testing
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { createR3FRenderer, advanceR3FFrames, setupSTLMocks } from '../../helpers/r3f-test-utils'
 import { useState } from 'react'
-import Board3D from '../../../components/game/Board3D'
-import { Cell, Block, Worker, BoundingBox, BoardBase } from '../../../components/game/GamePieces'
+import { Cell, Block, BoundingBox, BoardBase } from '../../../components/game/GamePieces'
 
 // ============================================================================
 // Example Component: Rotating Box
@@ -22,7 +21,7 @@ interface RotatingBoxProps {
 
 function RotatingBox({ initialScale = 1, scaleIncrement = 0.5 }: RotatingBoxProps) {
   const [scale, setScale] = useState(initialScale)
-  const [rotation, setRotation] = useState(0)
+  const [rotation] = useState(0)
 
   return (
     <mesh
@@ -335,7 +334,7 @@ describe('Game Board Components', () => {
       }
 
       const TestWrapper = () => {
-        const [unrelatedState, setUnrelatedState] = useState(0)
+        const [, setUnrelatedState] = useState(0)
         return (
           <group>
             <TrackedCell position={[0, 0, 0]} gridX={0} gridZ={0} onClick={() => {}} />
@@ -378,7 +377,7 @@ describe('Game Board Components', () => {
       }
 
       const TestWrapper = () => {
-        const [counter, setCounter] = useState(0)
+        const [, setCounter] = useState(0)
         return (
           <group>
             <TrackedBoardBase />
