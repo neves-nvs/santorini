@@ -120,7 +120,6 @@ export class WsRouter {
 
   private async joinGame(ws: AuthenticatedWebSocket, userId: number, gameId: number): Promise<void> {
     const { game, isNewPlayer } = await this.addPlayerIfNew(gameId, userId);
-    this.connectionManager.addClient(gameId, userId, ws);
 
     const gameView = await this.gameService.getGameStateForPlayer(gameId, userId);
     send(ws, WS_MESSAGE_TYPES.GAME_JOINED, { gameId, gameState: gameView });

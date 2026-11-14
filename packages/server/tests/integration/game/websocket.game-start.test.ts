@@ -308,6 +308,10 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       await joinPromise;
       await playerJoinedPromise;
 
+      const subscribeToGame = waitForMessage(ws2, "game_state_update");
+      ws2.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
+      await subscribeToGame;
+
       // Set up listener for player_left broadcast
       const playerLeftPromise = waitForMessage(ws1, "player_left");
 
