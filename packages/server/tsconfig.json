@@ -3,6 +3,7 @@
     "target": "ES2023",
     "module": "NodeNext",
     "outDir": "./dist",
+    "rootDir": "..",
     "strict": true,
     "isolatedModules": true,
     "rewriteRelativeImportExtensions": true,
