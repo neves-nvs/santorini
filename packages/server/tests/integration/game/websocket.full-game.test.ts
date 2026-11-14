@@ -4,7 +4,6 @@ import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { config } from "../../../src/configs/config.ts";
-import { db } from "../../../src/database.ts";
 
 interface TestPlayer {
   user: UserDTO;
@@ -54,7 +53,6 @@ describe("Full Game Integration Test", () => {
   afterAll(async () => {
     wss.close();
     server.close();
-    await db.destroy();
   });
 
   // Message queues for each player to handle broadcasts

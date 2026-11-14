@@ -1,5 +1,5 @@
 import { app } from "../../../src/app.ts";
-import { db } from "../../../src/database.ts";
+import { cleanupTestData } from "../helper/testDb.ts";
 import { findUserByUsername } from "../../../src/users/userRepository.ts";
 import request from "supertest";
 // Removed server import - not needed for HTTP tests using supertest
@@ -11,11 +11,7 @@ const userData = {
 
 describe("Users API Integration Tests", () => {
   afterEach(async () => {
-    await db.deleteFrom("users").execute();
-  });
-
-  afterAll(async () => {
-    await db.destroy();
+    await cleanupTestData();
   });
 
   describe("POST /users", () => {
