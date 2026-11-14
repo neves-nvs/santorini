@@ -23,6 +23,10 @@ const CORS_CONFIG = {
 
 const app = express();
 
+app.get("/healthz", (_req, res) => {
+  res.sendStatus(200);
+});
+
 app.use(morganMiddleware);
 app.use(morganBodyMiddleware);
 app.use(morganResBodyMiddleware);
