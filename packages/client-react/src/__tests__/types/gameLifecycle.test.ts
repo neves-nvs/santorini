@@ -153,14 +153,14 @@ describe('getGameStatusMessage', () => {
       const lifecycle = { main: 'WAITING' as const, sub: 'JOINING' as const }
       const message = getGameStatusMessage(lifecycle, false, 1, 2, 0)
 
-      expect(message).toBe('⏳ Waiting for players (1/2 joined)')
+      expect(message).toBe('Waiting for players (1/2 joined)')
     })
 
     it('should show ready check message', () => {
       const lifecycle = { main: 'WAITING' as const, sub: 'READY_CHECK' as const }
       const message = getGameStatusMessage(lifecycle, false, 2, 2, 1)
 
-      expect(message).toBe('⏳ Waiting for players (1/2 ready)')
+      expect(message).toBe('Waiting for players (1/2 ready)')
     })
   })
 
@@ -169,49 +169,49 @@ describe('getGameStatusMessage', () => {
       const lifecycle = { main: 'IN_PROGRESS' as const, sub: 'PLACING' as const }
       const message = getGameStatusMessage(lifecycle, true, 2, 2, 0)
 
-      expect(message).toBe('🎯 Your turn - Place worker')
+      expect(message).toBe('Your turn - Place worker')
     })
 
     it('should show placing message for opponent', () => {
       const lifecycle = { main: 'IN_PROGRESS' as const, sub: 'PLACING' as const }
       const message = getGameStatusMessage(lifecycle, false, 2, 2, 0)
 
-      expect(message).toBe('⏳ Opponent placing worker')
+      expect(message).toBe('Opponent placing worker')
     })
 
     it('should show moving message for current player', () => {
       const lifecycle = { main: 'IN_PROGRESS' as const, sub: 'MOVING' as const }
       const message = getGameStatusMessage(lifecycle, true, 2, 2, 0)
 
-      expect(message).toBe('🎯 Your turn - Move worker')
+      expect(message).toBe('Your turn - Move worker')
     })
 
     it('should show moving message for opponent', () => {
       const lifecycle = { main: 'IN_PROGRESS' as const, sub: 'MOVING' as const }
       const message = getGameStatusMessage(lifecycle, false, 2, 2, 0)
 
-      expect(message).toBe('⏳ Opponent moving')
+      expect(message).toBe('Opponent moving')
     })
 
     it('should show building message for current player', () => {
       const lifecycle = { main: 'IN_PROGRESS' as const, sub: 'BUILDING' as const }
       const message = getGameStatusMessage(lifecycle, true, 2, 2, 0)
 
-      expect(message).toBe('🎯 Your turn - Build block')
+      expect(message).toBe('Your turn - Build block')
     })
 
     it('should show building message for opponent', () => {
       const lifecycle = { main: 'IN_PROGRESS' as const, sub: 'BUILDING' as const }
       const message = getGameStatusMessage(lifecycle, false, 2, 2, 0)
 
-      expect(message).toBe('⏳ Opponent building')
+      expect(message).toBe('Opponent building')
     })
 
     it('should show generic message for unknown phase', () => {
       const lifecycle = { main: 'IN_PROGRESS' as const, sub: null }
       const message = getGameStatusMessage(lifecycle, true, 2, 2, 0)
 
-      expect(message).toBe('🎯 Your turn')
+      expect(message).toBe('Your turn')
     })
   })
 
@@ -220,14 +220,14 @@ describe('getGameStatusMessage', () => {
       const lifecycle = { main: 'FINISHED' as const, sub: 'ABORTED' as const }
       const message = getGameStatusMessage(lifecycle, false, 2, 2, 0)
 
-      expect(message).toBe('❌ Game was aborted')
+      expect(message).toBe('Game was aborted')
     })
 
     it('should show victory message', () => {
       const lifecycle = { main: 'FINISHED' as const, sub: 'VICTORY' as const }
       const message = getGameStatusMessage(lifecycle, false, 2, 2, 0)
 
-      expect(message).toBe('🏆 Game finished')
+      expect(message).toBe('Game finished')
     })
   })
 
@@ -235,7 +235,7 @@ describe('getGameStatusMessage', () => {
     const lifecycle = { main: 'INVALID' as any, sub: null }
     const message = getGameStatusMessage(lifecycle, false, 2, 2, 0)
 
-    expect(message).toBe('🎮 Game status unknown')
+    expect(message).toBe('Game status unknown')
   })
 })
 

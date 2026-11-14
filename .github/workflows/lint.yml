@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - packages/server/**
+      - packages/client-react/**
       - .prettierrc
       - .github/workflows/lint.yml
 
@@ -46,3 +47,25 @@ jobs:
         if: steps.changed.outputs.any == 'true'
         run: sed 's|^packages/server/||' "$RUNNER_TEMP/changed.txt" | xargs npx eslint
         working-directory: packages/server
+
+  lint-client:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 26
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: packages/client-react
+
+      - name: Lint
+        run: npm run lint
+        working-directory: packages/client-react

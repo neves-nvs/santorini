@@ -10,6 +10,7 @@ describe("loadConfig", () => {
       port: 3000,
       jwtSecret: "secret",
       allowedOrigins: ["http://localhost:5174"],
+      trustProxy: "loopback, linklocal, uniquelocal",
       google: { clientId: undefined, clientSecret: undefined },
       db: { host: "localhost", port: 5432, user: "postgres", database: "postgres", password: undefined },
       logging: { level: "http", httpFormat: "dev", force: false },
@@ -38,6 +39,13 @@ describe("loadConfig", () => {
     expect(config.allowedOrigins).toEqual(["https://a.example", "https://b.example"]);
     expect(config.db).toEqual({ host: "db", port: 6543, user: "santorini", database: "games", password: "pw" });
     expect(config.logging).toEqual({ level: "debug", httpFormat: "combined", force: true });
+  });
+
+  it("reads the proxies to trust", () => {
+    expect(loadConfig({ JWT_SECRET: "secret", TRUST_PROXY: "2" }, devSecretFile).trustProxy).toBe(2);
+    expect(loadConfig({ JWT_SECRET: "secret", TRUST_PROXY: "10.0.0.0/8" }, devSecretFile).trustProxy).toBe(
+      "10.0.0.0/8",
+    );
   });
 
   it("fails without a JWT secret outside development", () => {

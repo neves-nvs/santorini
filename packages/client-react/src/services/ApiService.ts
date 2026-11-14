@@ -183,28 +183,28 @@ export class ApiService {
 
   async getGameState(gameId: string): Promise<any> {
     // Use the new comprehensive game state endpoint
-    console.log(`🔍 Fetching game state for game ID: ${gameId}`)
+    console.log(`Fetching game state for game ID: ${gameId}`)
     const result = await this.request<any>(`/games/${gameId}`)
-    console.log(`🔍 Game state response:`, result)
-    console.log(`🔍 Board in response:`, result?.board)
+    console.log(`Game state response:`, result)
+    console.log(`Board in response:`, result?.board)
     return result
   }
 
   async setPlayerReady(gameId: string, isReady: boolean): Promise<boolean> {
     try {
-      console.log('🌐 ApiService.setPlayerReady called:', { gameId, isReady })
-      console.log('🌐 Sending POST to:', `/games/${gameId}/ready`)
-      console.log('🌐 Request body:', JSON.stringify({ isReady }))
+      console.log('ApiService.setPlayerReady called:', { gameId, isReady })
+      console.log('Sending POST to:', `/games/${gameId}/ready`)
+      console.log('Request body:', JSON.stringify({ isReady }))
 
       const response = await this.request<any>(`/games/${gameId}/ready`, {
         method: 'POST',
         body: JSON.stringify({ isReady }),
       })
 
-      console.log('🌐 Backend response:', response)
+      console.log('Backend response:', response)
       return true
     } catch (error) {
-      console.error('🌐 Failed to set ready status:', error)
+      console.error('Failed to set ready status:', error)
       return false
     }
   }

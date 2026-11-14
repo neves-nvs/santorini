@@ -83,32 +83,32 @@ export function getGameStatusMessage(
   switch (lifecycle.main) {
     case 'WAITING':
       if (lifecycle.sub === 'JOINING') {
-        return `⏳ Waiting for players (${currentPlayers}/${totalPlayers} joined)`
+        return `Waiting for players (${currentPlayers}/${totalPlayers} joined)`
       } else {
-        return `⏳ Waiting for players (${readyCount}/${currentPlayers} ready)`
+        return `Waiting for players (${readyCount}/${currentPlayers} ready)`
       }
 
     case 'IN_PROGRESS':
       switch (lifecycle.sub) {
         case 'PLACING':
-          return isMyTurn ? `🎯 Your turn - Place worker` : `⏳ Opponent placing worker`
+          return isMyTurn ? `Your turn - Place worker` : `Opponent placing worker`
         case 'MOVING':
-          return isMyTurn ? `🎯 Your turn - Move worker` : `⏳ Opponent moving`
+          return isMyTurn ? `Your turn - Move worker` : `Opponent moving`
         case 'BUILDING':
-          return isMyTurn ? `🎯 Your turn - Build block` : `⏳ Opponent building`
+          return isMyTurn ? `Your turn - Build block` : `Opponent building`
         default:
-          return isMyTurn ? `🎯 Your turn` : `⏳ Opponent's turn`
+          return isMyTurn ? `Your turn` : `Opponent's turn`
       }
 
     case 'FINISHED':
       if (lifecycle.sub === 'ABORTED') {
-        return `❌ Game was aborted`
+        return `Game was aborted`
       } else {
-        return `🏆 Game finished`
+        return `Game finished`
       }
 
     default:
-      return `🎮 Game status unknown`
+      return `Game status unknown`
   }
 }
 

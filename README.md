@@ -58,7 +58,7 @@ This is a personal portfolio project, and I'm the primary contributor. However, 
 
 5. Open a pull request and explain your changes.
 
-## 📖 How to Play
+## How to Play
 
 In **Santorini**, the goal is to be the first player to move one of your workers onto the third level of a building. Players take turns moving one worker and building a block or dome.
 
@@ -70,11 +70,11 @@ In **Santorini**, the goal is to be the first player to move one of your workers
 
 For a more detailed explanation of the rules, check out the [official Santorini rules](https://roxley.com/santorini).
 
-## 📝 License
+## License
 
 This project is licensed under the **AGPL-3.0 License**. See the [LICENSE](./LICENSE) file for more details.
 
-## 📦 Running it locally
+## Running it locally
 
 You need [Docker](https://www.docker.com/) (for PostgreSQL) and either [Node.js](https://nodejs.org/) 26 or [Nix](https://nixos.org/). The scripts start the Nix shell from `packages/server` by themselves when `npm` is not on your `PATH`. With [direnv](https://direnv.net/), run `direnv allow` in the repo root or in a package: it loads Node 26 from the Nix flake and prints the commands for that folder, or tells you what to install if Nix with flakes is not available.
 

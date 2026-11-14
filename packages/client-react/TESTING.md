@@ -45,11 +45,11 @@ Unit tests are located in `src/__tests__/` and use Vitest with jsdom environment
 
 ### What's Tested
 
-- ✅ **Services** (`ApiService`, `WebSocketService`)
-- ✅ **State Management** (`gameStore`)
-- ✅ **Utilities** (`errorHandler`, `performanceMonitor`)
-- ✅ **Type Helpers** (`gameLifecycle`)
-- ✅ **Board Logic** (`board-types`)
+- **Services** (`ApiService`, `WebSocketService`)
+- **State Management** (`gameStore`)
+- **Utilities** (`errorHandler`, `performanceMonitor`)
+- **Type Helpers** (`gameLifecycle`)
+- **Board Logic** (`board-types`)
 
 ### Example: Testing a Service
 
@@ -99,10 +99,10 @@ E2E tests are located in `e2e/` and test the full application in a real browser.
 
 ### What's Tested
 
-- ✅ **Authentication Flow** (login, registration)
-- ✅ **Navigation** (routing, page loads)
-- ✅ **UI Interactions** (forms, buttons)
-- ✅ **Error Handling** (graceful degradation)
+- **Authentication Flow** (login, registration)
+- **Navigation** (routing, page loads)
+- **UI Interactions** (forms, buttons)
+- **Error Handling** (graceful degradation)
 
 ### Example: Testing Authentication
 
@@ -245,7 +245,7 @@ describe('Coordinate Conversion', () => {
 
 ### What to Test in R3F Components
 
-#### ✅ **DO Test:**
+#### **DO Test:**
 - Board state transformations
 - Coordinate conversions
 - Game logic (valid moves, win conditions)
@@ -253,7 +253,7 @@ describe('Coordinate Conversion', () => {
 - Component props and rendering logic
 - State updates and re-renders
 
-#### ❌ **DON'T Test:**
+#### **DON'T Test:**
 - Exact 3D positions (use E2E for visual testing)
 - WebGL rendering details
 - STL model loading (mock it)
@@ -304,12 +304,12 @@ it('should animate', async () => {
 Extract game logic into pure functions that can be tested without 3D rendering:
 
 ```typescript
-// ✅ Good - testable logic
+// Good - testable logic
 export const calculateValidMoves = (board, worker) => {
   // Pure function logic
 }
 
-// ❌ Bad - logic mixed with rendering
+// Bad - logic mixed with rendering
 const Board3D = () => {
   // Complex logic inside component
 }
@@ -320,10 +320,10 @@ const Board3D = () => {
 Always use the provided test helpers for R3F components:
 
 ```typescript
-// ✅ Good
+// Good
 import { renderR3F, mockWebGLContext } from '../../helpers/r3f-test-utils'
 
-// ❌ Bad
+// Bad
 import { render } from '@testing-library/react'
 ```
 
@@ -343,14 +343,14 @@ beforeEach(() => {
 Focus on testing what users do, not implementation details:
 
 ```typescript
-// ✅ Good
+// Good
 it('should select worker when clicked', () => {
   const handleClick = vi.fn()
   renderR3F(<Worker onClick={handleClick} />)
   // Simulate click
 })
 
-// ❌ Bad
+// Bad
 it('should have correct mesh geometry', () => {
   // Testing Three.js internals
 })
@@ -430,11 +430,11 @@ beforeAll(() => {
 Make sure you're using `renderR3F` instead of `render`:
 
 ```typescript
-// ✅ Correct
+// Correct
 import { renderR3F } from '../../helpers/r3f-test-utils'
 const { container } = renderR3F(<MyComponent />)
 
-// ❌ Wrong
+// Wrong
 import { render } from '@testing-library/react'
 const { container } = render(<MyComponent />)
 ```

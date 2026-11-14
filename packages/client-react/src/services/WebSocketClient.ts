@@ -47,7 +47,7 @@ class WebSocketClient {
    * Connect after authentication - fetches JWT token first
    */
   async connectAfterAuth(): Promise<void> {
-    console.log('🔌 WebSocketClient.connectAfterAuth called')
+    console.log('WebSocketClient.connectAfterAuth called')
     this.isAuthenticated = true
 
     try {
@@ -55,9 +55,9 @@ class WebSocketClient {
       const { apiService } = await import('./ApiService')
       const tokenResponse = await apiService.getToken()
       this.authToken = tokenResponse.token
-      console.log('🔑 Got JWT token for WebSocket')
+      console.log('Got JWT token for WebSocket')
     } catch (error) {
-      console.error('🚨 Failed to get JWT token:', error)
+      console.error('Failed to get JWT token:', error)
       this.isAuthenticated = false
       return
     }
@@ -69,7 +69,7 @@ class WebSocketClient {
    * Disconnect and cleanup
    */
   disconnect(): void {
-    console.log('🔌 WebSocketClient disconnecting')
+    console.log('WebSocketClient disconnecting')
     this.isAuthenticated = false
     this.authToken = null
     this.reconnectAttempts = 0
@@ -100,7 +100,7 @@ class WebSocketClient {
     }
 
     this.socket.send(JSON.stringify({ type, payload }))
-    console.log('📤 Sent:', type)
+    console.log('Sent:', type)
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -109,25 +109,25 @@ class WebSocketClient {
 
   subscribeToGame(gameId: string): void {
     if (!this.isConnected()) {
-      console.warn('⚠️ WebSocket not ready for subscription, retrying...')
+      console.warn('WebSocket not ready for subscription, retrying...')
       this.retryWhenReady(() => this.subscribeToGame(gameId))
       return
     }
-    console.log('📡 Subscribing to game:', gameId)
+    console.log('Subscribing to game:', gameId)
     this.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId })
   }
 
   unsubscribeFromGame(gameId: string): void {
-    console.log('📡 Unsubscribe requested (cleanup on disconnect):', gameId)
+    console.log('Unsubscribe requested (cleanup on disconnect):', gameId)
   }
 
   joinGame(gameId: string): void {
     if (!this.isConnected()) {
-      console.warn('⚠️ WebSocket not ready for join, retrying...')
+      console.warn('WebSocket not ready for join, retrying...')
       this.retryWhenReady(() => this.joinGame(gameId))
       return
     }
-    console.log('🎮 Joining game:', gameId)
+    console.log('Joining game:', gameId)
     this.send(WS_MESSAGE_TYPES.JOIN_GAME, { gameId: parseInt(gameId) })
   }
 
@@ -137,11 +137,11 @@ class WebSocketClient {
 
   setReady(gameId: string, isReady: boolean): void {
     if (!this.isConnected()) {
-      console.warn('⚠️ WebSocket not ready for setReady, retrying...')
+      console.warn('WebSocket not ready for setReady, retrying...')
       this.retryWhenReady(() => this.setReady(gameId, isReady))
       return
     }
-    console.log('🎯 Setting ready status:', { gameId, isReady })
+    console.log('Setting ready status:', { gameId, isReady })
     this.send(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady })
   }
 
@@ -159,11 +159,11 @@ class WebSocketClient {
       ? `${this.serverAddress}?token=${this.authToken}`
       : this.serverAddress
 
-    console.log('🔌 Creating WebSocket connection')
+    console.log('Creating WebSocket connection')
     this.socket = new WebSocket(wsUrl)
 
     this.socket.onopen = () => {
-      console.log('✅ WebSocket connected')
+      console.log('WebSocket connected')
       this.reconnectAttempts = 0
       handleConnectionChange(true)
     }
@@ -178,13 +178,13 @@ class WebSocketClient {
     }
 
     this.socket.onclose = (event) => {
-      console.log('🔌 WebSocket closed:', event.code, event.reason)
+      console.log('WebSocket closed:', event.code, event.reason)
       handleConnectionChange(false)
       this.attemptReconnect()
     }
 
     this.socket.onerror = (error) => {
-      console.error('🚨 WebSocket error:', error)
+      console.error('WebSocket error:', error)
     }
   }
 

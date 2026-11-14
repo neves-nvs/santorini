@@ -6,7 +6,7 @@ interface PerformanceMetric {
   startTime: number
   endTime?: number
   duration?: number
-  metadata?: any
+  metadata?: unknown
 }
 
 class PerformanceMonitor {
@@ -17,7 +17,7 @@ class PerformanceMonitor {
   /**
    * Start timing an operation
    */
-  startTiming(name: string, metadata?: any): void {
+  startTiming(name: string, metadata?: unknown): void {
     if (!this.isEnabled) return
 
     this.metrics.set(name, {
@@ -47,9 +47,9 @@ class PerformanceMonitor {
 
     // Log slow operations
     if (duration > 16) { // More than one frame at 60fps
-      console.warn(`🐌 Slow operation detected: ${name} took ${duration.toFixed(2)}ms`, metric.metadata)
+      console.warn(`Slow operation detected: ${name} took ${duration.toFixed(2)}ms`, metric.metadata)
     } else if (duration > 5) {
-      console.log(`⚡ ${name} took ${duration.toFixed(2)}ms`, metric.metadata)
+      console.log(`${name} took ${duration.toFixed(2)}ms`, metric.metadata)
     }
 
     return duration
@@ -58,7 +58,7 @@ class PerformanceMonitor {
   /**
    * Track component render count
    */
-  trackRender(componentName: string, props?: any): void {
+  trackRender(componentName: string, props?: unknown): void {
     if (!this.isEnabled) return
 
     const currentCount = this.renderCounts.get(componentName) || 0
@@ -67,7 +67,7 @@ class PerformanceMonitor {
 
     // Log excessive re-renders
     if (newCount > 10 && newCount % 5 === 0) {
-      console.warn(`🔄 Component '${componentName}' has rendered ${newCount} times`, props)
+      console.warn(`Component '${componentName}' has rendered ${newCount} times`, props)
     }
   }
 
@@ -99,16 +99,16 @@ export const performanceMonitor = new PerformanceMonitor()
 
 // Make it available globally for console access
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  (window as any).performanceMonitor = performanceMonitor
+  Object.assign(window, { performanceMonitor })
 }
 
 // React hook for tracking component renders
-export function useRenderTracker(componentName: string, dependencies?: any[]) {
-  if (process.env.NODE_ENV === 'development') {
-    React.useEffect(() => {
+export function useRenderTracker(componentName: string, dependencies?: unknown[]) {
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
       performanceMonitor.trackRender(componentName, dependencies)
-    })
-  }
+    }
+  })
 }
 
 // Higher-order component for performance tracking
@@ -131,7 +131,7 @@ export function withPerformanceTracking<P extends object>(
 export function measureOperation<T>(
   name: string,
   operation: () => T,
-  metadata?: any
+  metadata?: unknown
 ): T {
   performanceMonitor.startTiming(name, metadata)
   try {
@@ -148,7 +148,7 @@ export function measureOperation<T>(
 export async function measureAsyncOperation<T>(
   name: string,
   operation: () => Promise<T>,
-  metadata?: any
+  metadata?: unknown
 ): Promise<T> {
   performanceMonitor.startTiming(name, metadata)
   try {

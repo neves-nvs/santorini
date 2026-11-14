@@ -47,46 +47,46 @@ export function handleWebSocketMessage(type: string, payload: unknown): void {
       break
 
     case WS_MESSAGE_TYPES.GAME_START:
-      log('🎮 Game started:', payload)
+      log('Game started:', payload)
       handleGameStart(payload, store)
       break
 
     case WS_MESSAGE_TYPES.GAME_READY_FOR_START:
-      log('🎮 Game ready for start:', payload)
+      log('Game ready for start:', payload)
       break
 
     case WS_MESSAGE_TYPES.PLAYERS_IN_GAME:
-      log('👥 Players in game update:', payload)
+      log('Players in game update:', payload)
       // Game state update will follow with full state
       break
 
     case WS_MESSAGE_TYPES.PLAYER_JOINED:
-      log('👤 Player joined:', payload)
+      log('Player joined:', payload)
       // Full game_state_update follows - UI will update from that
       break
 
     case WS_MESSAGE_TYPES.PLAYER_LEFT:
-      log('👤 Player left:', payload)
+      log('Player left:', payload)
       // Full game_state_update follows - UI will update from that
       break
 
     case WS_MESSAGE_TYPES.GAME_JOINED:
-      log('🎮 Game joined:', payload)
+      log('Game joined:', payload)
       handleGameJoined(payload, store)
       break
 
     case 'move_acknowledged':
-      log('✅ Move acknowledged:', payload)
+      log('Move acknowledged:', payload)
       break
 
     case 'error':
-      logError('🚨 Server error:', payload)
+      logError('Server error:', payload)
       break
 
     default:
       // Unknown message type - log for debugging
       if (type !== 'connected' && type !== 'disconnected') {
-        log('📨 Unhandled message type:', type, payload)
+        log('Unhandled message type:', type, payload)
       }
   }
 }
@@ -100,7 +100,7 @@ function handleGameStateUpdate(
 ): void {
   const gameView = payload.state
   if (!gameView) {
-    logWarn('🎮 Game state update missing state field:', payload)
+    logWarn('Game state update missing state field:', payload)
     return
   }
 
@@ -117,7 +117,7 @@ function handleGameStateUpdate(
   })
 
   if (lastGameStateHash === stateHash) {
-    log('🔄 Skipping duplicate game state update')
+    log('Skipping duplicate game state update')
     return
   }
   lastGameStateHash = stateHash
@@ -127,7 +127,7 @@ function handleGameStateUpdate(
   const isCurrentPlayer = isPlayer ? gameView.isCurrentPlayer : false
   const availableMoves = isPlayer ? gameView.availableMoves : undefined
 
-  log('🎮 Processing game state - phase:', gameView.phase, 'isCurrentPlayer:', isCurrentPlayer)
+  log('Processing game state - phase:', gameView.phase, 'isCurrentPlayer:', isCurrentPlayer)
 
   // Compute currentUserReady from players array
   // Get the current user's ID from the app store (single source of truth)
@@ -135,7 +135,7 @@ function handleGameStateUpdate(
   const currentUserPlayer = currentUserId ? gameView.players.find(p => p.userId === currentUserId) : undefined
   const currentUserReady = currentUserPlayer?.isReady ?? false
 
-  log('🎯 Current user ready status:', { currentUserId, currentUserReady, players: gameView.players })
+  log('Current user ready status:', { currentUserId, currentUserReady, players: gameView.players })
 
   // Convert to GameState format
   const gameState: GameState = {
@@ -183,7 +183,7 @@ function handleGameStart(
   store: ReturnType<typeof useGameStore.getState>
 ): void {
   const data = payload as GameStartPayload
-  log('🎮 Processing game start - activePlayerId:', data.activePlayerId)
+  log('Processing game start - activePlayerId:', data.activePlayerId)
 
   // Check if current user is the active player
   const currentUserId = useAppStore.getState().userId
@@ -191,7 +191,7 @@ function handleGameStart(
   const currentPlayer = gameState?.players.find(p => p.userId === currentUserId)
   const isCurrentPlayer = currentPlayer ? data.activePlayerId === currentPlayer.id : false
 
-  log('🎮 Is current player:', isCurrentPlayer, 'userId:', currentUserId, 'playerId:', currentPlayer?.id)
+  log('Is current player:', isCurrentPlayer, 'userId:', currentUserId, 'playerId:', currentPlayer?.id)
 
   // Update game state with new status/phase
   if (gameState) {
@@ -211,7 +211,7 @@ function handleGameStart(
   if (isCurrentPlayer && data.availableMoves && data.availableMoves.length > 0) {
     const transformedMoves = transformMovesToUIFormat(data.availableMoves)
     store.setCurrentPlayerMoves(transformedMoves)
-    log('🎮 Set available moves:', transformedMoves.length)
+    log('Set available moves:', transformedMoves.length)
   } else {
     store.setCurrentPlayerMoves([])
   }
@@ -272,7 +272,7 @@ function handlePlayerReadyStatus(
   const readyCount = readyStatuses.filter(p => p.isReady).length
   const totalPlayers = readyStatuses.length
 
-  log(`🎯 Ready status: ${readyCount}/${totalPlayers} players ready`)
+  log(`Ready status: ${readyCount}/${totalPlayers} players ready`)
 
   const currentGameState = store.gameState
   if (currentGameState) {

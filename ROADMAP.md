@@ -1,8 +1,8 @@
-# 🛤️ Full Roadmap and Wishlist Features
+# Full Roadmap and Wishlist Features
 
 This document outlines the future features and wishlist items for **Santorini Online** beyond the initial MVP.
 
-## 🚀 Future Features
+## Future Features
 
 These are features I plan to implement after the MVP is completed:
 
@@ -17,7 +17,7 @@ These are features I plan to implement after the MVP is completed:
 - **Spectator Mode**: Allow users to watch live games.
 - **Game History**: View game history and replay previous matches.
 
-## 🎨 UI/UX Improvements
+## UI/UX Improvements
 
 Enhancements to make the user interface and user experience more polished:
 
@@ -25,14 +25,14 @@ Enhancements to make the user interface and user experience more polished:
 - **Theme Customization**: Add different themes or skins for the game board and pieces.
 - **Sound Effects**: Introduce sound effects and background music to enhance gameplay.
 
-## 📱 Mobile Version
+## Mobile Version
 
 Once the desktop version is solid, I plan to develop a mobile-friendly version of the game, which may include:
 
 - **Native Mobile App**: Port the game to iOS and Android as a native app.
 - **Mobile-optimized Web Version**: Ensure the web version is fully responsive and optimized for mobile devices.
 
-## 🛠️ Technical Improvements
+## Technical Improvements
 
 These items will improve the architecture, performance, and scalability of the game:
 
@@ -41,7 +41,7 @@ These items will improve the architecture, performance, and scalability of the g
 - **Database Optimization**: Improve database structure to handle larger user bases and game histories.
 - **CI/CD Pipeline**: Set up a continuous integration/continuous deployment pipeline for automatic testing and deployment.
 
-## 📝 Wishlist
+## Wishlist
 
 These are ideas that may not be planned immediately but could be cool additions in the future:
 

@@ -11,11 +11,11 @@ The testing infrastructure has been upgraded to use the **official @react-three/
 **Package**: `@react-three/test-renderer@^9.4.0`
 
 This is the official testing library recommended by the React Three Fiber team. It provides:
-- ✅ **No WebGL mocking needed** - Works in headless environments
-- ✅ **Scene graph access** - Inspect the 3D scene structure  
-- ✅ **Event firing** - Test click handlers and interactions
-- ✅ **Frame advancement** - Test animations and frame-dependent behavior
-- ✅ **Props inspection** - Check component properties
+- **No WebGL mocking needed** - Works in headless environments
+- **Scene graph access** - Inspect the 3D scene structure  
+- **Event firing** - Test click handlers and interactions
+- **Frame advancement** - Test animations and frame-dependent behavior
+- **Props inspection** - Check component properties
 
 **Documentation**: https://r3f.docs.pmnd.rs/api/testing
 

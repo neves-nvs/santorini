@@ -19,6 +19,7 @@ RUN npm ci --omit=dev
 FROM node:${NODE_VERSION}-slim
 WORKDIR /app/packages/server
 ENV PORT=3000
+ENV NODE_ENV=production
 COPY --from=production-dependencies /app/packages/server/node_modules ./node_modules
 COPY --from=build /app/packages/server/dist ./dist
 COPY package.json ./

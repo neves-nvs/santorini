@@ -97,11 +97,11 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
 
   // Handle worker click for selection
   const handleWorkerClick = (workerId: number, playerId: number, x: number, y: number) => {
-    console.log(`🎯 Worker ${workerId} (player ${playerId}) clicked at (${x}, ${y})`)
+    console.log(`Worker ${workerId} (player ${playerId}) clicked at (${x}, ${y})`)
 
     // Only allow selecting current player's workers
     if (playerId !== currentPlayerId) {
-      console.log(`🎯 Not current player's worker (current: ${currentPlayerId})`)
+      console.log(`Not current player's worker (current: ${currentPlayerId})`)
       return
     }
 
@@ -112,20 +112,20 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
       move.workerId === workerId
     )
 
-    console.log(`🎯 Worker ${workerId} has available moves:`, hasMovesForWorker)
+    console.log(`Worker ${workerId} has available moves:`, hasMovesForWorker)
 
     if (hasMovesForWorker) {
       if (selectedWorker && selectedWorker.workerId === workerId) {
         // Deselect if clicking the same worker
-        console.log(`🎯 Deselecting worker ${workerId}`)
+        console.log(`Deselecting worker ${workerId}`)
         setSelectedWorker(null)
       } else {
         // Select the worker
-        console.log(`🎯 Selecting worker ${workerId} at (${x}, ${y})`)
+        console.log(`Selecting worker ${workerId} at (${x}, ${y})`)
         setSelectedWorker({ workerId, x, y })
       }
     } else {
-      console.log(`🎯 Worker ${workerId} has no available moves`)
+      console.log(`Worker ${workerId} has no available moves`)
     }
   }
 
@@ -133,7 +133,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
   useRenderTracker('Board3D', [storeBoardState, debugState?.useSampleBoard])
 
   const handleCellClick = (gridX: number, gridZ: number) => {
-    console.log(`🔧 handleCellClick called: grid(${gridX}, ${gridZ})`)
+    console.log(`handleCellClick called: grid(${gridX}, ${gridZ})`)
     console.log(`Clicked cell: grid(${gridX}, ${gridZ})`)
 
     // Get current game state directly from Zustand store
@@ -142,9 +142,9 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     const moves = store.currentPlayerMoves
     const currentSelectedWorker = selectedWorker
 
-    console.log('🎯 Available moves:', moves)
-    console.log('🎯 Game ID:', gameId)
-    console.log('🎯 Selected worker:', currentSelectedWorker)
+    console.log('Available moves:', moves)
+    console.log('Game ID:', gameId)
+    console.log('Selected worker:', currentSelectedWorker)
 
     // Simple validation: find if clicked position matches any available move
     let validMove: any = null
@@ -175,7 +175,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     }
 
     if (validMove && gameId) {
-      console.log('✅ Valid move found:', validMove)
+      console.log('Valid move found:', validMove)
 
       // Simple, direct submission to server
       const moveData: any = {
@@ -192,13 +192,13 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
       // Include server move object if available (preferred)
       if (validMove.selectedPosition?.serverMoveObject) {
         moveData.serverMoveObject = validMove.selectedPosition.serverMoveObject
-        console.log('🎯 Using server move object:', validMove.selectedPosition.serverMoveObject)
+        console.log('Using server move object:', validMove.selectedPosition.serverMoveObject)
       }
 
       try {
-        console.log('📤 Submitting move:', moveData)
+        console.log('Submitting move:', moveData)
         webSocketClient.send('make_move', moveData)
-        console.log('✅ Move submitted successfully')
+        console.log('Move submitted successfully')
 
         // For move_worker, keep selection - building phase needs the same worker
         // For place_worker and build moves, clear selection (turn segment complete)
@@ -206,13 +206,13 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
           setSelectedWorker(null)
         }
 
-        console.log('🧹 Move submitted - waiting for server response to update game state')
+        console.log('Move submitted - waiting for server response to update game state')
       } catch (error) {
-        console.error('❌ Failed to submit move:', error)
+        console.error('Failed to submit move:', error)
       }
     } else {
-      console.log('❌ Invalid move at position:', { gridX, gridZ })
-      console.log('❌ No game ID or no valid move found')
+      console.log('Invalid move at position:', { gridX, gridZ })
+      console.log('No game ID or no valid move found')
       // Don't clear selection on invalid click - user might just have misclicked
     }
 
@@ -266,7 +266,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
               moveType={validPos.type as 'build_block' | 'build_dome'}
               visible={true}
               onClick={() => {
-                console.log(`🔧 Building preview onClick callback triggered at (${validPos.x}, ${validPos.y}) for worker ${validPos.workerId}`)
+                console.log(`Building preview onClick callback triggered at (${validPos.x}, ${validPos.y}) for worker ${validPos.workerId}`)
                 handleCellClick(validPos.x, validPos.y)
               }}
             />
