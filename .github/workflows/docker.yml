@@ -7,6 +7,7 @@ on:
     paths:
       - .dockerignore
       - scripts/docker-check
+      - .github/scripts/summarize-images
       - packages/server/**
       - packages/client-react/**
       - packages/shared/**
@@ -15,6 +16,7 @@ on:
     paths:
       - .dockerignore
       - scripts/docker-check
+      - .github/scripts/summarize-images
       - packages/server/**
       - packages/client-react/**
       - packages/shared/**
@@ -35,3 +37,7 @@ jobs:
 
       - name: Build the images and run them against Postgres
         run: scripts/docker-check
+
+      - name: Summarize the images
+        if: always()
+        run: .github/scripts/summarize-images santorini-server:check santorini-client:check >> "$GITHUB_STEP_SUMMARY"

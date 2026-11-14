@@ -13,6 +13,7 @@ client_image="${SANTORINI_CLIENT_IMAGE:-santorini-client:check}"
 name="santorini-docker-check"
 port="${CHECK_PORT:-13000}"
 cookies="$(mktemp)"
+revision="$(git -C "$root" rev-parse HEAD 2>/dev/null || echo unknown)"
 
 cleanup() {
   docker rm -f "$name-web" "$name-app" "$name-db" >/dev/null 2>&1 || true
@@ -22,8 +23,8 @@ cleanup() {
 trap cleanup EXIT
 cleanup
 
-docker build -q -f "$root/packages/server/Dockerfile" -t "$server_image" "$root" >/dev/null
-docker build -q -f "$root/packages/client-react/Dockerfile" -t "$client_image" "$root" >/dev/null
+docker build -q -f "$root/packages/server/Dockerfile" --label "org.opencontainers.image.revision=$revision" -t "$server_image" "$root" >/dev/null
+docker build -q -f "$root/packages/client-react/Dockerfile" --label "org.opencontainers.image.revision=$revision" -t "$client_image" "$root" >/dev/null
 
 docker network create "$name" >/dev/null
 docker run -d --name "$name-db" --network "$name" \
