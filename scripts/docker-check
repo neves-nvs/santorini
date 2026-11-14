@@ -106,11 +106,11 @@ expect_status 401 "GET /api/games without a session" "$base/api/games"
 
 error_body="$(curl -s -X POST "$base/api/session" -H "$json" -d '{')"
 case "$error_body" in
-  *'"stack":null'*) echo "ok   error responses carry no stack trace" ;;
-  *)
+  *'"stack"'*)
     echo "FAIL error responses carry a stack trace: $error_body" >&2
     exit 1
     ;;
+  *) echo "ok   error responses carry no stack trace" ;;
 esac
 expect_status 201 "register through /api" -X POST "$base/api/users" -H "$json" -d "$credentials"
 expect_status 200 "login through /api" -c "$cookies" -X POST "$base/api/session" -H "$json" -d "$credentials"

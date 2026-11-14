@@ -50,13 +50,13 @@ describe("Auth Controller Integration Tests", () => {
       expect(decodedToken).toHaveProperty("username", userData.username);
     });
 
-    test("400 Bad Request when user does not exist", async () => {
+    test("401 Unauthorized when user does not exist", async () => {
       const response = await request(app)
         .post("/session")
         .send({ username: "nonexistent", password: "password" })
-        .expect(400);
+        .expect(401);
 
-      expect(response.body).toHaveProperty("message", "User not found");
+      expect(response.body).toHaveProperty("message", "Invalid username or password");
     });
 
     test("401 Unauthorized for incorrect password", async () => {
@@ -65,7 +65,35 @@ describe("Auth Controller Integration Tests", () => {
         .send({ username: userData.username, password: "wrongpassword" })
         .expect(401);
 
-      expect(response.body).toHaveProperty("message", "Invalid password");
+      expect(response.body).toHaveProperty("message", "Invalid username or password");
+    });
+
+    test("answers an unknown user and an incorrect password identically", async () => {
+      const unknownUser = await request(app)
+        .post("/session")
+        .send({ username: "nonexistent", password: "wrongpassword" });
+      const wrongPassword = await request(app)
+        .post("/session")
+        .send({ username: userData.username, password: "wrongpassword" });
+
+      expect(unknownUser.status).toBe(wrongPassword.status);
+      expect(unknownUser.body).toEqual(wrongPassword.body);
+      expect(unknownUser.headers["set-cookie"]).toBeUndefined();
+    });
+
+    test("401 Unauthorized for a user without a password", async () => {
+      await db
+        .insertInto("users")
+        .values({ username: "no-password", display_name: "No Password" } as NewUser)
+        .execute();
+
+      const response = await request(app)
+        .post("/session")
+        .send({ username: "no-password", password: "password" })
+        .expect(401);
+
+      expect(response.body).toHaveProperty("message", "Invalid username or password");
+      expect(response.headers["set-cookie"]).toBeUndefined();
     });
 
     test("400 Bad Request if username is missing", async () => {

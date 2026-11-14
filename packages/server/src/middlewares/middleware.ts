@@ -11,7 +11,13 @@ export function deprecate(req: Request, res: Response, next: NextFunction) {
 }
 
 export const checkValidation = (req: Request, res: Response, next: NextFunction) => {
-  const errors = validationResult(req);
+  // The submitted value is left out: it can be a password, and the log redaction cannot see it under this key.
+  const errors = validationResult(req).formatWith((error) => ({
+    type: error.type,
+    msg: error.msg,
+    path: error.type === "field" ? error.path : undefined,
+    location: error.type === "field" ? error.location : undefined,
+  }));
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }

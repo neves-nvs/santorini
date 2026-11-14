@@ -9,6 +9,10 @@ import { config } from "../configs/config.ts";
 import { findUserByUsername } from "../users/userRepository.ts";
 import logger from "../logger.ts";
 import passport from "passport";
+import { randomBytes } from "crypto";
+
+// Compared against when there is no hash to check, so an unknown user takes as long as a wrong password.
+const UNUSED_PASSWORD_HASH = bcrypt.hashSync(randomBytes(16).toString("hex"), 10);
 
 function sessionCookieOptions(req: Request): CookieOptions {
   return { httpOnly: true, secure: req.secure, sameSite: "lax", path: "/" };
@@ -53,7 +57,8 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
       next();
     } catch (e: unknown) {
-      return res.status(500).json({ message: "Internal server error", error: e });
+      logger.error("Failed to look up the authenticated user", e);
+      return res.status(500).json({ message: "Internal server error" });
     }
   })(req, res, next);
 };
@@ -70,20 +75,11 @@ router.post(
 
     try {
       const user = await findUserByUsername(username);
-      logger.debug(`Checked if user exists: ${JSON.stringify(user?.username)}`);
-      if (!user) {
-        logger.error("User not found");
-        return res.status(400).json({ message: "User not found" });
-      }
-
-      if (!user.password_hash) {
-        logger.error("User has no password set");
-        return res.status(StatusCodes.UNAUTHORIZED).json({ message: "User has no password set" });
-      }
-
-      if (!(await bcrypt.compare(password, user.password_hash))) {
-        logger.error("Invalid password");
-        return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid password" });
+      const passwordHash = user?.password_hash;
+      const passwordMatches = await bcrypt.compare(password, passwordHash ?? UNUSED_PASSWORD_HASH);
+      if (!user || !passwordHash || !passwordMatches) {
+        logger.warn("Login rejected", { reason: user ? "invalid password" : "unknown user" });
+        return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid username or password" });
       }
 
       if (!config.jwtSecret) {
