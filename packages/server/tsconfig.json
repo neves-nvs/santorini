@@ -1,18 +1,18 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
-    "module": "CommonJS",
+    "target": "ES2023",
+    "module": "NodeNext",
     "outDir": "./dist",
     "strict": true,
-    "esModuleInterop": true,
+    "isolatedModules": true,
+    "rewriteRelativeImportExtensions": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "types": ["node", "vitest/globals"]
   },
   "include": [
-    "src/**/*",
-    "tests/**/*.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",

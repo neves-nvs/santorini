@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Prints a Markdown summary of the given local images, for $GITHUB_STEP_SUMMARY.
+# Images that do not exist are skipped.
+
+for image in "$@"; do
+  docker image inspect "$image" >/dev/null 2>&1 || continue
+  docker image inspect "$image" | jq -r '
+    .[0] as $i |
+    "### \($i.RepoTags[0])",
+    "",
+    "| | |",
+    "|---|---|",
+    "| Image ID | `\($i.Id)` |",
+    "| Size | \(($i.Size / 1048576 * 10 | round) / 10) MB |",
+    "| Layers | \($i.RootFS.Layers | length) |",
+    "| Platform | \($i.Os)/\($i.Architecture) |",
+    "| Created | \($i.Created) |",
+    "| User | \($i.Config.User // "root") |",
+    "| Exposed ports | \(($i.Config.ExposedPorts // {}) | keys | join(", ")) |",
+    "| Healthcheck | \(if $i.Config.Healthcheck then "yes" else "no" end) |",
+    "",
+    "| Label | Value |",
+    "|---|---|",
+    (($i.Config.Labels // {}) | to_entries[] | "| `\(.key)` | \(.value) |"),
+    ""
+  '
+done

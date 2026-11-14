@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Builds the image of every package that has a docker-build script, in parallel.
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+pids=()
+for package in "$root"/packages/*/; do
+  [ -n "$(cd "$package" && npm pkg get scripts.docker-build | tr -d '{}')" ] || continue
+  (cd "$package" && npm run docker-build) &
+  pids+=("$!")
+done
+
+status=0
+for pid in "${pids[@]}"; do
+  wait "$pid" || status=1
+done
+exit "$status"

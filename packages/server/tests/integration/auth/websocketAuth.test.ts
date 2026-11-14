@@ -1,9 +1,9 @@
-import { server, wss } from "../../../src/main";
+import { server, wss } from "../../../src/main.ts";
 
-import { PORT } from "../../../src/configs/config";
+import { PORT } from "../../../src/configs/config.ts";
 import WebSocket from "ws";
-import { createTestUserWithLogin } from "../helper/helpers";
-import { db } from "../../../src/database";
+import { createTestUserWithLogin } from "../helper/helpers.ts";
+import { db } from "../../../src/database.ts";
 
 let jwtToken: string;
 

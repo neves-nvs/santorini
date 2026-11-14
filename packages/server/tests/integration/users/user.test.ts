@@ -1,6 +1,6 @@
-import { app } from "../../../src/app";
-import { db } from "../../../src/database";
-import { findUserByUsername } from "../../../src/users/userRepository";
+import { app } from "../../../src/app.ts";
+import { db } from "../../../src/database.ts";
+import { findUserByUsername } from "../../../src/users/userRepository.ts";
 import request from "supertest";
 // Removed server import - not needed for HTTP tests using supertest
 

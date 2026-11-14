@@ -1,0 +1,60 @@
+name: Docker
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/docker-build
+      - scripts/docker-check
+      - .github/scripts/summarize-images
+      - packages/server/**
+      - packages/client-react/**
+      - packages/shared/**
+      - .github/workflows/docker.yml
+  pull_request:
+    paths:
+      - scripts/docker-build
+      - scripts/docker-check
+      - .github/scripts/summarize-images
+      - packages/server/**
+      - packages/client-react/**
+      - packages/shared/**
+      - .github/workflows/docker.yml
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the server image
+        id: build-server
+        run: npm run docker-build
+        working-directory: packages/server
+        background: true
+
+      - name: Build the frontend image
+        id: build-client
+        run: npm run docker-build
+        working-directory: packages/client-react
+        background: true
+
+      - name: Wait for the image builds
+        wait: [build-server, build-client]
+
+      - name: Run the images against Postgres
+        run: scripts/docker-check
+        env:
+          SANTORINI_SKIP_BUILD: "1"
+
+      - name: Summarize the images
+        if: always()
+        run: .github/scripts/summarize-images santorini-server:check santorini-client:check >> "$GITHUB_STEP_SUMMARY"

@@ -2,6 +2,9 @@
 set -euo pipefail
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if ! command -v npm >/dev/null 2>&1; then
+  exec nix develop "$root/packages/server" --command "$0" "$@"
+fi
 export PORT="${PORT:-3000}"
 export JWT_SECRET="${JWT_SECRET:-santorini-dev-secret}"
 export DB_HOST="${DB_HOST:-127.0.0.1}"

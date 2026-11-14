@@ -1,9 +1,11 @@
 import * as path from "path";
 
 import { Client, ClientConfig, Pool } from "pg";
-import { FileMigrationProvider, Kysely, Migrator, PostgresDialect } from "kysely";
+import { FileMigrationProvider, Migrator } from "kysely/migration";
+import { Kysely, PostgresDialect } from "kysely";
 
-import { ConnectionInfo } from "./globalSetup";
+import { ConnectionInfo } from "./globalSetup.ts";
+import { fileURLToPath } from "url";
 import { promises as fs } from "fs";
 import { randomUUID } from "crypto";
 
@@ -27,6 +29,8 @@ const newDbName = `test_db_${randomUUID().replace(/-/g, "_")}`;
 process.env.DB_DATABASE = newDbName;
 
 async function setup() {
+  // console.log(`JEST_WORKER_ID: ${process.env.JEST_WORKER_ID}`);
+
   // const containerInfo = await loadContainerInfoFromFile();
   const containerInfo = await loadContainerInfoFromEnv();
   const { port, host, database, user, password } = containerInfo;
@@ -82,7 +86,7 @@ async function setup() {
     provider: new FileMigrationProvider({
       fs,
       path,
-      migrationFolder: path.resolve(__dirname, "../../migrations"),
+      migrationFolder: fileURLToPath(new URL("../../src/migrations", import.meta.url)),
     }),
   });
 

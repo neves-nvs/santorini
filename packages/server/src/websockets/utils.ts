@@ -1,5 +1,5 @@
-import { AuthenticatedWebSocket } from "./authenticatedWebsocket";
-import { WS_MESSAGE_TYPES } from "../../../shared/src/websocket-types";
+import { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
+import { WS_MESSAGE_TYPES } from "../../../shared/src/websocket-types.ts";
 
 /**
  * Send a WebSocket message with the standard { type, payload } format

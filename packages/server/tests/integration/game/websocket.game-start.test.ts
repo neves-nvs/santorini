@@ -1,11 +1,11 @@
-import * as helpers from "../helper/helpers";
+import * as helpers from "../helper/helpers.ts";
 
-import { server, wss } from "../../../src/main";
-import { PORT } from "../../../src/configs/config";
-import { UserDTO } from "../../../src/users/userDTO";
+import { server, wss } from "../../../src/main.ts";
+import { PORT } from "../../../src/configs/config.ts";
+import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
-import { cleanupTestData } from "../helper/testDb";
-import { db } from "../../../src/database";
+import { cleanupTestData } from "../helper/testDb.ts";
+import { db } from "../../../src/database.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WsMessage = Record<string, any>;
@@ -18,7 +18,7 @@ interface TestPlayer {
 
 /**
  * Integration tests for game ready confirmation and auto-start flow.
- * 
+ *
  * Game Start Flow:
  * 1. Players join a game via WebSocket connection
  * 2. Each player must confirm/accept the game (set_ready) to verify opponents
@@ -36,7 +36,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
   });
 
   afterEach(async () => {
-    players.forEach(player => {
+    players.forEach((player) => {
       if (player.ws.readyState === WebSocket.OPEN) {
         player.ws.close();
       }
@@ -72,7 +72,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
     return new Promise((resolve, reject) => {
       const receivedMessages: string[] = [];
       const timeoutId = setTimeout(() => {
-        reject(new Error(`Timeout waiting for message type: ${messageType}. Received: ${receivedMessages.join(', ')}`));
+        reject(new Error(`Timeout waiting for message type: ${messageType}. Received: ${receivedMessages.join(", ")}`));
       }, timeout);
 
       function onMessage(data: WebSocket.RawData) {
@@ -104,10 +104,12 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
 
       // Join game via WebSocket (creator reconnects, others join fresh)
       const joinPromise = waitForMessage(ws, "game_joined");
-      ws.send(JSON.stringify({
-        type: "join_game",
-        payload: { gameId }
-      }));
+      ws.send(
+        JSON.stringify({
+          type: "join_game",
+          payload: { gameId },
+        }),
+      );
       await joinPromise;
     }
 
@@ -117,13 +119,15 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
   describe("Ready Confirmation Flow", () => {
     test("should receive ready_status_update when setting ready", async () => {
       players = await createAndJoinPlayers(2);
-      
+
       const readyPromise = waitForMessage(players[0].ws, "ready_status_update");
-      players[0].ws.send(JSON.stringify({
-        type: "set_ready",
-        payload: { gameId, isReady: true }
-      }));
-      
+      players[0].ws.send(
+        JSON.stringify({
+          type: "set_ready",
+          payload: { gameId, isReady: true },
+        }),
+      );
+
       const response = await readyPromise;
       expect(response.type).toBe("ready_status_update");
       expect(response.payload.ready).toBe(true);
@@ -136,18 +140,22 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
 
       // Player 1 sets ready
       let readyPromise = waitForMessage(players[0].ws, "ready_status_update");
-      players[0].ws.send(JSON.stringify({
-        type: "set_ready",
-        payload: { gameId, isReady: true }
-      }));
+      players[0].ws.send(
+        JSON.stringify({
+          type: "set_ready",
+          payload: { gameId, isReady: true },
+        }),
+      );
       await readyPromise;
 
       // Player 2 sets ready - should trigger auto-start
       readyPromise = waitForMessage(players[1].ws, "ready_status_update");
-      players[1].ws.send(JSON.stringify({
-        type: "set_ready",
-        payload: { gameId, isReady: true }
-      }));
+      players[1].ws.send(
+        JSON.stringify({
+          type: "set_ready",
+          payload: { gameId, isReady: true },
+        }),
+      );
 
       const response = await readyPromise;
       expect(response.payload.ready).toBe(true);
@@ -160,18 +168,22 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
 
       // Player 1 sets ready
       let readyPromise = waitForMessage(players[0].ws, "ready_status_update");
-      players[0].ws.send(JSON.stringify({
-        type: "set_ready",
-        payload: { gameId, isReady: true }
-      }));
+      players[0].ws.send(
+        JSON.stringify({
+          type: "set_ready",
+          payload: { gameId, isReady: true },
+        }),
+      );
       await readyPromise;
 
       // Player 1 unsets ready
       readyPromise = waitForMessage(players[0].ws, "ready_status_update");
-      players[0].ws.send(JSON.stringify({
-        type: "set_ready",
-        payload: { gameId, isReady: false }
-      }));
+      players[0].ws.send(
+        JSON.stringify({
+          type: "set_ready",
+          payload: { gameId, isReady: false },
+        }),
+      );
 
       const response = await readyPromise;
       expect(response.payload.ready).toBe(false);
@@ -184,10 +196,12 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
 
       // Player sets ready
       const readyPromise = waitForMessage(players[0].ws, "ready_status_update");
-      players[0].ws.send(JSON.stringify({
-        type: "set_ready",
-        payload: { gameId, isReady: true }
-      }));
+      players[0].ws.send(
+        JSON.stringify({
+          type: "set_ready",
+          payload: { gameId, isReady: true },
+        }),
+      );
 
       const response = await readyPromise;
       expect(response.payload.ready).toBe(true);
@@ -203,19 +217,23 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       // Both players set ready
       for (const player of players) {
         const readyPromise = waitForMessage(player.ws, "ready_status_update");
-        player.ws.send(JSON.stringify({
-          type: "set_ready",
-          payload: { gameId, isReady: true }
-        }));
+        player.ws.send(
+          JSON.stringify({
+            type: "set_ready",
+            payload: { gameId, isReady: true },
+          }),
+        );
         await readyPromise;
       }
 
       // Request game state for current player
       const statePromise = waitForMessage(players[0].ws, "game_state_update");
-      players[0].ws.send(JSON.stringify({
-        type: "subscribe_game",
-        payload: { gameId }
-      }));
+      players[0].ws.send(
+        JSON.stringify({
+          type: "subscribe_game",
+          payload: { gameId },
+        }),
+      );
 
       const gameState = await statePromise;
       // State is nested under payload.state
@@ -315,10 +333,12 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
 
       // Player 2 sets ready
       const readyPromise = waitForMessage(players[1].ws, "ready_status_update");
-      players[1].ws.send(JSON.stringify({
-        type: "set_ready",
-        payload: { gameId, isReady: true }
-      }));
+      players[1].ws.send(
+        JSON.stringify({
+          type: "set_ready",
+          payload: { gameId, isReady: true },
+        }),
+      );
       await readyPromise;
 
       // Track if we receive player_left (we shouldn't)
@@ -335,11 +355,10 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       players[1].ws.close();
 
       // Wait a bit for potential broadcast
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       players[0].ws.off("message", playerLeftHandler);
       expect(playerLeftReceived).toBe(false);
     }, 15000);
   });
 });
-

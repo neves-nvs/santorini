@@ -1,0 +1,22 @@
+server {
+  listen 8080;
+  root /usr/share/nginx/html;
+
+  location /api/ {
+    proxy_pass ${BACKEND_URL}/;
+    proxy_set_header Host $http_host;
+  }
+
+  location /ws {
+    proxy_pass ${BACKEND_URL}/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $http_host;
+    proxy_read_timeout 1h;
+  }
+
+  location / {
+    try_files $uri /index.html;
+  }
+}

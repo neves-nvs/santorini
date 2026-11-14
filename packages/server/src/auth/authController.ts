@@ -1,15 +1,15 @@
 import { NextFunction, Request, Response, Router } from "express";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 
-import { JWT_SECRET } from "../configs/config";
+import { JWT_SECRET } from "../configs/config.ts";
 import { StatusCodes } from "http-status-codes";
-import { User } from "../model";
+import { User } from "../model.ts";
 
 import bcrypt from "bcryptjs";
 import { body } from "express-validator";
-import { checkValidation } from "../middlewares/middleware";
-import { findUserByUsername } from "../users/userRepository";
-import logger from "../logger";
+import { checkValidation } from "../middlewares/middleware.ts";
+import { findUserByUsername } from "../users/userRepository.ts";
+import logger from "../logger.ts";
 import passport from "passport";
 
 /**
@@ -179,7 +179,7 @@ router.get("/test-auth", authenticate, async (req, res) => {
       id: user.id,
       username: user.username,
       display_name: user.display_name,
-      created_at: user.created_at
+      created_at: user.created_at,
     });
   } catch (e: unknown) {
     const error = e as Error;

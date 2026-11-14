@@ -1,9 +1,9 @@
-import { AuthenticatedWebSocket } from "./authenticatedWebsocket";
+import { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
 import { Server } from "http";
 import { WebSocketServer } from "ws";
-import logger from "../logger";
-import { webSocketAuthUpgrade } from "../auth/webSocketAuth";
-import { wsRouter } from "../composition-root";
+import logger from "../logger.ts";
+import { webSocketAuthUpgrade } from "../auth/webSocketAuth.ts";
+import { wsRouter } from "../composition-root.ts";
 
 /**
  * Creates and configures a WebSocket server attached to an HTTP server.

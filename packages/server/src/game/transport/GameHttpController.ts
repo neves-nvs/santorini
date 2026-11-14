@@ -1,12 +1,12 @@
-import { Response, Router } from 'express';
-import { authenticate, getUser } from '../../auth/authController';
-import { getHttpStatus, getUserMessage } from '../../errors/GameErrors';
+import { Response, Router } from "express";
+import { authenticate, getUser } from "../../auth/authController.ts";
+import { getHttpStatus, getUserMessage } from "../../errors/GameErrors.ts";
 
-import { Game } from '../domain/Game';
-import { GameBroadcaster } from '../application/GameBroadcaster';
-import { GameService } from '../application/GameService';
-import { LobbyService } from '../application/LobbyService';
-import logger from '../../logger';
+import { Game } from "../domain/Game.ts";
+import { GameBroadcaster } from "../application/GameBroadcaster.ts";
+import { GameService } from "../application/GameService.ts";
+import { LobbyService } from "../application/LobbyService.ts";
+import logger from "../../logger.ts";
 
 // Convert Game domain object to DTO for API responses
 function gameToDto(game: Game) {
@@ -20,47 +20,47 @@ function gameToDto(game: Game) {
     turnNumber: game.turnNumber,
     version: game.version,
     playerCount: game.players.size,
-    players: Array.from(game.players.values()).map(p => ({
+    players: Array.from(game.players.values()).map((p) => ({
       id: p.id,
       userId: p.userId,
       seat: p.seat,
       status: p.status,
-      isReady: p.isReady
+      isReady: p.isReady,
     })),
     createdAt: game.createdAt,
     startedAt: game.startedAt,
-    finishedAt: game.finishedAt
+    finishedAt: game.finishedAt,
   };
 }
 
 export function createGameRoutes(
   gameService: GameService,
   lobbyService: LobbyService,
-  gameBroadcaster: GameBroadcaster
+  gameBroadcaster: GameBroadcaster,
 ): Router {
   const router = Router();
 
-  router.get('/', authenticate, async (_req, res) => {
+  router.get("/", authenticate, async (_req, res) => {
     try {
       const games = await lobbyService.findAvailableGames();
       res.json(games.map(gameToDto));
     } catch (error) {
-      handleError(res, error, 'Error getting games');
+      handleError(res, error, "Error getting games");
     }
   });
 
   // Get games where the current user is a player
-  router.get('/my', authenticate, async (req, res) => {
+  router.get("/my", authenticate, async (req, res) => {
     try {
       const userId = getUser(req).id;
       const games = await lobbyService.findMyGames(userId);
       res.json(games.map(gameToDto));
     } catch (error) {
-      handleError(res, error, 'Error getting my games');
+      handleError(res, error, "Error getting my games");
     }
   });
 
-  router.post('/', authenticate, async (req, res) => {
+  router.post("/", authenticate, async (req, res) => {
     try {
       const userId = getUser(req).id;
       const { maxPlayers = 2 } = req.body;
@@ -68,22 +68,22 @@ export function createGameRoutes(
       await gameService.addPlayer(game.id, userId);
       res.json({ gameId: game.id });
     } catch (error) {
-      handleError(res, error, 'Error creating game');
+      handleError(res, error, "Error creating game");
     }
   });
 
-  router.get('/:gameId', authenticate, async (req, res) => {
+  router.get("/:gameId", authenticate, async (req, res) => {
     try {
       const userId = getUser(req).id;
       const gameId = parseInt(req.params.gameId);
       const gameView = await gameService.getGameStateForPlayer(gameId, userId);
       res.json(gameView);
     } catch (error) {
-      handleError(res, error, 'Error getting game state');
+      handleError(res, error, "Error getting game state");
     }
   });
 
-  router.post('/:gameId/join', authenticate, async (req, res) => {
+  router.post("/:gameId/join", authenticate, async (req, res) => {
     try {
       const userId = getUser(req).id;
       const gameId = parseInt(req.params.gameId);
@@ -91,7 +91,7 @@ export function createGameRoutes(
       await gameBroadcaster.broadcastGameUpdate(game, []);
       res.json({ success: true });
     } catch (error) {
-      handleError(res, error, 'Error joining game');
+      handleError(res, error, "Error joining game");
     }
   });
 
