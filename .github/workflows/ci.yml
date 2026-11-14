@@ -61,3 +61,10 @@ jobs:
             console.log(["## Server test coverage", "", "| Metric | Coverage | Covered / total |", "| --- | --- | --- |", ...rows].join("\n"));
           ' >> "$GITHUB_STEP_SUMMARY"
         working-directory: packages/server
+
+      - name: Archive the coverage report
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: server-coverage
+          path: packages/server/coverage/cobertura-coverage.xml
+          if-no-files-found: error

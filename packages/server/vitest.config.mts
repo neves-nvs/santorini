@@ -10,7 +10,7 @@ export default defineConfig({
       provider: "v8",
       include: ["src/**/*.ts"],
       exclude: ["src/migrations/**", "src/runMigrations.ts"],
-      reporter: ["text-summary", "json-summary"],
+      reporter: ["text-summary", "json-summary", "cobertura"],
     },
     projects: [
       {
