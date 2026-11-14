@@ -14,8 +14,6 @@ ENV VITE_WS_URL=/ws
 RUN npx vite build
 
 FROM nginxinc/nginx-unprivileged:1-alpine
-LABEL org.opencontainers.image.title="santorini-client" \
-      org.opencontainers.image.source="https://github.com/neves-nvs/santorini"
 ENV BACKEND_URL=http://server:3000
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/packages/client-react/dist /usr/share/nginx/html
