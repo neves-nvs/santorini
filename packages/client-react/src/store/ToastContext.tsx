@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, { createContext, use, useState, ReactNode } from 'react'
 import Toast from '../components/ui/Toast'
 
 interface ToastMessage {
@@ -15,7 +15,7 @@ interface ToastContextType {
 const ToastContext = createContext<ToastContextType | undefined>(undefined)
 
 export const useToast = () => {
-  const context = useContext(ToastContext)
+  const context = use(ToastContext)
   if (!context) {
     throw new Error('useToast must be used within a ToastProvider')
   }
@@ -41,7 +41,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   }
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext value={{ showToast }}>
       {children}
       {toasts.map((toast, index) => (
         <div
@@ -61,6 +61,6 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
           />
         </div>
       ))}
-    </ToastContext.Provider>
+    </ToastContext>
   )
 }
