@@ -10,8 +10,8 @@ export default [
       "dist/**/*",
       "node_modules/**/*",
       ".config/**/*",
-      "migrations/**/*",
-      "runMigrations.ts",
+      "src/migrations/**/*",
+      "src/runMigrations.ts",
       "jest.*.js",
     ],
   },
@@ -21,7 +21,7 @@ export default [
     languageOptions: {
       globals: globals.node,
       parserOptions: {
-        project: "./tsconfig.json",
+        project: "./tests/tsconfig.json",
         tsconfigRootDir: import.meta.dirname,
       },
     },

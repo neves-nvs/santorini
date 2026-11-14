@@ -1,5 +1,5 @@
 import { FileMigrationProvider, Migrator } from "kysely/migration";
-import { db } from "./src/database.ts";
+import { db } from "./database.ts";
 import { promises as fs } from "fs";
 import path from "path";
 

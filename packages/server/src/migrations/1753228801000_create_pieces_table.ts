@@ -15,11 +15,7 @@ export async function up(db: Kysely<any>) {
     .execute();
 
   // Create index for efficient game queries
-  await db.schema
-    .createIndex("pieces_game_id_index")
-    .on("pieces")
-    .column("game_id")
-    .execute();
+  await db.schema.createIndex("pieces_game_id_index").on("pieces").column("game_id").execute();
 }
 
 export async function down(db: Kysely<any>) {
