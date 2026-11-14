@@ -87,7 +87,7 @@ async function setup() {
     provider: new FileMigrationProvider({
       fs,
       path,
-      migrationFolder: fileURLToPath(new URL("../../migrations", import.meta.url)),
+      migrationFolder: fileURLToPath(new URL("../../src/migrations", import.meta.url)),
     }),
   });
 

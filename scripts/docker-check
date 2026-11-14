@@ -46,8 +46,25 @@ env_args=(
   -e DB_DATABASE=santorini
 )
 
+echo "== server image contents"
+unwanted="$(docker run --rm --entrypoint sh "$server_image" -c '
+  find . -path ./node_modules -prune -o \( -name "*.test.*" -o -name tests \) -print
+  ls -d node_modules/typescript node_modules/jest 2>/dev/null || true
+')"
+if [ -n "$unwanted" ]; then
+  echo "FAIL test files or dev dependencies in the server image:" >&2
+  echo "$unwanted" >&2
+  exit 1
+fi
+echo "ok   no test files or dev dependencies"
+if [ "$(docker run --rm --entrypoint id "$server_image" -u)" = 0 ]; then
+  echo "FAIL the server image runs as root" >&2
+  exit 1
+fi
+echo "ok   runs as a non-root user"
+
 echo "== migrations"
-docker run --rm --network "$name" "${env_args[@]}" "$server_image" node dist/server/runMigrations.js
+docker run --rm --network "$name" "${env_args[@]}" "$server_image" node dist/server/src/runMigrations.js
 
 echo "== server and frontend"
 docker run -d --name "$name-app" --network "$name" "${env_args[@]}" "$server_image" >/dev/null
