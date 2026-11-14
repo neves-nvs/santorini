@@ -1,5 +1,5 @@
 import { ErrorHandler, ErrorType } from '../utils/errorHandler'
-import type { GameInfo } from '../types/game'
+import type { GameInfo, GameState, PlayerView } from '../types/game'
 
 export interface LoginRequest {
   username: string
@@ -18,6 +18,13 @@ export interface JoinGameRequest {
 export interface CreateUserRequest {
   username: string
   password: string
+}
+
+export interface UserSummary {
+  id: number
+  username: string
+  displayName: string
+  createdAt: string
 }
 
 export class ApiService {
@@ -119,27 +126,27 @@ export class ApiService {
     try {
       // This endpoint should return user info if authenticated, 401 if not
       return await this.request<{ id: number; username: string }>('/me')
-    } catch (error) {
+    } catch {
       // If 401 or any auth error, user is not authenticated
       return null
     }
   }
 
   // User management
-  async createUser(userData: CreateUserRequest): Promise<any> {
-    return this.request<any>('/users', {
+  async createUser(userData: CreateUserRequest): Promise<UserSummary> {
+    return this.request<UserSummary>('/users', {
       method: 'POST',
       body: JSON.stringify(userData),
     })
   }
 
-  async getUsers(): Promise<any[]> {
-    return this.request<any[]>('/users')
+  async getUsers(): Promise<UserSummary[]> {
+    return this.request<UserSummary[]>('/users')
   }
 
   // Game management
-  async getGames(): Promise<any[]> {
-    return this.request<any[]>('/games')
+  async getGames(): Promise<GameInfo[]> {
+    return this.request<GameInfo[]>('/games')
   }
 
   async getGamesWithPlayerCounts(): Promise<GameInfo[]> {
@@ -152,20 +159,20 @@ export class ApiService {
     return this.request<GameInfo[]>('/games/my')
   }
 
-  async createGame(gameData: CreateGameRequest): Promise<any> {
-    return this.request<any>('/games', {
+  async createGame(gameData: CreateGameRequest): Promise<{ gameId: number }> {
+    return this.request<{ gameId: number }>('/games', {
       method: 'POST',
       body: JSON.stringify(gameData),
     })
   }
 
-  async getGame(gameId: string): Promise<any> {
-    return this.request<any>(`/games/${gameId}`)
+  async getGame(gameId: string): Promise<GameState> {
+    return this.request<GameState>(`/games/${gameId}`)
   }
 
   async joinGame(gameId: string): Promise<boolean> {
     try {
-      await this.request<any>(`/games/${gameId}/join`, {
+      await this.request<unknown>(`/games/${gameId}/join`, {
         method: 'POST',
       })
       return true
@@ -175,16 +182,16 @@ export class ApiService {
     }
   }
 
-  async getGamePlayers(gameId: string): Promise<any[]> {
-    return this.request<any[]>(`/games/${gameId}/players`)
+  async getGamePlayers(gameId: string): Promise<PlayerView[]> {
+    return this.request<PlayerView[]>(`/games/${gameId}/players`)
   }
 
 
 
-  async getGameState(gameId: string): Promise<any> {
+  async getGameState(gameId: string): Promise<GameState> {
     // Use the new comprehensive game state endpoint
     console.log(`🔍 Fetching game state for game ID: ${gameId}`)
-    const result = await this.request<any>(`/games/${gameId}`)
+    const result = await this.request<GameState>(`/games/${gameId}`)
     console.log(`🔍 Game state response:`, result)
     console.log(`🔍 Board in response:`, result?.board)
     return result
@@ -196,7 +203,7 @@ export class ApiService {
       console.log('🌐 Sending POST to:', `/games/${gameId}/ready`)
       console.log('🌐 Request body:', JSON.stringify({ isReady }))
 
-      const response = await this.request<any>(`/games/${gameId}/ready`, {
+      const response = await this.request<unknown>(`/games/${gameId}/ready`, {
         method: 'POST',
         body: JSON.stringify({ isReady }),
       })
@@ -210,24 +217,24 @@ export class ApiService {
   }
 
   // Game plays
-  async makePlay(gameId: string, play: any): Promise<any> {
-    return this.request<any>(`/games/${gameId}/plays`, {
+  async makePlay(gameId: string, play: unknown): Promise<unknown> {
+    return this.request<unknown>(`/games/${gameId}/plays`, {
       method: 'POST',
       body: JSON.stringify({ play }),
     })
   }
 
   // Make a move using the new turn management system
-  async makeMove(gameId: string, move: any): Promise<any> {
-    return this.request<any>(`/games/${gameId}/move`, {
+  async makeMove(gameId: string, move: unknown): Promise<unknown> {
+    return this.request<unknown>(`/games/${gameId}/move`, {
       method: 'POST',
       body: JSON.stringify({ move }),
     })
   }
 
   // Get current turn state and available plays
-  async getTurnState(gameId: string): Promise<any> {
-    return this.request<any>(`/games/${gameId}/turn`)
+  async getTurnState(gameId: string): Promise<unknown> {
+    return this.request<unknown>(`/games/${gameId}/turn`)
   }
 }
 

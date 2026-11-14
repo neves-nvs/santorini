@@ -14,17 +14,17 @@ export interface AppError {
   type: ErrorType
   message: string
   code?: string | number
-  details?: any
+  details?: unknown
   timestamp: Date
 }
 
 export class GameError extends Error {
   public readonly type: ErrorType
   public readonly code?: string | number
-  public readonly details?: any
+  public readonly details?: unknown
   public readonly timestamp: Date
 
-  constructor(type: ErrorType, message: string, code?: string | number, details?: any) {
+  constructor(type: ErrorType, message: string, code?: string | number, details?: unknown) {
     super(message)
     this.name = 'GameError'
     this.type = type
@@ -74,7 +74,7 @@ export class ErrorHandler {
     type: ErrorType, 
     messageOrError: string | Error, 
     code?: string | number,
-    details?: any
+    details?: unknown
   ): GameError {
     const message = messageOrError instanceof Error 
       ? messageOrError.message 
@@ -88,13 +88,14 @@ export class ErrorHandler {
    */
   static async handleHttpError(response: Response): Promise<GameError> {
     let errorMessage = 'Unknown server error'
-    let errorDetails: any = null
+    let errorDetails: { message?: string; error?: string } | null = null
 
     try {
       const contentType = response.headers.get('content-type')
       if (contentType?.includes('application/json')) {
-        errorDetails = await response.json()
-        errorMessage = errorDetails.message || errorDetails.error || errorMessage
+        const body: { message?: string; error?: string } = await response.json()
+        errorDetails = body
+        errorMessage = body.message || body.error || errorMessage
       } else {
         errorMessage = await response.text() || errorMessage
       }

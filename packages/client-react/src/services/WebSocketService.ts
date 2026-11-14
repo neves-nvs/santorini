@@ -9,6 +9,23 @@ import {
 } from '../../../shared/src/websocket-types'
 import { log, logError, logWarn } from '../utils/log'
 
+interface RawAvailableMove {
+  type: AvailableMove['type']
+  workerId?: number
+  position?: AvailableMove['validPositions'][number]
+  validPositions?: AvailableMove['validPositions']
+}
+
+function extractRawMoves(payload: unknown): RawAvailableMove[] {
+  if (Array.isArray(payload)) {
+    return payload
+  }
+  if (payload && typeof payload === 'object' && 'moves' in payload && Array.isArray(payload.moves)) {
+    return payload.moves
+  }
+  return []
+}
+
 interface WebSocketMessage {
   type: string;
   payload: unknown;
@@ -219,25 +236,20 @@ export class WebSocketService {
     this.emit('message', message)
   }
 
-  private handleGameMessage(type: string, payload: any) {
+  private handleGameMessage(type: string, payload: unknown) {
     const store = useGameStore.getState()
 
     switch (type) {
       // Note: connected/disconnected are now handled directly in socket event handlers
 
-      case WS_MESSAGE_TYPES.AVAILABLE_MOVES:
+      case WS_MESSAGE_TYPES.AVAILABLE_MOVES: {
         log('🎯 Available moves:', payload)
 
         // Handle both formats: payload as array directly, or payload.moves as array
-        let moves: any[] = []
-        if (Array.isArray(payload)) {
-          moves = payload
-        } else if (payload && Array.isArray(payload.moves)) {
-          moves = payload.moves
-        }
+        const moves = extractRawMoves(payload)
 
         // Transform moves to expected format
-        const transformedMoves = moves.map((move: any) => ({
+        const transformedMoves = moves.map((move) => ({
           type: move.type,
           workerId: move.workerId || 1,
           validPositions: move.position ? [move.position] : (move.validPositions || [])
@@ -247,6 +259,7 @@ export class WebSocketService {
         store.setCurrentPlayerMoves(transformedMoves)
         store.setMyTurn(true)
         break
+      }
 
       case WS_MESSAGE_TYPES.GAME_STATE_UPDATE:
         log('🎮 Game state update:', payload)
@@ -321,7 +334,7 @@ export class WebSocketService {
     }
   }
 
-  private emit(event: string, data: any) {
+  private emit(event: string, data: unknown) {
     const handlers = this.eventHandlers.get(event)
     if (handlers) {
       handlers.forEach(handler => {
@@ -341,7 +354,7 @@ export class WebSocketService {
   }
 
   // Send message to server
-  send(type: string, payload: any) {
+  send(type: string, payload: unknown) {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
       const error = new Error(`WebSocket is not connected. State: ${this.socket?.readyState || 'null'}`)
       logError('WebSocket send failed:', error.message, { type, payload })
@@ -565,7 +578,7 @@ export const webSocketService = {
     this.getInstance().off(event, handler)
   },
 
-  send(type: string, payload: any) {
+  send(type: string, payload: unknown) {
     this.getInstance().send(type, payload)
   },
 
