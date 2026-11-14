@@ -76,7 +76,7 @@ export function createGameRoutes(
   });
 
   router.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
-    logger.error(`${req.method} ${req.originalUrl}:`, error);
+    logger.error("Games route failed", { method: req.method, route: req.route?.path, error });
     res.status(getHttpStatus(error)).json({ error: getUserMessage(error) });
   });
 
