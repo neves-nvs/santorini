@@ -8,4 +8,4 @@ set -euo pipefail
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$root"
 
-BUILDX_GIT_LABELS=1 docker buildx bake "$@"
+BUILDX_GIT_LABELS=1 docker buildx bake -f docker-bake.hcl "$@"
