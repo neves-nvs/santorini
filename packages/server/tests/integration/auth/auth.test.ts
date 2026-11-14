@@ -1,10 +1,9 @@
 import { NewUser, User } from "../../../src/model.ts";
+import { cleanupTestData, getTestDb } from "../helper/testDb.ts";
 
 import { JWT_SECRET } from "../../../src/configs/config.ts";
 import { app } from "../../../src/app.ts";
 import bcrypt from "bcryptjs";
-import { cleanupTestData } from "../helper/testDb.ts";
-import { db } from "../../../src/database.ts";
 import jwt from "jsonwebtoken";
 import request from "supertest";
 // Removed server import - not needed for HTTP tests using supertest
@@ -18,7 +17,7 @@ const userData = {
 
 describe("Auth Controller Integration Tests", () => {
   beforeEach(async () => {
-    await db.insertInto("users").values(userData).execute();
+    await getTestDb().insertInto("users").values(userData).execute();
   });
 
   afterEach(async () => {
