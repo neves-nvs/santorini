@@ -28,7 +28,6 @@ describe("Logging Integration Tests", () => {
 
   afterAll(async () => {
     await db.deleteFrom("users").where("username", "=", username).execute();
-    await db.destroy();
   });
 
   test("does not write passwords, hashes or tokens to the log", async () => {

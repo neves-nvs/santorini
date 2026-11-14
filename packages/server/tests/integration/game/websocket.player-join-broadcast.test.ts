@@ -11,7 +11,6 @@ import { UserDTO } from "../../../src/users/userDTO.ts";
 import { WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
-import { db } from "../../../src/database.ts";
 
 // TODO: move to packages/shared; its ServerMessage lacks game_joined and player_joined, and its GameStateUpdateMessage payload differs from what WsRouter sends
 type ServerPayloads = {
@@ -108,7 +107,6 @@ describe("Player Join Broadcast Integration Test", () => {
   afterAll(async () => {
     wss.close();
     server.close();
-    await db.destroy();
   });
 
   test("Player 1 should receive player_joined broadcast when Player 2 joins", async () => {

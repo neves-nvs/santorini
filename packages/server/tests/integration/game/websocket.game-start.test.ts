@@ -5,7 +5,6 @@ import { PORT } from "../../../src/configs/config.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
-import { db } from "../../../src/database.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WsMessage = Record<string, any>;
@@ -47,7 +46,6 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
   afterAll(async () => {
     wss.close();
     server.close();
-    await db.destroy();
   });
 
   async function createPlayerConnection(user: UserDTO, token: string): Promise<WebSocket> {
