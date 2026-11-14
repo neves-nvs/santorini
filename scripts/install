@@ -2,6 +2,9 @@
 set -euo pipefail
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if ! command -v npm >/dev/null 2>&1; then
+  exec nix develop "$root/packages/server" --command "$0" "$@"
+fi
 export NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-$root/.npm}"
 export npm_config_audit="${npm_config_audit:-false}"
 export npm_config_fund="${npm_config_fund:-false}"
