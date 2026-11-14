@@ -1,19 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Builds the image of every package that has a docker-build script, in parallel.
+# Builds the server and frontend images in parallel from docker-bake.hcl, with
+# buildx adding the revision and source labels from the git checkout.
+# Pass target names (server, client) to build only those.
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$root"
 
-pids=()
-for package in "$root"/packages/*/; do
-  [ -n "$(cd "$package" && npm pkg get scripts.docker-build | tr -d '{}')" ] || continue
-  (cd "$package" && npm run docker-build) &
-  pids+=("$!")
-done
-
-status=0
-for pid in "${pids[@]}"; do
-  wait "$pid" || status=1
-done
-exit "$status"
+BUILDX_GIT_LABELS=1 docker buildx bake "$@"

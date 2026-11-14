@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - docker-bake.hcl
       - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
@@ -14,6 +15,7 @@ on:
       - .github/workflows/docker.yml
   pull_request:
     paths:
+      - docker-bake.hcl
       - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
@@ -35,20 +37,38 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Build the server image
-        id: build-server
-        run: npm run docker-build
-        working-directory: packages/server
-        background: true
+      - name: Generate the server image metadata
+        id: meta-server
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: santorini-server
+          bake-target: metadata-server
+          tags: |
+            type=raw,value=check
+            type=sha,format=long,prefix=
+          labels: |
+            org.opencontainers.image.title=santorini-server
 
-      - name: Build the frontend image
-        id: build-client
-        run: npm run docker-build
-        working-directory: packages/client-react
-        background: true
+      - name: Generate the frontend image metadata
+        id: meta-client
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: santorini-client
+          bake-target: metadata-client
+          tags: |
+            type=raw,value=check
+            type=sha,format=long,prefix=
+          labels: |
+            org.opencontainers.image.title=santorini-client
 
-      - name: Wait for the image builds
-        wait: [build-server, build-client]
+      - name: Build the images
+        uses: docker/bake-action@v7.5.0
+        with:
+          files: |
+            ./docker-bake.hcl
+            cwd://${{ steps.meta-server.outputs.bake-file }}
+            cwd://${{ steps.meta-client.outputs.bake-file }}
+          load: true
 
       - name: Run the images against Postgres
         run: scripts/docker-check

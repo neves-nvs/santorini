@@ -8,10 +8,11 @@ for image in "$@"; do
   docker image inspect "$image" >/dev/null 2>&1 || continue
   docker image inspect "$image" | jq -r '
     .[0] as $i |
-    "### \($i.RepoTags[0])",
+    "### \($i.RepoTags[0] | split(":")[0])",
     "",
     "| | |",
     "|---|---|",
+    "| Tags | \($i.RepoTags | map("`\(.)`") | join(", ")) |",
     "| Image ID | `\($i.Id)` |",
     "| Size | \(($i.Size / 1048576 * 10 | round) / 10) MB |",
     "| Layers | \($i.RootFS.Layers | length) |",
