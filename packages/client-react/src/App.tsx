@@ -4,7 +4,6 @@ import { ToastProvider } from './store/ToastContext'
 import { useEffect, useState } from 'react'
 import { useApp } from './store/AppContext'
 import { apiService } from './services/ApiService'
-import { useGameStore } from './store/gameStore'
 import HomePage from './pages/HomePage'
 import GamePage from './pages/GamePage'
 import AuthPage from './pages/AuthPage'
@@ -33,7 +32,7 @@ const AppInitializer = ({ onInitialized }: { onInitialized: (initialized: boolea
     }
 
     checkAuthStatus()
-  }, [setUser])
+  }, [setUser, onInitialized])
 
   if (!isInitialized) {
     return (
