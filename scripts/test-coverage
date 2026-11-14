@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+package="${1:-server}"
+case "$package" in
+  server | client-react) ;;
+  *)
+    echo "usage: scripts/test-coverage [server|client-react]" >&2
+    exit 2
+    ;;
+esac
+
+if ! command -v npm >/dev/null 2>&1; then
+  exec nix develop "$root/packages/$package" --command "$0" "$@"
+fi
+
+cd "$root/packages/$package"
+if [ "$package" = server ]; then
+  export JWT_SECRET="${JWT_SECRET:-test-secret}"
+fi
+
+status=0
+npx vitest run --coverage || status=$?
+
+report="$PWD/coverage/index.html"
+if command -v open >/dev/null 2>&1; then
+  open "$report"
+else
+  xdg-open "$report"
+fi
+exit "$status"
