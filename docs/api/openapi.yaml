@@ -1,0 +1,521 @@
+openapi: 3.1.0
+info:
+  title: Santorini REST API
+  version: 0.1.0
+  description: |
+    Accounts, sessions and the game lobby. Live play (moves, readiness, updates) goes over the WebSocket described in
+    `asyncapi.yaml`.
+
+    Behind the nginx in `docker-compose.yml` every path here is served under `/api`.
+
+    Errors do not have one shape yet: validation failures use `ValidationErrors`, the games routes use
+    `{ "error": string }`, and everything else uses `{ "message": string }`. A 5xx always carries a generic message.
+servers:
+  - url: http://localhost:3000
+    description: Server run directly
+  - url: http://localhost:8080/api
+    description: Through the compose nginx
+security:
+  - sessionCookie: []
+tags:
+  - name: Health
+  - name: Session
+  - name: Users
+  - name: Games
+paths:
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Process is up
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema: { type: string, examples: [OK] }
+  /readyz:
+    get:
+      tags: [Health]
+      summary: Process is up and the database answers
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema: { type: string, examples: [OK] }
+        "503":
+          description: The database did not answer
+          content:
+            text/plain:
+              schema: { type: string, examples: [Service Unavailable] }
+  /session:
+    post:
+      tags: [Session]
+      summary: Log in
+      description: |
+        Sets the `token` cookie (a JWT valid for 5 hours). An unknown user, a wrong password and an account without a
+        password all give the same 401. Counted against the login and registration limit.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, minLength: 1 }
+                password: { type: string, minLength: 1 }
+      responses:
+        "200":
+          description: Logged in
+          headers:
+            Set-Cookie:
+              description: "`token=<jwt>; HttpOnly; SameSite=Lax; Path=/`, plus `Secure` when the request was https."
+              schema: { type: string }
+          content:
+            text/plain:
+              schema: { type: string, examples: [OK] }
+        "400":
+          $ref: "#/components/responses/ValidationFailed"
+        "401":
+          description: Invalid username or password
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /logout:
+    post:
+      tags: [Session]
+      summary: Log out
+      description: Clears the `token` cookie.
+      security: []
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+  /me:
+    get:
+      tags: [Session]
+      summary: The logged-in user
+      responses:
+        "200":
+          description: The user behind the cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, username]
+                properties:
+                  id: { type: integer }
+                  username: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /token:
+    get:
+      tags: [Session]
+      summary: A JWT to authenticate a WebSocket with a header
+      description: |
+        Returns a fresh 5 hour token. Browsers do not need it, because the WebSocket handshake carries the cookie.
+        Clients outside a browser send it as `Authorization: Bearer <token>`.
+      responses:
+        "200":
+          description: The token
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token]
+                properties:
+                  token: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /test-auth:
+    get:
+      tags: [Session]
+      summary: Authentication check used by tests
+      description: Returns the stored user row. Not meant for clients.
+      responses:
+        "200":
+          description: The user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  username: { type: string }
+                  display_name: { type: [string, "null"] }
+                  created_at: { type: string, format: date-time }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /auth/google:
+    get:
+      tags: [Session]
+      summary: Start Google sign-in
+      description: Redirects to Google. Only works when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set.
+      security: []
+      responses:
+        "302":
+          description: Redirect to Google
+  /auth/google/callback:
+    get:
+      tags: [Session]
+      summary: Google sign-in callback
+      description: Sets the `token` cookie and redirects to the client.
+      security: []
+      responses:
+        "302":
+          description: Redirect to the client
+  /users:
+    get:
+      tags: [Users]
+      summary: List users
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Users]
+      summary: Register
+      description: |
+        Counted against the login and registration limit. `REGISTRATION_ENABLED=false` makes this answer 403.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, minLength: 1 }
+                password: { type: string, minLength: 8 }
+      responses:
+        "201":
+          description: The new user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400":
+          $ref: "#/components/responses/ValidationFailed"
+        "403":
+          description: Registration is disabled
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "409":
+          description: The username is taken
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+  /users/{username}:
+    get:
+      tags: [Users]
+      summary: Look a user up by name
+      description: Needs no login.
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "404":
+          description: No such user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Message" }
+  /games:
+    get:
+      tags: [Games]
+      summary: Games that can still be joined
+      responses:
+        "200":
+          description: Open games
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GameSummary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Games]
+      summary: Create a game
+      description: The creator is added as the first player.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                maxPlayers: { type: integer, default: 2 }
+      responses:
+        "200":
+          description: The new game
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [gameId]
+                properties:
+                  gameId: { type: integer }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /games/my:
+    get:
+      tags: [Games]
+      summary: Games the user plays in, in any status
+      responses:
+        "200":
+          description: The user's games
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GameSummary" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /games/{gameId}:
+    get:
+      tags: [Games]
+      summary: A game as the logged-in user sees it
+      description: Includes `availableMoves` only when it is the user's turn.
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      responses:
+        "200":
+          description: The game view
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GameView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/GameError" }
+  /games/{gameId}/join:
+    post:
+      tags: [Games]
+      summary: Take a seat in a game
+      description: |
+        The same job as the `join_game` WebSocket message. Other subscribers receive a game update.
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      responses:
+        "200":
+          description: Joined
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [success]
+                properties:
+                  success: { type: boolean }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/GameError" }
+        "409":
+          description: The game is full, already started, or the user is already in it
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GameErrorBody" }
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: token
+      description: The JWT set by `POST /session`.
+  parameters:
+    GameId:
+      name: gameId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+  responses:
+    Unauthorized:
+      description: No token
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+    Forbidden:
+      description: The token is invalid or expired, or its user no longer exists
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Message" }
+    TooManyRequests:
+      description: |
+        Over the limit. The global limit is 300 requests a minute per client. Login and registration also share 20
+        requests per 15 minutes (`AUTH_RATE_LIMIT`).
+      content:
+        text/plain:
+          schema: { type: string }
+    ValidationFailed:
+      description: The body failed validation. The submitted values are not echoed.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ValidationErrors" }
+    GameError:
+      description: A game rule or lookup failed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/GameErrorBody" }
+  schemas:
+    Message:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+    GameErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string, examples: [Game not found] }
+    ValidationErrors:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required: [type, msg]
+            properties:
+              type: { type: string, examples: [field] }
+              msg: { type: string, examples: [Username is required] }
+              path: { type: string, examples: [username] }
+              location: { type: string, examples: [body] }
+    User:
+      type: object
+      required: [id, username, displayName, createdAt]
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        displayName: { type: string }
+        createdAt: { type: string, format: date-time }
+    Position:
+      type: object
+      required: [x, y]
+      properties:
+        x: { type: integer, minimum: 0, maximum: 4 }
+        y: { type: integer, minimum: 0, maximum: 4 }
+    PlayerView:
+      type: object
+      required: [id, userId, seat, status, isReady]
+      properties:
+        id: { type: integer, description: Player id inside the game }
+        userId: { type: integer }
+        seat: { type: integer }
+        status: { type: string, enum: [active, disconnected, blocked, eliminated] }
+        isReady: { type: boolean }
+    GameStatus:
+      type: string
+      enum: [waiting, in-progress, completed]
+    GamePhase:
+      type: [string, "null"]
+      enum: [placing, moving, building, null]
+    GameSummary:
+      type: object
+      required: [id, creatorId, maxPlayers, status, phase, currentPlayerId, turnNumber, version, playerCount, players]
+      properties:
+        id: { type: integer }
+        creatorId: { type: integer }
+        maxPlayers: { type: integer }
+        status: { $ref: "#/components/schemas/GameStatus" }
+        phase: { $ref: "#/components/schemas/GamePhase" }
+        currentPlayerId: { type: [integer, "null"] }
+        turnNumber: { type: integer }
+        version: { type: integer }
+        playerCount: { type: integer }
+        players:
+          type: array
+          items: { $ref: "#/components/schemas/PlayerView" }
+        createdAt: { type: string, format: date-time }
+        startedAt: { type: [string, "null"], format: date-time }
+        finishedAt: { type: [string, "null"], format: date-time }
+    Move:
+      description: A move the server offers or accepts. The `type` says which fields are present.
+      oneOf:
+        - type: object
+          required: [type, workerId, position]
+          properties:
+            type: { const: place_worker }
+            workerId: { type: integer }
+            position: { $ref: "#/components/schemas/Position" }
+        - type: object
+          required: [type, workerId, fromPosition, position]
+          properties:
+            type: { const: move_worker }
+            workerId: { type: integer }
+            fromPosition: { $ref: "#/components/schemas/Position" }
+            position: { $ref: "#/components/schemas/Position" }
+        - type: object
+          required: [type, position]
+          properties:
+            type: { enum: [build_block, build_dome] }
+            workerId: { type: integer }
+            position: { $ref: "#/components/schemas/Position" }
+    GameView:
+      type: object
+      required: [gameId, status, phase, currentPlayerId, turnNumber, version, board, players, isCurrentPlayer]
+      properties:
+        gameId: { type: integer }
+        status: { $ref: "#/components/schemas/GameStatus" }
+        phase: { $ref: "#/components/schemas/GamePhase" }
+        currentPlayerId: { type: [integer, "null"] }
+        turnNumber: { type: integer }
+        version:
+          type: integer
+          description: Grows with every change, so a client can drop an update older than the one it holds.
+        board:
+          type: object
+          required: [cells]
+          properties:
+            cells:
+              type: array
+              description: 5 columns of 5 cells, indexed `cells[x][y]`
+              items:
+                type: array
+                items:
+                  type: object
+                  required: [height, hasDome, worker]
+                  properties:
+                    height: { type: integer, minimum: 0, maximum: 3 }
+                    hasDome: { type: boolean }
+                    worker:
+                      oneOf:
+                        - type: "null"
+                        - type: object
+                          required: [playerId, workerId]
+                          properties:
+                            playerId: { type: integer }
+                            workerId: { type: integer }
+        players:
+          type: array
+          items: { $ref: "#/components/schemas/PlayerView" }
+        availableMoves:
+          type: array
+          description: Only present when it is this user's turn
+          items: { $ref: "#/components/schemas/Move" }
+        winnerId: { type: integer }
+        winReason: { type: string }
+        isCurrentPlayer: { type: boolean }
