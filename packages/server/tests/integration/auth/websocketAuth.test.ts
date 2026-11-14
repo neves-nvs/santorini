@@ -1,8 +1,8 @@
 import { server, wss } from "../../../src/main.ts";
 import WebSocket from "ws";
+import { cleanupTestData } from "../helper/testDb.ts";
 import { config } from "../../../src/configs/config.ts";
 import { createTestUserWithLogin } from "../helper/helpers.ts";
-import { db } from "../../../src/database.ts";
 
 let jwtToken: string;
 
@@ -52,15 +52,12 @@ describe("WebSocket Authentication Integration Tests", () => {
   });
 
   afterEach(async () => {
-    await db.deleteFrom("players").execute();
-    await db.deleteFrom("games").execute();
-    await db.deleteFrom("users").execute();
+    await cleanupTestData();
   });
 
   afterAll(async () => {
     wss.close();
     server.close();
-    await db.destroy();
   });
 
   describe("WebSocket Origin", () => {

@@ -106,3 +106,9 @@ async function setup() {
 }
 
 beforeAll(setup);
+
+afterAll(async () => {
+  // A static import would build the pool before DB_DATABASE is set for this file.
+  const { db } = await import("../../src/database.ts");
+  await db.destroy();
+});

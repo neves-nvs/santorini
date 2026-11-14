@@ -1,15 +1,11 @@
 import { app } from "../../../src/app.ts";
+import { cleanupTestData } from "../helper/testDb.ts";
 import { createTestUserWithLogin } from "../helper/helpers.ts";
-import { db } from "../../../src/database.ts";
 import request from "supertest";
 
 describe("Games HTTP error responses", () => {
   afterEach(async () => {
-    await db.deleteFrom("users").execute();
-  });
-
-  afterAll(async () => {
-    await db.destroy();
+    await cleanupTestData();
   });
 
   test("404 with the user-facing message when the game does not exist", async () => {

@@ -1,8 +1,8 @@
 import { NewUser, User } from "../../../src/model.ts";
+import { cleanupTestData, getTestDb } from "../helper/testDb.ts";
 import { app } from "../../../src/app.ts";
 import bcrypt from "bcryptjs";
 import { config } from "../../../src/configs/config.ts";
-import { db } from "../../../src/database.ts";
 import jwt from "jsonwebtoken";
 import request from "supertest";
 
@@ -17,17 +17,11 @@ const userData = {
 
 describe("Auth Controller Integration Tests", () => {
   beforeEach(async () => {
-    await db.insertInto("users").values(userData).execute();
+    await getTestDb().insertInto("users").values(userData).execute();
   });
 
   afterEach(async () => {
-    await db.deleteFrom("players").execute();
-    await db.deleteFrom("games").execute();
-    await db.deleteFrom("users").execute();
-  });
-
-  afterAll(async () => {
-    await db.destroy();
+    await cleanupTestData();
   });
 
   describe("POST /session", () => {
