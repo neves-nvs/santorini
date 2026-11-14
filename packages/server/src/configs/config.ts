@@ -1,4 +1,7 @@
 import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+
+import { resolveJwtSecret } from "./jwtSecret.ts";
 
 dotenv.config();
 
@@ -6,12 +9,11 @@ const DEFAULT_PORT = 3000;
 
 export const PORT = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT;
 
-const ENV_JWT_SECRET = process.env.JWT_SECRET;
-if (!ENV_JWT_SECRET) {
-  throw new Error("JWT_SECRET is not set");
-}
-
-export const JWT_SECRET = ENV_JWT_SECRET;
+export const JWT_SECRET = resolveJwtSecret({
+  configuredSecret: process.env.JWT_SECRET,
+  nodeEnv: process.env.NODE_ENV,
+  devSecretFile: fileURLToPath(new URL("../../.dev-jwt-secret", import.meta.url)),
+});
 
 const DEFAULT_ALLOWED_ORIGINS = "http://localhost:5174";
 
