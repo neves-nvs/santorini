@@ -115,5 +115,20 @@ esac
 expect_status 201 "register through /api" -X POST "$base/api/users" -H "$json" -d "$credentials"
 expect_status 200 "login through /api" -c "$cookies" -X POST "$base/api/session" -H "$json" -d "$credentials"
 expect_status 200 "GET /api/me with the session" -b "$cookies" "$base/api/me"
+
+cookie_is_secure() {
+  curl -s -D - -o /dev/null -X POST "$base/api/session" -H "$json" -d "$credentials" "$@" | grep -i '^set-cookie: token=' | grep -qi '; secure'
+}
+
+if cookie_is_secure; then
+  echo "FAIL the session cookie is Secure over plain http" >&2
+  exit 1
+fi
+echo "ok   the session cookie is not Secure over plain http"
+if ! cookie_is_secure -H 'X-Forwarded-Proto: https'; then
+  echo "FAIL the session cookie is not Secure when the proxy forwarded https" >&2
+  exit 1
+fi
+echo "ok   the session cookie is Secure when the proxy forwarded https"
 expect_status 401 "WebSocket upgrade without a session" "${websocket[@]}" "$base/ws"
 expect_status 101 "WebSocket upgrade with the session" "${websocket[@]}" -b "$cookies" "$base/ws"

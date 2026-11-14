@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response, Router } from "express";
+import { CookieOptions, NextFunction, Request, Response, Router } from "express";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import { User } from "../model.ts";
@@ -9,6 +9,10 @@ import { config } from "../configs/config.ts";
 import { findUserByUsername } from "../users/userRepository.ts";
 import logger from "../logger.ts";
 import passport from "passport";
+
+function sessionCookieOptions(req: Request): CookieOptions {
+  return { httpOnly: true, secure: req.secure, sameSite: "lax", path: "/" };
+}
 
 /**
  * Get authenticated user from request. Only call after authenticate middleware.
@@ -91,12 +95,7 @@ router.post(
         expiresIn: "5h",
       });
 
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        path: "/",
-      });
+      res.cookie("token", token, sessionCookieOptions(req));
       res.status(200).send("OK");
     } catch (err) {
       logger.error("An error occurred during authentication", err);
@@ -107,12 +106,7 @@ router.post(
 
 // Logout endpoint to clear the authentication cookie
 router.post("/logout", (req: Request, res: Response) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    path: "/",
-  });
+  res.clearCookie("token", sessionCookieOptions(req));
   res.status(200).json({ message: "Logged out successfully" });
 });
 
@@ -134,10 +128,7 @@ router.get("/auth/google/callback", passport.authenticate("google", { session: f
 
   const token = jwt.sign({ sub: user.id }, config.jwtSecret, { expiresIn: "5h" });
 
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-  });
+  res.cookie("token", token, sessionCookieOptions(req));
   res.redirect("http://localhost:5173");
 });
 
