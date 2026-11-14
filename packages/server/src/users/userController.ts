@@ -17,9 +17,8 @@ router.get("/", authenticate, async (req, res) => {
     const users = await findAllUsers();
     return res.status(200).json(users.map((user) => new UserDTO(user)));
   } catch (e: unknown) {
-    const error = e as Error;
-    logger.error(error.message);
-    res.status(400).send(error.message);
+    logger.error((e as Error).message);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
