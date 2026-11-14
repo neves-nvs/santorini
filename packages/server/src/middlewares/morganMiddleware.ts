@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
+import logger, { toRedactedJson } from "../logger.ts";
 
 import { HTTP_LOG_FORMAT } from "../configs/config.ts";
-import logger from "../logger.ts";
 import morgan from "morgan";
 
 if (process.env.HTTP_LOG_FORMAT) {
@@ -16,8 +16,7 @@ export const morganMiddleware = morgan(HTTP_LOG_FORMAT, {
   },
 });
 
-// TODO: debug-only, this logs secrets; never run with LOG_LEVEL=debug in production
-morgan.token("body", (req: Request) => JSON.stringify(req.body));
+morgan.token("body", (req: Request) => toRedactedJson(req.body));
 
 export const morganBodyMiddleware = morgan("Request body: :body", {
   stream: {
@@ -26,8 +25,7 @@ export const morganBodyMiddleware = morgan("Request body: :body", {
 });
 
 morgan.token("res-body", (req, res: Response) => {
-  const body = res.locals.body;
-  return JSON.stringify(body);
+  return toRedactedJson(res.locals.body);
 });
 
 export const morganResBodyMiddleware = morgan("Response body: :res-body", {
