@@ -21,7 +21,7 @@ describe('ApiService', () => {
         json: async () => mockData,
       })
 
-      const result = await apiService.getGames()
+      await apiService.getGames()
 
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:3000/games',
