@@ -31,7 +31,19 @@ export interface GameLifecycle {
  * Convert backend game state to clean lifecycle state
  * Supports both old format (game_status) and new format (status)
  */
-export function mapToGameLifecycle(backendState: any): GameLifecycle {
+interface BackendGameState {
+  status?: string
+  game_status?: string
+  phase?: string | null
+  game_phase?: string | null
+  players?: unknown[]
+  maxPlayers?: number
+  player_count?: number
+  winnerId?: number | null
+  winner_id?: number | null
+}
+
+export function mapToGameLifecycle(backendState: BackendGameState): GameLifecycle {
   // Support both old and new API formats
   const gameStatus = backendState.status || backendState.game_status
   const gamePhase = backendState.phase || backendState.game_phase
