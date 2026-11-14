@@ -1,26 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Builds one image: `docker-build server` or `docker-build client`.
+# Builds the image of every package that has a docker-build script, in parallel.
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-revision="$(git -C "$root" rev-parse HEAD 2>/dev/null || echo unknown)"
 
-case "${1:-}" in
-  server)
-    dockerfile=packages/server/Dockerfile
-    image="${SANTORINI_SERVER_IMAGE:-santorini-server:check}"
-    ;;
-  client)
-    dockerfile=packages/client-react/Dockerfile
-    image="${SANTORINI_CLIENT_IMAGE:-santorini-client:check}"
-    ;;
-  *)
-    echo "usage: $0 server|client" >&2
-    exit 2
-    ;;
-esac
+pids=()
+for package in "$root"/packages/*/; do
+  [ -n "$(cd "$package" && npm pkg get scripts.docker-build | tr -d '{}')" ] || continue
+  (cd "$package" && npm run docker-build) &
+  pids+=("$!")
+done
 
-docker build -f "$root/$dockerfile" \
-  --label "org.opencontainers.image.revision=$revision" \
-  -t "$image" "$root"
+status=0
+for pid in "${pids[@]}"; do
+  wait "$pid" || status=1
+done
+exit "$status"

@@ -5,7 +5,6 @@ on:
     branches:
       - main
     paths:
-      - .dockerignore
       - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
@@ -15,7 +14,6 @@ on:
       - .github/workflows/docker.yml
   pull_request:
     paths:
-      - .dockerignore
       - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
@@ -39,12 +37,14 @@ jobs:
 
       - name: Build the server image
         id: build-server
-        run: scripts/docker-build server
+        run: npm run docker-build
+        working-directory: packages/server
         background: true
 
       - name: Build the frontend image
         id: build-client
-        run: scripts/docker-build client
+        run: npm run docker-build
+        working-directory: packages/client-react
         background: true
 
       - name: Wait for the image builds
