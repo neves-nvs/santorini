@@ -1,4 +1,5 @@
 import { Writable } from "stream";
+import { config } from "../../../src/configs/config.ts";
 import request from "supertest";
 import { transports } from "winston";
 
@@ -47,5 +48,27 @@ describe("Logging Integration Tests", () => {
     expect(output).not.toContain(token as string);
     expect(output).not.toMatch(/\$2[aby]\$/);
     expect(output).not.toMatch(/"password(_hash|_salt)?"\s*:/);
+  });
+
+  test("redacts passwords, hashes and tokens when bodies and cookies are logged at debug level", async () => {
+    const { default: logger } = await import("../../../src/logger.ts");
+    logged.length = 0;
+    logger.level = "debug";
+
+    try {
+      const agent = request.agent(app);
+      const login = await agent.post("/session").send({ username, password }).expect(200);
+      const token = /token=([^;]+)/.exec(String(login.headers["set-cookie"]))?.[1];
+      await agent.get("/me").expect(200);
+
+      const output = logged.join("\n");
+      expect(output).toContain("Request body:");
+      expect(output).toContain("[REDACTED]");
+      expect(output).not.toContain(password);
+      expect(output).not.toContain(token as string);
+      expect(output).not.toMatch(/\$2[aby]\$/);
+    } finally {
+      logger.level = config.logging.level;
+    }
   });
 });
