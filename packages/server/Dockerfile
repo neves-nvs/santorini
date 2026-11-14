@@ -24,6 +24,6 @@ COPY --from=build /app/packages/server/dist ./dist
 COPY package.json ./
 USER node
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-  CMD node -e "fetch('http://127.0.0.1:' + process.env.PORT + '/healthz').then(() => process.exit(0), () => process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s \
+  CMD node -e "fetch('http://127.0.0.1:' + process.env.PORT + '/readyz').then((response) => process.exit(response.ok ? 0 : 1), () => process.exit(1))"
 CMD ["node", "dist/server/src/main.js"]
