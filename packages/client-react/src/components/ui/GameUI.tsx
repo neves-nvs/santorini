@@ -7,7 +7,6 @@ import GameLobby from '../game/GameLobby'
 import GameNavigation from '../game/GameNavigation'
 import DebugMenu from '../debug/DebugMenu'
 import { PerformanceDashboard } from '../debug/PerformanceDashboard'
-import { useGameLifecycle } from '../../hooks/useGameLifecycle'
 import { useDebugState } from '../../hooks/useDebugState'
 
 const GameUI = memo(() => {
@@ -17,9 +16,6 @@ const GameUI = memo(() => {
   const isConnected = useIsConnected()
 
   const { state: appState } = useApp()
-
-  // Use clean lifecycle state management (statusMessage used by GameStatusBar)
-  const { statusMessage: _statusMessage } = useGameLifecycle()
 
   // Use debug state hook (includes camera type)
   const { debugState, handleDebugChange, cameraType, toggleCameraType } = useDebugState()
