@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Starts the app the way a developer does and drives the real UI against it:
+# registers a user, reaches the lobby and is still logged in after a reload.
+#
+#   scripts/smoke [scripts|bare]
+#     scripts  start everything with scripts/dev
+#     bare     start the server and the client with plain `npm run dev`,
+#              without PORT or VITE_* settings
+#   With no argument both run. A throwaway database container is used.
+#   Set SMOKE_BROWSER_CHANNEL=chrome to use an installed Google Chrome instead of
+#   downloading Chromium.
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if ! command -v npm >/dev/null 2>&1; then
+  exec nix develop "$root/packages/server" --command "$0" "$@"
+fi
+
+mode="${1:-all}"
+export SANTORINI_DB_CONTAINER="${SANTORINI_DB_CONTAINER:-santorini-smoke}"
+export DB_PORT="${DB_PORT:-55432}"
+log_dir="$(mktemp -d)"
+pids=()
+
+set -m
+
+port_in_use() {
+  (echo > "/dev/tcp/127.0.0.1/$1") 2>/dev/null
+}
+
+wait_for() {
+  for _ in $(seq 1 90); do
+    if curl -s -o /dev/null "$1"; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Timed out waiting for $1" >&2
+  return 1
+}
+
+stop_apps() {
+  if [ "${#pids[@]}" -gt 0 ]; then
+    for pid in "${pids[@]}"; do
+      kill -- "-$pid" 2>/dev/null || true
+    done
+  fi
+  pids=()
+  for _ in $(seq 1 20); do
+    if ! port_in_use 3000 && ! port_in_use 5174; then
+      return 0
+    fi
+    sleep 1
+  done
+}
+
+cleanup() {
+  stop_apps
+  docker rm -f "$SANTORINI_DB_CONTAINER" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+start_scripts() {
+  "$root/scripts/dev" >"$log_dir/scripts.log" 2>&1 &
+  pids+=("$!")
+}
+
+start_bare() {
+  "$root/scripts/db-up" >/dev/null
+  "$root/scripts/migrate" >"$log_dir/bare-migrate.log" 2>&1
+
+  (
+    cd "$root/packages/server"
+    exec env -u PORT JWT_SECRET=smoke DB_HOST=127.0.0.1 DB_USER=postgres DB_PASSWORD=postgres DB_DATABASE=santorini npm run dev
+  ) >"$log_dir/bare-server.log" 2>&1 &
+  pids+=("$!")
+
+  (
+    cd "$root/packages/client-react"
+    exec env -u VITE_API_URL -u VITE_WS_URL npm run dev
+  ) >"$log_dir/bare-client.log" 2>&1 &
+  pids+=("$!")
+}
+
+show_logs() {
+  echo "--- logs ($log_dir)" >&2
+  tail -n 25 "$log_dir"/*.log >&2 || true
+}
+
+run_mode() {
+  local name=$1
+
+  echo "== smoke: $name"
+  for port in 3000 5174; do
+    if port_in_use "$port"; then
+      echo "Port $port is already in use; stop the running app first." >&2
+      return 1
+    fi
+  done
+
+  "start_$name"
+
+  if ! wait_for http://localhost:3000/games || ! wait_for http://localhost:5174; then
+    show_logs
+    stop_apps
+    return 1
+  fi
+
+  local status=0
+  (cd "$root/packages/client-react" && npx playwright test -c playwright.smoke.config.ts) || status=1
+  if [ "$status" -ne 0 ]; then
+    show_logs
+  fi
+  stop_apps
+  return "$status"
+}
+
+if [ ! -d "$root/packages/client-react/node_modules" ]; then
+  echo "Run scripts/install first." >&2
+  exit 1
+fi
+if [ -z "${SMOKE_BROWSER_CHANNEL:-}" ]; then
+  (cd "$root/packages/client-react" && npx playwright install chromium >/dev/null)
+fi
+
+failed=0
+case "$mode" in
+  scripts | bare) run_mode "$mode" || failed=1 ;;
+  all)
+    run_mode scripts || failed=1
+    run_mode bare || failed=1
+    ;;
+  *)
+    echo "Usage: scripts/smoke [scripts|bare]" >&2
+    exit 2
+    ;;
+esac
+
+exit "$failed"
