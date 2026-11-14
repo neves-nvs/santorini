@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../store/AppContext'
 import { apiService } from '../services/ApiService'
@@ -10,27 +10,61 @@ const LobbyPage = () => {
   const { state, logout } = useApp()
   const navigate = useNavigate()
 
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(Boolean(state.username))
   const [error, setError] = useState('')
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const refreshInFlight = useRef(false)
 
   const [availableGames, setAvailableGames] = useState<GameInfo[]>([])
   const [myGames, setMyGames] = useState<GameInfo[]>([])
   const [activeTab, setActiveTab] = useState<GameTab>('available')
   const [playerCount, setPlayerCount] = useState(2)
 
-  useEffect(() => {
-    if (state.username) {
-      handleRefreshGames()
+  const fetchGames = useCallback(async () => {
+    refreshInFlight.current = true
 
-      // Set up periodic refresh every 30 seconds (reasonable interval)
-      const interval = setInterval(() => {
-        handleRefreshGames()
-      }, 30000)
-
-      return () => clearInterval(interval)
+    try {
+      // Fetch both available games and my games in parallel
+      const [available, mine] = await Promise.all([
+        apiService.getGamesWithPlayerCounts(),
+        apiService.getMyGames()
+      ])
+      setAvailableGames(available)
+      setMyGames(mine)
+      console.log('Fetched', available.length, 'available games,', mine.length, 'my games')
+    } catch (err) {
+      console.error('Failed to fetch games:', err)
+      setError('Failed to fetch games. Please try again.')
+    } finally {
+      refreshInFlight.current = false
+      setLoading(false)
     }
-  }, [state.username]) // Only depends on username
+  }, [])
+
+  const handleRefreshGames = useCallback(async () => {
+    // Prevent multiple simultaneous requests
+    if (refreshInFlight.current) {
+      console.log('Refresh already in progress, skipping...')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    await fetchGames()
+  }, [fetchGames])
+
+  useEffect(() => {
+    if (!state.username) return
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the state is set after the request resolves, not synchronously
+    fetchGames()
+
+    // Set up periodic refresh every 30 seconds (reasonable interval)
+    const interval = setInterval(() => {
+      handleRefreshGames()
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [state.username, fetchGames, handleRefreshGames])
 
   const handleCreateGame = async () => {
     if (!state.username) {
@@ -74,37 +108,6 @@ const LobbyPage = () => {
       setLoading(false)
     }
   }
-
-  const handleRefreshGames = async () => {
-    // Prevent multiple simultaneous requests
-    if (isRefreshing) {
-      console.log('Refresh already in progress, skipping...')
-      return
-    }
-
-    setIsRefreshing(true)
-    setLoading(true)
-    setError('')
-
-    try {
-      // Fetch both available games and my games in parallel
-      const [available, mine] = await Promise.all([
-        apiService.getGamesWithPlayerCounts(),
-        apiService.getMyGames()
-      ])
-      setAvailableGames(available)
-      setMyGames(mine)
-      console.log('Fetched', available.length, 'available games,', mine.length, 'my games')
-    } catch (err) {
-      console.error('Failed to fetch games:', err)
-      setError('Failed to fetch games. Please try again.')
-    } finally {
-      setLoading(false)
-      setIsRefreshing(false)
-    }
-  }
-
-
 
   const handleLogout = async () => {
     try {

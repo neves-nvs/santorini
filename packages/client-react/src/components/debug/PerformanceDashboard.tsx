@@ -8,27 +8,21 @@ interface PerformanceDashboardProps {
 
 export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ visible, onToggle }) => {
   const [renderStats, setRenderStats] = useState<Record<string, number>>({})
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null)
 
   // Update stats every second when visible
   useEffect(() => {
-    if (visible) {
-      const updateStats = () => {
-        setRenderStats(performanceMonitor.getRenderStats())
-      }
-      
-      updateStats() // Initial update
-      const interval = setInterval(updateStats, 1000)
-      setRefreshInterval(interval)
-      
-      return () => {
-        if (interval) clearInterval(interval)
-      }
-    } else {
-      if (refreshInterval) {
-        clearInterval(refreshInterval)
-        setRefreshInterval(null)
-      }
+    if (!visible) return
+
+    const updateStats = () => {
+      setRenderStats(performanceMonitor.getRenderStats())
+    }
+
+    const initialUpdate = setTimeout(updateStats, 0)
+    const interval = setInterval(updateStats, 1000)
+
+    return () => {
+      clearTimeout(initialUpdate)
+      clearInterval(interval)
     }
   }, [visible])
 

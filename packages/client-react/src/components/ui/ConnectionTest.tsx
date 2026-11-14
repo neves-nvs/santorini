@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useIsConnected } from '../../store/gameSelectors'
 import { webSocketClient } from '../../services/WebSocketClient'
 import { apiService } from '../../services/ApiService'
@@ -6,6 +6,7 @@ import { apiService } from '../../services/ApiService'
 const ConnectionTest = () => {
   const isConnected = useIsConnected()
   const [testResults, setTestResults] = useState<string[]>([])
+  const [loggedConnectionState, setLoggedConnectionState] = useState<boolean | null>(null)
 
   const addResult = (message: string) => {
     setTestResults(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`])
@@ -32,9 +33,10 @@ const ConnectionTest = () => {
     setTestResults([])
   }
 
-  useEffect(() => {
+  if (loggedConnectionState !== isConnected) {
+    setLoggedConnectionState(isConnected)
     addResult(`Component mounted - WebSocket: ${isConnected ? 'Connected' : 'Disconnected'}`)
-  }, [isConnected])
+  }
 
   return (
     <div style={{
