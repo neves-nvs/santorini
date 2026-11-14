@@ -1,5 +1,5 @@
-import { FORCE_LOGS, LOG_LEVEL } from "./configs/config.ts";
 import { createLogger, format, transports } from "winston";
+import { config } from "./configs/config.ts";
 
 const { combine, timestamp, colorize, printf } = format;
 
@@ -18,12 +18,12 @@ const logFormat = printf(({ level, message, timestamp, ...metadata }) => {
 });
 
 let silence = process.env.NODE_ENV === "test";
-if (FORCE_LOGS === true) {
+if (config.logging.force) {
   silence = false;
 }
 
 const logger = createLogger({
-  level: LOG_LEVEL,
+  level: config.logging.level,
   format: combine(uppercaseLevel(), colorize(), timestamp({ format: "HH:mm:ss" }), logFormat),
   transports: [
     new transports.Console({
@@ -33,12 +33,12 @@ const logger = createLogger({
 });
 
 if (process.env.LOG_LEVEL) {
-  logger.info(`Log level set to '${LOG_LEVEL}'`);
+  logger.info(`Log level set to '${config.logging.level}'`);
 } else {
-  logger.info(`Log level using default: '${LOG_LEVEL}'`);
+  logger.info(`Log level using default: '${config.logging.level}'`);
 }
 
-if (FORCE_LOGS === true) {
+if (config.logging.force) {
   logger.warn("Forcing logs");
 }
 

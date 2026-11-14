@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "tsx watch ./src/main.ts",
+    "dev": "NODE_ENV=development tsx watch ./src/main.ts",
     "test": "vitest run",
     "start": "node dist/server/src/main.js",
     "clean": "rm -rf dist",
