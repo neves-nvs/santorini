@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# Build from this folder with `npm run docker-build`: the shared package comes in as a named build context.
+# Build with scripts/docker-build (docker-bake.hcl): the shared package comes in as a named build context.
 ARG NODE_VERSION=26
 
 FROM node:${NODE_VERSION}-slim AS build

@@ -14,7 +14,6 @@
     "migrate:prod": "node dist/server/src/runMigrations.js",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "docker-build": "docker build --build-context shared=../shared --label org.opencontainers.image.revision=$(git rev-parse HEAD) -t ${SANTORINI_SERVER_IMAGE:-santorini-server:check} .",
     "typecheck": "tsc -p tests/tsconfig.json"
   },
   "keywords": [],

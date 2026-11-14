@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - docker-bake.hcl
       - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
@@ -14,6 +15,7 @@ on:
       - .github/workflows/docker.yml
   pull_request:
     paths:
+      - docker-bake.hcl
       - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
@@ -35,20 +37,8 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Build the server image
-        id: build-server
-        run: npm run docker-build
-        working-directory: packages/server
-        background: true
-
-      - name: Build the frontend image
-        id: build-client
-        run: npm run docker-build
-        working-directory: packages/client-react
-        background: true
-
-      - name: Wait for the image builds
-        wait: [build-server, build-client]
+      - name: Build the images
+        run: scripts/docker-build
 
       - name: Run the images against Postgres
         run: scripts/docker-check
