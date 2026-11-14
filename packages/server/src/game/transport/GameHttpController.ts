@@ -75,7 +75,7 @@ export function createGameRoutes(
   router.get("/:gameId", authenticate, async (req, res) => {
     try {
       const userId = getUser(req).id;
-      const gameId = parseInt(req.params.gameId);
+      const gameId = parseInt(String(req.params.gameId));
       const gameView = await gameService.getGameStateForPlayer(gameId, userId);
       res.json(gameView);
     } catch (error) {
@@ -86,7 +86,7 @@ export function createGameRoutes(
   router.post("/:gameId/join", authenticate, async (req, res) => {
     try {
       const userId = getUser(req).id;
-      const gameId = parseInt(req.params.gameId);
+      const gameId = parseInt(String(req.params.gameId));
       const game = await lobbyService.joinGame(gameId, userId);
       await gameBroadcaster.broadcastGameUpdate(game, []);
       res.json({ success: true });
