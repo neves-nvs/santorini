@@ -88,7 +88,18 @@ scripts/dev       # starts PostgreSQL in Docker, runs migrations, then the serve
 - Server: <http://localhost:3000>
 - Client: <http://localhost:5174>
 
-`scripts/dev` uses local development defaults (see the scripts for the variables). Running `npm run dev` yourself in `packages/server` and `packages/client-react` works without any setup too: the server listens on port 3000 and the client talks to `localhost:3000` in development. The database container keeps running after you stop it; stop it with `scripts/db-down`.
+`scripts/dev` uses local development defaults (see the scripts for the variables). Running `npm run dev` yourself in `packages/server` and `packages/client-react` works without any setup too: the server listens on port 3000 and the client reaches it through the Vite proxy (`/api` and `/ws`); see [docs/dev-networking.md](./docs/dev-networking.md). The database container keeps running after you stop it; stop it with `scripts/db-down`.
+
+### With Docker
+
+`docker-compose.yml` runs the whole app from the Dockerfiles: PostgreSQL, the migrations, the server and the frontend, which serves the client and proxies `/api` and `/ws` to the server. Only the frontend is published.
+
+```bash
+cp .env.example .env   # then set JWT_SECRET and DB_PASSWORD
+docker compose up --build
+```
+
+Open <http://localhost:8080> (set `PORT` to change it). The database lives in the `postgres-data` volume; `docker compose down -v` deletes it.
 
 ## Acknowledgements
 
