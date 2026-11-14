@@ -21,7 +21,7 @@ export interface CreateUserRequest {
 }
 
 export class ApiService {
-  private baseUrl = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:3000' : '')
+  private baseUrl = import.meta.env.VITE_API_URL ?? '/api'
 
   private async request<T>(
     endpoint: string,
