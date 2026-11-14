@@ -140,6 +140,18 @@ describe("Game Domain", () => {
       expect(() => game.applyMove(2, move)).toThrow("Not your turn");
     });
 
+    it.each([
+      ["a fractional coordinate", { x: 1.5, y: 0 }],
+      ["a negative coordinate", { x: -1, y: 0 }],
+      ["a coordinate past the board", { x: 0, y: 5 }],
+      ["a string coordinate", { x: "__proto__", y: 0 }],
+      ["a missing coordinate", { x: 0 }],
+      ["a missing position", undefined],
+    ])("should reject a placement with %s", (_description, position) => {
+      const move = new PlaceWorkerMove(1, position as unknown as { x: number; y: number }, 1);
+      expect(() => game.applyMove(1, move)).toThrow("Invalid move");
+    });
+
     it("should reject move when game not in progress", () => {
       const waitingGame = Game.create(2, 100, 2);
       const move = new PlaceWorkerMove(1, { x: 0, y: 0 }, 1);
@@ -249,6 +261,11 @@ describe("Game Domain", () => {
       // Player 1 has 2 workers, each can move to adjacent empty cells
       expect(moves.length).toBeGreaterThan(0);
       expect(moves[0].type).toBe("move_worker");
+    });
+
+    it("should reject a movement from a position that is not on the board", () => {
+      const move = new MoveWorkerMove(1, { x: 1, y: 2 }, 1, { x: 2.5, y: 2 });
+      expect(() => game.applyMove(1, move)).toThrow("Invalid move");
     });
 
     it("should transition to building phase after movement", () => {

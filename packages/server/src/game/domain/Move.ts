@@ -10,6 +10,18 @@ export interface Position {
   y: number;
 }
 
+const BOARD_SIZE = 5;
+
+export function isBoardCoordinate(value: unknown): value is number {
+  return Number.isInteger(value) && (value as number) >= 0 && (value as number) < BOARD_SIZE;
+}
+
+export function isBoardPosition(position: unknown): position is Position {
+  if (typeof position !== "object" || position === null) return false;
+  const { x, y } = position as Record<string, unknown>;
+  return isBoardCoordinate(x) && isBoardCoordinate(y);
+}
+
 export type MoveType = "place_worker" | "move_worker" | "build_block" | "build_dome";
 
 export abstract class Move {
@@ -32,9 +44,7 @@ export class PlaceWorkerMove extends Move {
   }
 
   isValid(): boolean {
-    return (
-      this.position.x >= 0 && this.position.x < 5 && this.position.y >= 0 && this.position.y < 5 && this.workerId > 0
-    );
+    return isBoardPosition(this.position) && this.workerId > 0;
   }
 }
 
@@ -49,17 +59,7 @@ export class MoveWorkerMove extends Move {
   }
 
   isValid(): boolean {
-    return (
-      this.position.x >= 0 &&
-      this.position.x < 5 &&
-      this.position.y >= 0 &&
-      this.position.y < 5 &&
-      this.fromPosition.x >= 0 &&
-      this.fromPosition.x < 5 &&
-      this.fromPosition.y >= 0 &&
-      this.fromPosition.y < 5 &&
-      this.workerId > 0
-    );
+    return isBoardPosition(this.position) && isBoardPosition(this.fromPosition) && this.workerId > 0;
   }
 }
 
@@ -75,7 +75,7 @@ export class BuildMove extends Move {
   }
 
   isValid(): boolean {
-    return this.position.x >= 0 && this.position.x < 5 && this.position.y >= 0 && this.position.y < 5;
+    return isBoardPosition(this.position);
   }
 }
 
