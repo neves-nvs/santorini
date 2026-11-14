@@ -1,14 +1,14 @@
 import { body, param } from "express-validator";
-import { authenticate } from "../auth/authController";
-import { createUser, findAllUsers, findUserByUsername } from "./userRepository";
+import { createUser, findAllUsers, findUserByUsername } from "./userRepository.ts";
 
-import { NewUser } from "../model";
+import { NewUser } from "../model.ts";
 import { Router } from "express";
 import { StatusCodes } from "http-status-codes";
-import { UserDTO } from "./userDTO";
+import { UserDTO } from "./userDTO.ts";
+import { authenticate } from "../auth/authController.ts";
 import bcrypt from "bcryptjs";
-import { checkValidation } from "../middlewares/middleware";
-import logger from "../logger";
+import { checkValidation } from "../middlewares/middleware.ts";
+import logger from "../logger.ts";
 
 export const router = Router();
 

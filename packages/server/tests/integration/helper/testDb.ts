@@ -1,4 +1,4 @@
-import { db } from "../../../src/database";
+import { db } from "../../../src/database.ts";
 import { sql } from "kysely";
 
 /**
@@ -16,7 +16,7 @@ export async function cleanupTestData(): Promise<void> {
     // and handles foreign key constraints automatically
     await sql`TRUNCATE TABLE players, games, users RESTART IDENTITY CASCADE`.execute(db);
   } catch (error) {
-    console.warn('Truncate failed, falling back to deletes:', error);
+    console.warn("Truncate failed, falling back to deletes:", error);
     // Fallback to individual deletes if truncate fails
     await db.deleteFrom("players").execute();
     await db.deleteFrom("games").execute();

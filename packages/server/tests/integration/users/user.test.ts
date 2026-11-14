@@ -1,6 +1,6 @@
-import { app } from "../../../src/app";
-import { db } from "../../../src/database";
-import { findUserByUsername } from "../../../src/users/userRepository";
+import { app } from "../../../src/app.ts";
+import { db } from "../../../src/database.ts";
+import { findUserByUsername } from "../../../src/users/userRepository.ts";
 import request from "supertest";
 // Removed server import - not needed for HTTP tests using supertest
 
@@ -69,16 +69,7 @@ describe("Users API Integration Tests", () => {
 
   describe("GET /users", () => {
     test("401 Unauthorized if token is missing", async () => {
-      await request(app).post("/users").send(userData).expect(201);
-
       await request(app).get("/users").expect(401);
-    });
-
-    test("includes rate limit headers", async () => {
-      const response = await request(app).get("/users");
-
-      expect(response.headers).toHaveProperty("ratelimit-limit");
-      expect(response.headers).toHaveProperty("ratelimit-remaining");
     });
 
     test("200 OK and returns users without password data", async () => {

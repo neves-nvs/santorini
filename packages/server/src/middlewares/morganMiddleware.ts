@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 
-import { HTTP_LOG_FORMAT } from "../configs/config";
-import logger from "../logger";
+import { HTTP_LOG_FORMAT } from "../configs/config.ts";
+import logger from "../logger.ts";
 import morgan from "morgan";
 
 if (process.env.HTTP_LOG_FORMAT) {

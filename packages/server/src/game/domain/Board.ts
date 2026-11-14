@@ -1,12 +1,12 @@
 /**
  * Board Domain Entity
- * 
+ *
  * Represents the Santorini game board with all its state and rules.
  * Encapsulates board-level game logic and validation.
  */
 
-import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove, Position } from './Move';
-import { PlayerId } from './Player';
+import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove, Position } from "./Move.ts";
+import { PlayerId } from "./Player.ts";
 
 export interface WorkerRef {
   playerId: PlayerId;
@@ -41,7 +41,7 @@ export interface BoardSnapshot {
 export class Board {
   private constructor(
     private _cells: BoardCell[][],
-    private _workers: Map<string, { x: number; y: number; playerId: PlayerId }>
+    private _workers: Map<string, { x: number; y: number; playerId: PlayerId }>,
   ) {}
 
   static createEmpty(): Board {
@@ -52,7 +52,7 @@ export class Board {
       for (let y = 0; y < 5; y++) {
         cells[x][y] = {
           height: 0,
-          hasDome: false
+          hasDome: false,
         };
       }
     }
@@ -76,10 +76,12 @@ export class Board {
         cells[x][y] = {
           height: cellData.height || 0,
           hasDome: cellData.hasDome || false,
-          worker: cellData.worker ? {
-            playerId: cellData.worker.playerId,
-            workerId: cellData.worker.workerId
-          } : undefined
+          worker: cellData.worker
+            ? {
+                playerId: cellData.worker.playerId,
+                workerId: cellData.worker.workerId,
+              }
+            : undefined,
         };
 
         // Track workers for quick lookup
@@ -88,7 +90,7 @@ export class Board {
           workers.set(workerKey, {
             x,
             y,
-            playerId: cellData.worker.playerId
+            playerId: cellData.worker.playerId,
           });
         }
       }
@@ -114,7 +116,7 @@ export class Board {
         cells[x][y] = {
           height: cell.height,
           hasDome: cell.hasDome,
-          worker: cell.worker ? { playerId: cell.worker.playerId, workerId: cell.worker.workerId } : null
+          worker: cell.worker ? { playerId: cell.worker.playerId, workerId: cell.worker.workerId } : null,
         };
       }
     }
@@ -123,19 +125,19 @@ export class Board {
 
   applyMove(move: Move, playerId: PlayerId): MoveResult {
     if (!move.isValid()) {
-      return { success: false, error: 'Invalid move' };
+      return { success: false, error: "Invalid move" };
     }
 
     switch (move.type) {
-      case 'place_worker':
+      case "place_worker":
         return this.applyPlaceWorker(move as PlaceWorkerMove, playerId);
-      case 'move_worker':
+      case "move_worker":
         return this.applyMoveWorker(move as MoveWorkerMove, playerId);
-      case 'build_block':
-      case 'build_dome':
+      case "build_block":
+      case "build_dome":
         return this.applyBuild(move as BuildMove);
       default:
-        return { success: false, error: 'Unknown move type' };
+        return { success: false, error: "Unknown move type" };
     }
   }
 
@@ -157,13 +159,13 @@ export class Board {
     const { position, workerId } = move;
 
     if (this.isPositionOccupied(position.x, position.y)) {
-      return { success: false, error: 'Position occupied' };
+      return { success: false, error: "Position occupied" };
     }
 
     // Place worker on board
     this._cells[position.x][position.y].worker = {
       playerId,
-      workerId
+      workerId,
     };
 
     // Track worker position
@@ -178,7 +180,7 @@ export class Board {
 
     // Validate move (height difference, adjacency, etc.)
     if (!this.isValidWorkerMove(fromPosition, position, playerId, workerId)) {
-      return { success: false, error: 'Invalid worker move' };
+      return { success: false, error: "Invalid worker move" };
     }
 
     // Remove worker from old position
@@ -187,7 +189,7 @@ export class Board {
     // Place worker at new position
     this._cells[position.x][position.y].worker = {
       playerId,
-      workerId
+      workerId,
     };
 
     // Update worker tracking
@@ -204,28 +206,28 @@ export class Board {
       isWin,
       winner: isWin ? playerId : undefined,
       lastMovedWorkerId: workerId,
-      lastMovedWorkerPosition: position
+      lastMovedWorkerPosition: position,
     };
   }
 
   private applyBuild(move: BuildMove): MoveResult {
     const { position, buildingType } = move;
-    
+
     if (this.isPositionOccupied(position.x, position.y)) {
-      return { success: false, error: 'Cannot build on occupied position' };
+      return { success: false, error: "Cannot build on occupied position" };
     }
 
     const cell = this._cells[position.x][position.y];
-    
+
     if (cell.hasDome) {
-      return { success: false, error: 'Cannot build on dome' };
+      return { success: false, error: "Cannot build on dome" };
     }
 
-    if (buildingType === 'dome') {
+    if (buildingType === "dome") {
       cell.hasDome = true;
     } else {
       if (cell.height >= 3) {
-        return { success: false, error: 'Cannot build above level 3' };
+        return { success: false, error: "Cannot build above level 3" };
       }
       cell.height++;
     }

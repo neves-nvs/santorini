@@ -1,17 +1,13 @@
 import * as path from "path";
 
 import { Client, ClientConfig, Pool } from "pg";
-import {
-  FileMigrationProvider,
-  Kysely,
-  Migrator,
-  PostgresDialect,
-} from "kysely";
+import { FileMigrationProvider, Migrator } from "kysely/migration";
+import { Kysely, PostgresDialect } from "kysely";
 
-import { ConnectionInfo } from "./globalSetup";
+import { ConnectionInfo } from "./globalSetup.ts";
+import { fileURLToPath } from "url";
 import { promises as fs } from "fs";
 import { randomUUID } from "crypto";
-
 
 async function loadContainerInfoFromEnv(): Promise<ConnectionInfo> {
   return {
@@ -26,7 +22,7 @@ async function loadContainerInfoFromEnv(): Promise<ConnectionInfo> {
 // Set unique port for each Jest worker BEFORE any imports that might start the server
 // Use random port assignment since JEST_WORKER_ID seems to be always 1
 const randomPort = Math.floor(Math.random() * 1000) + 4000; // Random port between 4000-4999
-const workerId = process.env.JEST_WORKER_ID || '1';
+const workerId = process.env.JEST_WORKER_ID || "1";
 console.log(`Setting PORT to ${randomPort} for worker ${workerId}`);
 process.env.PORT = randomPort.toString();
 
@@ -91,7 +87,7 @@ async function setup() {
     provider: new FileMigrationProvider({
       fs,
       path,
-      migrationFolder: path.resolve(__dirname, "../../migrations"),
+      migrationFolder: fileURLToPath(new URL("../../migrations", import.meta.url)),
     }),
   });
 
@@ -110,6 +106,4 @@ async function setup() {
   }
 }
 
-module.exports = async () => {
-  await setup();
-};
+await setup();

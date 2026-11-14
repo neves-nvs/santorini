@@ -1,7 +1,8 @@
-module.exports = {
+import base from "./jest.base.js";
+
+export default {
+  ...base,
   displayName: "integration",
-  preset: "ts-jest",
-  testEnvironment: "node",
   testMatch: ["**/tests/integration/**/*.test.ts"],
   globalSetup: "<rootDir>/tests/integration/globalSetup.ts",
   globalTeardown: "<rootDir>/tests/integration/globalTeardown.ts",

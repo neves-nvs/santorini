@@ -10,6 +10,9 @@ workflows:
     '.github/workflows/dependency-review.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/dependency-review-action@v5.0.0'
+    '.github/workflows/lint.yml':
+        - 'actions/checkout@v7.0.1'
+        - 'actions/setup-node@v7.1.0'
     '.github/workflows/secrets.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/verify-lockfile.yml':

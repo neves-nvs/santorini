@@ -1,11 +1,11 @@
-import { GameViewBuilder, toSharedMove } from '../domain/GameViewBuilder';
+import { GameViewBuilder, toSharedMove } from "../domain/GameViewBuilder.ts";
 
-import { Game } from '../domain/Game';
-import { GameEvent } from '../domain/GameEvent';
-import { Move } from '../domain/Move';
-import { WS_MESSAGE_TYPES } from '../../../../shared/src/websocket-types';
-import { WebSocketConnectionManager } from '../infra/WebSocketConnectionManager';
-import logger from '../../logger';
+import { Game } from "../domain/Game.ts";
+import { GameEvent } from "../domain/GameEvent.ts";
+import { Move } from "../domain/Move.ts";
+import { WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
+import { WebSocketConnectionManager } from "../infra/WebSocketConnectionManager.ts";
+import logger from "../../logger.ts";
 
 /**
  * Application service responsible for broadcasting game updates to players
@@ -14,7 +14,7 @@ import logger from '../../logger';
 export class GameBroadcaster {
   constructor(
     private gameViewBuilder: GameViewBuilder = new GameViewBuilder(),
-    private wsConnectionManager: WebSocketConnectionManager = new WebSocketConnectionManager()
+    private wsConnectionManager: WebSocketConnectionManager = new WebSocketConnectionManager(),
   ) {}
 
   /**
@@ -26,7 +26,7 @@ export class GameBroadcaster {
     logger.info(`Broadcasting game update for game ${game.id} to all players`);
 
     // Get available moves for the current player (if game is in progress)
-    const availableMoves = game.status === 'in-progress' ? game.getAvailableMoves() : [];
+    const availableMoves = game.status === "in-progress" ? game.getAvailableMoves() : [];
 
     // Send personalized game state to each player in the game
     for (const player of game.players.values()) {
@@ -41,11 +41,13 @@ export class GameBroadcaster {
           payload: {
             gameId: game.id,
             version: game.version,
-            state: view
-          }
+            state: view,
+          },
         });
 
-        logger.debug(`Sent game state to player ${player.userId} for game ${game.id}, isCurrentPlayer: ${isCurrentPlayer}`);
+        logger.debug(
+          `Sent game state to player ${player.userId} for game ${game.id}, isCurrentPlayer: ${isCurrentPlayer}`,
+        );
       } catch (error) {
         logger.error(`Failed to send game state to player ${player.userId}:`, error);
       }
@@ -53,7 +55,7 @@ export class GameBroadcaster {
 
     // Log the events that triggered this broadcast
     if (events.length > 0) {
-      logger.info(`Broadcast triggered by events: ${events.map(e => e.type).join(', ')}`);
+      logger.info(`Broadcast triggered by events: ${events.map((e) => e.type).join(", ")}`);
     }
   }
 
@@ -74,7 +76,9 @@ export class GameBroadcaster {
     }
     const currentUserId = currentPlayer.userId;
 
-    logger.info(`Broadcasting available moves to current player ${game.currentPlayerId} (userId: ${currentUserId}) in game ${game.id}`);
+    logger.info(
+      `Broadcasting available moves to current player ${game.currentPlayerId} (userId: ${currentUserId}) in game ${game.id}`,
+    );
 
     try {
       const view = this.gameViewBuilder.buildForPlayer(game, currentUserId, availableMoves);
@@ -84,8 +88,8 @@ export class GameBroadcaster {
         payload: {
           gameId: game.id,
           version: game.version,
-          state: view
-        }
+          state: view,
+        },
       });
 
       logger.debug(`Sent ${availableMoves.length} available moves to player ${game.currentPlayerId}`);
@@ -111,8 +115,8 @@ export class GameBroadcaster {
         payload: {
           gameId: game.id,
           activePlayerId: game.currentPlayerId,
-          availableMoves: isActivePlayer ? sharedMoves : undefined
-        }
+          availableMoves: isActivePlayer ? sharedMoves : undefined,
+        },
       });
     }
   }
@@ -131,8 +135,8 @@ export class GameBroadcaster {
         status: game.status,
         winnerId: game.winnerId,
         winReason: game.winReason,
-        finishedAt: game.finishedAt
-      }
+        finishedAt: game.finishedAt,
+      },
     });
   }
 }

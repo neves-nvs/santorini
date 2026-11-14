@@ -1,10 +1,12 @@
 import { ExtractJwt, Strategy as JwtStrategy, VerifiedCallback } from "passport-jwt";
-import { JsonWebTokenError, JwtPayload, NotBeforeError, TokenExpiredError } from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 
-import { JWT_SECRET } from "../configs/config";
+const { JsonWebTokenError, NotBeforeError, TokenExpiredError } = jwt;
+
+import { JWT_SECRET } from "../configs/config.ts";
 import express from "express";
-import { findUserByUsername } from "../users/userRepository";
-import logger from "../logger";
+import { findUserByUsername } from "../users/userRepository.ts";
+import logger from "../logger.ts";
 import passport from "passport";
 
 function extractJwtFromCookies(req: express.Request): string | null {
