@@ -4,6 +4,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    reporters: ["tree"],
+    silent: "passed-only",
     projects: [
       {
         extends: true,

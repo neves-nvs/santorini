@@ -54,5 +54,5 @@ jobs:
         working-directory: packages/server
 
       - name: Run integration tests
-        run: npm run test:integration -- --reporter=verbose
+        run: npm run test:integration
         working-directory: packages/server
