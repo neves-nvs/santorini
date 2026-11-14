@@ -103,6 +103,15 @@ expect_status 200 "GET /auth falls back to the client" "$base/auth"
 expect_status 200 "GET /api/healthz" "$base/api/healthz"
 expect_status 200 "GET /api/readyz" "$base/api/readyz"
 expect_status 401 "GET /api/games without a session" "$base/api/games"
+
+error_body="$(curl -s -X POST "$base/api/session" -H "$json" -d '{')"
+case "$error_body" in
+  *'"stack":null'*) echo "ok   error responses carry no stack trace" ;;
+  *)
+    echo "FAIL error responses carry a stack trace: $error_body" >&2
+    exit 1
+    ;;
+esac
 expect_status 201 "register through /api" -X POST "$base/api/users" -H "$json" -d "$credentials"
 expect_status 200 "login through /api" -c "$cookies" -X POST "$base/api/session" -H "$json" -d "$credentials"
 expect_status 200 "GET /api/me with the session" -b "$cookies" "$base/api/me"
