@@ -15,7 +15,7 @@ export type BoardState = CellData[][]
 export interface GameState {
   currentPlayer?: number
   turn?: number
-  board_state?: any // TODO: Define proper board state structure
+  board_state?: unknown // TODO: Define proper board state structure
   game_status?: string
   // Add other game state properties as needed
 }

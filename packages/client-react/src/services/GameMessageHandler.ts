@@ -14,7 +14,7 @@
  */
 
 import { useGameStore } from '../store/gameStore'
-import { useAppStore } from '../store/AppContext'
+import { useAppStore } from '../store/appStore'
 import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '../types/game'
 import { WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types'
 import { log, logError, logWarn } from '../utils/log'

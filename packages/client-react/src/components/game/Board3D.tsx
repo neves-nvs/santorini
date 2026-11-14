@@ -10,6 +10,19 @@ import {
 import { useGameStore } from '../../store/gameStore'
 import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '../../constants/gameConstants'
 import { useRenderTracker } from '../../utils/performanceMonitor'
+import type { AvailableMove, BuildPosition, Move } from '../../types/game'
+
+interface MoveSubmission {
+  gameId: number
+  moveIndex: number
+  move: {
+    type: AvailableMove['type']
+    workerId: number
+    position: { x: number; y: number }
+    fromPosition?: { x: number; y: number }
+  }
+  serverMoveObject?: Move
+}
 
 interface DebugState {
   showAxis: boolean
@@ -147,12 +160,12 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     console.log('Selected worker:', currentSelectedWorker)
 
     // Simple validation: find if clicked position matches any available move
-    let validMove: any = null
+    let validMove: (AvailableMove & { selectedPosition: BuildPosition }) | null = null
     let moveIndex = -1
 
     if (Array.isArray(moves)) {
       for (let i = 0; i < moves.length; i++) {
-        const move: any = moves[i]
+        const move = moves[i]
 
         // For move_worker and build moves, require worker selection first
         if (move.type === 'move_worker' || move.type === 'build_block' || move.type === 'build_dome') {
@@ -162,7 +175,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
         }
 
         if (move.validPositions && Array.isArray(move.validPositions)) {
-          const matchingPosition: any = move.validPositions.find((pos: any) =>
+          const matchingPosition: BuildPosition | undefined = move.validPositions.find((pos) =>
             pos.x === gridX && pos.y === gridZ
           )
           if (matchingPosition) {
@@ -178,7 +191,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
       console.log('Valid move found:', validMove)
 
       // Simple, direct submission to server
-      const moveData: any = {
+      const moveData: MoveSubmission = {
         gameId: parseInt(gameId, 10), // Convert string to number for backend
         moveIndex: moveIndex, // Server can validate this was actually sent
         move: {

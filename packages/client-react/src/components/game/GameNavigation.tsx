@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Link } from 'react-router-dom'
-import { useApp } from '../../store/AppContext'
+import { useApp } from '../../store/appStore'
 import { useIsConnected, useGameId } from '../../store/gameSelectors'
 
 interface GameNavigationProps {

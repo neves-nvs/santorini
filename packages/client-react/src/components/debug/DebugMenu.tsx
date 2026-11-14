@@ -1,5 +1,6 @@
 import { useState, memo } from 'react'
 import type { CameraType } from '../game/GameBoard'
+import type { AvailableMove, GameState } from '../../types/game'
 
 // Debug state interface
 export interface DebugState {
@@ -17,7 +18,13 @@ interface DebugMenuProps {
   onDebugChange: (key: keyof DebugState, value: boolean) => void
   cameraType: CameraType
   onToggleCamera: () => void
-  gameContext: any
+  gameContext: {
+    state: {
+      gameState: GameState | null
+      isMyTurn: boolean
+      currentPlayerMoves: AvailableMove[]
+    }
+  }
   isConnected: boolean
 }
 
@@ -113,14 +120,14 @@ const DebugMenu = memo(({ debugState, onDebugChange, cameraType, onToggleCamera,
           borderRadius: '4px',
           fontSize: '10px'
         }}>
-          <div><strong>Game Phase:</strong> {gameContext.state.gameState?.game_phase || 'N/A'}</div>
+          <div><strong>Game Phase:</strong> {gameContext.state.gameState?.phase || 'N/A'}</div>
           <div><strong>Current Player:</strong> {gameContext.state.gameState?.currentPlayer || 'N/A'}</div>
           <div><strong>My Turn:</strong> <strong style={{ color: gameContext.state.isMyTurn ? 'lightgreen' : 'orange' }}>
             {gameContext.state.isMyTurn ? 'YES' : 'NO'}
           </strong></div>
           <div><strong>Available Moves:</strong> {gameContext.state.currentPlayerMoves.length}</div>
           <div><strong>Board:</strong> {gameContext.state.gameState?.board ? 'Present' : 'Missing'}</div>
-          <div><strong>Players Ready:</strong> {gameContext.state.gameState?.playersReadyStatus?.filter((p: any) => p.isReady).length || 0}/{gameContext.state.gameState?.playersReadyStatus?.length || 0}</div>
+          <div><strong>Players Ready:</strong> {gameContext.state.gameState?.playersReadyStatus?.filter((p) => p.isReady).length || 0}/{gameContext.state.gameState?.playersReadyStatus?.length || 0}</div>
         </div>
       </div>
 
