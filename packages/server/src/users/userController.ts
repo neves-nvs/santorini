@@ -1,16 +1,27 @@
+import { NextFunction, Request, Response, Router } from "express";
 import { body, param } from "express-validator";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository.ts";
 
 import { NewUser } from "../model.ts";
-import { Router } from "express";
 import { StatusCodes } from "http-status-codes";
 import { UserDTO } from "./userDTO.ts";
+import { authRateLimitMiddleware } from "../middlewares/authRateLimitMiddleware.ts";
 import { authenticate } from "../auth/authController.ts";
 import bcrypt from "bcryptjs";
 import { checkValidation } from "../middlewares/middleware.ts";
+import { config } from "../configs/config.ts";
 import logger from "../logger.ts";
 
 export const router = Router();
+
+const MIN_PASSWORD_LENGTH = 8;
+
+const requireRegistrationEnabled = (_req: Request, res: Response, next: NextFunction) => {
+  if (!config.registrationEnabled) {
+    return res.status(StatusCodes.FORBIDDEN).json({ message: "Registration is disabled" });
+  }
+  next();
+};
 
 router.get("/", authenticate, async (req, res) => {
   try {
@@ -24,8 +35,14 @@ router.get("/", authenticate, async (req, res) => {
 
 router.post(
   "/",
+  authRateLimitMiddleware,
+  requireRegistrationEnabled,
   body("username").isString().notEmpty().withMessage("Username is required"),
-  body("password").isString().notEmpty().withMessage("Password is required"),
+  body("password")
+    .isString()
+    .withMessage("Password is required")
+    .isLength({ min: MIN_PASSWORD_LENGTH })
+    .withMessage(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`),
   checkValidation,
   async (req, res) => {
     const { username, password } = req.body;

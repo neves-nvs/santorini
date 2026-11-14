@@ -11,6 +11,8 @@ describe("loadConfig", () => {
       jwtSecret: "secret",
       allowedOrigins: ["http://localhost:5174"],
       trustProxy: "loopback, linklocal, uniquelocal",
+      registrationEnabled: true,
+      authRateLimit: 20,
       google: { clientId: undefined, clientSecret: undefined },
       db: { host: "localhost", port: 5432, user: "postgres", database: "postgres", password: undefined },
       logging: { level: "http", httpFormat: "dev", force: false },
@@ -46,6 +48,16 @@ describe("loadConfig", () => {
     expect(loadConfig({ JWT_SECRET: "secret", TRUST_PROXY: "10.0.0.0/8" }, devSecretFile).trustProxy).toBe(
       "10.0.0.0/8",
     );
+  });
+
+  it("reads the registration flag and the login and registration limit", () => {
+    const config = loadConfig(
+      { JWT_SECRET: "secret", REGISTRATION_ENABLED: "false", AUTH_RATE_LIMIT: "5" },
+      devSecretFile,
+    );
+
+    expect(config.registrationEnabled).toBe(false);
+    expect(config.authRateLimit).toBe(5);
   });
 
   it("fails without a JWT secret outside development", () => {

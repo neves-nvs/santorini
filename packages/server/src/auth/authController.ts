@@ -2,6 +2,7 @@ import { CookieOptions, NextFunction, Request, Response, Router } from "express"
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import { User } from "../model.ts";
+import { authRateLimitMiddleware } from "../middlewares/authRateLimitMiddleware.ts";
 import bcrypt from "bcryptjs";
 import { body } from "express-validator";
 import { checkValidation } from "../middlewares/middleware.ts";
@@ -67,6 +68,7 @@ const router = Router();
 
 router.post(
   "/session",
+  authRateLimitMiddleware,
   body("username").isString().notEmpty().withMessage("Username is required"),
   body("password").isString().notEmpty().withMessage("Password is required"),
   checkValidation,

@@ -15,6 +15,7 @@ async function exportPostgresInfoToEnv(containerInfo: ConnectionInfo) {
   process.env.DB_NAME = database;
   process.env.DB_USER = user;
   process.env.DB_PASSWORD = password;
+  process.env.AUTH_RATE_LIMIT = "1000";
 }
 
 export default async function globalSetup() {
