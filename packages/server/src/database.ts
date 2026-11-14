@@ -1,29 +1,24 @@
 import { Kysely, PostgresDialect } from "kysely";
 import { Pool, PoolConfig } from "pg";
-
-import { DB_PORT } from "./configs/config.ts";
 import { Database } from "./model.ts";
+import { config } from "./configs/config.ts";
 import logger from "./logger.ts";
 
-const database = process.env.DB_DATABASE;
-const host = process.env.DB_HOST;
-const user = process.env.DB_USER;
-const password = process.env.DB_PASSWORD;
-const PORT = DB_PORT ?? 5432;
+const { database, host, user, password, port } = config.db;
 
 const POOL_CONFIG: PoolConfig = {
   database,
   host,
   user,
   password,
-  port: PORT,
+  port,
   // Connection pool settings for concurrent WebSocket operations
   max: 20, // Maximum number of connections in pool
   min: 2, // Minimum number of connections to maintain
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
   connectionTimeoutMillis: 5000, // Timeout when acquiring connection
 };
-logger.info("Database pool", { host, port: PORT, database, user });
+logger.info("Database pool", { host, port, database, user });
 
 const pool = new Pool(POOL_CONFIG);
 

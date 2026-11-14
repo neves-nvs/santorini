@@ -5,12 +5,12 @@
 
 import * as helpers from "../helper/helpers.ts";
 import { server, wss } from "../../../src/main.ts";
-import { PORT } from "../../../src/configs/config.ts";
 import { PlayerGameView } from "../../../../shared/src/game-types.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
 import { WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
+import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
 
 // TODO: move to packages/shared; its ServerMessage lacks game_joined and player_joined, and its GameStateUpdateMessage payload differs from what WsRouter sends
@@ -32,7 +32,7 @@ interface TestPlayer {
 
 async function createPlayerConnection(token: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
-    const ws = new WebSocket(`ws://localhost:${PORT}`, {
+    const ws = new WebSocket(`ws://localhost:${config.port}`, {
       headers: { Authorization: `Bearer ${token}` },
       perMessageDeflate: false,
     });

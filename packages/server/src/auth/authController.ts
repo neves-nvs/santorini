@@ -1,13 +1,11 @@
 import { NextFunction, Request, Response, Router } from "express";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
-
-import { JWT_SECRET } from "../configs/config.ts";
 import { StatusCodes } from "http-status-codes";
 import { User } from "../model.ts";
-
 import bcrypt from "bcryptjs";
 import { body } from "express-validator";
 import { checkValidation } from "../middlewares/middleware.ts";
+import { config } from "../configs/config.ts";
 import { findUserByUsername } from "../users/userRepository.ts";
 import logger from "../logger.ts";
 import passport from "passport";
@@ -85,12 +83,12 @@ router.post(
         return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid password" });
       }
 
-      if (!JWT_SECRET) {
+      if (!config.jwtSecret) {
         logger.error("JWT secret not set");
         return res.status(500).send("JWT secret not set");
       }
 
-      const token = jwt.sign({ username: user.username }, JWT_SECRET, {
+      const token = jwt.sign({ username: user.username }, config.jwtSecret, {
         expiresIn: "5h",
       });
 
@@ -130,12 +128,12 @@ router.get(
 router.get("/auth/google/callback", passport.authenticate("google", { session: false }), (req, res) => {
   const user = req.user as User;
 
-  if (!JWT_SECRET) {
+  if (!config.jwtSecret) {
     logger.error("JWT secret not set");
     return res.status(500).send("JWT secret not set");
   }
 
-  const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "5h" });
+  const token = jwt.sign({ sub: user.id }, config.jwtSecret, { expiresIn: "5h" });
 
   res.cookie("token", token, {
     httpOnly: true,
@@ -148,7 +146,7 @@ router.get("/auth/google/callback", passport.authenticate("google", { session: f
 router.get("/token", authenticate, async (req, res) => {
   try {
     const user = req.user as User;
-    const token = jwt.sign({ username: user.username }, JWT_SECRET, {
+    const token = jwt.sign({ username: user.username }, config.jwtSecret, {
       expiresIn: "5h",
     });
     res.status(200).json({ token });

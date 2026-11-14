@@ -3,7 +3,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 const { JsonWebTokenError, NotBeforeError, TokenExpiredError } = jwt;
 
-import { JWT_SECRET } from "../configs/config.ts";
+import { config } from "../configs/config.ts";
 import express from "express";
 import { findUserByUsername } from "../users/userRepository.ts";
 import logger from "../logger.ts";
@@ -19,7 +19,7 @@ passport.use(
   new JwtStrategy(
     {
       jwtFromRequest: ExtractJwt.fromExtractors([extractJwtFromCookies]),
-      secretOrKey: JWT_SECRET,
+      secretOrKey: config.jwtSecret,
     },
     async (jwtPayload: JwtPayload, done: VerifiedCallback) => {
       try {
