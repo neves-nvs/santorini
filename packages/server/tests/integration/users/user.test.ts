@@ -1,4 +1,5 @@
 import { app } from "../../../src/app.ts";
+import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
 import { findUserByUsername } from "../../../src/users/userRepository.ts";
 import request from "supertest";
@@ -45,6 +46,23 @@ describe("Users API Integration Tests", () => {
       expect(response.body.errors).toEqual(
         expect.arrayContaining([expect.objectContaining({ msg: "Username is required" })]),
       );
+    });
+
+    test("400 Bad Request for a password that is too short", async () => {
+      const response = await request(app).post("/users").send({ username: "johndoe", password: "short" }).expect(400);
+
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([expect.objectContaining({ msg: "Password must be at least 8 characters" })]),
+      );
+    });
+
+    test("403 Forbidden when registration is disabled", async () => {
+      config.registrationEnabled = false;
+      try {
+        await request(app).post("/users").send(userData).expect(403);
+      } finally {
+        config.registrationEnabled = true;
+      }
     });
 
     test("400 Bad Request for missing password", async () => {
