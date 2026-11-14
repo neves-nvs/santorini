@@ -1,4 +1,4 @@
-import { Kysely, PostgresDialect } from "kysely";
+import { Kysely, LogEvent, PostgresDialect } from "kysely";
 import { Pool, PoolConfig } from "pg";
 
 import { DB_PORT } from "./configs/config.ts";
@@ -48,9 +48,22 @@ export const dialect = new PostgresDialect({
   pool,
 });
 
+// The parameters are never logged: they carry passwords and password hashes.
+function logQuery(event: LogEvent) {
+  const { sql } = event.query;
+  const durationMs = event.queryDurationMillis;
+
+  if (event.level === "error") {
+    const error = event.error as { message?: string; code?: string };
+    logger.error("Database query failed", { sql, durationMs, error: error?.message, code: error?.code });
+  } else {
+    logger.debug("Database query", { sql, durationMs });
+  }
+}
+
 export const db = new Kysely<Database>({
   dialect,
-  // log: ["query", "error"],
+  log: logQuery,
 });
 
 // Graceful shutdown handler (only in production, not during tests)
