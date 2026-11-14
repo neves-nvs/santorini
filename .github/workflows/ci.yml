@@ -49,10 +49,15 @@ jobs:
         run: echo "JWT_SECRET=secret" >> .env
         working-directory: packages/server
 
-      - name: Run unit tests
-        run: npm run test:unit
+      - name: Run tests with coverage
+        run: npm run test:coverage
         working-directory: packages/server
 
-      - name: Run integration tests
-        run: npm run test:integration
+      - name: Summarise coverage
+        run: |
+          node -e '
+            const { total } = JSON.parse(require("fs").readFileSync("coverage/coverage-summary.json", "utf8"));
+            const rows = ["lines", "statements", "functions", "branches"].map((metric) => `| ${metric} | ${total[metric].pct}% | ${total[metric].covered} / ${total[metric].total} |`);
+            console.log(["## Server test coverage", "", "| Metric | Coverage | Covered / total |", "| --- | --- | --- |", ...rows].join("\n"));
+          ' >> "$GITHUB_STEP_SUMMARY"
         working-directory: packages/server

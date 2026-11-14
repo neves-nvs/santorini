@@ -12,6 +12,7 @@
     "lint": "eslint --fix",
     "migrate": "tsx src/runMigrations.ts",
     "migrate:prod": "node dist/server/src/runMigrations.js",
+    "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "typecheck": "tsc -p tests/tsconfig.json"
@@ -54,6 +55,7 @@
     "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
     "@types/ws": "^8.18.2",
+    "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^10.15.0",
     "globals": "^17.14.0",
     "kysely-ctl": "^0.22.0",

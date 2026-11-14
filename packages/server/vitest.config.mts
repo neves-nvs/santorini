@@ -6,6 +6,12 @@ export default defineConfig({
     environment: "node",
     reporters: ["tree"],
     silent: "passed-only",
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.ts"],
+      exclude: ["src/migrations/**", "src/runMigrations.ts"],
+      reporter: ["text-summary", "json-summary"],
+    },
     projects: [
       {
         extends: true,
