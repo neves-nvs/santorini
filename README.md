@@ -1,26 +1,14 @@
-# 🏛️ Santorini Online
+# Santorini Online
 
-> [!IMPORTANT]
-> After taking a **Graphical Computation** course and developing a growing interest in board games, I came across an online version of the game **Santorini**. However, I found that the website didn’t enforce the game’s rules—pieces were free to move anywhere on the board, which detracted from the strategy and experience. This frustration, combined with an inevitable childhood desire to develop games, sparked an idea: I decided it would be a fun and fulfilling challenge to create my own online version of **Santorini**, one that fully enforces the game rules and provides an enjoyable and seamless experience for players.
-
-## 🚀 About the Project
+## About the Project
 
 **Santorini Online** is a web-based version of the popular board game **Santorini**. This project brings the gameplay experience online, allowing users to compete against friends or AI, with full rule enforcement and game persistency. It’s designed to capture the strategy of the original board game while ensuring a seamless experience in the digital world.
 
 ![Santorini Online Demo](./assets/images/preview.gif)
 
-> [!NOTE]
-> Work in progress. The preview above shows an earlier version of the frontend. The current frontend (`packages/client-react`, React + Three.js) talks to the backend over HTTP and WebSockets.
 
-## 📅 Roadmap (MVP)
 
-- [x] User authentication and authorization
-- [x] Implement game persistency (PostgreSQL via Kysely)
-- [ ] Define and implement frontend graphical interface
-  - Translate game state changes to 3D graphics
-- [ ] Ensure full rule enforcement and game logic
-
-## 🛠️ Technologies Used
+## Technologies Used
 
 Here are the key technologies and libraries used in this project:
 
@@ -45,7 +33,7 @@ Here are the key technologies and libraries used in this project:
   </a>
 </p>
 
-## 🤝 Contributing
+## Contributing
 
 This is a personal portfolio project, and I'm the primary contributor. However, if you'd like to contribute, feel free to:
 
@@ -88,7 +76,7 @@ This project is licensed under the **AGPL-3.0 License**. See the [LICENSE](./LIC
 
 ## 📦 Running it locally
 
-You need [Node.js](https://nodejs.org/) 26 and [Docker](https://www.docker.com/) (for PostgreSQL). If you use [Nix](https://nixos.org/) with [direnv](https://direnv.net/), run `direnv allow` in `packages/server` and `packages/client-react` to get the right Node version automatically.
+You need [Docker](https://www.docker.com/) (for PostgreSQL) and either [Node.js](https://nodejs.org/) 26 or [Nix](https://nixos.org/). The scripts start the Nix shell from `packages/server` by themselves when `npm` is not on your `PATH`. With [direnv](https://direnv.net/), run `direnv allow` in the repo root or in a package: it loads Node 26 from the Nix flake and prints the commands for that folder, or tells you what to install if Nix with flakes is not available.
 
 ```bash
 git clone https://github.com/neves-nvs/santorini.git
@@ -100,7 +88,7 @@ scripts/dev       # starts PostgreSQL in Docker, runs migrations, then the serve
 - Server: <http://localhost:3000>
 - Client: <http://localhost:5174>
 
-`scripts/dev` uses local development defaults (see the scripts for the variables). The database container keeps running after you stop it; stop it with `scripts/db-down`.
+`scripts/dev` uses local development defaults (see the scripts for the variables). Running `npm run dev` yourself in `packages/server` and `packages/client-react` works without any setup too: the server listens on port 3000 and the client talks to `localhost:3000` in development. The database container keeps running after you stop it; stop it with `scripts/db-down`.
 
 ## Acknowledgements
 

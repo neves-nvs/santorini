@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Builds the server and frontend images in parallel from docker-bake.hcl, with
+# buildx adding the revision and source labels from the git checkout.
+# Pass target names (server, client) to build only those.
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$root"
+
+BUILDX_GIT_LABELS=1 docker buildx bake "$@"

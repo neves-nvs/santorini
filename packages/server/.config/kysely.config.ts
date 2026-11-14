@@ -1,9 +1,4 @@
-import {
-  DummyDriver,
-  PostgresAdapter,
-  PostgresIntrospector,
-  PostgresQueryCompiler,
-} from "kysely";
+import { DummyDriver, PostgresAdapter, PostgresIntrospector, PostgresQueryCompiler } from "kysely";
 import { defineConfig } from "kysely-ctl";
 
 export default defineConfig({
@@ -23,7 +18,7 @@ export default defineConfig({
     },
   },
   migrations: {
-    migrationFolder: "migrations",
+    migrationFolder: "src/migrations",
   },
   //   plugins: [],
   //   seeds: {

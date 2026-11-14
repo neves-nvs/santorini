@@ -18,5 +18,5 @@
 
 ## Testing
 
-- Jest
+- Vitest
 - Supertest

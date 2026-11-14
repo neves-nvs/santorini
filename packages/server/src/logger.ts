@@ -1,4 +1,4 @@
-import { FORCE_LOGS, LOG_LEVEL } from "./configs/config";
+import { FORCE_LOGS, LOG_LEVEL } from "./configs/config.ts";
 import { createLogger, format, transports } from "winston";
 
 const { combine, timestamp, colorize, printf } = format;

@@ -9,11 +9,11 @@ const password = "correct-horse-battery-staple";
 const username = "log-check";
 
 describe("Logging Integration Tests", () => {
-  let app: typeof import("../../../src/app").app;
-  let db: typeof import("../../../src/database").db;
+  let app: typeof import("../../../src/app.ts").app;
+  let db: typeof import("../../../src/database.ts").db;
 
   beforeAll(async () => {
-    const { default: logger } = await import("../../../src/logger");
+    const { default: logger } = await import("../../../src/logger.ts");
     const sink = new Writable({
       write(chunk, _encoding, done) {
         logged.push(chunk.toString());
@@ -22,8 +22,8 @@ describe("Logging Integration Tests", () => {
     });
     logger.add(new transports.Stream({ stream: sink }));
 
-    ({ app } = await import("../../../src/app"));
-    ({ db } = await import("../../../src/database"));
+    ({ app } = await import("../../../src/app.ts"));
+    ({ db } = await import("../../../src/database.ts"));
   });
 
   afterAll(async () => {

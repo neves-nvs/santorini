@@ -1,12 +1,20 @@
+import { ALLOWED_ORIGINS, JWT_SECRET } from "../configs/config.ts";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-import { AuthenticatedWebSocket } from "../websockets/authenticatedWebsocket";
+import { AuthenticatedWebSocket } from "../websockets/authenticatedWebsocket.ts";
 import { IncomingMessage } from "http";
-import { ALLOWED_ORIGINS, JWT_SECRET } from "../configs/config";
-import WebSocket from "ws";
-import { findUserByUsername } from "../users/userRepository";
+import { WebSocketServer } from "ws";
+import { findUserByUsername } from "../users/userRepository.ts";
 import internal from "stream";
-import logger from "../logger";
+import logger from "../logger.ts";
+
+function requestScheme(request: IncomingMessage): string {
+  const forwarded = request.headers["x-forwarded-proto"];
+  if (typeof forwarded === "string") {
+    return forwarded.split(",")[0].trim();
+  }
+  return "encrypted" in request.socket ? "https" : "http";
+}
 
 function isAllowedOrigin(request: IncomingMessage): boolean {
   const origin = request.headers.origin;
@@ -17,13 +25,19 @@ function isAllowedOrigin(request: IncomingMessage): boolean {
     return true;
   }
   try {
-    return new URL(origin).host === request.headers.host;
+    const { protocol, host } = new URL(origin);
+    return host === request.headers.host && protocol === `${requestScheme(request)}:`;
   } catch {
     return false;
   }
 }
 
-export async function webSocketAuthUpgrade(request: IncomingMessage, socket: internal.Duplex, head: Buffer, wss: WebSocket.Server) {
+export async function webSocketAuthUpgrade(
+  request: IncomingMessage,
+  socket: internal.Duplex,
+  head: Buffer,
+  wss: WebSocketServer,
+) {
   const authHeader = request.headers["authorization"];
   let token: string | null = null;
 
@@ -43,7 +57,7 @@ export async function webSocketAuthUpgrade(request: IncomingMessage, socket: int
     // Try to get token from query parameters
     if (request.url) {
       const url = new URL(request.url, `http://${request.headers.host}`);
-      const queryToken = url.searchParams.get('token');
+      const queryToken = url.searchParams.get("token");
       if (queryToken) {
         token = queryToken;
       }
@@ -53,11 +67,14 @@ export async function webSocketAuthUpgrade(request: IncomingMessage, socket: int
     if (!token) {
       const cookieHeader = request.headers.cookie;
       if (cookieHeader) {
-        const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
-          const [key, value] = cookie.trim().split('=');
-          acc[key] = value;
-          return acc;
-        }, {} as Record<string, string>);
+        const cookies = cookieHeader.split(";").reduce(
+          (acc, cookie) => {
+            const [key, value] = cookie.trim().split("=");
+            acc[key] = value;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
 
         token = cookies.token;
       }

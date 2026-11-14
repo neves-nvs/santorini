@@ -1,0 +1,12 @@
+# Sourced by the .envrc files. Loads the flake in $1 when Nix with flakes is
+# available and prints $2; otherwise explains what to install instead.
+santorini_env() {
+  local flake_dir=$1 commands=$2
+
+  if has nix && { nix config show experimental-features 2>/dev/null || nix show-config 2>/dev/null; } | grep -qw flakes; then
+    use flake "$flake_dir"
+    log_status "$commands"
+  else
+    log_error "Nix with flakes was not found, so no tools were loaded. Install Node.js 26 and Docker, or Nix (https://nixos.org/download) with flakes enabled. Commands: $commands"
+  fi
+}

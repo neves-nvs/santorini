@@ -1,9 +1,9 @@
-import { NewUser, User } from "../../../src/model";
+import { NewUser, User } from "../../../src/model.ts";
 
-import { JWT_SECRET } from "../../../src/configs/config";
-import { app } from "../../../src/app";
+import { JWT_SECRET } from "../../../src/configs/config.ts";
+import { app } from "../../../src/app.ts";
 import bcrypt from "bcryptjs";
-import { db } from "../../../src/database";
+import { db } from "../../../src/database.ts";
 import jwt from "jsonwebtoken";
 import request from "supertest";
 // Removed server import - not needed for HTTP tests using supertest

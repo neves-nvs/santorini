@@ -1,12 +1,11 @@
-import * as helpers from "../helper/helpers";
+import * as helpers from "../helper/helpers.ts";
 
-import { server, wss } from "../../../src/main";
-import { PORT } from "../../../src/configs/config";
-import { UserDTO } from "../../../src/users/userDTO";
+import { server, wss } from "../../../src/main.ts";
+import { PORT } from "../../../src/configs/config.ts";
+import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
-import { cleanupTestData } from "../helper/testDb";
-import { db } from "../../../src/database";
-
+import { cleanupTestData } from "../helper/testDb.ts";
+import { db } from "../../../src/database.ts";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WsMessage = Record<string, any>;
@@ -28,7 +27,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
     gameId = await helpers.createTestGame(creator.token);
 
     // Clean up any existing connections
-    players.forEach(player => {
+    players.forEach((player) => {
       if (player.ws.readyState === WebSocket.OPEN) {
         player.ws.close();
       }
@@ -38,7 +37,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
   afterEach(async () => {
     // Clean up WebSocket connections
-    players.forEach(player => {
+    players.forEach((player) => {
       if (player.ws.readyState === WebSocket.OPEN) {
         player.ws.close();
       }
@@ -134,10 +133,12 @@ describe("WebSocket Multiplayer Game Tests", () => {
       const joinPromises = players.map(async (player) => {
         const messagePromise = waitForMessage(player.ws, "game_joined");
 
-        player.ws.send(JSON.stringify({
-          type: "join_game",
-          payload: { gameId }
-        }));
+        player.ws.send(
+          JSON.stringify({
+            type: "join_game",
+            payload: { gameId },
+          }),
+        );
 
         return messagePromise;
       });
@@ -147,7 +148,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
       // Verify both players joined successfully
       expect(responses).toHaveLength(2);
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.type).toBe("game_joined");
         expect(response.payload).toBeDefined();
         expect(response.payload.gameId).toBe(gameId);
@@ -161,19 +162,23 @@ describe("WebSocket Multiplayer Game Tests", () => {
       // Both players join the game
       for (const player of players) {
         const messagePromise = waitForMessage(player.ws, "game_joined");
-        player.ws.send(JSON.stringify({
-          type: "join_game",
-          payload: { gameId }
-        }));
+        player.ws.send(
+          JSON.stringify({
+            type: "join_game",
+            payload: { gameId },
+          }),
+        );
         await messagePromise;
       }
 
       // Player subscribes and receives game state
       const statePromise = waitForMessage(players[0].ws, "game_state_update");
-      players[0].ws.send(JSON.stringify({
-        type: "subscribe_game",
-        payload: { gameId }
-      }));
+      players[0].ws.send(
+        JSON.stringify({
+          type: "subscribe_game",
+          payload: { gameId },
+        }),
+      );
 
       const response = await statePromise;
       expect(response.type).toBe("game_state_update");
@@ -188,18 +193,22 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
       // First player joins
       let messagePromise = waitForMessage(players[0].ws, "game_joined");
-      players[0].ws.send(JSON.stringify({
-        type: "join_game",
-        payload: { gameId }
-      }));
+      players[0].ws.send(
+        JSON.stringify({
+          type: "join_game",
+          payload: { gameId },
+        }),
+      );
       await messagePromise;
 
       // Second player joins - game_joined includes gameState with players
       messagePromise = waitForMessage(players[1].ws, "game_joined");
-      players[1].ws.send(JSON.stringify({
-        type: "join_game",
-        payload: { gameId }
-      }));
+      players[1].ws.send(
+        JSON.stringify({
+          type: "join_game",
+          payload: { gameId },
+        }),
+      );
       const response = await messagePromise;
 
       // Verify game state in join response shows both players (by userId)
@@ -216,10 +225,12 @@ describe("WebSocket Multiplayer Game Tests", () => {
       // Both players join
       for (const player of players) {
         const messagePromise = waitForMessage(player.ws, "game_joined");
-        player.ws.send(JSON.stringify({
-          type: "join_game",
-          payload: { gameId }
-        }));
+        player.ws.send(
+          JSON.stringify({
+            type: "join_game",
+            payload: { gameId },
+          }),
+        );
         await messagePromise;
       }
 
@@ -227,14 +238,16 @@ describe("WebSocket Multiplayer Game Tests", () => {
       players[0].ws.close();
 
       // Wait a bit for cleanup
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Second player should still be able to receive messages
       const messagePromise = waitForMessage(players[1].ws, "game_state_update");
-      players[1].ws.send(JSON.stringify({
-        type: "subscribe_game",
-        payload: { gameId }
-      }));
+      players[1].ws.send(
+        JSON.stringify({
+          type: "subscribe_game",
+          payload: { gameId },
+        }),
+      );
 
       const response = await messagePromise;
       expect(response.type).toBe("game_state_update");
@@ -249,17 +262,21 @@ describe("WebSocket Multiplayer Game Tests", () => {
       // Both players join and subscribe
       for (const player of players) {
         let messagePromise = waitForMessage(player.ws, "game_joined");
-        player.ws.send(JSON.stringify({
-          type: "join_game",
-          payload: { gameId }
-        }));
+        player.ws.send(
+          JSON.stringify({
+            type: "join_game",
+            payload: { gameId },
+          }),
+        );
         await messagePromise;
 
         messagePromise = waitForMessage(player.ws, "game_state_update");
-        player.ws.send(JSON.stringify({
-          type: "subscribe_game",
-          payload: { gameId }
-        }));
+        player.ws.send(
+          JSON.stringify({
+            type: "subscribe_game",
+            payload: { gameId },
+          }),
+        );
         await messagePromise;
       }
 

@@ -3,15 +3,26 @@
  * Tests the real user flow: Player 1 creates game via HTTP, both players join via WebSocket
  */
 
-import WebSocket from 'ws';
-import * as helpers from '../helper/helpers';
-import { UserDTO } from '../../../src/users/userDTO';
-import { server, wss } from '../../../src/main';
-import { PORT } from '../../../src/configs/config';
-import { cleanupTestData } from '../helper/testDb';
-import { db } from '../../../src/database';
+import * as helpers from "../helper/helpers.ts";
+import { server, wss } from "../../../src/main.ts";
+import { PORT } from "../../../src/configs/config.ts";
+import { PlayerGameView } from "../../../../shared/src/game-types.ts";
+import { UserDTO } from "../../../src/users/userDTO.ts";
+import { WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
+import WebSocket from "ws";
+import { cleanupTestData } from "../helper/testDb.ts";
+import { db } from "../../../src/database.ts";
 
-type WsMessage = Record<string, any>;
+// TODO: move to packages/shared; its ServerMessage lacks game_joined and player_joined, and its GameStateUpdateMessage payload differs from what WsRouter sends
+type ServerPayloads = {
+  [WS_MESSAGE_TYPES.GAME_JOINED]: { gameId: number; gameState: PlayerGameView };
+  [WS_MESSAGE_TYPES.PLAYER_JOINED]: { gameId: number; userId: number; playerCount: number; maxPlayers: number };
+  [WS_MESSAGE_TYPES.GAME_STATE_UPDATE]: { gameId: number; version: number; state: PlayerGameView };
+};
+
+type ServerMessageType = keyof ServerPayloads;
+
+type WsMessage<K extends ServerMessageType> = { type: K; payload: ServerPayloads[K] };
 
 interface TestPlayer {
   user: UserDTO;
@@ -37,7 +48,11 @@ async function createPlayerConnection(token: string): Promise<WebSocket> {
   });
 }
 
-function waitForMessage(ws: WebSocket, messageType: string, timeout = 5000): Promise<WsMessage> {
+function waitForMessage<K extends ServerMessageType>(
+  ws: WebSocket,
+  messageType: K,
+  timeout = 5000,
+): Promise<WsMessage<K>> {
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       reject(new Error(`Timeout waiting for message type: ${messageType}`));
@@ -51,7 +66,7 @@ function waitForMessage(ws: WebSocket, messageType: string, timeout = 5000): Pro
           ws.off("message", onMessage);
           resolve(message);
         }
-      } catch (err) {
+      } catch {
         // Ignore parse errors
       }
     }
@@ -138,20 +153,20 @@ describe("Player Join Broadcast Integration Test", () => {
 
     // Set up listener for game_state_update with 2 players
     const ws1 = player1.ws;
-    const stateUpdatePromise = new Promise<WsMessage>((resolve, reject) => {
+    const stateUpdatePromise = new Promise<WsMessage<"game_state_update">>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
-        reject(new Error('Timeout waiting for game_state_update with 2 players'));
+        reject(new Error("Timeout waiting for game_state_update with 2 players"));
       }, 5000);
 
       function onMessage(data: WebSocket.RawData) {
         try {
           const message = JSON.parse(data.toString());
-          if (message.type === 'game_state_update' && message.payload?.state?.players?.length === 2) {
+          if (message.type === "game_state_update" && message.payload?.state?.players?.length === 2) {
             clearTimeout(timeoutId);
             ws1.off("message", onMessage);
             resolve(message);
           }
-        } catch (err) {
+        } catch {
           // Ignore parse errors
         }
       }
@@ -173,7 +188,7 @@ describe("Player Join Broadcast Integration Test", () => {
     expect(stateUpdate.type).toBe("game_state_update");
     expect(stateUpdate.payload.state.players).toHaveLength(2);
 
-    const playerIds = stateUpdate.payload.state.players.map((p: any) => p.userId);
+    const playerIds = stateUpdate.payload.state.players.map((p) => p.userId);
     expect(playerIds).toContain(player1.user.id);
     expect(playerIds).toContain(user2.id);
   }, 15000);
@@ -197,7 +212,7 @@ describe("Player Join Broadcast Integration Test", () => {
 
     // Player 2 should see both players in their join response
     expect(joinResponse2.payload.gameState.players).toHaveLength(2);
-    const playerIds = joinResponse2.payload.gameState.players.map((p: any) => p.userId);
+    const playerIds = joinResponse2.payload.gameState.players.map((p) => p.userId);
     expect(playerIds).toContain(player1.user.id);
     expect(playerIds).toContain(user2.id);
   }, 15000);
@@ -221,4 +236,3 @@ describe("Player Join Broadcast Integration Test", () => {
     expect(response2.payload.gameState.players).toHaveLength(1);
   }, 15000);
 });
-

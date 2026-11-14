@@ -1,9 +1,9 @@
-import { GameFullError, GameNotFoundError, PlayerAlreadyInGameError } from '../../errors/GameErrors';
+import { GameFullError, GameNotFoundError, PlayerAlreadyInGameError } from "../../errors/GameErrors.ts";
 
-import { Game } from '../domain/Game';
-import { GameRepositoryDb } from '../infra/GameRepositoryDb';
-import { Player } from '../domain/Player';
-import logger from '../../logger';
+import { Game } from "../domain/Game.ts";
+import { GameRepositoryDb } from "../infra/GameRepositoryDb.ts";
+import { Player } from "../domain/Player.ts";
+import logger from "../../logger.ts";
 
 /**
  * Application service for lobby operations
@@ -29,10 +29,10 @@ export class LobbyService {
    * Find available games to join
    */
   async findAvailableGames(): Promise<Game[]> {
-    logger.info('Finding available games');
-    
-    const games = await this.gameRepository.findByStatus('waiting');
-    
+    logger.info("Finding available games");
+
+    const games = await this.gameRepository.findByStatus("waiting");
+
     logger.info(`Found ${games.length} available games`);
     return games;
   }
@@ -41,7 +41,7 @@ export class LobbyService {
    * Get all games (for admin/debugging)
    */
   async getAllGames(): Promise<Game[]> {
-    logger.info('Getting all games');
+    logger.info("Getting all games");
     return this.gameRepository.findAll();
   }
 
