@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import { randomBytes } from "crypto";
 
 export function resolveJwtSecret(options: {
@@ -16,11 +16,34 @@ export function resolveJwtSecret(options: {
     throw new Error("JWT_SECRET is not set");
   }
 
-  if (existsSync(devSecretFile)) {
-    return readFileSync(devSecretFile, "utf8").trim();
+  const existingSecret = readIfExists(devSecretFile);
+  if (existingSecret !== undefined) {
+    return existingSecret;
   }
 
   const generatedSecret = randomBytes(32).toString("hex");
-  writeFileSync(devSecretFile, generatedSecret, { mode: 0o600 });
-  return generatedSecret;
+  try {
+    writeFileSync(devSecretFile, generatedSecret, { mode: 0o600, flag: "wx" });
+    return generatedSecret;
+  } catch (error) {
+    if (isErrnoException(error) && error.code === "EEXIST") {
+      return readFileSync(devSecretFile, "utf8").trim();
+    }
+    throw error;
+  }
+}
+
+function readIfExists(file: string): string | undefined {
+  try {
+    return readFileSync(file, "utf8").trim();
+  } catch (error) {
+    if (isErrnoException(error) && error.code === "ENOENT") {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && "code" in error;
 }
