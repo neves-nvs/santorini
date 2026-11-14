@@ -1,4 +1,5 @@
 import { useGameStore } from './gameStore'
+import type { BuildPosition } from '../types/game'
 
 // Optimized selectors for R3F components to prevent unnecessary re-renders
 
@@ -113,7 +114,7 @@ export const useValidPositions = (selectedWorkerId?: number) =>
       // For movement/building phase, only show positions for selected worker
       else if (!selectedWorkerId || move.workerId === selectedWorkerId) {
         for (const pos of move.validPositions) {
-          const posWithBuilding = pos as any
+          const posWithBuilding = pos as BuildPosition
           positions.push({
             x: pos.x,
             y: pos.y,

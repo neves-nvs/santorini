@@ -51,40 +51,9 @@
       "count": 2
     }
   },
-  "src/components/debug/DebugMenu.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 2
-    }
-  },
   "src/components/debug/PerformanceDashboard.tsx": {
     "react-refresh/only-export-components": {
       "count": 1
-    }
-  },
-  "src/components/game/Board3D.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
-    }
-  },
-  "src/components/game/board-types.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/services/ApiService.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 24
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/services/WebSocketService.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 6
-    },
-    "no-case-declarations": {
-      "count": 2
     }
   },
   "src/store/AppContext.tsx": {
@@ -95,21 +64,6 @@
   "src/store/ToastContext.tsx": {
     "react-refresh/only-export-components": {
       "count": 1
-    }
-  },
-  "src/store/gameSelectors.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/types/gameLifecycle.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    }
-  },
-  "src/utils/errorHandler.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 5
     }
   }
 }
