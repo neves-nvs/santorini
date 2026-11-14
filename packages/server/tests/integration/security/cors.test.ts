@@ -1,12 +1,7 @@
 import { app } from "../../../src/app.ts";
-import { db } from "../../../src/database.ts";
 import request from "supertest";
 
 describe("CORS Integration Tests", () => {
-  afterAll(async () => {
-    await db.destroy();
-  });
-
   test("allows credentialed requests from a configured origin", async () => {
     const response = await request(app).get("/me").set("Origin", "http://localhost:5174");
 
