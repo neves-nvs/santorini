@@ -13,7 +13,8 @@
     "migrate": "tsx runMigrations.ts",
     "migrate:prod": "node dist/server/runMigrations.js",
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --selectProjects unit",
-    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --selectProjects integration"
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest --selectProjects integration",
+    "docker-build": "docker build --build-context shared=../shared --label org.opencontainers.image.revision=$(git rev-parse HEAD) -t ${SANTORINI_SERVER_IMAGE:-santorini-server:check} ."
   },
   "keywords": [],
   "author": "",

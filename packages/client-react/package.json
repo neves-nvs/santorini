@@ -14,7 +14,8 @@
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "docker-build": "docker build --build-context shared=../shared --label org.opencontainers.image.revision=$(git rev-parse HEAD) -t ${SANTORINI_CLIENT_IMAGE:-santorini-client:check} ."
   },
   "keywords": [
     "santorini",

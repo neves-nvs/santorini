@@ -24,8 +24,7 @@ trap cleanup EXIT
 cleanup
 
 if [ -z "${SANTORINI_SKIP_BUILD:-}" ]; then
-  "$root/scripts/docker-build" server
-  "$root/scripts/docker-build" client
+  "$root/scripts/docker-build"
 fi
 
 docker network create "$name" >/dev/null
@@ -55,7 +54,7 @@ docker run -d --name "$name-app" --network "$name" "${env_args[@]}" "$server_ima
 docker run -d --name "$name-web" --network "$name" -p "$port:80" \
   -e BACKEND_URL="http://$name-app:3000" "$client_image" >/dev/null
 for _ in $(seq 1 30); do
-  if curl -s -o /dev/null "localhost:$port/api/games"; then
+  if [ "$(curl -s -o /dev/null -w '%{http_code}' "localhost:$port/api/games")" = 401 ]; then
     break
   fi
   sleep 1
