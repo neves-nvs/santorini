@@ -1,9 +1,17 @@
+variable "SERVER_REPOSITORY" {
+  default = "santorini-server"
+}
+
+variable "CLIENT_REPOSITORY" {
+  default = "santorini-client"
+}
+
 variable "SANTORINI_SERVER_IMAGE" {
-  default = "santorini-server:check"
+  default = "${SERVER_REPOSITORY}:check"
 }
 
 variable "SANTORINI_CLIENT_IMAGE" {
-  default = "santorini-client:check"
+  default = "${CLIENT_REPOSITORY}:check"
 }
 
 variable "REVISION" {
@@ -17,13 +25,13 @@ group "default" {
 target "server" {
   context  = "packages/server"
   contexts = { shared = "packages/shared" }
-  tags     = [SANTORINI_SERVER_IMAGE]
+  tags     = [SANTORINI_SERVER_IMAGE, "${SERVER_REPOSITORY}:${REVISION}"]
   labels   = { "org.opencontainers.image.revision" = REVISION }
 }
 
 target "client" {
   context  = "packages/client-react"
   contexts = { shared = "packages/shared" }
-  tags     = [SANTORINI_CLIENT_IMAGE]
+  tags     = [SANTORINI_CLIENT_IMAGE, "${CLIENT_REPOSITORY}:${REVISION}"]
   labels   = { "org.opencontainers.image.revision" = REVISION }
 }
