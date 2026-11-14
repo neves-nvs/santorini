@@ -75,6 +75,12 @@ function waitForMessage<K extends ServerMessageType>(
   });
 }
 
+async function subscribe(ws: WebSocket, gameId: number): Promise<void> {
+  const subscribed = waitForMessage(ws, "game_state_update");
+  ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
+  await subscribed;
+}
+
 describe("Player Join Broadcast Integration Test", () => {
   let gameId: number;
   let player1: TestPlayer | null = null;
@@ -118,6 +124,7 @@ describe("Player Join Broadcast Integration Test", () => {
     const joinPromise1 = waitForMessage(player1.ws, "game_joined");
     player1.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     await joinPromise1;
+    await subscribe(player1.ws, gameId);
 
     // Set up listener for player_joined broadcast BEFORE Player 2 joins
     const playerJoinedPromise = waitForMessage(player1.ws, "player_joined");
@@ -146,6 +153,7 @@ describe("Player Join Broadcast Integration Test", () => {
     const joinPromise1 = waitForMessage(player1.ws, "game_joined");
     player1.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     const joinResponse1 = await joinPromise1;
+    await subscribe(player1.ws, gameId);
 
     // Verify Player 1 sees only themselves initially
     expect(joinResponse1.payload.gameState.players).toHaveLength(1);
