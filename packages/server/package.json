@@ -66,5 +66,13 @@
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.1.0"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "glob": {
+      "minimatch": "^11.0.8"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.8"
+    }
+  }
 }
