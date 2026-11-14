@@ -2,11 +2,12 @@ import { NewGame } from "../../../src/model.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
 import { app } from "../../../src/app.ts";
+import { randomBytes } from "crypto";
 import request from "supertest";
 
 export async function generateTestUser() {
-  const randomUsername = Math.random().toString(36).substring(7);
-  const randomPassword = Math.random().toString(36).substring(7);
+  const randomUsername = randomBytes(6).toString("hex");
+  const randomPassword = randomBytes(6).toString("hex");
   const userData = {
     username: randomUsername,
     password: randomPassword,
