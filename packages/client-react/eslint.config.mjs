@@ -10,6 +10,7 @@ export default [
   ...tseslint.configs.recommended,
   reactHooks.configs.flat.recommended,
   reactRefresh.configs.vite,
+  // TODO: remove these test overrides by typing the mocks and moving the helper's non-component exports out of r3f-test-utils.tsx
   {
     files: ["src/__tests__/**/*.ts", "src/__tests__/**/*.tsx"],
     rules: {
