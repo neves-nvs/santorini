@@ -5,7 +5,7 @@
  * Encapsulates board-level game logic and validation.
  */
 
-import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove, Position } from "./Move.ts";
+import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove, Position, isBoardCoordinate } from "./Move.ts";
 import { PlayerId } from "./Player.ts";
 
 export interface WorkerRef {
@@ -142,7 +142,7 @@ export class Board {
   }
 
   isValidPosition(x: number, y: number): boolean {
-    return x >= 0 && x < 5 && y >= 0 && y < 5;
+    return isBoardCoordinate(x) && isBoardCoordinate(y);
   }
 
   isPositionOccupied(x: number, y: number): boolean {
