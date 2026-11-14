@@ -1,16 +1,16 @@
 import { Request, Response } from "express";
 import logger, { toRedactedJson } from "../logger.ts";
 
-import { HTTP_LOG_FORMAT } from "../configs/config.ts";
+import { config } from "../configs/config.ts";
 import morgan from "morgan";
 
 if (process.env.HTTP_LOG_FORMAT) {
-  logger.info(`HTTP log format set to ${HTTP_LOG_FORMAT}`);
+  logger.info(`HTTP log format set to ${config.logging.httpFormat}`);
 } else {
-  logger.debug(`HTTP log format using default: ${HTTP_LOG_FORMAT}`);
+  logger.debug(`HTTP log format using default: ${config.logging.httpFormat}`);
 }
 
-export const morganMiddleware = morgan(HTTP_LOG_FORMAT, {
+export const morganMiddleware = morgan(config.logging.httpFormat, {
   stream: {
     write: (message) => logger.http(message.trim()),
   },

@@ -1,7 +1,6 @@
 import { server, wss } from "../../../src/main.ts";
-
-import { PORT } from "../../../src/configs/config.ts";
 import WebSocket from "ws";
+import { config } from "../../../src/configs/config.ts";
 import { createTestUserWithLogin } from "../helper/helpers.ts";
 import { db } from "../../../src/database.ts";
 
@@ -66,7 +65,7 @@ describe("WebSocket Authentication Integration Tests", () => {
 
   describe("WebSocket Origin", () => {
     function connectFrom(origin: string, extraHeaders: Record<string, string> = {}) {
-      return new WebSocket(`ws://localhost:${PORT}`, {
+      return new WebSocket(`ws://localhost:${config.port}`, {
         origin,
         headers: { Authorization: `Bearer ${jwtToken}`, ...extraHeaders },
         perMessageDeflate: false,
@@ -82,21 +81,21 @@ describe("WebSocket Authentication Integration Tests", () => {
     });
 
     test("authenticates connection from the same origin", async () => {
-      await expectConnectionAccepted(connectFrom(`http://localhost:${PORT}`));
+      await expectConnectionAccepted(connectFrom(`http://localhost:${config.port}`));
     });
 
     test("rejects connection from the same host with a different scheme", async () => {
-      await expectConnectionRejected(connectFrom(`https://localhost:${PORT}`));
+      await expectConnectionRejected(connectFrom(`https://localhost:${config.port}`));
     });
 
     test("authenticates connection from the same host when the proxy forwarded https", async () => {
-      await expectConnectionAccepted(connectFrom(`https://localhost:${PORT}`, { "X-Forwarded-Proto": "https" }));
+      await expectConnectionAccepted(connectFrom(`https://localhost:${config.port}`, { "X-Forwarded-Proto": "https" }));
     });
   });
 
   describe("WebSocket Authentication", () => {
     test("authenticates WebSocket connection with valid JWT", async () => {
-      const ws = new WebSocket(`ws://localhost:${PORT}`, {
+      const ws = new WebSocket(`ws://localhost:${config.port}`, {
         headers: {
           Authorization: `Bearer ${jwtToken}`,
         },
@@ -117,7 +116,7 @@ describe("WebSocket Authentication Integration Tests", () => {
     });
 
     test("rejects connection for invalid JWT", async () => {
-      const ws = new WebSocket(`ws://localhost:${PORT}`, {
+      const ws = new WebSocket(`ws://localhost:${config.port}`, {
         headers: {
           Authorization: `Bearer invalidToken`,
         },
@@ -127,7 +126,7 @@ describe("WebSocket Authentication Integration Tests", () => {
     });
 
     test("rejects connection when JWT token is missing", async () => {
-      const ws = new WebSocket(`ws://localhost:${PORT}`);
+      const ws = new WebSocket(`ws://localhost:${config.port}`);
 
       await expectConnectionRejected(ws);
     });

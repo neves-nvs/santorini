@@ -13,10 +13,10 @@
     "dist"
   ],
   "devDependencies": {
-    "typescript": "^5.2.2"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^6.0.3"
   },
   "type": "module"
 }

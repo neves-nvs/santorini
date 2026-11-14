@@ -6,7 +6,6 @@ if ! command -v npm >/dev/null 2>&1; then
   exec nix develop "$root/packages/server" --command "$0" "$@"
 fi
 export PORT="${PORT:-3000}"
-export JWT_SECRET="${JWT_SECRET:-santorini-dev-secret}"
 export DB_HOST="${DB_HOST:-127.0.0.1}"
 export DB_PORT="${DB_PORT:-5432}"
 export DB_USER="${DB_USER:-postgres}"

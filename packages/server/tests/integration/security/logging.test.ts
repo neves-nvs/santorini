@@ -1,5 +1,5 @@
-import { LOG_LEVEL } from "../../../src/configs/config.ts";
 import { Writable } from "stream";
+import { config } from "../../../src/configs/config.ts";
 import request from "supertest";
 import { transports } from "winston";
 
@@ -68,7 +68,7 @@ describe("Logging Integration Tests", () => {
       expect(output).not.toContain(token as string);
       expect(output).not.toMatch(/\$2[aby]\$/);
     } finally {
-      logger.level = LOG_LEVEL;
+      logger.level = config.logging.level;
     }
   });
 });

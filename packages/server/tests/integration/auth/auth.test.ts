@@ -1,11 +1,11 @@
 import { NewUser, User } from "../../../src/model.ts";
-
-import { JWT_SECRET } from "../../../src/configs/config.ts";
 import { app } from "../../../src/app.ts";
 import bcrypt from "bcryptjs";
+import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
 import jwt from "jsonwebtoken";
 import request from "supertest";
+
 // Removed server import - not needed for HTTP tests using supertest
 
 const password = "password";
@@ -45,7 +45,7 @@ describe("Auth Controller Integration Tests", () => {
       const tokenHeader = cookies.find((cookie) => cookie.startsWith("token=")) as string;
       const token = tokenHeader.split("=")[1];
 
-      const decodedToken = jwt.verify(token, JWT_SECRET);
+      const decodedToken = jwt.verify(token, config.jwtSecret);
 
       expect(decodedToken).toHaveProperty("username", userData.username);
     });
@@ -89,7 +89,7 @@ describe("Auth Controller Integration Tests", () => {
 
   describe("GET /test-auth", () => {
     test("200 OK with valid token authentication", async () => {
-      const validToken = jwt.sign({ username: userData.username }, JWT_SECRET, { expiresIn: "5h" });
+      const validToken = jwt.sign({ username: userData.username }, config.jwtSecret, { expiresIn: "5h" });
 
       const response = await request(app).get("/test-auth").set("Cookie", `token=${validToken}`).expect(200);
 
