@@ -29,6 +29,24 @@ function expectConnectionRejected(ws: WebSocket): Promise<void> {
   });
 }
 
+function expectConnectionAccepted(ws: WebSocket): Promise<void> {
+  return new Promise((resolve, reject) => {
+    ws.once("open", () => {
+      try {
+        expect(ws.readyState).toBe(WebSocket.OPEN);
+        ws.close();
+        resolve();
+      } catch (assertion) {
+        reject(assertion);
+      }
+    });
+
+    ws.once("error", (err) => {
+      reject(new Error(`WebSocket connection failed: ${err}`));
+    });
+  });
+}
+
 describe("WebSocket Authentication Integration Tests", () => {
   beforeEach(async () => {
     jwtToken = (await createTestUserWithLogin()).token;
@@ -44,6 +62,36 @@ describe("WebSocket Authentication Integration Tests", () => {
     wss.close();
     server.close();
     await db.destroy();
+  });
+
+  describe("WebSocket Origin", () => {
+    function connectFrom(origin: string, extraHeaders: Record<string, string> = {}) {
+      return new WebSocket(`ws://localhost:${PORT}`, {
+        origin,
+        headers: { Authorization: `Bearer ${jwtToken}`, ...extraHeaders },
+        perMessageDeflate: false,
+      });
+    }
+
+    test("rejects connection from an unknown origin", async () => {
+      await expectConnectionRejected(connectFrom("https://evil.example"));
+    });
+
+    test("authenticates connection from an allowed origin", async () => {
+      await expectConnectionAccepted(connectFrom("http://localhost:5174"));
+    });
+
+    test("authenticates connection from the same origin", async () => {
+      await expectConnectionAccepted(connectFrom(`http://localhost:${PORT}`));
+    });
+
+    test("rejects connection from the same host with a different scheme", async () => {
+      await expectConnectionRejected(connectFrom(`https://localhost:${PORT}`));
+    });
+
+    test("authenticates connection from the same host when the proxy forwarded https", async () => {
+      await expectConnectionAccepted(connectFrom(`https://localhost:${PORT}`, { "X-Forwarded-Proto": "https" }));
+    });
   });
 
   describe("WebSocket Authentication", () => {

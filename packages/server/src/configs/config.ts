@@ -13,6 +13,12 @@ if (!ENV_JWT_SECRET) {
 
 export const JWT_SECRET = ENV_JWT_SECRET;
 
+const DEFAULT_ALLOWED_ORIGINS = "http://localhost:5174";
+
+export const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS)
+  .split(",")
+  .map((origin) => origin.trim());
+
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
