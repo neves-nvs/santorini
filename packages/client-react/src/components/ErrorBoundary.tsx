@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
           backgroundColor: '#fff5f5',
           color: '#cc0000'
         }}>
-          <h2>🚨 Something went wrong</h2>
+          <h2>Something went wrong</h2>
           <p>An unexpected error occurred in the game interface.</p>
           <details style={{ marginTop: '10px' }}>
             <summary>Error Details</summary>

@@ -32,7 +32,7 @@ export function useReadyState() {
   const handleReadyToggle = useCallback(async () => {
     if (!gameId) return
 
-    console.log('🎯 Ready toggle clicked:', {
+    console.log('Ready toggle clicked:', {
       currentReadyState: isReady,
       newReadyState: !isReady,
       gameId: gameId,
@@ -43,14 +43,14 @@ export function useReadyState() {
     const newReadyState = !isReady
 
     try {
-      console.log('🎯 Sending ready status via WebSocket:', newReadyState)
+      console.log('Sending ready status via WebSocket:', newReadyState)
       webSocketClient.setReady(gameId, newReadyState)
 
       // Optimistically update local state
       setIsReady(newReadyState)
-      console.log('🎯 Local ready state updated to:', newReadyState)
+      console.log('Local ready state updated to:', newReadyState)
     } catch (error) {
-      console.error('🎯 Failed to send ready status:', error)
+      console.error('Failed to send ready status:', error)
     } finally {
       setIsSettingReady(false)
     }

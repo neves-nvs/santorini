@@ -285,51 +285,51 @@ npm run build        # Static files in dist/
 
 The system is considered **functionally complete** when:
 
-### ✅ User Management
+### User Management
 - [ ] User can register with username/password
 - [ ] User can login and receive JWT token
 - [ ] Authentication persists across page refreshes
 - [ ] User can logout
 
-### ✅ Game Creation & Joining
+### Game Creation & Joining
 - [ ] User can create a new game
 - [ ] User can see list of available games
 - [ ] User can join an existing game
 - [ ] Game shows all joined players in real-time
 
-### ✅ Real-Time Updates
+### Real-Time Updates
 - [ ] WebSocket connection established after login
 - [ ] Player joins are broadcast to all players in game
 - [ ] Player ready status updates in real-time
 - [ ] Game state changes broadcast to all players
 - [ ] Move updates appear for all players instantly
 
-### ✅ Game Start
+### Game Start
 - [ ] Players can set ready status
 - [ ] Game starts when all players ready
 - [ ] Game transitions to placing phase
 - [ ] Current player receives available moves
 
-### ✅ Worker Placement
+### Worker Placement
 - [ ] Current player can place workers on valid cells
 - [ ] Invalid placements are rejected
 - [ ] Turn switches after successful placement
 - [ ] All players see worker placements in real-time
 - [ ] Game transitions to playing phase after all workers placed
 
-### ✅ Gameplay
+### Gameplay
 - [ ] Current player can move worker to adjacent cell
 - [ ] Current player can build after moving
 - [ ] Invalid moves are rejected
 - [ ] Turn switches after successful move+build
 - [ ] All players see moves in real-time
 
-### ✅ Win Condition
+### Win Condition
 - [ ] Game detects when worker reaches level 3
 - [ ] Game ends and declares winner
 - [ ] All players notified of game end
 
-### ✅ Error Handling
+### Error Handling
 - [ ] Network errors show user-friendly messages
 - [ ] WebSocket reconnection on disconnect
 - [ ] Invalid moves show error feedback

@@ -47,9 +47,9 @@ class PerformanceMonitor {
 
     // Log slow operations
     if (duration > 16) { // More than one frame at 60fps
-      console.warn(`🐌 Slow operation detected: ${name} took ${duration.toFixed(2)}ms`, metric.metadata)
+      console.warn(`Slow operation detected: ${name} took ${duration.toFixed(2)}ms`, metric.metadata)
     } else if (duration > 5) {
-      console.log(`⚡ ${name} took ${duration.toFixed(2)}ms`, metric.metadata)
+      console.log(`${name} took ${duration.toFixed(2)}ms`, metric.metadata)
     }
 
     return duration
@@ -67,7 +67,7 @@ class PerformanceMonitor {
 
     // Log excessive re-renders
     if (newCount > 10 && newCount % 5 === 0) {
-      console.warn(`🔄 Component '${componentName}' has rendered ${newCount} times`, props)
+      console.warn(`Component '${componentName}' has rendered ${newCount} times`, props)
     }
   }
 
