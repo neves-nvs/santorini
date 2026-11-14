@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useGameState, useGameId } from '../store/gameSelectors'
 import { useApp } from '../store/AppContext'
 import { webSocketClient } from '../services/WebSocketClient'
@@ -12,22 +12,18 @@ export function useReadyState() {
   const gameId = useGameId()
   const { state: appState } = useApp()
   
-  const [isReady, setIsReady] = useState(false)
+  const serverReady = gameState?.currentUserReady
+  const [isReady, setIsReady] = useState(serverReady ?? false)
+  const [previousServerReady, setPreviousServerReady] = useState(serverReady)
   const [isSettingReady, setIsSettingReady] = useState(false)
 
-  // Sync ready state with server when game state updates
-  useEffect(() => {
-    if (gameState?.status === 'waiting' && gameState?.currentUserReady !== undefined) {
-      setIsReady(gameState.currentUserReady)
+  // Follow the server whenever its ready state changes
+  if (serverReady !== previousServerReady) {
+    setPreviousServerReady(serverReady)
+    if (serverReady !== undefined) {
+      setIsReady(serverReady)
     }
-  }, [gameState?.status, gameState?.currentUserReady])
-
-  // Initialize ready state when component mounts or game state first loads
-  useEffect(() => {
-    if (gameState?.currentUserReady !== undefined) {
-      setIsReady(gameState.currentUserReady)
-    }
-  }, [gameState?.currentUserReady])
+  }
 
   const handleReadyToggle = useCallback(async () => {
     if (!gameId) return

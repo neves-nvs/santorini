@@ -97,13 +97,6 @@ export function useGameSetup(gameId?: string): GameSetupResult {
     }
   }, [gameId, isConnected, isReady, initializeGame])
 
-  // Show connecting state while waiting for WebSocket
-  useEffect(() => {
-    if (isConnecting) {
-      setIsLoading(true)
-    }
-  }, [isConnecting])
-
   return {
     isLoading: isLoading || isConnecting,
     error: localError || appState.error,
