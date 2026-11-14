@@ -23,6 +23,8 @@ const CORS_CONFIG = {
 
 const app = express();
 
+app.set("trust proxy", config.trustProxy);
+
 app.get("/healthz", (_req, res) => {
   res.sendStatus(200);
 });
