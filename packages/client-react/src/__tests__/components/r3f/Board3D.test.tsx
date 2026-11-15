@@ -86,7 +86,6 @@ const withWorkers = (...workers: Array<{ x: number; y: number; playerId: number;
 }
 
 beforeEach(() => {
-  vi.spyOn(console, 'log').mockImplementation(() => {})
   sent().mockClear()
   seed({})
 })

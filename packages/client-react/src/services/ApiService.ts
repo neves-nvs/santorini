@@ -2,33 +2,28 @@ import { ErrorHandler, ErrorType } from '@/utils/errorHandler'
 import { logWarn } from '@/utils/log'
 import type { GameInfo, GameState } from '@/types/game'
 
-export interface LoginRequest {
+interface LoginRequest {
   username: string
   password: string
 }
 
-export interface CreateGameRequest {
+interface CreateGameRequest {
   maxPlayers: number
 }
 
-export interface JoinGameRequest {
-  username: string
-  gameID: string
-}
-
-export interface CreateUserRequest {
+interface CreateUserRequest {
   username: string
   password: string
 }
 
-export interface UserSummary {
+interface UserSummary {
   id: number
   username: string
   displayName: string
   createdAt: string
 }
 
-export class ApiService {
+class ApiService {
   private baseUrl = import.meta.env.VITE_API_URL ?? '/api'
 
   private async request<T>(

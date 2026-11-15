@@ -1,24 +1,16 @@
 // Board state and game types
 
-export interface WorkerData {
+interface WorkerData {
   playerId: number
   workerId: number
 }
 
-export interface CellData {
+interface CellData {
   buildingLevel: number
   worker: WorkerData | null
 }
 
 export type BoardState = CellData[][]
-
-export interface GameState {
-  currentPlayer?: number
-  turn?: number
-  board_state?: unknown // TODO: Define proper board state structure
-  game_status?: string
-  // Add other game state properties as needed
-}
 
 // Helper functions for board state
 export const createEmptyBoard = (size: number = 5): BoardState => {

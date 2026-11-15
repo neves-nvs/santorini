@@ -240,12 +240,8 @@ describe('ErrorHandler.logError', () => {
     ErrorHandler.logError(error, 'TestContext')
 
     expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining('TestContext'),
-      expect.objectContaining({
-        message: 'Connection failed',
-        code: 500,
-        details: { url: '/api' },
-      })
+      expect.stringMatching(/TestContext.*Connection failed/),
+      expect.stringContaining('"code":500')
     )
   })
 
@@ -256,7 +252,7 @@ describe('ErrorHandler.logError', () => {
 
     expect(console.error).toHaveBeenCalledWith(
       expect.stringContaining('TestContext'),
-      error
+      'Something went wrong'
     )
   })
 

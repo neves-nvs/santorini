@@ -17,7 +17,7 @@ import { useGameStore } from '@/store/gameStore'
 import { useAppStore } from '@/store/appStore'
 import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '@/types/game'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
-import { log, logError, logWarn } from '@/utils/log'
+import { logError, logWarn } from '@/utils/log'
 
 // Type guard for PlayerGameView (has isCurrentPlayer field)
 function isPlayerGameView(view: GameStateUpdatePayload['state']): view is PlayerGameView {
@@ -47,47 +47,21 @@ export function handleWebSocketMessage(type: string, payload: unknown): void {
       break
 
     case WS_MESSAGE_TYPES.GAME_START:
-      log('Game started:', payload)
       handleGameStart(payload, store)
       break
 
     case WS_MESSAGE_TYPES.GAME_READY_FOR_START:
-      log('Game ready for start:', payload)
-      break
-
     case WS_MESSAGE_TYPES.PLAYERS_IN_GAME:
-      log('Players in game update:', payload)
-      // Game state update will follow with full state
-      break
-
     case WS_MESSAGE_TYPES.PLAYER_JOINED:
-      log('Player joined:', payload)
-      // Full game_state_update follows - UI will update from that
-      break
-
     case WS_MESSAGE_TYPES.PLAYER_LEFT:
-      log('Player left:', payload)
-      // Full game_state_update follows - UI will update from that
-      break
-
     case WS_MESSAGE_TYPES.GAME_JOINED:
-      log('Game joined:', payload)
-      handleGameJoined(payload, store)
-      break
-
     case 'move_acknowledged':
-      log('Move acknowledged:', payload)
+      // The game_state_update that follows carries the state
       break
 
     case 'error':
       logError('Server error:', payload)
       break
-
-    default:
-      // Unknown message type - log for debugging
-      if (type !== 'connected' && type !== 'disconnected') {
-        log('Unhandled message type:', type, payload)
-      }
   }
 }
 
@@ -117,7 +91,6 @@ function handleGameStateUpdate(
   })
 
   if (lastGameStateHash === stateHash) {
-    log('Skipping duplicate game state update')
     return
   }
   lastGameStateHash = stateHash
@@ -127,15 +100,11 @@ function handleGameStateUpdate(
   const isCurrentPlayer = isPlayer ? gameView.isCurrentPlayer : false
   const availableMoves = isPlayer ? gameView.availableMoves : undefined
 
-  log('Processing game state - phase:', gameView.phase, 'isCurrentPlayer:', isCurrentPlayer)
-
   // Compute currentUserReady from players array
   // Get the current user's ID from the app store (single source of truth)
   const currentUserId = useAppStore.getState().userId
   const currentUserPlayer = currentUserId ? gameView.players.find(p => p.userId === currentUserId) : undefined
   const currentUserReady = currentUserPlayer?.isReady ?? false
-
-  log('Current user ready status:', { currentUserId, currentUserReady, players: gameView.players })
 
   // Convert to GameState format
   const gameState: GameState = {
@@ -183,15 +152,12 @@ function handleGameStart(
   store: ReturnType<typeof useGameStore.getState>
 ): void {
   const data = payload as GameStartPayload
-  log('Processing game start - activePlayerId:', data.activePlayerId)
 
   // Check if current user is the active player
   const currentUserId = useAppStore.getState().userId
   const gameState = store.gameState
   const currentPlayer = gameState?.players.find(p => p.userId === currentUserId)
   const isCurrentPlayer = currentPlayer ? data.activePlayerId === currentPlayer.id : false
-
-  log('Is current player:', isCurrentPlayer, 'userId:', currentUserId, 'playerId:', currentPlayer?.id)
 
   // Update game state with new status/phase
   if (gameState) {
@@ -211,24 +177,9 @@ function handleGameStart(
   if (isCurrentPlayer && data.availableMoves && data.availableMoves.length > 0) {
     const transformedMoves = transformMovesToUIFormat(data.availableMoves)
     store.setCurrentPlayerMoves(transformedMoves)
-    log('Set available moves:', transformedMoves.length)
   } else {
     store.setCurrentPlayerMoves([])
   }
-}
-
-/**
- * Handle game_joined messages
- * Sent when a player joins/reconnects to a game
- * Note: subscribe_game also sends game_state_update with the same data,
- * so we just log here. The game_state_update handler will process the state.
- */
-function handleGameJoined(
-  _payload: unknown,
-  _store: ReturnType<typeof useGameStore.getState>
-): void {
-  // game_state_update from subscribe_game will handle the actual state update
-  // This message just confirms we've joined the game
 }
 
 /**
@@ -271,8 +222,6 @@ function handlePlayerReadyStatus(
   const readyStatuses = payload as Array<{ userId: number; isReady: boolean }>
   const readyCount = readyStatuses.filter(p => p.isReady).length
   const totalPlayers = readyStatuses.length
-
-  log(`Ready status: ${readyCount}/${totalPlayers} players ready`)
 
   const currentGameState = store.gameState
   if (currentGameState) {

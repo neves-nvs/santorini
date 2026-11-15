@@ -1,6 +1,6 @@
 // STL Import Configuration - Exact values from original client/src/view/STLLoader.ts
 
-export const locations = {
+const locations = {
   builder: "/assets/Builder.stl",
   base: "/assets/Base.stl",
   mid: "/assets/Mid.stl",
@@ -20,9 +20,3 @@ export const configs = {
 
 export type PieceType = 'base' | 'mid' | 'top' | 'dome' | 'builder' | 'board'
 
-export interface PieceConfig {
-  file: string
-  y_offset: number
-  x_rotation: number
-  scale: number
-}
