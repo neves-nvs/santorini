@@ -1,8 +1,9 @@
+import { randomUUID } from 'node:crypto'
 import { test, expect, Page } from '@playwright/test'
 
 // Registers a new user through the UI; the client then logs in and opens the lobby
 async function registerUser(page: Page, role: string): Promise<void> {
-  const username = `${role}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`
+  const username = `${role}-${randomUUID()}`
   await page.goto('/auth')
   await page.getByRole('button', { name: /need an account\? register/i }).click()
   await page.locator('input[type="text"]').fill(username)
