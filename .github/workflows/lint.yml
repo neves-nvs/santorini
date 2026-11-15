@@ -69,3 +69,7 @@ jobs:
       - name: Lint
         run: npm run lint
         working-directory: packages/client-react
+
+      - name: Type-check
+        run: npm run type-check
+        working-directory: packages/client-react

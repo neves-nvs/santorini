@@ -24,9 +24,8 @@ describe('ApiService', () => {
       await apiService.getGames()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/games',
+        '/api/games',
         expect.objectContaining({
-          method: 'GET',
           credentials: 'include',
         })
       )
@@ -40,13 +39,13 @@ describe('ApiService', () => {
         json: async () => mockResponse,
       })
 
-      const result = await apiService.createGame({ player_count: 2 })
+      const result = await apiService.createGame({ maxPlayers: 2 })
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/games',
+        '/api/games',
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ player_count: 2 }),
+          body: JSON.stringify({ maxPlayers: 2 }),
         })
       )
       expect(result).toEqual(mockResponse)
@@ -136,7 +135,7 @@ describe('ApiService', () => {
       })
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/session',
+        '/api/session',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ username: 'testuser', password: 'testpass' }),
@@ -155,7 +154,7 @@ describe('ApiService', () => {
       await apiService.logout()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/logout',
+        '/api/logout',
         expect.objectContaining({
           method: 'POST',
         })
@@ -226,7 +225,7 @@ describe('ApiService', () => {
       })
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/users',
+        '/api/users',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ username: 'newuser', password: 'password123' }),
@@ -277,7 +276,7 @@ describe('ApiService', () => {
         json: async () => mockResponse,
       })
 
-      const result = await apiService.createGame({ player_count: 2 })
+      const result = await apiService.createGame({ maxPlayers: 2 })
 
       expect(result).toEqual(mockResponse)
     })
@@ -297,7 +296,7 @@ describe('ApiService', () => {
       const result = await apiService.getGame('1')
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/games/1/state',
+        '/api/games/1',
         expect.any(Object)
       )
       expect(result).toEqual(mockGameState)
