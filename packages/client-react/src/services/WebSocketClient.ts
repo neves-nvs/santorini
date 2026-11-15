@@ -119,8 +119,7 @@ class WebSocketClient {
   }
 
   unsubscribeFromGame(gameId: string): void {
-    if (!this.isConnected()) return
-    this.send(WS_MESSAGE_TYPES.UNSUBSCRIBE_GAME, { gameId: parseInt(gameId) })
+    console.log('Unsubscribe requested (cleanup on disconnect):', gameId)
   }
 
   joinGame(gameId: string): void {

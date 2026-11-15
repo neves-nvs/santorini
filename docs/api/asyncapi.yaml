@@ -12,9 +12,9 @@ info:
 
     **Joining and subscribing are separate.** `join_game` makes the user a player and replies `game_joined`.
     `subscribe_game` registers this socket for the game's updates, as a player or as a watcher, and replies with the
-    current state. A client that is playing sends both, and sends `unsubscribe_game` when it leaves the page. Only a subscribed socket receives `game_state_update`,
+    current state. A client that is playing sends both. A client leaves a game by closing its socket. Only a subscribed socket receives `game_state_update`,
     `player_joined`, `player_left` and `game_start`. A player who has not clicked ready is removed from a waiting game
-    when their last subscribed socket closes or unsubscribes. A ready player keeps the seat.
+    when their last subscribed socket closes. A ready player keeps the seat.
 
     Messages the server never sends, although `WS_MESSAGE_TYPES` still lists them: `available_moves`, `players_in_game`,
     `player_ready_status`, `game_ready_for_start`, `connected`, `disconnected`, `ping`, `pong`, `start_game`.
@@ -43,14 +43,12 @@ channels:
       listGames: { $ref: "#/components/messages/listGames" }
       leaveGame: { $ref: "#/components/messages/leaveGame" }
       subscribeGame: { $ref: "#/components/messages/subscribeGame" }
-      unsubscribeGame: { $ref: "#/components/messages/unsubscribeGame" }
       setReady: { $ref: "#/components/messages/setReady" }
       makeMove: { $ref: "#/components/messages/makeMove" }
       gameCreated: { $ref: "#/components/messages/gameCreated" }
       gameJoined: { $ref: "#/components/messages/gameJoined" }
       gamesList: { $ref: "#/components/messages/gamesList" }
       gameLeft: { $ref: "#/components/messages/gameLeft" }
-      gameUnsubscribed: { $ref: "#/components/messages/gameUnsubscribed" }
       playerJoined: { $ref: "#/components/messages/playerJoined" }
       playerLeft: { $ref: "#/components/messages/playerLeft" }
       gameStateUpdate: { $ref: "#/components/messages/gameStateUpdate" }
@@ -104,18 +102,6 @@ operations:
     reply:
       channel: { $ref: "#/channels/game" }
       messages: [{ $ref: "#/channels/game/messages/gameStateUpdate" }]
-  unsubscribeGame:
-    action: receive
-    channel: { $ref: "#/channels/game" }
-    summary: Stop receiving a game's updates
-    description: |
-      Send it when leaving a game page. The socket may stay open and subscribe to another game. If this was the
-      user's last subscribed socket for the game, a player who has not clicked ready is removed from a waiting game,
-      the same as when the connection closes.
-    messages: [{ $ref: "#/channels/game/messages/unsubscribeGame" }]
-    reply:
-      channel: { $ref: "#/channels/game" }
-      messages: [{ $ref: "#/channels/game/messages/gameUnsubscribed" }]
   setReady:
     action: receive
     channel: { $ref: "#/channels/game" }
@@ -213,14 +199,6 @@ components:
         properties:
           type: { const: subscribe_game }
           payload: { $ref: "#/components/schemas/GameIdPayload" }
-    unsubscribeGame:
-      name: unsubscribe_game
-      payload:
-        type: object
-        required: [type, payload]
-        properties:
-          type: { const: unsubscribe_game }
-          payload: { $ref: "#/components/schemas/GameIdPayload" }
     setReady:
       name: set_ready
       payload:
@@ -302,14 +280,6 @@ components:
         required: [type, payload]
         properties:
           type: { const: game_left }
-          payload: { $ref: "#/components/schemas/GameIdPayload" }
-    gameUnsubscribed:
-      name: game_unsubscribed
-      payload:
-        type: object
-        required: [type, payload]
-        properties:
-          type: { const: game_unsubscribed }
           payload: { $ref: "#/components/schemas/GameIdPayload" }
     playerJoined:
       name: player_joined

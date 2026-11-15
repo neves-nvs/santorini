@@ -23,7 +23,6 @@ export interface Position {
 export const WS_MESSAGE_TYPES = {
   // Client -> Server
   SUBSCRIBE_GAME: 'subscribe_game',
-  UNSUBSCRIBE_GAME: 'unsubscribe_game',
   JOIN_GAME: 'join_game',
   MAKE_MOVE: 'make_move',
   SET_READY: 'set_ready',
@@ -46,7 +45,6 @@ export const WS_MESSAGE_TYPES = {
   GAME_JOINED: 'game_joined',
   GAMES_LIST: 'games_list',
   GAME_LEFT: 'game_left',
-  GAME_UNSUBSCRIBED: 'game_unsubscribed',
   ERROR: 'error',
   CONNECTED: 'connected',
   DISCONNECTED: 'disconnected',
@@ -121,13 +119,6 @@ export interface SubscribeGameMessage {
   };
 }
 
-export interface UnsubscribeGameMessage {
-  type: typeof WS_MESSAGE_TYPES.UNSUBSCRIBE_GAME;
-  payload: {
-    gameId: number;
-  };
-}
-
 export interface SetReadyMessage {
   type: typeof WS_MESSAGE_TYPES.SET_READY;
   payload: {
@@ -181,13 +172,6 @@ export interface GamesListMessage {
 
 export interface GameLeftMessage {
   type: typeof WS_MESSAGE_TYPES.GAME_LEFT;
-  payload: {
-    gameId: number;
-  };
-}
-
-export interface GameUnsubscribedMessage {
-  type: typeof WS_MESSAGE_TYPES.GAME_UNSUBSCRIBED;
   payload: {
     gameId: number;
   };
@@ -252,7 +236,6 @@ export type ClientMessage =
   | ListGamesMessage
   | LeaveGameMessage
   | SubscribeGameMessage
-  | UnsubscribeGameMessage
   | SetReadyMessage
   | MakeMoveMessage;
 
@@ -261,7 +244,6 @@ export type ServerMessage =
   | GameJoinedMessage
   | GamesListMessage
   | GameLeftMessage
-  | GameUnsubscribedMessage
   | PlayerJoinedMessage
   | PlayerLeftMessage
   | GameStateUpdateMessage
@@ -291,7 +273,6 @@ export function isClientMessage(message: GenericWSMessage): message is ClientMes
     WS_MESSAGE_TYPES.LIST_GAMES,
     WS_MESSAGE_TYPES.LEAVE_GAME,
     WS_MESSAGE_TYPES.SUBSCRIBE_GAME,
-    WS_MESSAGE_TYPES.UNSUBSCRIBE_GAME,
     WS_MESSAGE_TYPES.SET_READY,
     WS_MESSAGE_TYPES.MAKE_MOVE
   ];
@@ -304,7 +285,6 @@ export function isServerMessage(message: GenericWSMessage): message is ServerMes
     WS_MESSAGE_TYPES.GAME_JOINED,
     WS_MESSAGE_TYPES.GAMES_LIST,
     WS_MESSAGE_TYPES.GAME_LEFT,
-    WS_MESSAGE_TYPES.GAME_UNSUBSCRIBED,
     WS_MESSAGE_TYPES.PLAYER_JOINED,
     WS_MESSAGE_TYPES.PLAYER_LEFT,
     WS_MESSAGE_TYPES.GAME_STATE_UPDATE,

@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { AppProvider } from './store/AppContext'
 import { ToastProvider } from './store/ToastContext'
 import { useEffect, useState } from 'react'
@@ -59,6 +59,12 @@ const AppInitializer = ({ onInitialized }: { onInitialized: (initialized: boolea
   return null
 }
 
+// A new game id remounts the page, so leaving the old game closes its socket
+const GamePageForId = () => {
+  const { gameId } = useParams<{ gameId: string }>()
+  return <GamePage key={gameId} />
+}
+
 const AppRoutes = ({ isInitialized }: { isInitialized: boolean }) => {
   const { state } = useApp()
 
@@ -90,7 +96,7 @@ const AppRoutes = ({ isInitialized }: { isInitialized: boolean }) => {
       <Route
         path="/game/:gameId"
         element={
-          state.username ? <GamePage /> : <Navigate to="/auth" replace />
+          state.username ? <GamePageForId /> : <Navigate to="/auth" replace />
         }
       />
     </Routes>
