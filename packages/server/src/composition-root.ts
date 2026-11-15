@@ -14,9 +14,9 @@ import { GameService } from "./game/application/GameService.ts";
 import { GameViewBuilder } from "./game/domain/GameViewBuilder.ts";
 import { LobbyService } from "./game/application/LobbyService.ts";
 import { WsRouter } from "./websockets/WsRouter.ts";
+import { connectionManager } from "./game/infra/ConnectionManager.ts";
 import { createGameRoutes } from "./game/transport/GameHttpController.ts";
 import { db } from "./database.ts";
-import { webSocketConnectionManager } from "./game/infra/WebSocketConnectionManager.ts";
 
 // Infrastructure
 const gameRepository = new GameRepositoryDb(db);
@@ -25,18 +25,18 @@ const gameRepository = new GameRepositoryDb(db);
 const gameViewBuilder = new GameViewBuilder();
 
 // Application
-const gameBroadcaster = new GameBroadcaster(gameViewBuilder, webSocketConnectionManager);
+const gameBroadcaster = new GameBroadcaster(gameViewBuilder, connectionManager);
 const gameService = new GameService(gameRepository, gameViewBuilder, gameBroadcaster);
 const lobbyService = new LobbyService(gameRepository);
 
 // Transport
-const wsRouter = new WsRouter(gameService, lobbyService, webSocketConnectionManager);
+const wsRouter = new WsRouter(gameService, lobbyService, connectionManager);
 const gameRoutes = createGameRoutes(gameService, lobbyService, gameBroadcaster);
 
 export {
   // Infrastructure
   gameRepository,
-  webSocketConnectionManager,
+  connectionManager,
 
   // Domain
   gameViewBuilder,

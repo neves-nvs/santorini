@@ -1,11 +1,10 @@
 import { ClientMessage, GameMove, WS_MESSAGE_TYPES } from "../../../shared/src/websocket-types.ts";
-import { send, sendError } from "./utils.ts";
-
-import { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
+import { Connection } from "../game/infra/Connection.ts";
+import { ConnectionManager } from "../game/infra/ConnectionManager.ts";
 import { GameService } from "../game/application/GameService.ts";
 import { LobbyService } from "../game/application/LobbyService.ts";
-import { WebSocketConnectionManager } from "../game/infra/WebSocketConnectionManager.ts";
 import logger from "../logger.ts";
+import { sendError } from "./utils.ts";
 
 /**
  * WebSocket message router.
@@ -18,21 +17,17 @@ export class WsRouter {
   constructor(
     private gameService: GameService,
     private lobbyService: LobbyService,
-    private connectionManager: WebSocketConnectionManager,
+    private connectionManager: ConnectionManager,
   ) {}
 
-  async handleMessage(ws: AuthenticatedWebSocket, raw: string): Promise<void> {
-    const user = ws.user;
-    if (!user) {
-      sendError(ws, "Not authenticated");
-      return;
-    }
+  async handleMessage(connection: Connection, raw: string): Promise<void> {
+    const { user } = connection;
 
     let message: ClientMessage;
     try {
       message = JSON.parse(raw) as ClientMessage;
     } catch {
-      sendError(ws, "Invalid message format");
+      sendError(connection, "Invalid message format");
       return;
     }
 
@@ -40,19 +35,18 @@ export class WsRouter {
     logger.info(`[WS] ${type} from ${user.username}`);
 
     try {
-      await this.route(ws, user.id, type, payload);
+      await this.route(connection, user.id, type, payload);
     } catch (error) {
       logger.error(`[WS] Error handling ${type}:`, error);
-      sendError(ws, error instanceof Error ? error.message : "Request failed");
+      sendError(connection, error instanceof Error ? error.message : "Request failed");
     }
   }
 
-  async handleDisconnect(ws: AuthenticatedWebSocket): Promise<void> {
-    const user = ws.user;
-    if (!user) return;
+  async handleDisconnect(connection: Connection): Promise<void> {
+    const { user } = connection;
 
     logger.info(`[WS] Disconnect: ${user.username}`);
-    const disconnects = this.connectionManager.removeConnection(ws);
+    const disconnects = this.connectionManager.removeConnection(connection);
 
     for (const { gameId, userId, wasLastConnection } of disconnects) {
       if (wasLastConnection) {
@@ -62,7 +56,7 @@ export class WsRouter {
   }
 
   private async route(
-    ws: AuthenticatedWebSocket,
+    connection: Connection,
     userId: number,
     type: string,
     payload: Record<string, unknown> | undefined,
@@ -72,35 +66,35 @@ export class WsRouter {
     switch (type) {
       // Lobby
       case WS_MESSAGE_TYPES.CREATE_GAME:
-        return this.createGame(ws, userId, payload?.maxPlayers as number | undefined);
+        return this.createGame(connection, userId, payload?.maxPlayers as number | undefined);
 
       case WS_MESSAGE_TYPES.JOIN_GAME:
         this.requireGameId(gameId);
-        return this.joinGame(ws, userId, gameId);
+        return this.joinGame(connection, userId, gameId);
 
       case WS_MESSAGE_TYPES.LIST_GAMES:
-        return this.listGames(ws);
+        return this.listGames(connection);
 
       case WS_MESSAGE_TYPES.LEAVE_GAME:
         this.requireGameId(gameId);
-        return this.leaveGame(ws, userId, gameId);
+        return this.leaveGame(connection, userId, gameId);
 
       // Game
       case WS_MESSAGE_TYPES.SUBSCRIBE_GAME:
         this.requireGameId(gameId);
-        this.connectionManager.addClient(gameId, userId, ws);
-        return this.getGameState(ws, userId, gameId);
+        this.connectionManager.addClient(gameId, userId, connection);
+        return this.getGameState(connection, userId, gameId);
 
       case WS_MESSAGE_TYPES.SET_READY:
         this.requireGameId(gameId);
-        return this.setReady(ws, userId, gameId, payload?.isReady as boolean);
+        return this.setReady(connection, userId, gameId, payload?.isReady as boolean);
 
       case WS_MESSAGE_TYPES.MAKE_MOVE:
         this.requireGameId(gameId);
-        return this.makeMove(ws, userId, gameId, payload?.move as GameMove);
+        return this.makeMove(connection, userId, gameId, payload?.move as GameMove);
 
       default:
-        sendError(ws, `Unknown message type: ${type}`);
+        sendError(connection, `Unknown message type: ${type}`);
     }
   }
 
@@ -108,21 +102,21 @@ export class WsRouter {
     if (!gameId) throw new Error("Game ID required");
   }
 
-  private async createGame(ws: AuthenticatedWebSocket, userId: number, maxPlayers = 2): Promise<void> {
+  private async createGame(connection: Connection, userId: number, maxPlayers = 2): Promise<void> {
     const game = await this.lobbyService.createGame(userId, maxPlayers);
     await this.gameService.addPlayer(game.id, userId);
 
     const gameView = await this.gameService.getGameStateForPlayer(game.id, userId);
-    send(ws, WS_MESSAGE_TYPES.GAME_CREATED, { gameId: game.id, gameState: gameView });
+    connection.send({ type: WS_MESSAGE_TYPES.GAME_CREATED, payload: { gameId: game.id, gameState: gameView } });
 
     logger.info(`Game ${game.id} created by user ${userId}`);
   }
 
-  private async joinGame(ws: AuthenticatedWebSocket, userId: number, gameId: number): Promise<void> {
+  private async joinGame(connection: Connection, userId: number, gameId: number): Promise<void> {
     const { game, isNewPlayer } = await this.addPlayerIfNew(gameId, userId);
 
     const gameView = await this.gameService.getGameStateForPlayer(gameId, userId);
-    send(ws, WS_MESSAGE_TYPES.GAME_JOINED, { gameId, gameState: gameView });
+    connection.send({ type: WS_MESSAGE_TYPES.GAME_JOINED, payload: { gameId, gameState: gameView } });
 
     if (isNewPlayer) {
       await this.broadcastPlayerJoined(game, userId);
@@ -131,7 +125,7 @@ export class WsRouter {
     logger.info(`User ${userId} ${isNewPlayer ? "joined" : "reconnected to"} game ${gameId}`);
   }
 
-  private async listGames(ws: AuthenticatedWebSocket): Promise<void> {
+  private async listGames(connection: Connection): Promise<void> {
     const games = await this.lobbyService.findAvailableGames();
 
     const gamesList = games.map((g) => ({
@@ -142,12 +136,12 @@ export class WsRouter {
       createdAt: g.createdAt,
     }));
 
-    send(ws, WS_MESSAGE_TYPES.GAMES_LIST, { games: gamesList });
+    connection.send({ type: WS_MESSAGE_TYPES.GAMES_LIST, payload: { games: gamesList } });
   }
 
-  private async leaveGame(ws: AuthenticatedWebSocket, userId: number, gameId: number): Promise<void> {
+  private async leaveGame(connection: Connection, userId: number, gameId: number): Promise<void> {
     const { game } = await this.gameService.removePlayer(gameId, userId);
-    send(ws, WS_MESSAGE_TYPES.GAME_LEFT, { gameId });
+    connection.send({ type: WS_MESSAGE_TYPES.GAME_LEFT, payload: { gameId } });
 
     this.connectionManager.broadcastToGame(gameId, {
       type: WS_MESSAGE_TYPES.PLAYER_LEFT,
@@ -174,38 +168,47 @@ export class WsRouter {
     }
   }
 
-  private async getGameState(ws: AuthenticatedWebSocket, userId: number, gameId: number): Promise<void> {
+  private async getGameState(connection: Connection, userId: number, gameId: number): Promise<void> {
     const [gameView, game] = await Promise.all([
       this.gameService.getGameStateForPlayer(gameId, userId),
       this.gameService.getGame(gameId),
     ]);
 
-    send(ws, WS_MESSAGE_TYPES.GAME_STATE_UPDATE, {
-      gameId,
-      version: game?.version ?? 0,
-      state: gameView,
+    connection.send({
+      type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
+      payload: {
+        gameId,
+        version: game?.version ?? 0,
+        state: gameView,
+      },
     });
   }
 
-  private async setReady(ws: AuthenticatedWebSocket, userId: number, gameId: number, ready: boolean): Promise<void> {
+  private async setReady(connection: Connection, userId: number, gameId: number, ready: boolean): Promise<void> {
     const { game } = await this.gameService.setPlayerReady(gameId, userId, ready);
 
-    send(ws, WS_MESSAGE_TYPES.READY_STATUS_UPDATE, {
-      ready,
-      allReady: game.areAllPlayersReady(),
-      gameStarted: game.status === "in-progress",
+    connection.send({
+      type: WS_MESSAGE_TYPES.READY_STATUS_UPDATE,
+      payload: {
+        ready,
+        allReady: game.areAllPlayersReady(),
+        gameStarted: game.status === "in-progress",
+      },
     });
 
     logger.info(`Ready status: user ${userId} in game ${gameId} = ${ready}`);
   }
 
-  private async makeMove(ws: AuthenticatedWebSocket, userId: number, gameId: number, move: GameMove): Promise<void> {
+  private async makeMove(connection: Connection, userId: number, gameId: number, move: GameMove): Promise<void> {
     const result = await this.gameService.applyMove(gameId, userId, move);
 
-    send(ws, WS_MESSAGE_TYPES.GAME_STATE_UPDATE, {
-      gameId,
-      version: result.game.version,
-      state: result.view,
+    connection.send({
+      type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
+      payload: {
+        gameId,
+        version: result.game.version,
+        state: result.view,
+      },
     });
 
     logger.info(`Move processed for user ${userId} in game ${gameId}`);
