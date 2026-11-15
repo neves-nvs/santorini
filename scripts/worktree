@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# One git worktree per task, created next to the main clone.
+#   scripts/worktree new <task> [<branch>]   create ../<task> from origin/main, branch defaults to <task>
+#   scripts/worktree list                    every worktree: branch, uncommitted files, pull request state
+#   scripts/worktree done <task>             remove the task's worktree and branches once its pull request is merged
+# Run it from any worktree of the repository.
+
+die() {
+  echo "$1" >&2
+  exit 1
+}
+
+main_dir="$(git worktree list --porcelain | sed -n '1s/^worktree //p')"
+[ -n "$main_dir" ] || die "Run this inside a git worktree of the project."
+project_dir="$(dirname "$main_dir")"
+
+new_worktree() {
+  local task=${1:?usage: scripts/worktree new <task> [<branch>]} branch=${2:-$1}
+  local dir="$project_dir/$task"
+  [[ "$task" =~ ^[A-Za-z0-9._-]+$ ]] || die "A task name uses letters, digits, dots, underscores and dashes."
+  [ ! -e "$dir" ] || die "$dir already exists."
+  git -C "$main_dir" fetch -q origin
+  git -C "$main_dir" worktree add --no-track -b "$branch" "$dir" origin/main >&2
+  (cd "$dir" && scripts/install --if-needed) >&2
+  echo "$dir"
+}
+
+list_worktrees() {
+  local path="" branch="" key value
+  while read -r key value; do
+    case "$key" in
+      worktree)
+        path=$value
+        branch="(detached)"
+        ;;
+      branch) branch=${value#refs/heads/} ;;
+      "")
+        [ -n "$path" ] || continue
+        local dirty pr="-"
+        dirty=$(git -C "$path" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+        if command -v gh >/dev/null 2>&1 && [ "$branch" != "main" ] && [ "$branch" != "(detached)" ]; then
+          pr=$(gh pr list --head "$branch" --state all --json number,state -q '.[0] // empty | "#\(.number) \(.state)"' 2>/dev/null || true)
+          pr=${pr:--}
+        fi
+        printf '%-24s %-36s %3s uncommitted  %s\n' "${path#"$project_dir"/}" "$branch" "$dirty" "$pr"
+        path=""
+        ;;
+    esac
+  done < <(git worktree list --porcelain; echo)
+}
+
+finish() {
+  local task=${1:?usage: scripts/worktree done <task>}
+  local dir="$project_dir/$task" branch tip pr number head remote_tip
+  [ -d "$dir" ] || die "No worktree at $dir."
+  branch=$(git -C "$dir" branch --show-current)
+  [ -n "$branch" ] || die "$dir is on a detached HEAD."
+  [ -z "$(git -C "$dir" status --porcelain)" ] || die "$dir has uncommitted changes."
+  command -v gh >/dev/null 2>&1 || die "gh is needed to check the pull request."
+  git -C "$main_dir" fetch -q origin
+  pr=$(gh pr list --head "$branch" --state merged --json number,headRefOid -q '.[0] // empty | "\(.number) \(.headRefOid)"')
+  [ -n "$pr" ] || die "No merged pull request for $branch, so nothing is removed."
+  number=${pr%% *}
+  head=${pr#* }
+  tip=$(git -C "$dir" rev-parse HEAD)
+  [ "$tip" = "$head" ] || die "$branch has commits that the merged pull request #$number does not have."
+  git -C "$main_dir" worktree remove "$dir"
+  git -C "$main_dir" branch -D -q "$branch"
+  echo "removed $dir and the local branch $branch (pull request #$number is merged)"
+  remote_tip=$(git -C "$main_dir" ls-remote --heads origin "$branch" | cut -f1)
+  if [ -z "$remote_tip" ]; then
+    echo "origin/$branch is already gone"
+  elif [ "$remote_tip" = "$head" ]; then
+    git -C "$main_dir" push -q origin --delete "$branch"
+    echo "deleted origin/$branch"
+  else
+    echo "kept origin/$branch: it differs from the merged pull request"
+  fi
+}
+
+case "${1:-}" in
+  new) shift; new_worktree "$@" ;;
+  list) list_worktrees ;;
+  done) shift; finish "$@" ;;
+  *) die "Usage: scripts/worktree new <task> [<branch>] | list | done <task>" ;;
+esac
