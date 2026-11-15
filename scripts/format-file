@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# Formats one file the way CI checks it: the server with prettier and eslint --fix, the client with eslint --fix.
+#   scripts/format-file <file>
+# Files outside the two packages, and other file types, are left alone.
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+file="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+
+case "$file" in
+  "$root"/packages/server/src/*.ts | "$root"/packages/server/tests/*.ts)
+    cd "$root/packages/server" && npx prettier --write "$file" && npx eslint --fix "$file"
+    ;;
+  "$root"/packages/client-react/src/*.ts | "$root"/packages/client-react/src/*.tsx | "$root"/packages/client-react/e2e/*.ts)
+    cd "$root/packages/client-react" && npx eslint --fix "$file"
+    ;;
+esac

@@ -25,6 +25,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "integration",
+          env: { JWT_SECRET: "integration-test-secret" },
           include: ["tests/integration/**/*.test.ts"],
           globalSetup: ["tests/integration/globalSetup.ts"],
           setupFiles: ["tests/integration/setup.ts"],
