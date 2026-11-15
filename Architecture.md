@@ -23,7 +23,7 @@ Santorini Online is a real-time multiplayer board game built with a Node.js back
 - **Testing**: Vitest
 
 ### Shared
-- **Package**: `@santorini/shared` in `packages/shared/`, compiled to `dist/` and installed in the server and the client as `file:../shared`. Both import from `@santorini/shared`.
+- **Package**: `@santorini/shared` in `packages/shared/`, compiled to `dist/`. The repository is an npm workspace (one `package-lock.json` at the root), so the server and the client get it as a linked dependency. Both import from `@santorini/shared`.
 - **Type Definitions**: game views, move commands and the shapes the server sends
 - **WebSocket Protocol**: Typed message contracts (`ClientMessage`, `ServerMessage`)
 
