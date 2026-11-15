@@ -24,7 +24,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@santorini/shared": "file:../shared",
+    "@santorini/shared": "*",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.6",

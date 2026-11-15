@@ -21,13 +21,13 @@ target "metadata-client" {
 }
 
 target "server" {
-  inherits = ["metadata-server"]
-  context  = "packages/server"
-  contexts = { shared = "packages/shared" }
+  inherits   = ["metadata-server"]
+  context    = "."
+  dockerfile = "packages/server/Dockerfile"
 }
 
 target "client" {
-  inherits = ["metadata-client"]
-  context  = "packages/client-react"
-  contexts = { shared = "packages/shared" }
+  inherits   = ["metadata-client"]
+  context    = "."
+  dockerfile = "packages/client-react/Dockerfile"
 }

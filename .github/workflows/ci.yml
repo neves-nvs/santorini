@@ -7,11 +7,15 @@ on:
     paths:
       - packages/server/**
       - packages/shared/**
+      - package.json
+      - package-lock.json
       - .github/workflows/ci.yml
   pull_request:
     paths:
       - packages/server/**
       - packages/shared/**
+      - package.json
+      - package-lock.json
       - .github/workflows/ci.yml
 
 permissions:
@@ -34,15 +38,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-        working-directory: packages/shared
 
       - name: Type-check
         run: npm run typecheck
         working-directory: packages/shared
 
       - name: Build
-        run: npm run build
-        working-directory: packages/shared
+        run: npm run build:shared
 
   test:
     runs-on: ubuntu-latest
@@ -62,20 +64,16 @@ jobs:
         id: node-modules-cache
         uses: actions/cache@v6.1.0
         with:
-          path: packages/server/node_modules
-          key: ${{ runner.os }}-node-26-${{ hashFiles('packages/server/package-lock.json') }}
+          path: node_modules
+          key: ${{ runner.os }}-node-26-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-26-
 
-      - name: Build the shared package
-        run: |
-          npm ci
-          npm run build
-        working-directory: packages/shared
-
       - name: Install dependencies
         run: npm ci
-        working-directory: packages/server
+
+      - name: Build the shared package
+        run: npm run build:shared
 
       - name: Setup environment variables
         run: echo "JWT_SECRET=secret" >> .env

@@ -1,29 +1,27 @@
 # syntax=docker/dockerfile:1
 
-# Build with scripts/docker-build (docker-bake.hcl): the shared package comes in as a named build context.
-# The client depends on it as file:../shared, so a built copy has to sit at /app/packages/shared before npm ci.
+# Build from the repository root with scripts/docker-build (docker-bake.hcl). The packages are npm workspaces
+# that share one lockfile, so the build stage installs from the root and builds packages/shared before the client.
 ARG NODE_VERSION=26
 
-FROM node:${NODE_VERSION}-slim AS shared-build
-WORKDIR /app/packages/shared
-COPY --from=shared package.json package-lock.json ./
-RUN npm ci
-COPY --from=shared . ./
-RUN npm run build && npm prune --omit=dev
-
 FROM node:${NODE_VERSION}-slim AS build
-COPY --from=shared-build /app/packages/shared /app/packages/shared
-WORKDIR /app/packages/client-react
+WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
-COPY . ./
+COPY packages/shared/package.json packages/shared/
+COPY packages/server/package.json packages/server/
+COPY packages/client-react/package.json packages/client-react/
+RUN --mount=type=cache,target=/root/.npm npm ci -w packages/shared -w packages/client-react
+COPY packages/shared packages/shared
+RUN npm run build -w packages/shared
+COPY packages/client-react packages/client-react
+WORKDIR /app/packages/client-react
 ENV VITE_API_URL=/api
 ENV VITE_WS_URL=/ws
 RUN npx vite build
 
 FROM nginxinc/nginx-unprivileged:1-alpine
 ENV BACKEND_URL=http://server:3000
-COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY packages/client-react/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/packages/client-react/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s \

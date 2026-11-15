@@ -81,7 +81,7 @@ You need [Docker](https://www.docker.com/) (for PostgreSQL) and either [Node.js]
 ```bash
 git clone https://github.com/neves-nvs/santorini.git
 cd santorini
-scripts/install   # npm ci in every package, then builds packages/shared
+scripts/install   # npm ci once at the root (the packages are npm workspaces), then builds packages/shared
 scripts/dev       # starts PostgreSQL in Docker, runs migrations, then the server and client
 ```
 

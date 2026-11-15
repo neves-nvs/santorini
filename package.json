@@ -1,0 +1,11 @@
+{
+  "name": "santorini",
+  "private": true,
+  "description": "Santorini Online: the web version of the board game",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build -w @santorini/shared"
+  }
+}

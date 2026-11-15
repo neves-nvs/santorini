@@ -118,7 +118,7 @@ run_mode() {
   return "$status"
 }
 
-if [ ! -d "$root/packages/client-react/node_modules" ]; then
+if [ ! -d "$root/node_modules" ]; then
   echo "Run scripts/install first." >&2
   exit 1
 fi
