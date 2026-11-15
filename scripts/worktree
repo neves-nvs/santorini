@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Worktree lifecycle for a project folder that holds `main` (the clone) and one folder per task next to it.
-#   scripts/worktree new <task> [<branch>]   create <project>/<task> from origin/main, branch defaults to <task>
+# One git worktree per task, created next to the main clone.
+#   scripts/worktree new <task> [<branch>]   create ../<task> from origin/main, branch defaults to <task>
 #   scripts/worktree list                    every worktree: branch, uncommitted files, pull request state
 #   scripts/worktree done <task>             remove the task's worktree and branches once its pull request is merged
-# Run it from any worktree of the project. It never creates anything under .claude/.
+# Run it from any worktree of the repository.
 
 die() {
   echo "$1" >&2

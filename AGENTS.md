@@ -34,9 +34,9 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 
 ## Git and pull requests
 
-- The project folder holds the main clone and one worktree per task: `santorini/main`, `santorini/<task>`. Keep `main` clean: do not edit files there or run `pull`, `checkout`, `reset` or `stash`. `git fetch` and `scripts/worktree` are fine.
-- Start a task with `scripts/worktree new <task> <branch>`. It fetches, creates `santorini/<task>` from `origin/main` on a new branch (give it a conventional prefix such as `fix/` or `feat/`) and installs dependencies. Work in that folder. Never create worktrees under `.claude/`.
-- When the owner says the pull request is merged, run `scripts/worktree done <task>`. It removes the worktree and the local branch, and the remote branch if it is still there, but only when the pull request is merged and the branch has nothing the pull request lacks. `scripts/worktree list` shows every worktree with its pull request.
+- Work on each task in its own git worktree, so branches and installed dependencies do not collide. Keep the main clone on `main`.
+- `scripts/worktree new <task> <branch>` fetches, creates `../<task>` next to the main clone from `origin/main` on a new branch (use a conventional prefix such as `fix/` or `feat/`) and installs dependencies.
+- `scripts/worktree done <task>` removes the worktree and the local branch, and the remote branch if it is still there, once the pull request is merged and the branch has nothing the pull request lacks. `scripts/worktree list` shows every worktree with its pull request.
 - Small pull requests with short imperative commit subjects and a prefix (`fix:`, `feat:`, `test:`, `docs:`, `chore:`). Say what changed, what was checked and what was not.
 - The owner merges, by squash. After a squash merge, rebase a stacked branch with `git rebase --onto origin/main <old base tip>`. Force-push only branches other than `main`, and with `--force-with-lease`.
 
