@@ -5,9 +5,27 @@ map $http_x_forwarded_proto $forwarded_proto {
   "" $scheme;
 }
 
+# Hashed build files never change; the unhashed STL models do; the page and everything else must be revalidated.
+# A map keeps this in one add_header, which would otherwise hide the security headers in any location that sets its own.
+map $uri $cache_control {
+  default "no-cache";
+  ~^/(api|ws) "";
+  ~\.stl$ "public, max-age=3600";
+  ~^/assets/ "public, immutable, max-age=31536000";
+}
+
 server {
   listen 8080;
   root /usr/share/nginx/html;
+
+  gzip on;
+  gzip_types text/css text/javascript application/javascript application/json image/svg+xml application/octet-stream;
+
+  add_header Cache-Control $cache_control always;
+  add_header X-Content-Type-Options nosniff always;
+  add_header Referrer-Policy strict-origin-when-cross-origin always;
+  # style-src needs 'unsafe-inline' for React inline styles; connect-src lists the WebSocket host explicitly because older Safari does not match it with 'self'
+  add_header Content-Security-Policy "default-src 'self'; connect-src 'self' ws://$http_host wss://$http_host; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
 
   location /api/ {
     proxy_pass ${BACKEND_URL}/;
