@@ -8,14 +8,9 @@ import logger from "../../logger.ts";
  * Tracks the connections subscribed to each game, whatever transport they use, and sends messages to them.
  */
 
-interface ConnectionContext {
-  userId: number;
-  gameId: number;
-}
-
 export class ConnectionManager {
-  // Primary: connection -> context (for cleanup on disconnect)
-  private connections = new Map<Connection, ConnectionContext>();
+  // Primary: connection -> the games it is subscribed to (for cleanup on disconnect)
+  private connectionGames = new Map<Connection, Set<number>>();
 
   // Index 1: gameId -> Set<Connection> (for broadcasting)
   private gameConnections = new Map<number, Set<Connection>>();
@@ -55,8 +50,13 @@ export class ConnectionManager {
 
     logger.info(`Adding client ${userId} to game ${gameId}`);
 
-    // 1. Store connection context (primary index)
-    this.connections.set(connection, { userId, gameId });
+    // 1. Remember which games this connection is subscribed to (primary index)
+    let games = this.connectionGames.get(connection);
+    if (!games) {
+      games = new Set();
+      this.connectionGames.set(connection, games);
+    }
+    games.add(gameId);
 
     // 2. Add to game's connection set (for broadcasting)
     gameConnection.add(connection);
@@ -80,122 +80,53 @@ export class ConnectionManager {
   }
 
   /**
-   * Remove a client from a specific game
+   * Remove a connection from one game.
+   * Returns whether the user has no connection left in that game.
    */
-  removeClient(gameId: number, userId: number, connection: Connection): void {
+  removeClient(gameId: number, userId: number, connection: Connection): boolean {
     logger.info(`Removing client ${userId} from game ${gameId}`);
 
-    // Remove from connections map
-    this.connections.delete(connection);
-
-    // Remove from game's connection set
-    const gameConnection = this.gameConnections.get(gameId);
-    if (gameConnection) {
-      gameConnection.delete(connection);
-    }
-
-    // Remove from user-game index
-    const gameUsers = this.userGameConnections.get(gameId);
-    if (gameUsers) {
-      const userConnections = gameUsers.get(userId);
-      if (userConnections) {
-        userConnections.delete(connection);
-        if (userConnections.size === 0) {
-          gameUsers.delete(userId);
-        }
+    const games = this.connectionGames.get(connection);
+    if (games) {
+      games.delete(gameId);
+      if (games.size === 0) {
+        this.connectionGames.delete(connection);
       }
     }
 
-    logger.info(`Client ${userId} removed from game ${gameId}`);
+    this.gameConnections.get(gameId)?.delete(connection);
+
+    let wasLastConnection = false;
+    const gameUsers = this.userGameConnections.get(gameId);
+    const userConnections = gameUsers?.get(userId);
+    if (gameUsers && userConnections) {
+      userConnections.delete(connection);
+      if (userConnections.size === 0) {
+        gameUsers.delete(userId);
+        wasLastConnection = true;
+      }
+    }
+
+    logger.info(`Client ${userId} removed from game ${gameId}, wasLastConnection: ${wasLastConnection}`);
+    return wasLastConnection;
   }
 
   /**
-   * Remove a single connection (on disconnect).
-   * Returns info about games where user lost their last connection.
+   * Remove a connection from every game it is subscribed to (on disconnect).
+   * Returns the games where the user lost their last connection.
    */
   removeConnection(connection: Connection): { gameId: number; userId: number; wasLastConnection: boolean }[] {
-    const context = this.connections.get(connection);
-    if (!context) {
+    const games = this.connectionGames.get(connection);
+    if (!games) {
       return [];
     }
 
-    const { gameId, userId } = context;
-    logger.info(`Removing connection for user ${userId} from game ${gameId}`);
-
-    // Remove from primary index
-    this.connections.delete(connection);
-
-    // Remove from game's connection set
-    const gameConnection = this.gameConnections.get(gameId);
-    if (gameConnection) {
-      gameConnection.delete(connection);
-    }
-
-    // Remove from user-game index and check if it was the last connection
-    let wasLastConnection = false;
-    const gameUsers = this.userGameConnections.get(gameId);
-    if (gameUsers) {
-      const userConnections = gameUsers.get(userId);
-      if (userConnections) {
-        userConnections.delete(connection);
-        if (userConnections.size === 0) {
-          gameUsers.delete(userId);
-          wasLastConnection = true;
-        }
-      }
-    }
-
-    logger.info(`Connection removed for user ${userId} from game ${gameId}, wasLastConnection: ${wasLastConnection}`);
-
-    return [{ gameId, userId, wasLastConnection }];
-  }
-
-  /**
-   * Remove a client from all games (on disconnect).
-   * Returns games where user lost their last connection.
-   * @deprecated Use removeConnection instead for single connection removal
-   */
-  removeClientFromAllGames(userId: number): { gameId: number; wasLastConnection: boolean }[] {
-    logger.info(`Removing client ${userId} from all games due to connection close`);
-
-    const results: { gameId: number; wasLastConnection: boolean }[] = [];
-    const processedGames = new Set<number>();
-
-    // Find all connections for this user
-    const connectionsToRemove: { connection: Connection; gameId: number }[] = [];
-    for (const [connection, context] of this.connections) {
-      if (context.userId === userId) {
-        connectionsToRemove.push({ connection, gameId: context.gameId });
-      }
-    }
-
-    // Remove each connection
-    for (const { connection, gameId } of connectionsToRemove) {
-      this.connections.delete(connection);
-
-      const gameConnection = this.gameConnections.get(gameId);
-      if (gameConnection) {
-        gameConnection.delete(connection);
-      }
-
-      const gameUsers = this.userGameConnections.get(gameId);
-      if (gameUsers) {
-        const userConnections = gameUsers.get(userId);
-        if (userConnections) {
-          userConnections.delete(connection);
-          if (userConnections.size === 0) {
-            gameUsers.delete(userId);
-            if (!processedGames.has(gameId)) {
-              results.push({ gameId, wasLastConnection: true });
-              processedGames.add(gameId);
-            }
-          }
-        }
-      }
-    }
-
-    logger.info(`Client ${userId} removed from games: [${results.map((r) => r.gameId).join(", ")}]`);
-    return results;
+    const userId = connection.user.id;
+    return Array.from(games, (gameId) => ({
+      gameId,
+      userId,
+      wasLastConnection: this.removeClient(gameId, userId, connection),
+    }));
   }
 
   /**
@@ -303,7 +234,7 @@ export class ConnectionManager {
    * Clear all game sessions (for testing)
    */
   clearAllGameSessions(): void {
-    this.connections.clear();
+    this.connectionGames.clear();
     this.gameConnections.clear();
     this.userGameConnections.clear();
     this.playerReadyStatus.clear();

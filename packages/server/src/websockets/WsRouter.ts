@@ -85,6 +85,10 @@ export class WsRouter {
         this.connectionManager.addClient(gameId, userId, connection);
         return this.getGameState(connection, userId, gameId);
 
+      case WS_MESSAGE_TYPES.UNSUBSCRIBE_GAME:
+        this.requireGameId(gameId);
+        return this.unsubscribeFromGame(connection, userId, gameId);
+
       case WS_MESSAGE_TYPES.SET_READY:
         this.requireGameId(gameId);
         return this.setReady(connection, userId, gameId, payload?.isReady as boolean);
@@ -182,6 +186,15 @@ export class WsRouter {
         state: gameView,
       },
     });
+  }
+
+  private async unsubscribeFromGame(connection: Connection, userId: number, gameId: number): Promise<void> {
+    const wasLastConnection = this.connectionManager.removeClient(gameId, userId, connection);
+    connection.send({ type: WS_MESSAGE_TYPES.GAME_UNSUBSCRIBED, payload: { gameId } });
+
+    if (wasLastConnection) {
+      await this.handlePlayerDisconnect(gameId, userId);
+    }
   }
 
   private async setReady(connection: Connection, userId: number, gameId: number, ready: boolean): Promise<void> {
