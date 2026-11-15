@@ -82,6 +82,7 @@ export class WsRouter {
       // Game
       case WS_MESSAGE_TYPES.SUBSCRIBE_GAME:
         this.requireGameId(gameId);
+        this.requireNoOtherGame(connection, gameId);
         this.connectionManager.addClient(gameId, userId, connection);
         return this.getGameState(connection, userId, gameId);
 
@@ -95,6 +96,13 @@ export class WsRouter {
 
       default:
         sendError(connection, `Unknown message type: ${type}`);
+    }
+  }
+
+  private requireNoOtherGame(connection: Connection, gameId: number): void {
+    const subscribedGameId = this.connectionManager.gameOf(connection);
+    if (subscribedGameId !== undefined && subscribedGameId !== gameId) {
+      throw new Error(`Already subscribed to game ${subscribedGameId}; open a new connection for another game`);
     }
   }
 
