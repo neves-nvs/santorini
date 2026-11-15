@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*.*.*"
     paths:
       - docker-bake.hcl
       - scripts/docker-build
@@ -78,3 +80,57 @@ jobs:
       - name: Summarize the images
         if: always()
         run: .github/scripts/summarize-images santorini-server:check santorini-client:check >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    needs: image
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate the server image metadata
+        id: meta-server
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/santorini-server
+          bake-target: metadata-server
+          tags: |
+            type=sha,format=long,prefix=
+            type=semver,pattern={{version}}
+          labels: |
+            org.opencontainers.image.title=santorini-server
+
+      - name: Generate the frontend image metadata
+        id: meta-client
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/santorini-client
+          bake-target: metadata-client
+          tags: |
+            type=sha,format=long,prefix=
+            type=semver,pattern={{version}}
+          labels: |
+            org.opencontainers.image.title=santorini-client
+
+      - name: Build and push the images
+        uses: docker/bake-action@v7.5.0
+        with:
+          files: |
+            ./docker-bake.hcl
+            cwd://${{ steps.meta-server.outputs.bake-file }}
+            cwd://${{ steps.meta-client.outputs.bake-file }}
+          push: true
