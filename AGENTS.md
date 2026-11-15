@@ -48,6 +48,12 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 - Small pull requests with short imperative commit subjects and a prefix (`fix:`, `feat:`, `test:`, `docs:`, `chore:`).
 - The owner merges, by squash. After a squash merge, rebase a stacked branch with `git rebase --onto origin/main <old base tip>`. Force-push only branches other than `main`, and with `--force-with-lease`.
 
+## Releases
+
+- Versions are semver starting at `0.`: while the major is 0, any minor bump may break things. Move to `1.0.0` when the first stable deploy is running.
+- The git tag is the only version source. The owner tags `main` with `v0.<minor>.<patch>` and pushes it.
+- CI pushes both images to `ghcr.io/neves-nvs/santorini-server` and `santorini-client`: every push to `main` that changes an image input gets the commit SHA as its tag, and a `v*.*.*` tag also gets the version without the `v` (for example `0.1.0`). There is no `latest`: deploys pin a version or a SHA.
+
 ## Environment
 
 - `JWT_SECRET` is required outside development. The server also needs the `DB_*` settings (see `packages/server/.env.example`). Client keys start with `VITE_`.
