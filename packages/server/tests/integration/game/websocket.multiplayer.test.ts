@@ -152,7 +152,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
         expect(response.payload).toBeDefined();
         expect(response.payload.gameId).toBe(gameId);
       });
-    }, 10000);
+    });
 
     test("should send game state to subscriber when subscribe_game is called", async () => {
       // Create 2 players
@@ -182,7 +182,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
       const response = await statePromise;
       expect(response.type).toBe("game_state_update");
       expect(response.payload.gameId).toBe(gameId);
-    }, 10000);
+    });
   });
 
   describe("Player Connection Management", () => {
@@ -215,7 +215,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
       const playerUserIds = response.payload.gameState.players.map((p: { userId: number }) => p.userId);
       expect(playerUserIds).toContain(players[0].user.id);
       expect(playerUserIds).toContain(players[1].user.id);
-    }, 10000);
+    });
 
     test("should handle player disconnection gracefully", async () => {
       // Create 2 players
@@ -250,7 +250,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
       const response = await messagePromise;
       expect(response.type).toBe("game_state_update");
-    }, 10000);
+    });
   });
 
   describe("Message Broadcasting", () => {
@@ -283,6 +283,6 @@ describe("WebSocket Multiplayer Game Tests", () => {
       // targeted messages (though specific targeting would need game logic)
       expect(players[0].ws.readyState).toBe(WebSocket.OPEN);
       expect(players[1].ws.readyState).toBe(WebSocket.OPEN);
-    }, 10000);
+    });
   });
 });

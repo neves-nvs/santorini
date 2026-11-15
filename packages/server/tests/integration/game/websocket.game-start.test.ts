@@ -132,7 +132,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       expect(response.payload.ready).toBe(true);
       expect(response.payload.allReady).toBe(false); // Only 1 of 2 ready
       expect(response.payload.gameStarted).toBe(false);
-    }, 10000);
+    });
 
     test("should auto-start game when all players confirm ready", async () => {
       players = await createAndJoinPlayers(2);
@@ -160,7 +160,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       expect(response.payload.ready).toBe(true);
       expect(response.payload.allReady).toBe(true);
       expect(response.payload.gameStarted).toBe(true);
-    }, 10000);
+    });
 
     test("should allow player to unset ready before game starts", async () => {
       players = await createAndJoinPlayers(2);
@@ -187,7 +187,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       const response = await readyPromise;
       expect(response.payload.ready).toBe(false);
       expect(response.payload.gameStarted).toBe(false);
-    }, 10000);
+    });
 
     test("should not auto-start when game is not full", async () => {
       // Only 1 player joins (game needs 2)
@@ -206,7 +206,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       expect(response.payload.ready).toBe(true);
       expect(response.payload.allReady).toBe(false);
       expect(response.payload.gameStarted).toBe(false);
-    }, 10000);
+    });
   });
 
   describe("Game State After Auto-Start", () => {
@@ -245,7 +245,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
         expect(state.availableMoves).toBeDefined();
         expect(state.availableMoves.length).toBe(25);
       }
-    }, 15000);
+    });
   });
 
   describe("Player Join Broadcasts", () => {
@@ -280,7 +280,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       expect(broadcast.type).toBe("player_joined");
       expect(broadcast.payload.gameId).toBe(gameId);
       expect(broadcast.payload.playerCount).toBe(2);
-    }, 15000);
+    });
   });
 
   describe("Player Disconnect Auto-Remove", () => {
@@ -324,7 +324,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       expect(broadcast.payload.gameId).toBe(gameId);
       expect(broadcast.payload.userId).toBe(user2.id);
       expect(broadcast.payload.playerCount).toBe(1);
-    }, 15000);
+    });
 
     test("should NOT auto-remove ready player when they disconnect", async () => {
       players = await createAndJoinPlayers(2);
@@ -362,6 +362,6 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
 
       players[0].ws.off("message", playerLeftHandler);
       expect(playerLeftReceived).toBe(false);
-    }, 15000);
+    });
   });
 });

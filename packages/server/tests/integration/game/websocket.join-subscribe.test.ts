@@ -77,7 +77,7 @@ describe("Join and Subscribe Integration Tests", () => {
     await settle();
 
     expect(guestConnection.messages.map((m) => m.type)).toEqual([WS_MESSAGE_TYPES.GAME_JOINED]);
-  }, 15000);
+  });
 
   test("a player who is not in the game can subscribe and watch it", async () => {
     const [owner, guest, watcher] = await Promise.all([
@@ -96,7 +96,7 @@ describe("Join and Subscribe Integration Tests", () => {
     const joined = await waitFor(watcherConnection, WS_MESSAGE_TYPES.PLAYER_JOINED);
 
     expect(joined.payload.gameId).toBe(gameId);
-  }, 15000);
+  });
 
   test("a socket follows one game at a time", async () => {
     const [firstOwner, secondOwner, watcher] = await Promise.all([
@@ -114,5 +114,5 @@ describe("Join and Subscribe Integration Tests", () => {
     const error = await waitFor(watcherConnection, WS_MESSAGE_TYPES.ERROR);
 
     expect(error.payload).toContain("Already subscribed");
-  }, 15000);
+  });
 });

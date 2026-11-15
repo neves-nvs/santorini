@@ -134,7 +134,7 @@ describe("Player Join Broadcast Integration Test", () => {
     expect(broadcast.payload.gameId).toBe(gameId);
     expect(broadcast.payload.userId).toBe(user2.id);
     expect(broadcast.payload.playerCount).toBe(2);
-  }, 15000);
+  });
 
   test("Player 1 should receive game_state_update with updated player list when Player 2 joins", async () => {
     if (!player1) throw new Error("Player 1 not initialized");
@@ -191,7 +191,7 @@ describe("Player Join Broadcast Integration Test", () => {
     const playerIds = players.map((p) => p.userId);
     expect(playerIds).toContain(player1.user.id);
     expect(playerIds).toContain(user2.id);
-  }, 15000);
+  });
 
   test("Both players should see each other after joining", async () => {
     if (!player1) throw new Error("Player 1 not initialized");
@@ -215,7 +215,7 @@ describe("Player Join Broadcast Integration Test", () => {
     const playerIds = joinResponse2.payload.gameState.players.map((p) => p.userId);
     expect(playerIds).toContain(player1.user.id);
     expect(playerIds).toContain(user2.id);
-  }, 15000);
+  });
 
   test("join_game should be idempotent - Player 1 can rejoin without error", async () => {
     if (!player1) throw new Error("Player 1 not initialized");
@@ -234,5 +234,5 @@ describe("Player Join Broadcast Integration Test", () => {
 
     // Should still see only 1 player
     expect(response2.payload.gameState.players).toHaveLength(1);
-  }, 15000);
+  });
 });
