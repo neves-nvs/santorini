@@ -25,7 +25,7 @@ const LobbyPage = () => {
     try {
       // Fetch both available games and my games in parallel
       const [available, mine] = await Promise.all([
-        apiService.getGamesWithPlayerCounts(),
+        apiService.getGames(),
         apiService.getMyGames()
       ])
       setAvailableGames(available)

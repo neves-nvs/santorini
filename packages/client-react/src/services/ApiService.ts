@@ -1,5 +1,6 @@
 import { ErrorHandler, ErrorType } from '../utils/errorHandler'
-import type { GameInfo, GameState, PlayerView } from '../types/game'
+import { logWarn } from '../utils/log'
+import type { GameInfo, GameState } from '../types/game'
 
 export interface LoginRequest {
   username: string
@@ -57,15 +58,10 @@ export class ApiService {
 
         // Handle specific error types with consistent actions
         if (error.type === ErrorType.AUTHENTICATION) {
-          console.warn('Authentication failed - redirecting to auth.')
+          logWarn('Authentication failed - redirecting to auth.')
           if (window.location.pathname !== '/auth') {
             window.location.href = '/auth'
           }
-        }
-
-        if (response.status === 404 && endpoint.includes('/games/')) {
-          console.warn('Game not found')
-          // Let the UI handle clearing game state, don't manipulate localStorage
         }
 
         if (!expectedStatuses.includes(response.status)) {
@@ -114,9 +110,8 @@ export class ApiService {
         method: 'POST',
       })
     } catch (error) {
-      console.warn('Logout request failed:', error)
+      logWarn('Logout request failed:', error)
     }
-    // Note: No longer clearing localStorage - let GameContext handle state
   }
 
   // A one-time ticket for opening a WebSocket (browsers cannot set headers on the handshake)
@@ -154,11 +149,6 @@ export class ApiService {
     return this.request<GameInfo[]>('/games')
   }
 
-  async getGamesWithPlayerCounts(): Promise<GameInfo[]> {
-    // This now returns games with player counts included
-    return this.request<GameInfo[]>('/games')
-  }
-
   async getMyGames(): Promise<GameInfo[]> {
     // Get games where the current user is a player
     return this.request<GameInfo[]>('/games/my')
@@ -173,73 +163,6 @@ export class ApiService {
 
   async getGame(gameId: string): Promise<GameState> {
     return this.request<GameState>(`/games/${gameId}`)
-  }
-
-  async joinGame(gameId: string): Promise<boolean> {
-    try {
-      await this.request<unknown>(`/games/${gameId}/join`, {
-        method: 'POST',
-      })
-      return true
-    } catch (error) {
-      console.error('Failed to join game:', error)
-      return false
-    }
-  }
-
-  async getGamePlayers(gameId: string): Promise<PlayerView[]> {
-    return this.request<PlayerView[]>(`/games/${gameId}/players`)
-  }
-
-
-
-  async getGameState(gameId: string): Promise<GameState> {
-    // Use the new comprehensive game state endpoint
-    console.log(`Fetching game state for game ID: ${gameId}`)
-    const result = await this.request<GameState>(`/games/${gameId}`)
-    console.log(`Game state response:`, result)
-    console.log(`Board in response:`, result?.board)
-    return result
-  }
-
-  async setPlayerReady(gameId: string, isReady: boolean): Promise<boolean> {
-    try {
-      console.log('ApiService.setPlayerReady called:', { gameId, isReady })
-      console.log('Sending POST to:', `/games/${gameId}/ready`)
-      console.log('Request body:', JSON.stringify({ isReady }))
-
-      const response = await this.request<unknown>(`/games/${gameId}/ready`, {
-        method: 'POST',
-        body: JSON.stringify({ isReady }),
-      })
-
-      console.log('Backend response:', response)
-      return true
-    } catch (error) {
-      console.error('Failed to set ready status:', error)
-      return false
-    }
-  }
-
-  // Game plays
-  async makePlay(gameId: string, play: unknown): Promise<unknown> {
-    return this.request<unknown>(`/games/${gameId}/plays`, {
-      method: 'POST',
-      body: JSON.stringify({ play }),
-    })
-  }
-
-  // Make a move using the new turn management system
-  async makeMove(gameId: string, move: unknown): Promise<unknown> {
-    return this.request<unknown>(`/games/${gameId}/move`, {
-      method: 'POST',
-      body: JSON.stringify({ move }),
-    })
-  }
-
-  // Get current turn state and available plays
-  async getTurnState(gameId: string): Promise<unknown> {
-    return this.request<unknown>(`/games/${gameId}/turn`)
   }
 }
 

@@ -71,8 +71,7 @@ export function useGameActions() {
    */
   const fetchGameState = useCallback(async (gameId: string): Promise<void> => {
     try {
-      console.log('Fetching game state:', gameId)
-      const state = await apiService.getGameState(gameId)
+      const state = await apiService.getGame(gameId)
       setGameState(state)
     } catch (error) {
       console.error('Failed to fetch game state:', error)
