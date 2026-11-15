@@ -19,6 +19,26 @@ export default [
     },
   },
   {
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { patterns: [{ group: ["..", "../**"], message: "Import across folders through the @/ alias; ./ stays for the same folder." }] },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[object.name='process'][property.name='env']",
+          message: "Client code reads configuration from import.meta.env, not process.env.",
+        },
+        {
+          selector: "CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|doMock|importActual)$/] > Literal.arguments:first-child[value=/^\\.\\./], ImportExpression > Literal.source[value=/^\\.\\./]",
+          message: "Use the @/ alias instead of a ../ path.",
+        },
+      ],
+    },
+  },
+  {
     files: ["scripts/**/*.mjs"],
     languageOptions: {
       globals: globals.node,
