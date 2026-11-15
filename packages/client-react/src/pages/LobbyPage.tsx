@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
 import { apiService } from '@/services/ApiService'
-import { GameInfo } from '@/types/game'
+import type { GameSummary } from '@santorini/shared'
 
 type GameTab = 'available' | 'my-games'
 
@@ -15,8 +15,8 @@ const LobbyPage = () => {
   const [error, setError] = useState('')
   const refreshInFlight = useRef(false)
 
-  const [availableGames, setAvailableGames] = useState<GameInfo[]>([])
-  const [myGames, setMyGames] = useState<GameInfo[]>([])
+  const [availableGames, setAvailableGames] = useState<GameSummary[]>([])
+  const [myGames, setMyGames] = useState<GameSummary[]>([])
   const [activeTab, setActiveTab] = useState<GameTab>('available')
   const [playerCount, setPlayerCount] = useState(2)
 
@@ -90,7 +90,7 @@ const LobbyPage = () => {
     }
   }
 
-  const handleJoinGame = async (game: GameInfo) => {
+  const handleJoinGame = async (game: GameSummary) => {
     if (!username) {
       setError('Please login first')
       return
