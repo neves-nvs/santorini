@@ -30,13 +30,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(import.meta.dirname, './src'),
-      '@/components': path.resolve(import.meta.dirname, './src/components'),
-      '@/hooks': path.resolve(import.meta.dirname, './src/hooks'),
-      '@/services': path.resolve(import.meta.dirname, './src/services'),
-      '@/types': path.resolve(import.meta.dirname, './src/types'),
-      '@/utils': path.resolve(import.meta.dirname, './src/utils'),
-      '@/store': path.resolve(import.meta.dirname, './src/store'),
+      '@shared': path.resolve(import.meta.dirname, '../shared/src'),
     },
   },
 })

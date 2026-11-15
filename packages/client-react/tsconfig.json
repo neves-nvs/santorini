@@ -23,13 +23,7 @@
 
     /* Path mapping */
     "paths": {
-      "@/*": ["./src/*"],
-      "@/components/*": ["./src/components/*"],
-      "@/hooks/*": ["./src/hooks/*"],
-      "@/services/*": ["./src/services/*"],
-      "@/types/*": ["./src/types/*"],
-      "@/utils/*": ["./src/utils/*"],
-      "@/store/*": ["./src/store/*"]
+      "@shared/*": ["../shared/src/*"]
     }
   },
   "include": ["src"],
