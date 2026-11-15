@@ -28,12 +28,13 @@ test.describe('Navigation and Routing', () => {
     await page.goto('/')
     await page.waitForTimeout(2000)
 
-    // Filter out known acceptable errors (like network errors if backend is down)
+    // The browser itself reports the 401 that /me answers to a visitor who is not logged in
     const criticalErrors = consoleErrors.filter(
       (error) => 
         !error.includes('Failed to fetch') &&
         !error.includes('NetworkError') &&
-        !error.includes('ERR_CONNECTION_REFUSED')
+        !error.includes('ERR_CONNECTION_REFUSED') &&
+        !error.includes('status of 401')
     )
 
     expect(criticalErrors).toHaveLength(0)

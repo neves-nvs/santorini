@@ -2,11 +2,12 @@ import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/support/require-stack.ts',
   fullyParallel: false, // Run tests sequentially for multi-player tests
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Single worker for consistent test state
-  reporter: 'html',
+  reporter: [['list'], ['html', { open: 'never' }]],
   timeout: 60000, // 60 second timeout per test
   use: {
     baseURL: 'http://localhost:5174',
@@ -18,24 +19,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
-
-  // Both frontend and backend need to be running
-  // Backend should be started separately or via webServer array
-  webServer: [
-    {
-      command: 'cd ../server && npm run dev',
-      url: 'http://localhost:3000/games',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120000,
-    },
-    {
-      command: 'npm run dev',
-      url: 'http://localhost:5174',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120000,
+      use: { ...devices['Desktop Chrome'], channel: process.env.SMOKE_BROWSER_CHANNEL || undefined },
     },
   ],
 })

@@ -11,6 +11,8 @@ set -euo pipefail
 #   With no argument both run. A throwaway database container is used.
 #   Set SMOKE_BROWSER_CHANNEL=chrome to use an installed Google Chrome instead of
 #   downloading Chromium.
+#   SMOKE_TEST_COMMAND replaces the Playwright command that runs against the started
+#   app (scripts/e2e uses it to run the whole suite).
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 if ! command -v npm >/dev/null 2>&1; then
@@ -31,7 +33,7 @@ port_in_use() {
 
 wait_for() {
   for _ in $(seq 1 90); do
-    if curl -s -o /dev/null "$1"; then
+    if curl -sf -o /dev/null "$1"; then
       return 0
     fi
     sleep 1
@@ -101,14 +103,14 @@ run_mode() {
 
   "start_$name"
 
-  if ! wait_for http://localhost:3000/games || ! wait_for http://localhost:5174; then
+  if ! wait_for http://localhost:3000/readyz || ! wait_for http://localhost:5174; then
     show_logs
     stop_apps
     return 1
   fi
 
   local status=0
-  (cd "$root/packages/client-react" && npm run test:smoke) || status=1
+  (cd "$root/packages/client-react" && bash -c "${SMOKE_TEST_COMMAND:-npm run test:smoke}") || status=1
   if [ "$status" -ne 0 ]; then
     show_logs
   fi
@@ -120,9 +122,11 @@ if [ ! -d "$root/packages/client-react/node_modules" ]; then
   echo "Run scripts/install first." >&2
   exit 1
 fi
-if [ -z "${SMOKE_BROWSER_CHANNEL:-}" ]; then
-  (cd "$root/packages/client-react" && npx playwright install chromium >/dev/null)
+if ! docker info >/dev/null 2>&1; then
+  echo "Docker is not running; the test stack starts a throwaway Postgres container." >&2
+  exit 1
 fi
+(cd "$root/packages/client-react" && node scripts/ensure-browser.mjs "${SMOKE_BROWSER_CHANNEL:-}")
 
 failed=0
 case "$mode" in

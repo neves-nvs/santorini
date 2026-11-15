@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Runs the whole Playwright suite against a freshly started app: a throwaway Postgres container, the
+# server and the client, all stopped and removed afterwards. Asks before installing the browser.
+#
+#   scripts/e2e
+#   Set SMOKE_BROWSER_CHANNEL=chrome to use an installed Google Chrome instead of Playwright's Chromium.
+
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export SMOKE_TEST_COMMAND="npx playwright test"
+exec "$here/smoke" scripts

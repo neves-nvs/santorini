@@ -14,7 +14,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:coverage:open": "../../scripts/test-coverage client-react",
-    "test:e2e": "node scripts/ensure-browser.mjs && playwright test",
+    "test:e2e": "../../scripts/e2e",
     "test:e2e:ui": "node scripts/ensure-browser.mjs && playwright test --ui",
     "test:e2e:headed": "node scripts/ensure-browser.mjs && playwright test --headed",
     "test:smoke": "node scripts/ensure-browser.mjs \"$SMOKE_BROWSER_CHANNEL\" && playwright test -c playwright.smoke.config.ts"

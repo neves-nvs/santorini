@@ -32,7 +32,8 @@ export class ApiService {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    expectedStatuses: number[] = []
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
 
@@ -67,7 +68,9 @@ export class ApiService {
           // Let the UI handle clearing game state, don't manipulate localStorage
         }
 
-        ErrorHandler.logError(error, `ApiService.request(${endpoint})`)
+        if (!expectedStatuses.includes(response.status)) {
+          ErrorHandler.logError(error, `ApiService.request(${endpoint})`)
+        }
         throw error
       }
 
@@ -126,7 +129,8 @@ export class ApiService {
   async checkAuth(): Promise<{ id: number; username: string } | null> {
     try {
       // This endpoint should return user info if authenticated, 401 if not
-      return await this.request<{ id: number; username: string }>('/me')
+      // Being logged out is an expected answer here, not an error to log
+      return await this.request<{ id: number; username: string }>('/me', {}, [401, 403])
     } catch {
       // If 401 or any auth error, user is not authenticated
       return null

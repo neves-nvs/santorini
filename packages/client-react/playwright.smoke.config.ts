@@ -4,6 +4,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   testMatch: "dev-setup.spec.ts",
+  globalSetup: "./e2e/support/require-stack.ts",
   timeout: 60000,
   reporter: "list",
   use: {
