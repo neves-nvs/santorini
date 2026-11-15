@@ -8,6 +8,7 @@ import { db } from "./database.ts";
 import errorHandler from "./middlewares/errorMiddleware.ts";
 import express from "express";
 import { gameRoutes } from "./composition-root.ts";
+import helmet from "helmet";
 import passport from "passport";
 import { rateLimitMiddleware } from "./middlewares/rateLimitMiddleware.ts";
 import { sql } from "kysely";
@@ -24,6 +25,9 @@ const CORS_CONFIG = {
 const app = express();
 
 app.set("trust proxy", config.trustProxy);
+
+// HSTS is left to the proxy that terminates TLS
+app.use(helmet({ strictTransportSecurity: false }));
 
 app.get("/healthz", (_req, res) => {
   res.sendStatus(200);

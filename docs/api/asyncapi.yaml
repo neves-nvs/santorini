@@ -9,6 +9,7 @@ info:
 
     Every message is JSON text shaped `{ "type": string, "payload": ... }`. A message that is not valid JSON, or whose
     handler fails, is answered with an `error` message whose payload is a string.
+    A message larger than 16 KiB closes the connection with close code 1009.
 
     **Joining and subscribing are separate.** `join_game` makes the user a player and replies `game_joined`.
     `subscribe_game` registers this socket for the game's updates, as a player or as a watcher, and replies with the
