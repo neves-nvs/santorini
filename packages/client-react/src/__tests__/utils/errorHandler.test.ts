@@ -121,6 +121,26 @@ describe('ErrorHandler.handleHttpError', () => {
     expect(error.message).toBe('Invalid move')
   })
 
+  it('should show the messages of a validation failure from the server', async () => {
+    const response = new Response(
+      JSON.stringify({
+        errors: [
+          { type: 'field', msg: 'Username is required', path: 'username' },
+          { type: 'field', msg: 'Password must be at least 8 characters', path: 'password' },
+        ],
+      }),
+      {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      }
+    )
+
+    const error = await ErrorHandler.handleHttpError(response)
+
+    expect(error.type).toBe(ErrorType.VALIDATION)
+    expect(error.message).toBe('Username is required, Password must be at least 8 characters')
+  })
+
   it('should handle 422 validation error', async () => {
     const response = new Response(
       JSON.stringify({ message: 'Unprocessable entity' }),

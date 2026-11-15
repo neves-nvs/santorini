@@ -66,6 +66,12 @@ export const ERROR_MESSAGES = {
 } as const
 
 // Error handling utilities
+interface HttpErrorBody {
+  message?: string
+  error?: string
+  errors?: { msg: string }[]
+}
+
 export class ErrorHandler {
   /**
    * Create a standardized error from various input types
@@ -88,14 +94,14 @@ export class ErrorHandler {
    */
   static async handleHttpError(response: Response): Promise<GameError> {
     let errorMessage = 'Unknown server error'
-    let errorDetails: { message?: string; error?: string } | null = null
+    let errorDetails: HttpErrorBody | null = null
 
     try {
       const contentType = response.headers.get('content-type')
       if (contentType?.includes('application/json')) {
-        const body: { message?: string; error?: string } = await response.json()
+        const body: HttpErrorBody = await response.json()
         errorDetails = body
-        errorMessage = body.message || body.error || errorMessage
+        errorMessage = body.message || body.error || body.errors?.map((e) => e.msg).join(', ') || errorMessage
       } else {
         errorMessage = await response.text() || errorMessage
       }
