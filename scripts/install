@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# scripts/install               npm ci in every package
+# scripts/install --if-needed   only in the packages whose installed dependencies do not match package.json
+
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 if ! command -v npm >/dev/null 2>&1; then
   exec nix develop "$root/packages/server" --command "$0" "$@"
@@ -10,8 +13,16 @@ export npm_config_audit="${npm_config_audit:-false}"
 export npm_config_fund="${npm_config_fund:-false}"
 export npm_config_update_notifier="${npm_config_update_notifier:-false}"
 
+only_if_needed=false
+if [ "${1:-}" = "--if-needed" ]; then
+  only_if_needed=true
+fi
+
 for package in shared server client-react; do
-  echo "npm ci: packages/$package"
   cd "$root/packages/$package"
+  if [ "$only_if_needed" = true ] && [ -d node_modules ] && npm ls --depth=0 >/dev/null 2>&1; then
+    continue
+  fi
+  echo "npm ci: packages/$package"
   npm ci
 done

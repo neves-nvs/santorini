@@ -3,6 +3,7 @@ set -euo pipefail
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
+"$root/scripts/install" --if-needed
 "$root/scripts/db-up"
 "$root/scripts/migrate"
 
