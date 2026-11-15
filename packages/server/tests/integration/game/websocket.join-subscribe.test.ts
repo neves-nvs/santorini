@@ -1,19 +1,16 @@
 import * as helpers from "../helper/helpers.ts";
+import { ServerMessage, WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
 import { server, wss } from "../../../src/main.ts";
-import { WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
 
-interface Message {
-  type: string;
-  payload?: { gameId?: number } | string;
-}
+type MessageOf<K extends ServerMessage["type"]> = Extract<ServerMessage, { type: K }>;
 
 interface Connection {
   ws: WebSocket;
-  messages: Message[];
+  messages: ServerMessage[];
   send: (type: string, gameId: number) => void;
 }
 
@@ -22,7 +19,7 @@ async function connect(token: string): Promise<Connection> {
     headers: { Authorization: `Bearer ${token}` },
     perMessageDeflate: false,
   });
-  const messages: Message[] = [];
+  const messages: ServerMessage[] = [];
   ws.on("message", (data) => messages.push(JSON.parse(data.toString())));
   await new Promise((resolve, reject) => {
     ws.once("open", resolve);
@@ -31,9 +28,9 @@ async function connect(token: string): Promise<Connection> {
   return { ws, messages, send: (type, gameId) => ws.send(JSON.stringify({ type, payload: { gameId } })) };
 }
 
-async function waitFor(connection: Connection, type: string): Promise<Message> {
+async function waitFor<K extends ServerMessage["type"]>(connection: Connection, type: K): Promise<MessageOf<K>> {
   for (let attempt = 0; attempt < 100; attempt++) {
-    const message = connection.messages.find((m) => m.type === type);
+    const message = connection.messages.find((m): m is MessageOf<K> => m.type === type);
     if (message) return message;
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
@@ -100,7 +97,7 @@ describe("Join and Subscribe Integration Tests", () => {
     guestConnection.send(WS_MESSAGE_TYPES.JOIN_GAME, gameId);
     const joined = await waitFor(watcherConnection, WS_MESSAGE_TYPES.PLAYER_JOINED);
 
-    expect(joined.payload).toEqual(expect.objectContaining({ gameId }));
+    expect(joined.payload.gameId).toBe(gameId);
   }, 15000);
 
   test("a socket follows one game at a time", async () => {
