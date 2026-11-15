@@ -1,24 +1,42 @@
-# Repository Guidelines
+# Repository guidelines
 
-System Instruction: Absolute Mode • Eliminate: emojis, filler, hype, soft asks, conversational transitions, call-to-action appendixes. •
-Assume: user retains high-perception
-despite blunt tone. • Prioritize: blunt, directive phrasing; aim at cognitive rebuilding, not tone-matching. • Disable: engagement/sentiment-boosting behaviors. • Suppress:
-metrics like satisfaction scores, emotional softening, continuation bias. • Never mirror: user's diction, mood, or affect. • Speak only: to underlying cognitive tier. • No: questions, offers, suggestions, transitions, motivational content. • Terminate reply: immediately after delivering info - no closures. • Goal: restore independent, high-fidelity thinking. • Outcome: model obsolescence via user self-sufficiency.
+Santorini Online is a web version of the board game. `packages/server` is the Express API and WebSocket server, `packages/client-react` is the React and three.js client, `packages/shared` holds the types both use.
 
-## Project Structure & Module Organization
-Santorini Online lives in `packages/`. `server` contains the Express API, WebSocket lobby, and rule engine—core code in `src/app.ts`, `src/game`, and `src/board`, with database access in `src/users` and migrations in `src/migrations/`. `client-react` is the React + @react-three/fiber UI with routing under `src/pages` and shared stores in `src/services`. Supporting docs sit in `packages/server/docs`, while assets and marketing media live under `assets/`.
+## Layout
 
-## Build, Test, and Development Commands
-Install dependencies per package. Backend: `npm run dev` serves port 3000, `npm run build && npm start` compiles for production, `npm run migrate` applies Kysely migrations, and `npm run lint` or `npm run format` keep style aligned. Three.js frontend: `npm run dev` (Vite at `localhost:5173`) and `npm run build` for static output. React frontend: same dev/build flow plus `npm run type-check` and `npm run lint` before submitting. In either package, `npm run test:coverage:open` runs the tests with coverage and opens the HTML report.
+- `packages/server/src`: `app.ts`, `main.ts` and `composition-root.ts` wire things up. `auth/`, `users/`, `middlewares/`, `configs/`, `websockets/` (the WebSocket server and `WsRouter`), `game/` (`domain` rules, `application` services, `infra` repository and connection manager, `transport` HTTP routes), `migrations/` (Kysely). ES modules: relative imports end in `.ts`.
+- `packages/client-react/src`: `pages/`, `components/`, `hooks/`, `services/` (`ApiService`, `WebSocketClient`), `store/`. End-to-end tests are in `e2e/` (Playwright).
+- `packages/shared/src`: `websocket-types.ts` and `game-types.ts`, the message and game shapes used by both sides.
+- `docs/api/openapi.yaml` and `docs/api/asyncapi.yaml` describe the REST routes and the WebSocket messages. Change them together with the code.
+- `scripts/`: the shell helpers below.
 
-## Coding Style & Naming Conventions
-TypeScript throughout with Prettier and ESLint enforcing two-space indentation, trailing commas, and single quotes unless escaped. Use `camelCase` for functions and hooks, `PascalCase` for React components/classes, and `SCREAMING_SNAKE_CASE` for reusable constants (`src/constants.ts`). Backend modules should import via the `@src/...` alias and remain grouped by domain to match existing directories.
+## Commands (from the repository root)
 
-## Testing Guidelines
-Vitest drives automation. `npm run test` runs the full backend suite, `npm run test:unit` targets `packages/server/tests/unit`, and `npm run test:integration` launches a PostgreSQL Testcontainers instance—ensure Docker Desktop is running. Name specs `<feature>.test.ts` and keep integration tests beside the feature folder. Frontend automation is light; when adding behaviour, drop Vitest specs under `src/__tests__` and document manual smoke steps in the PR.
+- `scripts/install` runs `npm ci` in every package. `scripts/install --if-needed` does it only where `node_modules` is out of date.
+- `scripts/dev` starts Postgres, the server on :3000 and the client on :5174, installing missing dependencies first.
+- `scripts/check [server|client|all]` runs the checks CI runs, quietly. The server integration tests need Docker.
+- `scripts/e2e` runs the Playwright suite against a throwaway database, server and client. `scripts/smoke` checks the dev setup.
+- `scripts/docker-check` builds both images and runs the stack through nginx. Run it after a dependency change.
+- `scripts/format-file <file>` formats one file the way CI checks it.
 
-## Commit & Pull Request Guidelines
-Recent history favors short imperative subjects (`add frontend upgrades`, `fix tests`); stick to that voice and optionally prefix scope with Conventional tokens (`feat:`, `refactor:`) when helpful. Keep commits focused, describing cross-package work in the body. Pull requests should summarise intent, list affected packages, link issues or roadmap items, add before/after assets for UI changes, and state the test commands you ran.
+## Style
 
-## Environment & Configuration
-Create `.env` in `packages/server` defining `PORT`, `JWT_SECRET`, and database credentials (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_DATABASE`, `DB_PASSWORD`). Integration tests overwrite these during execution, so avoid hard-coding production secrets. Frontend environment keys must use the `VITE_` prefix; document new keys in `README.md` when they are required.
+- TypeScript with Prettier and ESLint. The `sort-imports` rule is on: imports with several members first, then single-member imports, each group sorted case-sensitively by first member.
+- `camelCase` for functions, `PascalCase` for components and classes, `SCREAMING_SNAKE_CASE` for constants.
+- Code explains itself through names and structure. Add a comment only for a "why" the code cannot show.
+
+## Tests
+
+- Vitest. Name specs `<feature>.test.ts`. Server unit tests are in `packages/server/tests/unit`, integration tests (Testcontainers, Docker needed) in `tests/integration`. Client unit tests are in `src/__tests__`.
+- A fix comes with a test that fails without it. No per-test timeouts. Do not re-test libraries.
+- The client's `npm run type-check` and `npm test` have known failures, so CI does not gate on them yet.
+
+## Git and pull requests
+
+- Work in a worktree from `origin/main`: `git worktree add -b <branch> ../santorini-<name> origin/main`, then `scripts/install --if-needed`.
+- Small pull requests with short imperative commit subjects and a prefix (`fix:`, `feat:`, `test:`, `docs:`, `chore:`). Say what changed, what was checked and what was not.
+- The owner merges, by squash. After a squash merge, rebase a stacked branch with `git rebase --onto origin/main <old base tip>`. Force-push only branches other than `main`, and with `--force-with-lease`.
+
+## Environment
+
+- `JWT_SECRET` is required outside development. The server also needs the `DB_*` settings (see `packages/server/.env.example`). Client keys start with `VITE_`.

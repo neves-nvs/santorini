@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+# Runs the checks CI runs, quietly: one line per step, and the tail of the output only for a step that fails.
+#   scripts/check [server|client|all]    (default: all)
+# The server integration tests need Docker and are skipped, with a note, when it is not running.
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if ! command -v npm >/dev/null 2>&1; then
+  exec nix develop "$root/packages/server" --command "$0" "$@"
+fi
+"$root/scripts/install" --if-needed
+
+failed=0
+log="$(mktemp)"
+trap 'rm -f "$log"' EXIT
+
+step() {
+  local label=$1 package=$2
+  shift 2
+  if (cd "$root/packages/$package" && "$@") >"$log" 2>&1; then
+    echo "ok    $label"
+  else
+    echo "FAIL  $label"
+    tail -n 25 "$log" | sed 's/^/        /'
+    failed=1
+  fi
+}
+
+check_server() {
+  step "server eslint" server npx eslint src tests
+  step "server prettier" server npx prettier --check 'src/**/*.ts' 'tests/**/*.ts'
+  step "server types" server npm run typecheck
+  step "server unit tests" server npm run test:unit
+  if docker info >/dev/null 2>&1; then
+    step "server integration tests" server npm run test:integration
+  else
+    echo "skip  server integration tests (Docker is not running)"
+  fi
+}
+
+check_client() {
+  step "client eslint" client-react npm run lint
+  echo "skip  client types and unit tests (known failures, CI does not gate on them yet)"
+}
+
+case "${1:-all}" in
+  server) check_server ;;
+  client) check_client ;;
+  all)
+    check_server
+    check_client
+    ;;
+  *)
+    echo "Usage: scripts/check [server|client|all]" >&2
+    exit 2
+    ;;
+esac
+
+exit "$failed"
