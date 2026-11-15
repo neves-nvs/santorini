@@ -33,7 +33,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 
 ## Git and pull requests
 
-- Work in a worktree from `origin/main`: `git worktree add -b <branch> ../santorini-<name> origin/main`, then `scripts/install --if-needed`.
+- The project folder holds the main clone and one worktree per task: `santorini/main`, `santorini/<task>`. From `santorini/main`, run `git worktree add -b <branch> ../<task> origin/main`, then `scripts/install --if-needed` in the new folder. Start the agent inside the worktree, and keep `main` clean.
 - Small pull requests with short imperative commit subjects and a prefix (`fix:`, `feat:`, `test:`, `docs:`, `chore:`). Say what changed, what was checked and what was not.
 - The owner merges, by squash. After a squash merge, rebase a stacked branch with `git rebase --onto origin/main <old base tip>`. Force-push only branches other than `main`, and with `--force-with-lease`.
 
