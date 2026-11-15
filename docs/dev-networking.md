@@ -21,7 +21,7 @@ flowchart LR
 
     Browser -- "GET / , /src/*" --> Static
     Browser -- "fetch /api/users" --> ApiProxy
-    Browser -- "ws://localhost:5174/ws?token=..." --> WsProxy
+    Browser -- "ws://localhost:5174/ws?ticket=..." --> WsProxy
     ApiProxy -- "/users" --> Rest
     WsProxy -- "ws://localhost:3000/" --> Ws
     Rest --> DB
@@ -41,12 +41,12 @@ sequenceDiagram
     S-->>V: 200 + Set-Cookie (JWT)
     V-->>B: 200 + Set-Cookie (same origin)
 
-    B->>V: GET /api/token
-    V->>S: GET /token (cookie)
-    S-->>B: { token }
+    B->>V: POST /api/ws-ticket (cookie)
+    V->>S: POST /ws-ticket (cookie)
+    S-->>B: { ticket } (one use, 30 s)
 
-    B->>V: Upgrade ws://localhost:5174/ws?token=...
-    V->>S: Upgrade ws://localhost:3000/?token=...
+    B->>V: Upgrade ws://localhost:5174/ws?ticket=...
+    V->>S: Upgrade ws://localhost:3000/?ticket=...
     S-->>B: 101 Switching Protocols
 ```
 

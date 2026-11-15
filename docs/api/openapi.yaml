@@ -116,13 +116,33 @@ paths:
                   username: { type: string }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /ws-ticket:
+    post:
+      tags: [Session]
+      summary: A one-time ticket for opening a WebSocket from a browser
+      description: |
+        A browser cannot set headers on the WebSocket handshake, and the session cookie alone is not accepted there.
+        Ask for a ticket, then open `ws://host/ws?ticket=<ticket>`. A ticket works once and expires after 30 seconds,
+        so each connection, including every reconnect, asks for a new one. Tickets are kept in the server's memory.
+      responses:
+        "200":
+          description: The ticket
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ticket]
+                properties:
+                  ticket: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /token:
     get:
       tags: [Session]
       summary: A JWT to authenticate a WebSocket with a header
       description: |
-        Returns a fresh 5 hour token. Browsers do not need it, because the WebSocket handshake carries the cookie.
-        Clients outside a browser send it as `Authorization: Bearer <token>`.
+        Returns a fresh 5 hour token. For clients that can set headers on the handshake (scripts, not browsers): send
+        it as `Authorization: Bearer <token>`.
       responses:
         "200":
           description: The token

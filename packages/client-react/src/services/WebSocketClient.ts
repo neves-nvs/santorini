@@ -13,6 +13,7 @@
  */
 
 import { WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types'
+import { apiService } from './ApiService'
 import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from './GameMessageHandler'
 import { RECONNECTION_DELAY } from '../constants/gameConstants'
 
@@ -40,30 +41,16 @@ class WebSocketClient {
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = RECONNECTION_DELAY
-  private authToken: string | null = null
-  private isAuthenticated = false
+  private shouldReconnect = false
 
   /**
-   * Connect after authentication - fetches JWT token first
+   * Open the socket and keep it open across drops. A browser cannot set headers on the handshake, so each
+   * connection asks the server for a one-time ticket first.
    */
-  async connectAfterAuth(): Promise<void> {
-    console.log('WebSocketClient.connectAfterAuth called')
-    this.isAuthenticated = true
-
-    try {
-      // Dynamic import to avoid circular dependency
-      const { apiService } = await import('./ApiService')
-      const tokenResponse = await apiService.getToken()
-      this.authToken = tokenResponse.token
-      console.log('Got JWT token for WebSocket')
-    } catch (error) {
-      console.error('Failed to get JWT token:', error)
-      this.isAuthenticated = false
-      return
-    }
-
-    if (!this.isAuthenticated) return
-    this.connect()
+  async connect(): Promise<void> {
+    console.log('WebSocketClient.connect called')
+    this.shouldReconnect = true
+    await this.openSocket()
   }
 
   /**
@@ -71,8 +58,7 @@ class WebSocketClient {
    */
   disconnect(): void {
     console.log('WebSocketClient disconnecting')
-    this.isAuthenticated = false
-    this.authToken = null
+    this.shouldReconnect = false
     this.reconnectAttempts = 0
 
     if (this.socket) {
@@ -150,18 +136,30 @@ class WebSocketClient {
   // Private methods
   // ─────────────────────────────────────────────────────────────
 
-  private connect(): void {
-    if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || this.socket.readyState === WebSocket.OPEN)) {
+  private isOpenOrOpening(): boolean {
+    return this.socket?.readyState === WebSocket.CONNECTING || this.socket?.readyState === WebSocket.OPEN
+  }
+
+  private async openSocket(): Promise<void> {
+    if (this.isOpenOrOpening()) {
       console.log('WebSocket already connecting/connected')
       return
     }
 
-    const wsUrl = this.authToken 
-      ? `${this.serverAddress}?token=${this.authToken}`
-      : this.serverAddress
+    let ticket: string
+    try {
+      ticket = await apiService.createWebSocketTicket()
+    } catch (error) {
+      console.error('Failed to get a WebSocket ticket:', error)
+      this.attemptReconnect()
+      return
+    }
+
+    // disconnect() may have run, or another call may have opened the socket, while the ticket was on its way
+    if (!this.shouldReconnect || this.isOpenOrOpening()) return
 
     console.log('Creating WebSocket connection')
-    this.socket = new WebSocket(wsUrl)
+    this.socket = new WebSocket(`${this.serverAddress}?ticket=${ticket}`)
 
     this.socket.onopen = () => {
       console.log('WebSocket connected')
@@ -190,8 +188,8 @@ class WebSocketClient {
   }
 
   private attemptReconnect(): void {
-    if (!this.isAuthenticated || this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnect attempts reached or not authenticated')
+    if (!this.shouldReconnect || this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error('Reconnecting is off or the maximum number of attempts was reached')
       return
     }
 
@@ -199,7 +197,7 @@ class WebSocketClient {
     console.log(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
 
     setTimeout(() => {
-      this.connect()
+      void this.openSocket()
     }, this.reconnectDelay * this.reconnectAttempts)
   }
 
@@ -212,9 +210,8 @@ class WebSocketClient {
     if (this.socket?.readyState === WebSocket.CONNECTING) {
       setTimeout(() => action(), 500)
     } else if (!this.socket) {
-      this.connectAfterAuth().then(() => {
-        setTimeout(() => action(), 1000)
-      })
+      void this.connect()
+      setTimeout(() => action(), 1000)
     }
   }
 }
@@ -233,8 +230,8 @@ export const webSocketClient = {
     return instance
   },
 
-  connectAfterAuth(): Promise<void> {
-    return this.getInstance().connectAfterAuth()
+  connect(): Promise<void> {
+    return this.getInstance().connect()
   },
 
   disconnect(): void {

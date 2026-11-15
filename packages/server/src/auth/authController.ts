@@ -11,6 +11,7 @@ import { findUserByUsername } from "../users/userRepository.ts";
 import logger from "../logger.ts";
 import passport from "passport";
 import { randomBytes } from "crypto";
+import { webSocketTickets } from "./webSocketTickets.ts";
 
 // Compared against when there is no hash to check, so an unknown user takes as long as a wrong password.
 const UNUSED_PASSWORD_HASH = bcrypt.hashSync(randomBytes(16).toString("hex"), 10);
@@ -143,6 +144,11 @@ router.get("/token", authenticate, async (req, res) => {
     logger.error(error.message);
     res.status(400).send(error.message);
   }
+});
+
+// A one-time ticket for opening a WebSocket from a browser, which cannot set headers on the handshake
+router.post("/ws-ticket", authenticate, (req, res) => {
+  res.status(200).json({ ticket: webSocketTickets.issue(getUser(req).username) });
 });
 
 // Endpoint to check authentication status and get user info

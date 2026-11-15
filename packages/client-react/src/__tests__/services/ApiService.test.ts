@@ -168,21 +168,20 @@ describe('ApiService', () => {
       await expect(apiService.logout()).resolves.toBeUndefined()
     })
 
-    it('should get JWT token', async () => {
-      const mockToken = { token: 'jwt-token-123' }
+    it('should create a WebSocket ticket', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockToken,
+        json: async () => ({ ticket: 'ticket-123' }),
       })
 
-      const result = await apiService.getToken()
+      const ticket = await apiService.createWebSocketTicket()
 
       expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/token',
-        expect.any(Object)
+        expect.stringContaining('/ws-ticket'),
+        expect.objectContaining({ method: 'POST' })
       )
-      expect(result).toEqual(mockToken)
+      expect(ticket).toBe('ticket-123')
     })
 
     it('should check authentication status', async () => {

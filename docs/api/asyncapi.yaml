@@ -30,7 +30,7 @@ servers:
     pathname: /ws
     description: Through the compose nginx
     security:
-      - $ref: "#/components/securitySchemes/sessionCookie"
+      - $ref: "#/components/securitySchemes/wsTicket"
 channels:
   game:
     address: /
@@ -150,13 +150,21 @@ operations:
     messages: [{ $ref: "#/channels/game/messages/error" }]
 components:
   securitySchemes:
-    sessionCookie:
+    wsTicket:
       type: httpApiKey
-      in: cookie
-      name: token
+      in: query
+      name: ticket
       description: |
-        The JWT from `POST /session`, which a browser sends by itself. Other clients send `Authorization: Bearer <jwt>`
-        (see `GET /token`). A `?token=` query parameter is also accepted for now and is due to be removed.
+        Browsers: `POST /ws-ticket` (authenticated with the session cookie) returns a one-time ticket that expires
+        after 30 seconds. Open the socket with `?ticket=<ticket>`. A ticket works once, so every connection and every
+        reconnect asks for a new one.
+    bearerToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Clients that can set headers on the handshake send `Authorization: Bearer <jwt>` (see `GET /token`).
+        The session cookie alone is not accepted on the handshake, and neither is a JWT in the query string.
   messages:
     createGame:
       name: create_game
