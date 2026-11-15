@@ -12,7 +12,7 @@ interface PerformanceMetric {
 class PerformanceMonitor {
   private metrics: Map<string, PerformanceMetric> = new Map()
   private renderCounts: Map<string, number> = new Map()
-  private isEnabled: boolean = process.env.NODE_ENV === 'development'
+  private isEnabled: boolean = import.meta.env.DEV
 
   /**
    * Start timing an operation
@@ -98,14 +98,14 @@ class PerformanceMonitor {
 export const performanceMonitor = new PerformanceMonitor()
 
 // Make it available globally for console access
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   Object.assign(window, { performanceMonitor })
 }
 
 // React hook for tracking component renders
 export function useRenderTracker(componentName: string, dependencies?: unknown[]) {
   React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       performanceMonitor.trackRender(componentName, dependencies)
     }
   })
@@ -119,7 +119,7 @@ export function withPerformanceTracking<P extends object>(
   const name = componentName || Component.displayName || Component.name || 'Unknown'
   
   return function TrackedComponent(props: P) {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       performanceMonitor.trackRender(name, props)
     }
     

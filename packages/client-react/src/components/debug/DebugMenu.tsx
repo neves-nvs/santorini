@@ -36,7 +36,7 @@ const DebugMenu = memo(({ debugState, onDebugChange, cameraType, onToggleCamera,
   const [isOpen, setIsOpen] = useState(false)
 
   // Only show in development
-  if (process.env.NODE_ENV === 'production') {
+  if (import.meta.env.PROD) {
     return null
   }
 

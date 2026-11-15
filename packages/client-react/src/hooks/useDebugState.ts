@@ -32,7 +32,7 @@ export function useDebugState() {
   // Keyboard shortcuts
   useEffect(() => {
     // Only enable in development
-    if (process.env.NODE_ENV !== 'development') {
+    if (!import.meta.env.DEV) {
       return
     }
 
@@ -76,7 +76,7 @@ export function useDebugState() {
     toggleCameraType,
 
     // Convenience flags
-    isDebugMode: process.env.NODE_ENV === 'development',
+    isDebugMode: import.meta.env.DEV,
     hasAnyDebugEnabled: Object.values(debugState).some(Boolean)
   }
 }
