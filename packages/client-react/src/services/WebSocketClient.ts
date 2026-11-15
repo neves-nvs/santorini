@@ -101,7 +101,7 @@ class WebSocketClient {
       return
     }
     console.log('Subscribing to game:', gameId)
-    this.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId })
+    this.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: parseInt(gameId) })
   }
 
   unsubscribeFromGame(gameId: string): void {

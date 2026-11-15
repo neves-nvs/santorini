@@ -7,14 +7,14 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@/components': path.resolve(__dirname, './src/components'),
-      '@/hooks': path.resolve(__dirname, './src/hooks'),
-      '@/services': path.resolve(__dirname, './src/services'),
-      '@/types': path.resolve(__dirname, './src/types'),
-      '@/utils': path.resolve(__dirname, './src/utils'),
-      '@/store': path.resolve(__dirname, './src/store'),
-      '@shared': path.resolve(__dirname, '../shared'),
+      '@': path.resolve(import.meta.dirname, './src'),
+      '@/components': path.resolve(import.meta.dirname, './src/components'),
+      '@/hooks': path.resolve(import.meta.dirname, './src/hooks'),
+      '@/services': path.resolve(import.meta.dirname, './src/services'),
+      '@/types': path.resolve(import.meta.dirname, './src/types'),
+      '@/utils': path.resolve(import.meta.dirname, './src/utils'),
+      '@/store': path.resolve(import.meta.dirname, './src/store'),
+      '@shared': path.resolve(import.meta.dirname, '../shared'),
     },
   },
   server: {

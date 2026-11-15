@@ -14,9 +14,10 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:coverage:open": "../../scripts/test-coverage client-react",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e": "../../scripts/e2e",
+    "test:e2e:ui": "node scripts/ensure-browser.mjs && playwright test --ui",
+    "test:e2e:headed": "node scripts/ensure-browser.mjs && playwright test --headed",
+    "test:smoke": "node scripts/ensure-browser.mjs \"$SMOKE_BROWSER_CHANNEL\" && playwright test -c playwright.smoke.config.ts"
   },
   "keywords": [
     "santorini",
@@ -40,7 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.65.0",
+    "@playwright/test": "1.64.1",
     "@react-three/test-renderer": "^9.1.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

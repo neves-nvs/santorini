@@ -61,7 +61,7 @@ export class WsRouter {
     type: string,
     payload: Record<string, unknown> | undefined,
   ): Promise<void> {
-    const gameId = payload?.gameId as number | undefined;
+    const gameId: unknown = payload?.gameId;
 
     switch (type) {
       // Lobby
@@ -101,8 +101,8 @@ export class WsRouter {
     }
   }
 
-  private requireGameId(gameId: number | undefined): asserts gameId is number {
-    if (!gameId) throw new Error("Game ID required");
+  private requireGameId(gameId: unknown): asserts gameId is number {
+    if (!Number.isInteger(gameId) || (gameId as number) < 1) throw new Error("Game ID must be a positive whole number");
   }
 
   private async createGame(connection: Connection, userId: number, maxPlayers = 2): Promise<void> {

@@ -120,4 +120,15 @@ describe("Join and Subscribe Integration Tests", () => {
 
     expect(error.payload).toContain("Already subscribed");
   });
+
+  test("rejects a game id that is not a number", async () => {
+    const owner = await helpers.createTestUserWithLogin();
+    const gameId = await helpers.createTestGame(owner.token);
+    const connection = await connectUser(owner.token);
+
+    connection.ws.send(JSON.stringify({ type: WS_MESSAGE_TYPES.SUBSCRIBE_GAME, payload: { gameId: String(gameId) } }));
+    const error = await waitFor(connection, WS_MESSAGE_TYPES.ERROR);
+
+    expect(error.payload).toContain("whole number");
+  });
 });
