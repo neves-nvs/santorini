@@ -26,7 +26,7 @@ interface GameSetupResult {
 export function useGameSetup(gameId?: string): GameSetupResult {
   const { state: appState, setError } = useApp()
   const { isConnected, isConnecting } = useGameConnection()
-  const { joinGame, subscribeToGame, fetchGameState, resetActionState } = useGameActions()
+  const { joinGame, subscribeToGame, unsubscribeFromGame, fetchGameState, resetActionState } = useGameActions()
   const setGameId = useSetGameId()
   const setGameState = useSetGameState()
 
@@ -44,6 +44,9 @@ export function useGameSetup(gameId?: string): GameSetupResult {
 
     if (prevGameIdRef.current !== gameId) {
       console.log('Game ID changed:', prevGameIdRef.current, '→', gameId)
+      if (prevGameIdRef.current) {
+        unsubscribeFromGame(prevGameIdRef.current)
+      }
       prevGameIdRef.current = gameId
 
       // Clear state for new game
@@ -56,7 +59,7 @@ export function useGameSetup(gameId?: string): GameSetupResult {
     }
 
     setGameId(gameId)
-  }, [gameId, setGameId, setGameState, resetActionState])
+  }, [gameId, setGameId, setGameState, resetActionState, unsubscribeFromGame])
 
   // Initialize game when connected
   const initializeGame = useCallback(async () => {

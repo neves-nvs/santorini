@@ -37,15 +37,13 @@ export function useGameConnection() {
     }
   }, [appState.username])
 
-  // Disconnect on unmount (logout)
+  // The socket belongs to the game page: leaving it closes the socket, and the server cleans up
   useEffect(() => {
     return () => {
-      // Only disconnect if no username (logged out)
-      if (!appState.username) {
-        webSocketClient.disconnect()
-      }
+      connectionAttemptedRef.current = false
+      webSocketClient.disconnect()
     }
-  }, [appState.username])
+  }, [])
 
   return {
     isConnected,
