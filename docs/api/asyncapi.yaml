@@ -12,7 +12,7 @@ info:
 
     **Joining and subscribing are separate.** `join_game` makes the user a player and replies `game_joined`.
     `subscribe_game` registers this socket for the game's updates, as a player or as a watcher, and replies with the
-    current state. A client that is playing sends both. Only a subscribed socket receives `game_state_update`,
+    current state. A client that is playing sends both. A client leaves a game by closing its socket. Only a subscribed socket receives `game_state_update`,
     `player_joined`, `player_left` and `game_start`. A player who has not clicked ready is removed from a waiting game
     when their last subscribed socket closes. A ready player keeps the seat.
 
@@ -97,7 +97,8 @@ operations:
     summary: Receive a game's updates
     description: |
       Open to any logged-in user, so someone who is not in the game can watch it. Replies with a `game_state_update`
-      carrying the user's view.
+      carrying the user's view. A connection follows one game: subscribing again, to the same game or another, gives an
+      `error`, so a client opens a new connection for each game page.
     messages: [{ $ref: "#/channels/game/messages/subscribeGame" }]
     reply:
       channel: { $ref: "#/channels/game" }

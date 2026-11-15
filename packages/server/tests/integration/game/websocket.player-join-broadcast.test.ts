@@ -4,17 +4,13 @@
  */
 
 import * as helpers from "../helper/helpers.ts";
+import { ServerMessageOf, ServerMessageType } from "../../../../shared/src/websocket-types.ts";
 import { server, wss } from "../../../src/main.ts";
-import { ServerMessage } from "../../../../shared/src/websocket-types.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
-
-type ServerMessageType = ServerMessage["type"];
-
-type WsMessage<K extends ServerMessageType> = Extract<ServerMessage, { type: K }>;
 
 interface TestPlayer {
   user: UserDTO;
@@ -44,7 +40,7 @@ function waitForMessage<K extends ServerMessageType>(
   ws: WebSocket,
   messageType: K,
   timeout = 5000,
-): Promise<WsMessage<K>> {
+): Promise<ServerMessageOf<K>> {
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       reject(new Error(`Timeout waiting for message type: ${messageType}`));
@@ -136,7 +132,7 @@ describe("Player Join Broadcast Integration Test", () => {
     expect(broadcast.payload.gameId).toBe(gameId);
     expect(broadcast.payload.userId).toBe(user2.id);
     expect(broadcast.payload.playerCount).toBe(2);
-  }, 15000);
+  });
 
   test("Player 1 should receive game_state_update with updated player list when Player 2 joins", async () => {
     if (!player1) throw new Error("Player 1 not initialized");
@@ -153,7 +149,7 @@ describe("Player Join Broadcast Integration Test", () => {
 
     // Set up listener for game_state_update with 2 players
     const ws1 = player1.ws;
-    const stateUpdatePromise = new Promise<WsMessage<"game_state_update">>((resolve, reject) => {
+    const stateUpdatePromise = new Promise<ServerMessageOf<"game_state_update">>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error("Timeout waiting for game_state_update with 2 players"));
       }, 5000);
@@ -193,7 +189,7 @@ describe("Player Join Broadcast Integration Test", () => {
     const playerIds = players.map((p) => p.userId);
     expect(playerIds).toContain(player1.user.id);
     expect(playerIds).toContain(user2.id);
-  }, 15000);
+  });
 
   test("Both players should see each other after joining", async () => {
     if (!player1) throw new Error("Player 1 not initialized");
@@ -217,7 +213,7 @@ describe("Player Join Broadcast Integration Test", () => {
     const playerIds = joinResponse2.payload.gameState.players.map((p) => p.userId);
     expect(playerIds).toContain(player1.user.id);
     expect(playerIds).toContain(user2.id);
-  }, 15000);
+  });
 
   test("join_game should be idempotent - Player 1 can rejoin without error", async () => {
     if (!player1) throw new Error("Player 1 not initialized");
@@ -236,5 +232,5 @@ describe("Player Join Broadcast Integration Test", () => {
 
     // Should still see only 1 player
     expect(response2.payload.gameState.players).toHaveLength(1);
-  }, 15000);
+  });
 });

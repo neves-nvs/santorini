@@ -43,6 +43,13 @@ export class ConnectionManager {
   }
 
   /**
+   * The game a connection is subscribed to, if any. A connection follows one game at a time.
+   */
+  gameOf(connection: Connection): number | undefined {
+    return this.connections.get(connection)?.gameId;
+  }
+
+  /**
    * Add a client connection to a game
    */
   addClient(gameId: number, userId: number, connection: Connection): void {

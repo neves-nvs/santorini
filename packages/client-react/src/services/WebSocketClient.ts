@@ -62,6 +62,7 @@ class WebSocketClient {
       return
     }
 
+    if (!this.isAuthenticated) return
     this.connect()
   }
 

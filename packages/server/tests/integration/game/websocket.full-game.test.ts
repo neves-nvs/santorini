@@ -459,7 +459,7 @@ describe("Full Game Integration Test", () => {
     expect(state.status).toBe("completed");
     expect(state.winnerId).toBe(players[0].playerId);
     expect(state.winReason).toBe("win_condition");
-  }, 60000);
+  });
 
   test("should end game when player is trapped (lose condition)", async () => {
     await setupGame();
@@ -584,7 +584,7 @@ describe("Full Game Integration Test", () => {
     // The unit test covers the actual trap detection logic
     expect(state.status).toBe("in-progress");
     expect(state.phase).toBe("moving");
-  }, 60000);
+  });
 
   test("should reject move from wrong player", async () => {
     await setupGame();
@@ -619,7 +619,7 @@ describe("Full Game Integration Test", () => {
     // Check error message - could be in payload.message or payload directly
     const errMessage = errorMsg.payload?.message || errorMsg.payload || "";
     expect(errMessage).toContain("Not your turn");
-  }, 30000);
+  });
 
   test("should reject invalid move position", async () => {
     await setupGame();
@@ -661,5 +661,5 @@ describe("Full Game Integration Test", () => {
     // Error message should indicate invalid position
     const errMessage = errorMsg.payload?.message || errorMsg.payload || "";
     expect(errMessage.length).toBeGreaterThan(0);
-  }, 30000);
+  });
 });
