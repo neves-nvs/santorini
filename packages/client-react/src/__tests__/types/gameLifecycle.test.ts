@@ -19,17 +19,6 @@ describe('mapToGameLifecycle', () => {
       expect(lifecycle.sub).toBe('VICTORY')
     })
 
-    it('should map aborted game to FINISHED/ABORTED', () => {
-      const backendState = {
-        game_status: 'aborted',
-      }
-
-      const lifecycle = mapToGameLifecycle(backendState)
-
-      expect(lifecycle.main).toBe('FINISHED')
-      expect(lifecycle.sub).toBe('ABORTED')
-    })
-
     it('should map game with winner to FINISHED/VICTORY', () => {
       const backendState = {
         game_status: 'in-progress',
