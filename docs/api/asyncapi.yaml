@@ -4,8 +4,8 @@ info:
   version: 0.1.0
   description: |
     Live play: lobby actions, readiness, moves and the updates the server pushes. Accounts and the game lists are in
-    `openapi.yaml`. The TypeScript types for these messages are in `packages/shared/src/websocket-types.ts` and
-    `game-types.ts`.
+    `openapi.yaml`. The TypeScript types for these messages are in `@santorini/shared` (`packages/shared/src/websocket-types.ts`
+    and `game-types.ts`).
 
     Every message is JSON text shaped `{ "type": string, "payload": ... }`. A message that is not valid JSON, or whose
     handler fails, is answered with an `error` message whose payload is a string.

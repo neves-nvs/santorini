@@ -5,13 +5,13 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx watch ./src/main.ts",
     "test": "vitest run",
-    "start": "node dist/server/src/main.js",
+    "start": "node dist/main.js",
     "clean": "rm -rf dist",
     "build": "tsc",
     "format": "prettier --write 'src/**/*.{js,ts,json}'",
     "lint": "eslint --fix",
     "migrate": "tsx src/runMigrations.ts",
-    "migrate:prod": "node dist/server/src/runMigrations.js",
+    "migrate:prod": "node dist/runMigrations.js",
     "test:coverage": "vitest run --coverage",
     "test:coverage:open": "../../scripts/test-coverage server",
     "test:unit": "vitest run --project unit",
@@ -24,6 +24,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@santorini/shared": "file:../shared",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.6",

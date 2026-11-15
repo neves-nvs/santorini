@@ -1,13 +1,21 @@
 # syntax=docker/dockerfile:1
 
 # Build with scripts/docker-build (docker-bake.hcl): the shared package comes in as a named build context.
+# The client depends on it as file:../shared, so a built copy has to sit at /app/packages/shared before npm ci.
 ARG NODE_VERSION=26
 
+FROM node:${NODE_VERSION}-slim AS shared-build
+WORKDIR /app/packages/shared
+COPY --from=shared package.json package-lock.json ./
+RUN npm ci
+COPY --from=shared . ./
+RUN npm run build && npm prune --omit=dev
+
 FROM node:${NODE_VERSION}-slim AS build
+COPY --from=shared-build /app/packages/shared /app/packages/shared
 WORKDIR /app/packages/client-react
 COPY package.json package-lock.json ./
 RUN npm ci
-COPY --from=shared . /app/packages/shared
 COPY . ./
 ENV VITE_API_URL=/api
 ENV VITE_WS_URL=/ws

@@ -7,7 +7,7 @@ import {
   PlayerView,
   Move as SharedMove,
   SpectatorGameView,
-} from "../../../../shared/src/game-types.ts";
+} from "@santorini/shared";
 import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "./Move.ts";
 import { Board } from "./Board.ts";
 import { Game } from "./Game.ts";

@@ -76,6 +76,36 @@ export interface BuildMove {
 export type Move = PlaceWorkerMove | MoveWorkerMove | BuildMove;
 
 // ============================================================================
+// Move Commands (client -> server)
+// ============================================================================
+
+/**
+ * What a client sends to make a move. The server takes the player from the authenticated user and looks
+ * at nothing but the fields below, so a command is looser than the Move it becomes: `workerId` may be left
+ * out (the server falls back to 0) and a build names no worker.
+ */
+export interface PlaceWorkerCommand {
+  type: 'place_worker';
+  position: Position;
+  workerId?: number;
+}
+
+export interface MoveWorkerCommand {
+  type: 'move_worker';
+  position: Position;
+  fromPosition: Position;
+  workerId?: number;
+}
+
+export interface BuildCommand {
+  type: 'build_block' | 'build_dome';
+  position: Position;
+  buildingLevel?: number;
+}
+
+export type MoveCommand = PlaceWorkerCommand | MoveWorkerCommand | BuildCommand;
+
+// ============================================================================
 // Game View Types (sent to clients)
 // ============================================================================
 

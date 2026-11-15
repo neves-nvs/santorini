@@ -1,10 +1,5 @@
 import * as helpers from "../helper/helpers.ts";
-import {
-  ServerMessage,
-  ServerMessageOf,
-  ServerMessageType,
-  WS_MESSAGE_TYPES,
-} from "../../../../shared/src/websocket-types.ts";
+import { ServerMessage, ServerMessageOf, ServerMessageType, WS_MESSAGE_TYPES } from "@santorini/shared";
 import { server, wss } from "../../../src/main.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";

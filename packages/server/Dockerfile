@@ -1,22 +1,34 @@
 # syntax=docker/dockerfile:1
 
 # Build with scripts/docker-build (docker-bake.hcl): the shared package comes in as a named build context.
+# The server depends on it as file:../shared, so a built copy has to sit at /app/packages/shared in every stage
+# that runs npm ci, and in the final image, where node_modules/@santorini/shared links to it.
 ARG NODE_VERSION=26
 
+FROM node:${NODE_VERSION}-slim AS shared-build
+WORKDIR /app/packages/shared
+COPY --from=shared package.json package-lock.json ./
+RUN npm ci
+COPY --from=shared . ./
+RUN npm run build && npm prune --omit=dev
+
 FROM node:${NODE_VERSION}-slim AS build
+COPY --from=shared-build /app/packages/shared /app/packages/shared
 WORKDIR /app/packages/server
 COPY package.json package-lock.json ./
 RUN npm ci
-COPY --from=shared . /app/packages/shared
 COPY . ./
 RUN npm run build
 
 FROM node:${NODE_VERSION}-slim AS production-dependencies
+COPY --from=shared-build /app/packages/shared /app/packages/shared
 WORKDIR /app/packages/server
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 FROM node:${NODE_VERSION}-slim
+COPY --from=shared-build /app/packages/shared/package.json /app/packages/shared/package.json
+COPY --from=shared-build /app/packages/shared/dist /app/packages/shared/dist
 WORKDIR /app/packages/server
 ENV PORT=3000
 ENV NODE_ENV=production
@@ -27,4 +39,4 @@ USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s \
   CMD node -e "fetch('http://127.0.0.1:' + process.env.PORT + '/readyz').then((response) => process.exit(response.ok ? 0 : 1), () => process.exit(1))"
-CMD ["node", "dist/server/src/main.js"]
+CMD ["node", "dist/main.js"]

@@ -66,7 +66,7 @@ done
 echo "ok   both images run as a non-root user"
 
 echo "== migrations"
-docker run --rm --network "$name" "${env_args[@]}" "$server_image" node dist/server/src/runMigrations.js
+docker run --rm --network "$name" "${env_args[@]}" "$server_image" node dist/runMigrations.js
 
 echo "== server and frontend"
 docker run -d --name "$name-app" --network "$name" "${env_args[@]}" "$server_image" >/dev/null

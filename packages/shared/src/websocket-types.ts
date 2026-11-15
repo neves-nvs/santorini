@@ -5,16 +5,14 @@
  * to ensure type safety and prevent message type mismatches.
  */
 
-import type { GameEndPayload, GameStateUpdatePayload, GameStatus, Move, PlayerGameView } from './game-types.ts';
-
-// ============================================================================
-// Base Types
-// ============================================================================
-
-export interface Position {
-  x: number;
-  y: number;
-}
+import type {
+  GameEndPayload,
+  GameStateUpdatePayload,
+  GameStatus,
+  Move,
+  MoveCommand,
+  PlayerGameView,
+} from './game-types.ts';
 
 // ============================================================================
 // Message Type Constants (eliminates magic strings)
@@ -55,32 +53,6 @@ export const WS_MESSAGE_TYPES = {
 } as const;
 
 export type WSMessageType = typeof WS_MESSAGE_TYPES[keyof typeof WS_MESSAGE_TYPES];
-
-// ============================================================================
-// Move Types
-// ============================================================================
-
-export interface PlaceWorkerMove {
-  type: 'place_worker';
-  workerId?: number;
-  position: Position;
-}
-
-export interface MoveWorkerMove {
-  type: 'move_worker';
-  workerId?: number;
-  fromPosition: Position;
-  position: Position;
-}
-
-export interface BuildMove {
-  type: 'build_block' | 'build_dome';
-  position: Position;
-  buildingLevel?: number;
-  buildingType?: string;
-}
-
-export type GameMove = PlaceWorkerMove | MoveWorkerMove | BuildMove;
 
 // ============================================================================
 // Client -> Server Messages
@@ -131,7 +103,7 @@ export interface MakeMoveMessage {
   type: typeof WS_MESSAGE_TYPES.MAKE_MOVE;
   payload: {
     gameId: number;
-    move: GameMove;
+    move: MoveCommand;
   };
 }
 

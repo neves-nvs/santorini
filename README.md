@@ -81,14 +81,14 @@ You need [Docker](https://www.docker.com/) (for PostgreSQL) and either [Node.js]
 ```bash
 git clone https://github.com/neves-nvs/santorini.git
 cd santorini
-scripts/install   # npm ci in every package
+scripts/install   # npm ci in every package, then builds packages/shared
 scripts/dev       # starts PostgreSQL in Docker, runs migrations, then the server and client
 ```
 
 - Server: <http://localhost:3000>
 - Client: <http://localhost:5174>
 
-`scripts/dev` uses local development defaults (see the scripts for the variables). Running `npm run dev` yourself in `packages/server` and `packages/client-react` works without any setup too: the server listens on port 3000 and the client reaches it through the Vite proxy (`/api` and `/ws`); see [docs/dev-networking.md](./docs/dev-networking.md). The database container keeps running after you stop it; stop it with `scripts/db-down`.
+`scripts/dev` uses local development defaults (see the scripts for the variables). Running `npm run dev` yourself in `packages/server` and `packages/client-react` works without any setup too (after `scripts/install`; `packages/shared` is a built package, so run `npm run dev` there as well, or `npm run build` after changing it): the server listens on port 3000 and the client reaches it through the Vite proxy (`/api` and `/ws`); see [docs/dev-networking.md](./docs/dev-networking.md). The database container keeps running after you stop it; stop it with `scripts/db-down`.
 
 ### With Docker
 

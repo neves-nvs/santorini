@@ -32,7 +32,7 @@ services:
 
   migrate:
     <<: *server
-    command: ["node", "dist/server/src/runMigrations.js"]
+    command: ["node", "dist/runMigrations.js"]
     depends_on:
       postgres:
         condition: service_healthy

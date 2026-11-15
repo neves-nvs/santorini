@@ -1,12 +1,13 @@
 import { GameNotFoundError, PlayerNotInGameError } from "../../errors/GameErrors.ts";
 import { GameViewBuilder, PlayerGameView } from "../domain/GameViewBuilder.ts";
-import { MoveCommand, createMove } from "../domain/Move.ts";
 
 import { Game } from "../domain/Game.ts";
 import { GameBroadcaster } from "./GameBroadcaster.ts";
 import { GameEvent } from "../domain/GameEvent.ts";
 import { GameRepositoryDb } from "../infra/GameRepositoryDb.ts";
+import type { MoveCommand } from "@santorini/shared";
 import { Player } from "../domain/Player.ts";
+import { createMove } from "../domain/Move.ts";
 import logger from "../../logger.ts";
 
 /**
