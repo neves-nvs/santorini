@@ -2,6 +2,13 @@ import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
 
+// STL files are not loaded in tests: every useLoader call returns a box
+vi.mock('@react-three/fiber', async () => {
+  const THREE = await import('three')
+  const actual = await vi.importActual<object>('@react-three/fiber')
+  return { ...actual, useLoader: () => new THREE.BoxGeometry(1, 1, 1) }
+})
+
 // Cleanup after each test case
 afterEach(() => {
   cleanup()

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { createR3FRenderer, advanceR3FFrames, setupSTLMocks } from '../../helpers/r3f-test-utils'
+import { createR3FRenderer, advanceR3FFrames } from '../../helpers/r3f-test-utils'
 import { useState } from 'react'
 import { Cell, Block, BoundingBox, BoardBase } from '../../../components/game/GamePieces'
 
@@ -279,8 +279,6 @@ describe('Game Board Components', () => {
 
   describe('Block Component', () => {
     it('should render building blocks with correct position', async () => {
-      setupSTLMocks()
-
       const renderer = await createR3FRenderer(
         <Block type="base" position={[1, 0, 1]} />
       )
@@ -291,8 +289,6 @@ describe('Game Board Components', () => {
     })
 
     it('should render preview blocks with transparency', async () => {
-      setupSTLMocks()
-
       const renderer = await createR3FRenderer(
         <Block type="mid" position={[0, 0.5, 0]} isPreview={true} />
       )
@@ -367,8 +363,6 @@ describe('Game Board Components', () => {
     })
 
     it('should memoize BoardBase component', async () => {
-      setupSTLMocks()
-
       let renderCount = 0
 
       const TrackedBoardBase = () => {
