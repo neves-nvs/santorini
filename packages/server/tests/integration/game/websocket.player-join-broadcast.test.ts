@@ -4,15 +4,13 @@
  */
 
 import * as helpers from "../helper/helpers.ts";
-import { ServerMessage, ServerMessageOf } from "../../../../shared/src/websocket-types.ts";
+import { ServerMessageOf, ServerMessageType } from "../../../../shared/src/websocket-types.ts";
 import { server, wss } from "../../../src/main.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
-
-type ServerMessageType = ServerMessage["type"];
 
 interface TestPlayer {
   user: UserDTO;

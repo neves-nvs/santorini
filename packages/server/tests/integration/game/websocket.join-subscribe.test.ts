@@ -1,5 +1,10 @@
 import * as helpers from "../helper/helpers.ts";
-import { ServerMessage, ServerMessageOf, WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
+import {
+  ServerMessage,
+  ServerMessageOf,
+  ServerMessageType,
+  WS_MESSAGE_TYPES,
+} from "../../../../shared/src/websocket-types.ts";
 import { server, wss } from "../../../src/main.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
@@ -26,7 +31,7 @@ async function connect(token: string): Promise<Connection> {
   return { ws, messages, send: (type, gameId) => ws.send(JSON.stringify({ type, payload: { gameId } })) };
 }
 
-async function waitFor<K extends ServerMessage["type"]>(connection: Connection, type: K): Promise<ServerMessageOf<K>> {
+async function waitFor<K extends ServerMessageType>(connection: Connection, type: K): Promise<ServerMessageOf<K>> {
   for (let attempt = 0; attempt < 100; attempt++) {
     const message = connection.messages.find((m): m is ServerMessageOf<K> => m.type === type);
     if (message) return message;
