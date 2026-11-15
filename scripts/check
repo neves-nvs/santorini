@@ -41,7 +41,8 @@ check_server() {
 
 check_client() {
   step "client eslint" client-react npm run lint
-  echo "skip  client types and unit tests (known failures, CI does not gate on them yet)"
+  step "client types" client-react npm run type-check
+  echo "skip  client unit tests (known failures, CI does not gate on them yet)"
 }
 
 case "${1:-all}" in

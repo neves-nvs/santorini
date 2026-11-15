@@ -30,7 +30,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 
 - Vitest. Name specs `<feature>.test.ts`. Server unit tests are in `packages/server/tests/unit`, integration tests (Testcontainers, Docker needed) in `tests/integration`. Client unit tests are in `src/__tests__`.
 - No per-test timeouts. Do not re-test libraries.
-- The client's `npm run type-check` and `npm test` have known failures, so CI does not gate on them yet.
+- The client's `npm test` has known failures, so CI does not gate on it yet. `npm run type-check` is gated.
 
 ## Definition of done
 

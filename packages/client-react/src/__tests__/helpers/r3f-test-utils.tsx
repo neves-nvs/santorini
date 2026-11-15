@@ -13,6 +13,7 @@ import { Canvas } from '@react-three/fiber'
 import ReactThreeTestRenderer from '@react-three/test-renderer'
 import * as THREE from 'three'
 import { vi } from 'vitest'
+import type { BoardCell } from '../../store/gameStore'
 
 // Create a simple box geometry as a mock (shared across all mocks)
 const mockGeometry = new THREE.BoxGeometry(1, 1, 1)
@@ -24,7 +25,7 @@ export const mockSTLLoader = () => {
   // Mock the STLLoader
   vi.mock('three/examples/jsm/loaders/STLLoader', () => ({
     STLLoader: vi.fn().mockImplementation(() => ({
-      load: vi.fn((url, onLoad) => {
+      load: vi.fn((_url, onLoad) => {
         onLoad(mockGeometry)
       }),
     })),
@@ -114,7 +115,7 @@ export const createMockGameState = (overrides = {}) => ({
 /**
  * Create mock board state for testing
  */
-export const createMockBoardState = () => {
+export const createMockBoardState = (): BoardCell[][] => {
   return Array(5).fill(null).map(() =>
     Array(5).fill(null).map(() => ({
       buildingLevel: 0,
@@ -127,12 +128,12 @@ export const createMockBoardState = () => {
  * Add a worker to a board state at specific position
  */
 export const addWorkerToBoardState = (
-  boardState: any[][],
+  boardState: BoardCell[][],
   x: number,
   y: number,
   playerId: number,
   workerId: number
-) => {
+): BoardCell[][] => {
   const newBoard = JSON.parse(JSON.stringify(boardState))
   newBoard[x][y].worker = { playerId, workerId }
   return newBoard
@@ -142,11 +143,11 @@ export const addWorkerToBoardState = (
  * Add a building to a board state at specific position
  */
 export const addBuildingToBoardState = (
-  boardState: any[][],
+  boardState: BoardCell[][],
   x: number,
   y: number,
   level: number
-) => {
+): BoardCell[][] => {
   const newBoard = JSON.parse(JSON.stringify(boardState))
   newBoard[x][y].buildingLevel = level
   return newBoard

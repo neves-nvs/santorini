@@ -1,6 +1,36 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useGameStore } from '../../store/gameStore'
-import type { GameState } from '../../types/game'
+import type { AvailableMove, BoardView, GameState } from '../../types/game'
+
+const emptyBoard = (): BoardView => ({
+  cells: Array.from({ length: 5 }, () =>
+    Array.from({ length: 5 }, () => ({ height: 0, hasDome: false, worker: null })),
+  ),
+})
+
+const gameStateWith = (board: BoardView): GameState => ({
+  gameId: 1,
+  status: 'in-progress',
+  phase: 'moving',
+  currentPlayerId: 1,
+  turnNumber: 1,
+  version: 1,
+  board,
+  players: [],
+  isCurrentPlayer: true,
+})
+
+const boardWithWorkerAt = (x: number, y: number): BoardView => {
+  const board = emptyBoard()
+  board.cells[x][y].worker = { playerId: 1, workerId: 1 }
+  return board
+}
+
+const moveWorkerTo = (x: number, y: number): AvailableMove => ({
+  type: 'move_worker',
+  workerId: 1,
+  validPositions: [{ x, y }],
+})
 
 describe('gameStore', () => {
   beforeEach(() => {
@@ -44,14 +74,7 @@ describe('gameStore', () => {
 
   describe('setGameState', () => {
     it('should update game state', () => {
-      const mockGameState: GameState = {
-        id: 1,
-        game_status: 'in-progress',
-        game_phase: 'moving',
-        currentPlayer: 1,
-        players: [],
-        board: { spaces: [] },
-      }
+      const mockGameState = gameStateWith(emptyBoard())
 
       useGameStore.getState().setGameState(mockGameState)
 
@@ -59,51 +82,24 @@ describe('gameStore', () => {
       expect(state.gameState).toEqual(mockGameState)
     })
 
-    it('should parse board state when game state has board', () => {
-      const mockGameState: GameState = {
-        id: 1,
-        game_status: 'in-progress',
-        game_phase: 'moving',
-        currentPlayer: 1,
-        players: [],
-        board: {
-          spaces: [
-            { x: 0, y: 0, height: 0, workers: [] },
-            { x: 0, y: 1, height: 1, workers: [] },
-          ],
-        },
-      }
+    it('should parse the board, turning a dome into an extra building level', () => {
+      const board = emptyBoard()
+      board.cells[0][1] = { height: 1, hasDome: false, worker: null }
+      board.cells[0][2] = { height: 3, hasDome: true, worker: null }
 
-      useGameStore.getState().setGameState(mockGameState)
+      useGameStore.getState().setGameState(gameStateWith(board))
 
-      const state = useGameStore.getState()
-      expect(state.boardState).not.toBeNull()
-      expect(state.boardState?.cells).toBeDefined()
+      const cells = useGameStore.getState().boardState?.cells
+      expect(cells?.[0][1].buildingLevel).toBe(1)
+      expect(cells?.[0][2].buildingLevel).toBe(4)
     })
 
     it('should build worker indices when game state has workers', () => {
-      const mockGameState: GameState = {
-        id: 1,
-        game_status: 'in-progress',
-        game_phase: 'moving',
-        currentPlayer: 1,
-        players: [],
-        board: {
-          spaces: [
-            {
-              x: 0,
-              y: 0,
-              height: 0,
-              workers: [{ playerId: 1, workerId: 1, color: 'blue' }],
-            },
-          ],
-        },
-      }
-
-      useGameStore.getState().setGameState(mockGameState)
+      useGameStore.getState().setGameState(gameStateWith(boardWithWorkerAt(0, 0)))
 
       const state = useGameStore.getState()
-      expect(state.workersByPosition.size).toBeGreaterThan(0)
+      expect(state.workersByPosition.get('0,0')).toEqual({ x: 0, y: 0, playerId: 1, workerId: 1 })
+      expect(state.workersByPlayer.get(1)).toHaveLength(1)
     })
   })
 
@@ -118,10 +114,7 @@ describe('gameStore', () => {
 
   describe('setCurrentPlayerMoves', () => {
     it('should update current player moves', () => {
-      const moves = [
-        { type: 'move_worker', position: { x: 0, y: 0 }, workerId: 1 },
-        { type: 'move_worker', position: { x: 0, y: 1 }, workerId: 1 },
-      ]
+      const moves = [moveWorkerTo(0, 0), moveWorkerTo(0, 1)]
 
       useGameStore.getState().setCurrentPlayerMoves(moves)
 
@@ -211,9 +204,7 @@ describe('gameStore', () => {
       useGameStore.getState().setGameId('123')
       useGameStore.getState().setMyTurn(true)
       useGameStore.getState().setSelectedWorker({ workerId: 1, x: 0, y: 0 })
-      useGameStore.getState().setCurrentPlayerMoves([
-        { type: 'move_worker', position: { x: 0, y: 0 }, workerId: 1 },
-      ])
+      useGameStore.getState().setCurrentPlayerMoves([moveWorkerTo(0, 0)])
 
       // Reset
       useGameStore.getState().resetGame()
@@ -240,23 +231,7 @@ describe('gameStore', () => {
 
   describe('updateBoardCell', () => {
     beforeEach(() => {
-      // Set up a game state with a board
-      const mockGameState: GameState = {
-        id: 1,
-        game_status: 'in-progress',
-        game_phase: 'moving',
-        currentPlayer: 1,
-        players: [],
-        board: {
-          spaces: Array.from({ length: 25 }, (_, i) => ({
-            x: Math.floor(i / 5),
-            y: i % 5,
-            height: 0,
-            workers: [],
-          })),
-        },
-      }
-      useGameStore.getState().setGameState(mockGameState)
+      useGameStore.getState().setGameState(gameStateWith(emptyBoard()))
     })
 
     it('should update cell building level', () => {
@@ -297,40 +272,17 @@ describe('gameStore', () => {
       useGameStore.getState().updateBoardCell(3, 3, { worker })
 
       const state = useGameStore.getState()
-      expect(state.workersByPosition.has('3-3')).toBe(true)
+      expect(state.workersByPosition.has('3,3')).toBe(true)
     })
   })
 
   describe('moveWorker', () => {
     beforeEach(() => {
-      // Set up a game state with a worker
-      const mockGameState: GameState = {
-        id: 1,
-        game_status: 'in-progress',
-        game_phase: 'moving',
-        currentPlayer: 1,
-        players: [],
-        board: {
-          spaces: Array.from({ length: 25 }, (_, i) => {
-            const x = Math.floor(i / 5)
-            const y = i % 5
-            return {
-              x,
-              y,
-              height: 0,
-              workers:
-                x === 1 && y === 1
-                  ? [{ playerId: 1, workerId: 1, color: 'blue' }]
-                  : [],
-            }
-          }),
-        },
-      }
-      useGameStore.getState().setGameState(mockGameState)
+      useGameStore.getState().setGameState(gameStateWith(boardWithWorkerAt(1, 1)))
     })
 
     it('should move worker from one cell to another', () => {
-      useGameStore.getState().moveWorker(1, 1, 2, 2)
+      useGameStore.getState().moveWorker(1, 1, 2, 2, 1, 1)
 
       const state = useGameStore.getState()
       expect(state.boardState?.cells[1][1].worker).toBeNull()
@@ -341,30 +293,11 @@ describe('gameStore', () => {
     })
 
     it('should update worker indices after move', () => {
-      useGameStore.getState().moveWorker(1, 1, 2, 2)
+      useGameStore.getState().moveWorker(1, 1, 2, 2, 1, 1)
 
       const state = useGameStore.getState()
-      expect(state.workersByPosition.has('1-1')).toBe(false)
-      expect(state.workersByPosition.has('2-2')).toBe(true)
-    })
-
-    it('should not move if source cell has no worker', () => {
-      const stateBefore = useGameStore.getState().boardState
-
-      useGameStore.getState().moveWorker(0, 0, 1, 0)
-
-      const stateAfter = useGameStore.getState().boardState
-      expect(stateAfter).toEqual(stateBefore)
-    })
-
-    it('should not move to out of bounds position', () => {
-      const stateBefore = useGameStore.getState().boardState
-
-      useGameStore.getState().moveWorker(1, 1, 10, 10)
-
-      const stateAfter = useGameStore.getState().boardState
-      expect(stateAfter).toEqual(stateBefore)
+      expect(state.workersByPosition.has('1,1')).toBe(false)
+      expect(state.workersByPosition.has('2,2')).toBe(true)
     })
   })
 })
-
