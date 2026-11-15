@@ -31,17 +31,3 @@ export const useAppStore = create<AppStore>((set) => ({
   })
 }))
 
-// Hook for React components (backwards compatible)
-export const useApp = () => {
-  const store = useAppStore()
-  return {
-    state: {
-      userId: store.userId,
-      username: store.username,
-      error: store.error
-    },
-    setUser: store.setUser,
-    setError: store.setError,
-    logout: store.logout
-  }
-}

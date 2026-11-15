@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Link } from 'react-router-dom'
-import { useApp } from '../../store/appStore'
+import { useAppStore } from '../../store/appStore'
 import { useIsConnected, useGameId } from '../../store/gameSelectors'
 
 interface GameNavigationProps {
@@ -13,7 +13,7 @@ interface GameNavigationProps {
  * Provides links back to lobby and home, plus connection status
  */
 const GameNavigation = memo(({ className, style }: GameNavigationProps) => {
-  const { state: appState } = useApp()
+  const username = useAppStore((s) => s.username)
   const isConnected = useIsConnected()
   const gameId = useGameId()
 
@@ -38,7 +38,7 @@ const GameNavigation = memo(({ className, style }: GameNavigationProps) => {
       {/* User Info */}
       <div style={{ marginBottom: '0.75rem' }}>
         <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-          {appState.username || 'Guest'}
+          {username || 'Guest'}
         </div>
         <div style={{ fontSize: '0.8rem' }}>
           <span style={{ color: isConnected ? '#4CAF50' : '#f44336' }}>

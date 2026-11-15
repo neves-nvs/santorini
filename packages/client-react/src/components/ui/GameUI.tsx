@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { useApp } from '../../store/appStore'
+import { useAppStore } from '../../store/appStore'
 import { useGameState, useCurrentPlayerMoves, useIsMyTurn, useIsConnected } from '../../store/gameSelectors'
 import GameBoard from '../game/GameBoard'
 import GameStatusBar from '../game/GameStatusBar'
@@ -15,7 +15,7 @@ const GameUI = memo(() => {
   const isMyTurn = useIsMyTurn()
   const isConnected = useIsConnected()
 
-  const { state: appState } = useApp()
+  const appError = useAppStore((s) => s.error)
 
   // Use debug state hook (includes camera type)
   const { debugState, handleDebugChange, cameraType, toggleCameraType } = useDebugState()
@@ -39,7 +39,7 @@ const GameUI = memo(() => {
       <GameLobby />
 
       {/* Error Display */}
-      {appState.error && (
+      {appError && (
         <div style={{
           position: 'absolute',
           top: '50%',
@@ -51,7 +51,7 @@ const GameUI = memo(() => {
           borderRadius: '8px',
           zIndex: 1000
         }}>
-          <strong>Error:</strong> {appState.error}
+          <strong>Error:</strong> {appError}
         </div>
       )}
 
