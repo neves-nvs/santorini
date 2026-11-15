@@ -6,6 +6,7 @@ import { config } from "../configs/config.ts";
 import { findUserByUsername } from "../users/userRepository.ts";
 import internal from "stream";
 import logger from "../logger.ts";
+import { webSocketTickets } from "./webSocketTickets.ts";
 
 function requestScheme(request: IncomingMessage): string {
   const forwarded = request.headers["x-forwarded-proto"];
@@ -31,15 +32,26 @@ function isAllowedOrigin(request: IncomingMessage): boolean {
   }
 }
 
+function usernameFromBearerToken(request: IncomingMessage): string | null {
+  const authHeader = request.headers["authorization"];
+  if (!authHeader?.startsWith("Bearer ")) {
+    return null;
+  }
+  const decoded = jwt.verify(authHeader.split(" ")[1], config.jwtSecret) as JwtPayload;
+  return decoded.username;
+}
+
+function usernameFromTicket(request: IncomingMessage): string | null {
+  const ticket = new URL(request.url ?? "/", "http://localhost").searchParams.get("ticket");
+  return ticket ? webSocketTickets.consume(ticket) : null;
+}
+
 export async function webSocketAuthUpgrade(
   request: IncomingMessage,
   socket: internal.Duplex,
   head: Buffer,
   wss: WebSocketServer,
 ) {
-  const authHeader = request.headers["authorization"];
-  let token: string | null = null;
-
   logger.info("WebSocket upgrade request received");
 
   if (!isAllowedOrigin(request)) {
@@ -49,35 +61,16 @@ export async function webSocketAuthUpgrade(
     return;
   }
 
-  if (authHeader?.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-  } else {
-    const cookieHeader = request.headers.cookie;
-    if (cookieHeader) {
-      const cookies = cookieHeader.split(";").reduce(
-        (acc, cookie) => {
-          const [key, value] = cookie.trim().split("=");
-          acc[key] = value;
-          return acc;
-        },
-        {} as Record<string, string>,
-      );
-
-      token = cookies.token;
-    }
-  }
-
-  if (!token) {
-    logger.error("No authentication token found in the Authorization header or cookies");
-    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-    socket.destroy();
-    return;
-  }
-
   try {
-    const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
+    const username = usernameFromBearerToken(request) ?? usernameFromTicket(request);
+    if (!username) {
+      logger.error("No Bearer token or valid ticket on the WebSocket upgrade");
+      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+      socket.destroy();
+      return;
+    }
 
-    const user = await findUserByUsername(decoded.username);
+    const user = await findUserByUsername(username);
     if (!user) {
       logger.error("User not found");
       socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");

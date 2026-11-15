@@ -1,8 +1,10 @@
 import { server, wss } from "../../../src/main.ts";
 import WebSocket from "ws";
+import { app } from "../../../src/app.ts";
 import { config } from "../../../src/configs/config.ts";
 import { createTestUserWithLogin } from "../helper/helpers.ts";
 import { db } from "../../../src/database.ts";
+import request from "supertest";
 
 let jwtToken: string;
 
@@ -44,6 +46,11 @@ function expectConnectionAccepted(ws: WebSocket): Promise<void> {
       reject(new Error(`WebSocket connection failed: ${err}`));
     });
   });
+}
+
+async function requestTicket(): Promise<string> {
+  const response = await request(app).post("/ws-ticket").set("Cookie", `token=${jwtToken}`).expect(200);
+  return response.body.ticket;
 }
 
 describe("WebSocket Authentication Integration Tests", () => {
@@ -115,13 +122,34 @@ describe("WebSocket Authentication Integration Tests", () => {
       });
     });
 
-    test("authenticates WebSocket connection with the session cookie", async () => {
+    test("rejects a connection that has only the session cookie", async () => {
       const ws = new WebSocket(`ws://localhost:${config.port}`, {
         headers: { Cookie: `token=${jwtToken}` },
         perMessageDeflate: false,
       });
 
-      await expectConnectionAccepted(ws);
+      await expectConnectionRejected(ws);
+    });
+
+    test("authenticates WebSocket connection with a ticket", async () => {
+      const ticket = await requestTicket();
+
+      await expectConnectionAccepted(new WebSocket(`ws://localhost:${config.port}/?ticket=${ticket}`));
+    });
+
+    test("accepts a ticket only once", async () => {
+      const ticket = await requestTicket();
+      await expectConnectionAccepted(new WebSocket(`ws://localhost:${config.port}/?ticket=${ticket}`));
+
+      await expectConnectionRejected(new WebSocket(`ws://localhost:${config.port}/?ticket=${ticket}`));
+    });
+
+    test("rejects a ticket that was never issued", async () => {
+      await expectConnectionRejected(new WebSocket(`ws://localhost:${config.port}/?ticket=made-up`));
+    });
+
+    test("only a logged-in user can get a ticket", async () => {
+      await request(app).post("/ws-ticket").expect(401);
     });
 
     test("rejects a valid JWT passed in the query string", async () => {

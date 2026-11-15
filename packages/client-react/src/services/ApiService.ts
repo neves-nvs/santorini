@@ -116,6 +116,12 @@ export class ApiService {
     // Note: No longer clearing localStorage - let GameContext handle state
   }
 
+  // A one-time ticket for opening a WebSocket (browsers cannot set headers on the handshake)
+  async createWebSocketTicket(): Promise<string> {
+    const { ticket } = await this.request<{ ticket: string }>('/ws-ticket', { method: 'POST' })
+    return ticket
+  }
+
   // Check if user is authenticated and get user info
   async checkAuth(): Promise<{ id: number; username: string } | null> {
     try {

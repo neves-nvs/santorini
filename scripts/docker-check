@@ -130,5 +130,9 @@ if ! cookie_is_secure -H 'X-Forwarded-Proto: https'; then
   exit 1
 fi
 echo "ok   the session cookie is Secure when the proxy forwarded https"
-expect_status 401 "WebSocket upgrade without a session" "${websocket[@]}" "$base/ws"
-expect_status 101 "WebSocket upgrade with the session" "${websocket[@]}" -b "$cookies" "$base/ws"
+expect_status 401 "WebSocket upgrade without a ticket" "${websocket[@]}" "$base/ws"
+expect_status 401 "WebSocket upgrade with only the session cookie" "${websocket[@]}" -b "$cookies" "$base/ws"
+expect_status 401 "POST /api/ws-ticket without a session" -X POST "$base/api/ws-ticket"
+ticket="$(curl -s -m 5 -b "$cookies" -X POST "$base/api/ws-ticket" | sed -n 's/.*"ticket":"\([^"]*\)".*/\1/p')"
+expect_status 101 "WebSocket upgrade with a ticket" "${websocket[@]}" "$base/ws?ticket=$ticket"
+expect_status 401 "WebSocket upgrade with the same ticket again" "${websocket[@]}" "$base/ws?ticket=$ticket"

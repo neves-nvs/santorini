@@ -168,6 +168,22 @@ describe('ApiService', () => {
       await expect(apiService.logout()).resolves.toBeUndefined()
     })
 
+    it('should create a WebSocket ticket', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ ticket: 'ticket-123' }),
+      })
+
+      const ticket = await apiService.createWebSocketTicket()
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/ws-ticket'),
+        expect.objectContaining({ method: 'POST' })
+      )
+      expect(ticket).toBe('ticket-123')
+    })
+
     it('should check authentication status', async () => {
       const mockUser = { username: 'testuser' }
       global.fetch = vi.fn().mockResolvedValue({

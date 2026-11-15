@@ -13,6 +13,7 @@
  */
 
 import { WS_MESSAGE_TYPES } from '../../../shared/src/websocket-types'
+import { apiService } from './ApiService'
 import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from './GameMessageHandler'
 import { RECONNECTION_DELAY } from '../constants/gameConstants'
 
@@ -43,12 +44,13 @@ class WebSocketClient {
   private shouldReconnect = false
 
   /**
-   * Open the socket and keep it open across drops. The browser sends the session cookie with the handshake.
+   * Open the socket and keep it open across drops. A browser cannot set headers on the handshake, so each
+   * connection asks the server for a one-time ticket first.
    */
-  connect(): void {
+  async connect(): Promise<void> {
     console.log('WebSocketClient.connect called')
     this.shouldReconnect = true
-    this.openSocket()
+    await this.openSocket()
   }
 
   /**
@@ -134,14 +136,30 @@ class WebSocketClient {
   // Private methods
   // ─────────────────────────────────────────────────────────────
 
-  private openSocket(): void {
-    if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || this.socket.readyState === WebSocket.OPEN)) {
+  private isOpenOrOpening(): boolean {
+    return this.socket?.readyState === WebSocket.CONNECTING || this.socket?.readyState === WebSocket.OPEN
+  }
+
+  private async openSocket(): Promise<void> {
+    if (this.isOpenOrOpening()) {
       console.log('WebSocket already connecting/connected')
       return
     }
 
+    let ticket: string
+    try {
+      ticket = await apiService.createWebSocketTicket()
+    } catch (error) {
+      console.error('Failed to get a WebSocket ticket:', error)
+      this.attemptReconnect()
+      return
+    }
+
+    // disconnect() may have run, or another call may have opened the socket, while the ticket was on its way
+    if (!this.shouldReconnect || this.isOpenOrOpening()) return
+
     console.log('Creating WebSocket connection')
-    this.socket = new WebSocket(this.serverAddress)
+    this.socket = new WebSocket(`${this.serverAddress}?ticket=${ticket}`)
 
     this.socket.onopen = () => {
       console.log('WebSocket connected')
@@ -179,7 +197,7 @@ class WebSocketClient {
     console.log(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
 
     setTimeout(() => {
-      this.openSocket()
+      void this.openSocket()
     }, this.reconnectDelay * this.reconnectAttempts)
   }
 
@@ -192,7 +210,7 @@ class WebSocketClient {
     if (this.socket?.readyState === WebSocket.CONNECTING) {
       setTimeout(() => action(), 500)
     } else if (!this.socket) {
-      this.connect()
+      void this.connect()
       setTimeout(() => action(), 1000)
     }
   }
@@ -212,8 +230,8 @@ export const webSocketClient = {
     return instance
   },
 
-  connect(): void {
-    this.getInstance().connect()
+  connect(): Promise<void> {
+    return this.getInstance().connect()
   },
 
   disconnect(): void {
