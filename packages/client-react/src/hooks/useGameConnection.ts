@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useApp } from '../store/appStore'
+import { useAppStore } from '../store/appStore'
 import { useIsConnected, useIsConnecting } from '../store/gameSelectors'
 import { webSocketClient } from '../services/WebSocketClient'
 
@@ -16,26 +16,26 @@ import { webSocketClient } from '../services/WebSocketClient'
  * - Game state fetching (use useGameActions.fetchGameState)
  */
 export function useGameConnection() {
-  const { state: appState } = useApp()
+  const username = useAppStore((s) => s.username)
   const isConnected = useIsConnected()
   const isConnecting = useIsConnecting()
   const connectionAttemptedRef = useRef(false)
 
   // Connect WebSocket when authenticated
   useEffect(() => {
-    if (appState.username && !isConnected && !isConnecting && !connectionAttemptedRef.current) {
-      console.log('Initiating WebSocket connection for user:', appState.username)
+    if (username && !isConnected && !isConnecting && !connectionAttemptedRef.current) {
+      console.log('Initiating WebSocket connection for user:', username)
       connectionAttemptedRef.current = true
       webSocketClient.connect()
     }
-  }, [appState.username, isConnected, isConnecting])
+  }, [username, isConnected, isConnecting])
 
   // Reset connection attempt flag when user logs out
   useEffect(() => {
-    if (!appState.username) {
+    if (!username) {
       connectionAttemptedRef.current = false
     }
-  }, [appState.username])
+  }, [username])
 
   // The socket belongs to the game page: leaving it closes the socket, and the server cleans up
   useEffect(() => {

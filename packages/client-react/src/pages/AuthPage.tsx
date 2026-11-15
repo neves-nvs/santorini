@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiService } from '../services/ApiService'
-import { useApp } from '../store/appStore'
+import { useAppStore } from '../store/appStore'
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true)
@@ -10,7 +10,7 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
-  const { setUser } = useApp()
+  const setUser = useAppStore((s) => s.setUser)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

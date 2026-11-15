@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useApp } from '../store/appStore'
+import { useAppStore } from '../store/appStore'
 import { apiService } from '../services/ApiService'
 import { GameInfo } from '../types/game'
 
 type GameTab = 'available' | 'my-games'
 
 const LobbyPage = () => {
-  const { state, logout } = useApp()
+  const username = useAppStore((s) => s.username)
+  const logout = useAppStore((s) => s.logout)
   const navigate = useNavigate()
 
-  const [loading, setLoading] = useState(Boolean(state.username))
+  const [loading, setLoading] = useState(Boolean(username))
   const [error, setError] = useState('')
   const refreshInFlight = useRef(false)
 
@@ -53,7 +54,7 @@ const LobbyPage = () => {
   }, [fetchGames])
 
   useEffect(() => {
-    if (!state.username) return
+    if (!username) return
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the state is set after the request resolves, not synchronously
     fetchGames()
@@ -64,10 +65,10 @@ const LobbyPage = () => {
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [state.username, fetchGames, handleRefreshGames])
+  }, [username, fetchGames, handleRefreshGames])
 
   const handleCreateGame = async () => {
-    if (!state.username) {
+    if (!username) {
       setError('Please login first')
       return
     }
@@ -90,7 +91,7 @@ const LobbyPage = () => {
   }
 
   const handleJoinGame = async (game: GameInfo) => {
-    if (!state.username) {
+    if (!username) {
       setError('Please login first')
       return
     }
@@ -145,7 +146,7 @@ const LobbyPage = () => {
           <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', margin: 0 }}>Game Lobby</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <div style={{ fontSize: 'clamp(0.85rem, 2.5vw, 1rem)' }}>
-              <strong>Player:</strong> {state.username}
+              <strong>Player:</strong> {username}
             </div>
             <button onClick={handleLogout} style={{
               background: 'rgba(255, 255, 255, 0.2)',

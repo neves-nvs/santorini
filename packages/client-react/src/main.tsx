@@ -4,7 +4,6 @@ import App from './App.tsx'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
-  // Temporarily disable StrictMode to prevent double execution of effects
   <StrictMode>
     <App />
   </StrictMode>,

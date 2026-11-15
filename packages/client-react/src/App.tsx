@@ -1,8 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
-import { AppProvider } from './store/AppContext'
 import { ToastProvider } from './store/ToastContext'
-import { lazy, Suspense, useEffect, useState } from 'react'
-import { useApp } from './store/appStore'
+import { type ReactNode, lazy, Suspense, useEffect, useState } from 'react'
+import { useAppStore } from './store/appStore'
 import { apiService } from './services/ApiService'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
@@ -12,52 +11,29 @@ import './App.css'
 
 const GamePage = lazy(() => import('./pages/GamePage'))
 
-const AppInitializer = ({ onInitialized }: { onInitialized: (initialized: boolean) => void }) => {
-  const { setUser } = useApp()
+const LoadingScreen = () => (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    zIndex: 9999
+  }}>
+    <div style={{ textAlign: 'center' }}>
+      <h3>Loading...</h3>
+      <p>Initializing application</p>
+    </div>
+  </div>
+)
 
-  const [isInitialized, setIsInitialized] = useState(false)
-
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const authInfo = await apiService.checkAuth()
-        if (authInfo) {
-          setUser(authInfo)
-        }
-      } catch (error) {
-        console.log('Authentication check failed:', error)
-      } finally {
-        setIsInitialized(true)
-        onInitialized(true)
-      }
-    }
-
-    checkAuthStatus()
-  }, [setUser, onInitialized])
-
-  if (!isInitialized) {
-    return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        zIndex: 9999
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <h3>Loading...</h3>
-          <p>Initializing application</p>
-        </div>
-      </div>
-    )
-  }
-
-  return null
+const RequireAuth = ({ children }: { children: ReactNode }) => {
+  const username = useAppStore((s) => s.username)
+  return username ? children : <Navigate to="/auth" replace />
 }
 
 // A new game id remounts the page, so leaving the old game closes its socket
@@ -66,60 +42,47 @@ const GamePageForId = () => {
   return <GamePage key={gameId} />
 }
 
-const AppRoutes = ({ isInitialized }: { isInitialized: boolean }) => {
-  const { state } = useApp()
+const AppRoutes = () => {
+  const username = useAppStore((s) => s.username)
+  const setUser = useAppStore((s) => s.setUser)
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  useEffect(() => {
+    apiService
+      .checkAuth()
+      .then((authInfo) => {
+        if (authInfo) setUser(authInfo)
+      })
+      .catch((error) => console.log('Authentication check failed:', error))
+      .finally(() => setIsInitialized(true))
+  }, [setUser])
 
   if (!isInitialized) {
-    return null
+    return <LoadingScreen />
   }
 
   return (
     <Suspense fallback={null}>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route
-          path="/auth"
-          element={
-            state.username ? <Navigate to="/lobby" replace /> : <AuthPage />
-          }
-        />
-        <Route
-          path="/lobby"
-          element={
-            state.username ? <LobbyPage /> : <Navigate to="/auth" replace />
-          }
-        />
-        <Route
-          path="/game"
-          element={
-            state.username ? <GamePage /> : <Navigate to="/auth" replace />
-          }
-        />
-        <Route
-          path="/game/:gameId"
-          element={
-            state.username ? <GamePageForId /> : <Navigate to="/auth" replace />
-          }
-        />
+        <Route path="/auth" element={username ? <Navigate to="/lobby" replace /> : <AuthPage />} />
+        <Route path="/lobby" element={<RequireAuth><LobbyPage /></RequireAuth>} />
+        <Route path="/game" element={<RequireAuth><GamePage /></RequireAuth>} />
+        <Route path="/game/:gameId" element={<RequireAuth><GamePageForId /></RequireAuth>} />
       </Routes>
     </Suspense>
   )
 }
 
 function App() {
-  const [isInitialized, setIsInitialized] = useState(false)
-
   return (
     <ErrorBoundary>
       <ToastProvider>
-        <AppProvider>
-          <Router>
-            <div className="app">
-              <AppInitializer onInitialized={setIsInitialized} />
-              <AppRoutes isInitialized={isInitialized} />
-            </div>
-          </Router>
-        </AppProvider>
+        <Router>
+          <div className="app">
+            <AppRoutes />
+          </div>
+        </Router>
       </ToastProvider>
     </ErrorBoundary>
   )

@@ -13,7 +13,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useGameConnection } from './useGameConnection'
 import { useGameActions } from './useGameActions'
-import { useApp } from '../store/appStore'
+import { useAppStore } from '../store/appStore'
 import { useSetGameId, useSetGameState } from '../store/gameSelectors'
 
 interface GameSetupResult {
@@ -24,7 +24,8 @@ interface GameSetupResult {
 }
 
 export function useGameSetup(gameId?: string): GameSetupResult {
-  const { state: appState, setError } = useApp()
+  const appError = useAppStore((s) => s.error)
+  const setError = useAppStore((s) => s.setError)
   const { isConnected, isConnecting } = useGameConnection()
   const { joinGame, subscribeToGame, fetchGameState, resetActionState } = useGameActions()
   const setGameId = useSetGameId()
@@ -99,7 +100,7 @@ export function useGameSetup(gameId?: string): GameSetupResult {
 
   return {
     isLoading: isLoading || isConnecting,
-    error: localError || appState.error,
+    error: localError || appError,
     isConnected,
     isReady
   }

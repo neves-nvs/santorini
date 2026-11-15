@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useGameState, useGameId } from '../store/gameSelectors'
-import { useApp } from '../store/appStore'
+import { useAppStore } from '../store/appStore'
 import { webSocketClient } from '../services/WebSocketClient'
 
 /**
@@ -10,7 +10,7 @@ import { webSocketClient } from '../services/WebSocketClient'
 export function useReadyState() {
   const gameState = useGameState()
   const gameId = useGameId()
-  const { state: appState } = useApp()
+  const username = useAppStore((s) => s.username)
   
   const serverReady = gameState?.currentUserReady
   const [isReady, setIsReady] = useState(serverReady ?? false)
@@ -32,7 +32,7 @@ export function useReadyState() {
       currentReadyState: isReady,
       newReadyState: !isReady,
       gameId: gameId,
-      username: appState.username
+      username
     })
 
     setIsSettingReady(true)
@@ -50,7 +50,7 @@ export function useReadyState() {
     } finally {
       setIsSettingReady(false)
     }
-  }, [gameId, isReady, appState.username])
+  }, [gameId, isReady, username])
 
   return {
     isReady,
