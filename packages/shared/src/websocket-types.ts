@@ -253,6 +253,8 @@ export type ServerMessage =
 
 export type WebSocketMessage = ClientMessage | ServerMessage;
 
+export type ServerMessageOf<K extends ServerMessage['type']> = Extract<ServerMessage, { type: K }>;
+
 // ============================================================================
 // Generic Message Interface (for backwards compatibility)
 // ============================================================================

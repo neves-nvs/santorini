@@ -1,12 +1,10 @@
 import * as helpers from "../helper/helpers.ts";
-import { ServerMessage, WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
+import { ServerMessage, ServerMessageOf, WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
 import { server, wss } from "../../../src/main.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
-
-type MessageOf<K extends ServerMessage["type"]> = Extract<ServerMessage, { type: K }>;
 
 interface Connection {
   ws: WebSocket;
@@ -28,9 +26,9 @@ async function connect(token: string): Promise<Connection> {
   return { ws, messages, send: (type, gameId) => ws.send(JSON.stringify({ type, payload: { gameId } })) };
 }
 
-async function waitFor<K extends ServerMessage["type"]>(connection: Connection, type: K): Promise<MessageOf<K>> {
+async function waitFor<K extends ServerMessage["type"]>(connection: Connection, type: K): Promise<ServerMessageOf<K>> {
   for (let attempt = 0; attempt < 100; attempt++) {
-    const message = connection.messages.find((m): m is MessageOf<K> => m.type === type);
+    const message = connection.messages.find((m): m is ServerMessageOf<K> => m.type === type);
     if (message) return message;
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
@@ -115,6 +113,6 @@ describe("Join and Subscribe Integration Tests", () => {
     watcherConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, secondGameId);
     const error = await waitFor(watcherConnection, WS_MESSAGE_TYPES.ERROR);
 
-    expect(error.payload).toContain(`game ${firstGameId}`);
+    expect(error.payload).toContain("Already subscribed");
   }, 15000);
 });

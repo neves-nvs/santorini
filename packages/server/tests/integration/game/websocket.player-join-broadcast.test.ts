@@ -4,8 +4,8 @@
  */
 
 import * as helpers from "../helper/helpers.ts";
+import { ServerMessage, ServerMessageOf } from "../../../../shared/src/websocket-types.ts";
 import { server, wss } from "../../../src/main.ts";
-import { ServerMessage } from "../../../../shared/src/websocket-types.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
@@ -13,8 +13,6 @@ import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
 
 type ServerMessageType = ServerMessage["type"];
-
-type WsMessage<K extends ServerMessageType> = Extract<ServerMessage, { type: K }>;
 
 interface TestPlayer {
   user: UserDTO;
@@ -44,7 +42,7 @@ function waitForMessage<K extends ServerMessageType>(
   ws: WebSocket,
   messageType: K,
   timeout = 5000,
-): Promise<WsMessage<K>> {
+): Promise<ServerMessageOf<K>> {
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
       reject(new Error(`Timeout waiting for message type: ${messageType}`));
@@ -153,7 +151,7 @@ describe("Player Join Broadcast Integration Test", () => {
 
     // Set up listener for game_state_update with 2 players
     const ws1 = player1.ws;
-    const stateUpdatePromise = new Promise<WsMessage<"game_state_update">>((resolve, reject) => {
+    const stateUpdatePromise = new Promise<ServerMessageOf<"game_state_update">>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
         reject(new Error("Timeout waiting for game_state_update with 2 players"));
       }, 5000);
