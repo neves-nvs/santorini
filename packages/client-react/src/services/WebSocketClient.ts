@@ -40,15 +40,15 @@ class WebSocketClient {
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = RECONNECTION_DELAY
-  private isAuthenticated = false
+  private shouldReconnect = false
 
   /**
-   * Connect after authentication. The browser sends the session cookie with the handshake.
+   * Open the socket and keep it open across drops. The browser sends the session cookie with the handshake.
    */
-  connectAfterAuth(): void {
-    console.log('WebSocketClient.connectAfterAuth called')
-    this.isAuthenticated = true
-    this.connect()
+  connect(): void {
+    console.log('WebSocketClient.connect called')
+    this.shouldReconnect = true
+    this.openSocket()
   }
 
   /**
@@ -56,7 +56,7 @@ class WebSocketClient {
    */
   disconnect(): void {
     console.log('WebSocketClient disconnecting')
-    this.isAuthenticated = false
+    this.shouldReconnect = false
     this.reconnectAttempts = 0
 
     if (this.socket) {
@@ -134,7 +134,7 @@ class WebSocketClient {
   // Private methods
   // ─────────────────────────────────────────────────────────────
 
-  private connect(): void {
+  private openSocket(): void {
     if (this.socket && (this.socket.readyState === WebSocket.CONNECTING || this.socket.readyState === WebSocket.OPEN)) {
       console.log('WebSocket already connecting/connected')
       return
@@ -170,8 +170,8 @@ class WebSocketClient {
   }
 
   private attemptReconnect(): void {
-    if (!this.isAuthenticated || this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnect attempts reached or not authenticated')
+    if (!this.shouldReconnect || this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error('Reconnecting is off or the maximum number of attempts was reached')
       return
     }
 
@@ -179,7 +179,7 @@ class WebSocketClient {
     console.log(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
 
     setTimeout(() => {
-      this.connect()
+      this.openSocket()
     }, this.reconnectDelay * this.reconnectAttempts)
   }
 
@@ -192,7 +192,7 @@ class WebSocketClient {
     if (this.socket?.readyState === WebSocket.CONNECTING) {
       setTimeout(() => action(), 500)
     } else if (!this.socket) {
-      this.connectAfterAuth()
+      this.connect()
       setTimeout(() => action(), 1000)
     }
   }
@@ -212,8 +212,8 @@ export const webSocketClient = {
     return instance
   },
 
-  connectAfterAuth(): void {
-    this.getInstance().connectAfterAuth()
+  connect(): void {
+    this.getInstance().connect()
   },
 
   disconnect(): void {

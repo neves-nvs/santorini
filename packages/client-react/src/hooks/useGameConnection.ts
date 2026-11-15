@@ -26,7 +26,7 @@ export function useGameConnection() {
     if (appState.username && !isConnected && !isConnecting && !connectionAttemptedRef.current) {
       console.log('Initiating WebSocket connection for user:', appState.username)
       connectionAttemptedRef.current = true
-      webSocketClient.connectAfterAuth()
+      webSocketClient.connect()
     }
   }, [appState.username, isConnected, isConnecting])
 
