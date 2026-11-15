@@ -29,15 +29,23 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 ## Tests
 
 - Vitest. Name specs `<feature>.test.ts`. Server unit tests are in `packages/server/tests/unit`, integration tests (Testcontainers, Docker needed) in `tests/integration`. Client unit tests are in `src/__tests__`.
-- A fix comes with a test that fails without it. No per-test timeouts. Do not re-test libraries.
+- No per-test timeouts. Do not re-test libraries.
 - The client's `npm run type-check` and `npm test` have known failures, so CI does not gate on them yet.
+
+## Definition of done
+
+- Read what surrounds a change before planning it: its callers and tests, and, when behaviour or configuration changes, `docs/api`, `.env.example` and the README.
+- A fix or feature starts with a test that fails for the right reason. Then implement until it passes.
+- `scripts/check` passes. After a dependency, Dockerfile, compose or configuration change, `scripts/docker-check` passes too.
+- Stay inside the task. A behaviour change beyond it is either left out or named in the pull request.
+- The pull request says what changed, what was run, and what was not checked.
 
 ## Git and pull requests
 
 - Work on each task in its own git worktree, so branches and installed dependencies do not collide. Keep the main clone on `main`.
 - `scripts/worktree new <task> <branch>` fetches, creates `../<task>` next to the main clone from `origin/main` on a new branch (use a conventional prefix such as `fix/` or `feat/`) and installs dependencies.
 - `scripts/worktree done <task>` removes the worktree and the local branch, and the remote branch if it is still there, once the pull request is merged and the branch has nothing the pull request lacks. `scripts/worktree list` shows every worktree with its pull request.
-- Small pull requests with short imperative commit subjects and a prefix (`fix:`, `feat:`, `test:`, `docs:`, `chore:`). Say what changed, what was checked and what was not.
+- Small pull requests with short imperative commit subjects and a prefix (`fix:`, `feat:`, `test:`, `docs:`, `chore:`).
 - The owner merges, by squash. After a squash merge, rebase a stacked branch with `git rebase --onto origin/main <old base tip>`. Force-push only branches other than `main`, and with `--force-with-lease`.
 
 ## Environment
