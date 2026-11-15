@@ -1,15 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { AppProvider } from './store/AppContext'
 import { ToastProvider } from './store/ToastContext'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { useApp } from './store/appStore'
 import { apiService } from './services/ApiService'
 import HomePage from './pages/HomePage'
-import GamePage from './pages/GamePage'
 import AuthPage from './pages/AuthPage'
 import LobbyPage from './pages/LobbyPage'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import './App.css'
+
+const GamePage = lazy(() => import('./pages/GamePage'))
 
 const AppInitializer = ({ onInitialized }: { onInitialized: (initialized: boolean) => void }) => {
   const { setUser } = useApp()
@@ -73,33 +74,35 @@ const AppRoutes = ({ isInitialized }: { isInitialized: boolean }) => {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route
-        path="/auth"
-        element={
-          state.username ? <Navigate to="/lobby" replace /> : <AuthPage />
-        }
-      />
-      <Route
-        path="/lobby"
-        element={
-          state.username ? <LobbyPage /> : <Navigate to="/auth" replace />
-        }
-      />
-      <Route
-        path="/game"
-        element={
-          state.username ? <GamePage /> : <Navigate to="/auth" replace />
-        }
-      />
-      <Route
-        path="/game/:gameId"
-        element={
-          state.username ? <GamePageForId /> : <Navigate to="/auth" replace />
-        }
-      />
-    </Routes>
+    <Suspense fallback={null}>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/auth"
+          element={
+            state.username ? <Navigate to="/lobby" replace /> : <AuthPage />
+          }
+        />
+        <Route
+          path="/lobby"
+          element={
+            state.username ? <LobbyPage /> : <Navigate to="/auth" replace />
+          }
+        />
+        <Route
+          path="/game"
+          element={
+            state.username ? <GamePage /> : <Navigate to="/auth" replace />
+          }
+        />
+        <Route
+          path="/game/:gameId"
+          element={
+            state.username ? <GamePageForId /> : <Navigate to="/auth" replace />
+          }
+        />
+      </Routes>
+    </Suspense>
   )
 }
 

@@ -55,27 +55,29 @@ const GameUI = memo(() => {
         </div>
       )}
 
-      {/* Debug Menu */}
-      <DebugMenu
-        debugState={debugState}
-        onDebugChange={handleDebugChange}
-        cameraType={cameraType}
-        onToggleCamera={toggleCameraType}
-        gameContext={{
-          state: {
-            gameState,
-            isMyTurn,
-            currentPlayerMoves
-          }
-        }}
-        isConnected={isConnected}
-      />
+      {import.meta.env.DEV && (
+        <>
+          <DebugMenu
+            debugState={debugState}
+            onDebugChange={handleDebugChange}
+            cameraType={cameraType}
+            onToggleCamera={toggleCameraType}
+            gameContext={{
+              state: {
+                gameState,
+                isMyTurn,
+                currentPlayerMoves
+              }
+            }}
+            isConnected={isConnected}
+          />
 
-      {/* Performance Dashboard */}
-      <PerformanceDashboard
-        visible={debugState.showPerformance}
-        onToggle={() => handleDebugChange('showPerformance', !debugState.showPerformance)}
-      />
+          <PerformanceDashboard
+            visible={debugState.showPerformance}
+            onToggle={() => handleDebugChange('showPerformance', !debugState.showPerformance)}
+          />
+        </>
+      )}
     </div>
   )
 })
