@@ -156,7 +156,7 @@ components:
       name: token
       description: |
         The JWT from `POST /session`, which a browser sends by itself. Other clients send `Authorization: Bearer <jwt>`
-        (see `GET /token`). A `?token=` query parameter is also accepted for now and is due to be removed.
+        (see `GET /token`). A token in the query string is rejected, so it never ends up in a URL or a log.
   messages:
     createGame:
       name: create_game

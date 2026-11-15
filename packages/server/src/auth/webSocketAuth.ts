@@ -49,39 +49,26 @@ export async function webSocketAuthUpgrade(
     return;
   }
 
-  // Try to get token from Authorization header first
   if (authHeader?.startsWith("Bearer ")) {
     token = authHeader.split(" ")[1];
   } else {
-    // Try to get token from query parameters
-    if (request.url) {
-      const url = new URL(request.url, `http://${request.headers.host}`);
-      const queryToken = url.searchParams.get("token");
-      if (queryToken) {
-        token = queryToken;
-      }
-    }
+    const cookieHeader = request.headers.cookie;
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(";").reduce(
+        (acc, cookie) => {
+          const [key, value] = cookie.trim().split("=");
+          acc[key] = value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
 
-    // Fallback: try to get token from cookies
-    if (!token) {
-      const cookieHeader = request.headers.cookie;
-      if (cookieHeader) {
-        const cookies = cookieHeader.split(";").reduce(
-          (acc, cookie) => {
-            const [key, value] = cookie.trim().split("=");
-            acc[key] = value;
-            return acc;
-          },
-          {} as Record<string, string>,
-        );
-
-        token = cookies.token;
-      }
+      token = cookies.token;
     }
   }
 
   if (!token) {
-    logger.error("No authentication token found in Authorization header, query params, or cookies");
+    logger.error("No authentication token found in the Authorization header or cookies");
     socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
     socket.destroy();
     return;

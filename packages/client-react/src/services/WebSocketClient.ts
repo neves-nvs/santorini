@@ -40,29 +40,14 @@ class WebSocketClient {
   private reconnectAttempts = 0
   private maxReconnectAttempts = 5
   private reconnectDelay = RECONNECTION_DELAY
-  private authToken: string | null = null
   private isAuthenticated = false
 
   /**
-   * Connect after authentication - fetches JWT token first
+   * Connect after authentication. The browser sends the session cookie with the handshake.
    */
-  async connectAfterAuth(): Promise<void> {
+  connectAfterAuth(): void {
     console.log('WebSocketClient.connectAfterAuth called')
     this.isAuthenticated = true
-
-    try {
-      // Dynamic import to avoid circular dependency
-      const { apiService } = await import('./ApiService')
-      const tokenResponse = await apiService.getToken()
-      this.authToken = tokenResponse.token
-      console.log('Got JWT token for WebSocket')
-    } catch (error) {
-      console.error('Failed to get JWT token:', error)
-      this.isAuthenticated = false
-      return
-    }
-
-    if (!this.isAuthenticated) return
     this.connect()
   }
 
@@ -72,7 +57,6 @@ class WebSocketClient {
   disconnect(): void {
     console.log('WebSocketClient disconnecting')
     this.isAuthenticated = false
-    this.authToken = null
     this.reconnectAttempts = 0
 
     if (this.socket) {
@@ -156,12 +140,8 @@ class WebSocketClient {
       return
     }
 
-    const wsUrl = this.authToken 
-      ? `${this.serverAddress}?token=${this.authToken}`
-      : this.serverAddress
-
     console.log('Creating WebSocket connection')
-    this.socket = new WebSocket(wsUrl)
+    this.socket = new WebSocket(this.serverAddress)
 
     this.socket.onopen = () => {
       console.log('WebSocket connected')
@@ -212,9 +192,8 @@ class WebSocketClient {
     if (this.socket?.readyState === WebSocket.CONNECTING) {
       setTimeout(() => action(), 500)
     } else if (!this.socket) {
-      this.connectAfterAuth().then(() => {
-        setTimeout(() => action(), 1000)
-      })
+      this.connectAfterAuth()
+      setTimeout(() => action(), 1000)
     }
   }
 }
@@ -233,8 +212,8 @@ export const webSocketClient = {
     return instance
   },
 
-  connectAfterAuth(): Promise<void> {
-    return this.getInstance().connectAfterAuth()
+  connectAfterAuth(): void {
+    this.getInstance().connectAfterAuth()
   },
 
   disconnect(): void {

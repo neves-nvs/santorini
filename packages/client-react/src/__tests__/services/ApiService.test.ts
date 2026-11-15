@@ -168,23 +168,6 @@ describe('ApiService', () => {
       await expect(apiService.logout()).resolves.toBeUndefined()
     })
 
-    it('should get JWT token', async () => {
-      const mockToken = { token: 'jwt-token-123' }
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockToken,
-      })
-
-      const result = await apiService.getToken()
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/token',
-        expect.any(Object)
-      )
-      expect(result).toEqual(mockToken)
-    })
-
     it('should check authentication status', async () => {
       const mockUser = { username: 'testuser' }
       global.fetch = vi.fn().mockResolvedValue({

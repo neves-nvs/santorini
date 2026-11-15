@@ -116,11 +116,6 @@ export class ApiService {
     // Note: No longer clearing localStorage - let GameContext handle state
   }
 
-  // Get JWT token for WebSocket authentication
-  async getToken(): Promise<{ token: string }> {
-    return this.request<{ token: string }>('/token')
-  }
-
   // Check if user is authenticated and get user info
   async checkAuth(): Promise<{ id: number; username: string } | null> {
     try {

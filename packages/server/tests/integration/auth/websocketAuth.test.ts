@@ -115,6 +115,21 @@ describe("WebSocket Authentication Integration Tests", () => {
       });
     });
 
+    test("authenticates WebSocket connection with the session cookie", async () => {
+      const ws = new WebSocket(`ws://localhost:${config.port}`, {
+        headers: { Cookie: `token=${jwtToken}` },
+        perMessageDeflate: false,
+      });
+
+      await expectConnectionAccepted(ws);
+    });
+
+    test("rejects a valid JWT passed in the query string", async () => {
+      const ws = new WebSocket(`ws://localhost:${config.port}/?token=${jwtToken}`);
+
+      await expectConnectionRejected(ws);
+    });
+
     test("rejects connection for invalid JWT", async () => {
       const ws = new WebSocket(`ws://localhost:${config.port}`, {
         headers: {
