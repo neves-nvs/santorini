@@ -1,121 +1,74 @@
-/**
- * Tests for React Three Fiber Game Pieces
- * 
- * Example tests showing how to test R3F components
- */
+import ReactThreeTestRenderer from '@react-three/test-renderer'
+import { describe, expect, it, vi } from 'vitest'
+import { BoundingBox, Cell, Worker } from '../../../components/game/GamePieces'
+import { PLAYER_COLORS } from '../../../constants/gameConstants'
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { Cell, BoundingBox } from '../../../components/game/GamePieces'
-import { renderR3F, createMock3DClickEvent, mockWebGLContext } from '../../helpers/r3f-test-utils'
+type Renderer = Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>
 
-// Setup WebGL mocks before tests
-beforeEach(() => {
-  mockWebGLContext()
-})
+const materialColors = (renderer: Renderer) =>
+  renderer.scene.findAll((node) => node.type.endsWith('Material')).map((material) => material.props.color)
 
-describe('Cell Component', () => {
-  it('should render without crashing', () => {
-    const { container } = renderR3F(
-      <Cell 
-        position={[0, 0, 0]} 
-        gridX={0} 
-        gridZ={0} 
-        onClick={vi.fn()} 
-      />
-    )
-    
-    expect(container).toBeTruthy()
-  })
+describe('Cell', () => {
+  it('alternates its colour like a checkerboard', async () => {
+    const colorAt = async (x: number, z: number) => {
+      const renderer = await ReactThreeTestRenderer.create(<Cell position={[0, 0, 0]} gridX={x} gridZ={z} onClick={vi.fn()} />)
+      return materialColors(renderer)[0]
+    }
 
-  it('should call onClick when clicked', () => {
-    const handleClick = vi.fn()
-    
-    const { container } = renderR3F(
-      <Cell 
-        position={[0, 0, 0]} 
-        gridX={2} 
-        gridZ={3} 
-        onClick={handleClick} 
-      />
-    )
-    
-    // In a real test, you'd simulate a click on the mesh
-    // For now, we verify the component renders with the handler
-    expect(container).toBeTruthy()
-    expect(handleClick).not.toHaveBeenCalled()
-  })
-
-  it('should render at correct position', () => {
-    const position: [number, number, number] = [1, 0, 2]
-    
-    const { container } = renderR3F(
-      <Cell 
-        position={position} 
-        gridX={1} 
-        gridZ={2} 
-        onClick={vi.fn()} 
-      />
-    )
-    
-    expect(container).toBeTruthy()
+    expect(await colorAt(0, 0)).toBe(await colorAt(1, 1))
+    expect(await colorAt(0, 1)).toBe(await colorAt(1, 0))
+    expect(await colorAt(0, 0)).not.toBe(await colorAt(0, 1))
   })
 })
 
-describe('BoundingBox Component', () => {
-  it('should render when visible', () => {
-    const { container } = renderR3F(
-      <BoundingBox 
-        position={[0, 0, 0]} 
-        blockLevel={2} 
-        visible={true} 
-      />
-    )
-    
-    expect(container).toBeTruthy()
+describe('Worker', () => {
+  const render = (props: Partial<Parameters<typeof Worker>[0]>) =>
+    ReactThreeTestRenderer.create(<Worker playerId={1} position={[0, 0, 0]} {...props} />)
+
+  it('only reports clicks when it can move', async () => {
+    const onClick = vi.fn()
+
+    const blocked = await render({ canMove: false, onClick })
+    await blocked.fireEvent(blocked.scene.children[0], 'click')
+    expect(onClick).not.toHaveBeenCalled()
+
+    const movable = await render({ canMove: true, onClick })
+    await movable.fireEvent(movable.scene.children[0], 'click')
+    expect(onClick).toHaveBeenCalledOnce()
   })
 
-  it('should not render when not visible', () => {
-    const { container } = renderR3F(
-      <BoundingBox 
-        position={[0, 0, 0]} 
-        blockLevel={2} 
-        visible={false} 
-      />
-    )
-    
-    expect(container).toBeTruthy()
+  it('is drawn in its player\'s colour', async () => {
+    const first = await render({ playerId: 1 })
+    const second = await render({ playerId: 2 })
+
+    expect(materialColors(first)).toContain(PLAYER_COLORS[0])
+    expect(materialColors(second)).toContain(PLAYER_COLORS[1])
   })
 
-  it('should render different heights for different block levels', () => {
-    const { container: container1 } = renderR3F(
-      <BoundingBox 
-        position={[0, 0, 0]} 
-        blockLevel={1} 
-        visible={true} 
-      />
-    )
-    
-    const { container: container2 } = renderR3F(
-      <BoundingBox 
-        position={[0, 0, 0]} 
-        blockLevel={4} 
-        visible={true} 
-      />
-    )
-    
-    expect(container1).toBeTruthy()
-    expect(container2).toBeTruthy()
+  it('shows a ring only when it can move, and highlights it when selected', async () => {
+    const idle = await render({ canMove: false })
+    const movable = await render({ canMove: true })
+    const selected = await render({ canMove: true, isSelected: true })
+
+    expect(materialColors(idle)).not.toContain('#00ff00')
+    expect(materialColors(movable)).toContain('#00ff00')
+    expect(materialColors(selected)).toContain('#ffff00')
+    expect(materialColors(selected)).not.toContain('#00ff00')
   })
 })
 
-describe('3D Interaction Helpers', () => {
-  it('should create mock click events', () => {
-    const event = createMock3DClickEvent([1, 2, 3])
-    
-    expect(event.stopPropagation).toBeDefined()
-    expect(event.point.x).toBe(1)
-    expect(event.point.y).toBe(2)
-    expect(event.point.z).toBe(3)
+describe('BoundingBox', () => {
+  const boxes = async (blockLevel: number, visible = true) => {
+    const renderer = await ReactThreeTestRenderer.create(<BoundingBox position={[0, 0, 0]} blockLevel={blockLevel} visible={visible} />)
+    return renderer.scene.children[0]?.children ?? []
+  }
+
+  it('draws nothing when hidden', async () => {
+    expect(await boxes(2, false)).toHaveLength(0)
+  })
+
+  it('draws one box per building level', async () => {
+    expect(await boxes(1)).toHaveLength(1)
+    expect(await boxes(3)).toHaveLength(3)
   })
 })
-
