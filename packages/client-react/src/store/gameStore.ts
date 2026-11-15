@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
-import type { AvailableMove, BoardView, GameState } from '../types/game'
+import type { AvailableMove, BoardView, GameState } from '@/types/game'
 
 // Board cell data for optimized 3D rendering
 export interface BoardCell {

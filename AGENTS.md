@@ -23,6 +23,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 ## Style
 
 - TypeScript with Prettier and ESLint. The `sort-imports` rule is on: imports with several members first, then single-member imports, each group sorted case-sensitively by first member.
+- Client imports: `./` within a folder, `@/` (the `src` folder) across folders, `@shared/` for the shared package. No `../`.
 - `camelCase` for functions, `PascalCase` for components and classes, `SCREAMING_SNAKE_CASE` for constants.
 - Code explains itself through names and structure. Add a comment only for a "why" the code cannot show.
 

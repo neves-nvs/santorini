@@ -1,6 +1,6 @@
 import { memo } from 'react'
-import { useGameLifecycle } from '../../hooks/useGameLifecycle'
-import { useReadyState } from '../../hooks/useReadyState'
+import { useGameLifecycle } from '@/hooks/useGameLifecycle'
+import { useReadyState } from '@/hooks/useReadyState'
 import PlayerList from './PlayerList'
 
 interface GameLobbyProps {

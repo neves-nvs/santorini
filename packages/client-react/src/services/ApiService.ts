@@ -1,6 +1,6 @@
-import { ErrorHandler, ErrorType } from '../utils/errorHandler'
-import { logWarn } from '../utils/log'
-import type { GameInfo, GameState } from '../types/game'
+import { ErrorHandler, ErrorType } from '@/utils/errorHandler'
+import { logWarn } from '@/utils/log'
+import type { GameInfo, GameState } from '@/types/game'
 
 export interface LoginRequest {
   username: string

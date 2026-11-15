@@ -1,13 +1,13 @@
 import { memo } from 'react'
-import { useAppStore } from '../../store/appStore'
-import { useGameState, useCurrentPlayerMoves, useIsMyTurn, useIsConnected } from '../../store/gameSelectors'
-import GameBoard from '../game/GameBoard'
-import GameStatusBar from '../game/GameStatusBar'
-import GameLobby from '../game/GameLobby'
-import GameNavigation from '../game/GameNavigation'
-import DebugMenu from '../debug/DebugMenu'
-import { PerformanceDashboard } from '../debug/PerformanceDashboard'
-import { useDebugState } from '../../hooks/useDebugState'
+import { useAppStore } from '@/store/appStore'
+import { useGameState, useCurrentPlayerMoves, useIsMyTurn, useIsConnected } from '@/store/gameSelectors'
+import GameBoard from '@/components/game/GameBoard'
+import GameStatusBar from '@/components/game/GameStatusBar'
+import GameLobby from '@/components/game/GameLobby'
+import GameNavigation from '@/components/game/GameNavigation'
+import DebugMenu from '@/components/debug/DebugMenu'
+import { PerformanceDashboard } from '@/components/debug/PerformanceDashboard'
+import { useDebugState } from '@/hooks/useDebugState'
 
 const GameUI = memo(() => {
   const gameState = useGameState()

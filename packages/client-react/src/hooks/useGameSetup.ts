@@ -13,8 +13,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useGameConnection } from './useGameConnection'
 import { useGameActions } from './useGameActions'
-import { useAppStore } from '../store/appStore'
-import { useSetGameId, useSetGameState } from '../store/gameSelectors'
+import { useAppStore } from '@/store/appStore'
+import { useSetGameId, useSetGameState } from '@/store/gameSelectors'
 
 interface GameSetupResult {
   isLoading: boolean

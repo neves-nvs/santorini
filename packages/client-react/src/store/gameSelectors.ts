@@ -1,5 +1,5 @@
 import { useGameStore } from './gameStore'
-import type { BuildPosition } from '../types/game'
+import type { BuildPosition } from '@/types/game'
 
 // Optimized selectors for R3F components to prevent unnecessary re-renders
 

@@ -3,7 +3,7 @@ import {
   performanceMonitor,
   measureOperation,
   measureAsyncOperation,
-} from '../../utils/performanceMonitor'
+} from '@/utils/performanceMonitor'
 
 describe('PerformanceMonitor', () => {
   beforeEach(() => {
