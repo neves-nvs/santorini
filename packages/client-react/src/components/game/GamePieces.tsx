@@ -1,6 +1,7 @@
 import React from 'react'
 import STLPiece from './STLPiece'
 import { PLAYER_COLORS } from '../../constants/gameConstants'
+import { isClick } from '../../utils/isClick'
 
 // Building colors
 const DOME_COLOR = '#1E5F8A' // Marine blue
@@ -58,7 +59,7 @@ export const Worker: React.FC<WorkerProps> = ({
     <group
       onClick={(e) => {
         e.stopPropagation()
-        if (canMove && onClick) {
+        if (canMove && onClick && isClick(e)) {
           onClick()
         }
       }}
@@ -141,7 +142,9 @@ export const Cell: React.FC<CellProps> = ({ position, gridX, gridZ, onClick }) =
   return (
     <mesh
       position={position}
-      onClick={onClick}
+      onClick={(e) => {
+        if (isClick(e)) onClick()
+      }}
       onPointerOver={(e) => {
         e.stopPropagation()
         document.body.style.cursor = 'pointer'
@@ -261,7 +264,7 @@ export const MovePreview: React.FC<MovePreviewProps> = ({ position, workerId: _w
       position={position}
       onClick={(e) => {
         e.stopPropagation()
-        onClick?.()
+        if (isClick(e)) onClick?.()
       }}
       onPointerOver={(e) => {
         e.stopPropagation()
@@ -324,7 +327,7 @@ export const BuildingPreview: React.FC<BuildingPreviewProps> = ({
       position={position}
       onClick={(e) => {
         e.stopPropagation()
-        onClick?.()
+        if (isClick(e)) onClick?.()
       }}
       onPointerOver={(e) => {
         e.stopPropagation()
