@@ -6,13 +6,14 @@ import { apiService } from './services/ApiService'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
 import LobbyPage from './pages/LobbyPage'
+import NotFoundPage from './pages/NotFoundPage'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import './App.css'
 
 const GamePage = lazy(() => import('./pages/GamePage'))
 
 const LoadingScreen = () => (
-  <div style={{
+  <div role="status" style={{
     position: 'fixed',
     top: 0,
     left: 0,
@@ -22,6 +23,7 @@ const LoadingScreen = () => (
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    color: '#333',
     zIndex: 9999
   }}>
     <div style={{ textAlign: 'center' }}>
@@ -69,6 +71,7 @@ const AppRoutes = () => {
         <Route path="/lobby" element={<RequireAuth><LobbyPage /></RequireAuth>} />
         <Route path="/game" element={<RequireAuth><GamePage /></RequireAuth>} />
         <Route path="/game/:gameId" element={<RequireAuth><GamePageForId /></RequireAuth>} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   )

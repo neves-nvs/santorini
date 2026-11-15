@@ -5,7 +5,7 @@ interface GamePageContainerProps {
 }
 
 const GamePageContainer: React.FC<GamePageContainerProps> = ({ children }) => (
-  <div className="page">
+  <main className="page">
     <div className="game-container" style={{
       background: 'linear-gradient(to bottom, #87CEEB, #E0F6FF)',
       display: 'flex',
@@ -14,7 +14,7 @@ const GamePageContainer: React.FC<GamePageContainerProps> = ({ children }) => (
     }}>
       {children}
     </div>
-  </div>
+  </main>
 )
 
 interface GameLoadingStateProps {
@@ -23,8 +23,8 @@ interface GameLoadingStateProps {
 
 export const GameLoadingState: React.FC<GameLoadingStateProps> = ({ gameId }) => (
   <GamePageContainer>
-    <div style={{ textAlign: 'center', color: '#333' }}>
-      <h2>Loading Game {gameId}...</h2>
+    <div role="status" style={{ textAlign: 'center', color: '#333' }}>
+      <h1>Loading Game {gameId}...</h1>
       <p>Fetching game state...</p>
     </div>
   </GamePageContainer>
@@ -36,8 +36,8 @@ interface GameErrorStateProps {
 
 export const GameErrorState: React.FC<GameErrorStateProps> = ({ error }) => (
   <GamePageContainer>
-    <div style={{ textAlign: 'center', color: '#333' }}>
-      <h2>Failed to Load Game</h2>
+    <div role="alert" style={{ textAlign: 'center', color: '#333' }}>
+      <h1>Failed to Load Game</h1>
       <p>{error}</p>
       <button onClick={() => window.location.reload()}>Retry</button>
     </div>
@@ -49,7 +49,8 @@ interface GameMainStateProps {
 }
 
 export const GameMainState: React.FC<GameMainStateProps> = ({ children }) => (
-  <div className="page">
+  <main className="page">
+    <h1 className="visually-hidden">Santorini game</h1>
     <div className="game-container" style={{
       background: 'linear-gradient(to bottom, #87CEEB, #E0F6FF)'
     }}>
@@ -57,5 +58,5 @@ export const GameMainState: React.FC<GameMainStateProps> = ({ children }) => (
         {children}
       </div>
     </div>
-  </div>
+  </main>
 )

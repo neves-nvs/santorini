@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiService } from '@/services/ApiService'
 import { useAppStore } from '@/store/appStore'
@@ -10,6 +10,9 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
+  const usernameId = useId()
+  const passwordId = useId()
+  const errorId = useId()
   const setUser = useAppStore((s) => s.setUser)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,11 +51,11 @@ const AuthPage = () => {
   }
 
   return (
-    <div className="page" style={{
+    <main className="page" style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'var(--brand-gradient)',
       padding: '1rem'
     }}>
       <div style={{
@@ -63,19 +66,20 @@ const AuthPage = () => {
         width: '100%',
         maxWidth: '400px'
       }}>
-        <h2 style={{ 
-          textAlign: 'center', 
+        <h1 style={{
+          fontSize: '1.5rem',
+          textAlign: 'center',
           marginBottom: '2rem',
           color: '#333'
         }}>
           {isLogin ? 'Login' : 'Register'}
-        </h2>
+        </h1>
         
         <form onSubmit={handleSubmit}>
           {error && (
-            <div style={{
+            <div id={errorId} role="alert" style={{
               background: '#fee',
-              color: '#c33',
+              color: '#b91c1c',
               padding: '0.75rem',
               borderRadius: '4px',
               marginBottom: '1rem',
@@ -86,11 +90,15 @@ const AuthPage = () => {
           )}
 
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
-              Username:
+            <label htmlFor={usernameId} style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
+              Username
             </label>
             <input
+              id={usernameId}
               type="text"
+              autoComplete="username"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? errorId : undefined}
               value={usernameInput}
               onChange={(e) => setUsernameInput(e.target.value)}
               style={{
@@ -106,11 +114,15 @@ const AuthPage = () => {
           </div>
 
           <div style={{ marginBottom: '2rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
-              Password:
+            <label htmlFor={passwordId} style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
+              Password
             </label>
             <input
+              id={passwordId}
               type="password"
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? errorId : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={{
@@ -131,7 +143,7 @@ const AuthPage = () => {
             style={{
               width: '100%',
               padding: '0.75rem',
-              background: loading ? '#ccc' : '#667eea',
+              background: loading ? '#ccc' : 'var(--brand-accent)',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -150,7 +162,7 @@ const AuthPage = () => {
             style={{
               background: 'none',
               border: 'none',
-              color: '#667eea',
+              color: 'var(--brand-accent)',
               textDecoration: 'underline',
               cursor: 'pointer',
               marginBottom: '1rem'
@@ -161,12 +173,12 @@ const AuthPage = () => {
         </div>
         
         <div style={{ textAlign: 'center' }}>
-          <Link to="/" style={{ color: '#667eea', textDecoration: 'none' }}>
+          <Link to="/" style={{ color: 'var(--brand-accent)', textDecoration: 'underline' }}>
             ← Back to Home
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
 

@@ -42,7 +42,7 @@ export class ApiService {
         const error = await ErrorHandler.handleHttpError(response)
 
         // Handle specific error types with consistent actions
-        if (error.type === ErrorType.AUTHENTICATION) {
+        if (error.type === ErrorType.AUTHENTICATION && !expectedStatuses.includes(response.status)) {
           logWarn('Authentication failed - redirecting to auth.')
           if (window.location.pathname !== '/auth') {
             window.location.href = '/auth'
