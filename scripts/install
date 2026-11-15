@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# scripts/install               npm ci in every package
-# scripts/install --if-needed   only in the packages whose installed dependencies do not match package.json
+# scripts/install               npm ci in every package, then build packages/shared
+# scripts/install --if-needed   only in the packages whose installed dependencies do not match package.json,
+#                               and only build packages/shared when its dist is missing or older than its sources
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 if ! command -v npm >/dev/null 2>&1; then
@@ -18,11 +19,18 @@ if [ "${1:-}" = "--if-needed" ]; then
   only_if_needed=true
 fi
 
+shared_is_built() {
+  [ -f dist/index.js ] && [ -z "$(find src package.json tsconfig.json -newer dist/index.js -print -quit)" ]
+}
+
 for package in shared server client-react; do
   cd "$root/packages/$package"
-  if [ "$only_if_needed" = true ] && [ -d node_modules ] && npm ls --depth=0 >/dev/null 2>&1; then
-    continue
+  if [ "$only_if_needed" = false ] || [ ! -d node_modules ] || ! npm ls --depth=0 >/dev/null 2>&1; then
+    echo "npm ci: packages/$package"
+    npm ci
   fi
-  echo "npm ci: packages/$package"
-  npm ci
+  if [ "$package" = shared ] && { [ "$only_if_needed" = false ] || ! shared_is_built; }; then
+    echo "build: packages/shared"
+    npm run build
+  fi
 done

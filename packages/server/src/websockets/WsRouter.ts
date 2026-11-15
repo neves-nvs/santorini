@@ -1,4 +1,4 @@
-import { ClientMessage, GameMove, WS_MESSAGE_TYPES } from "../../../shared/src/websocket-types.ts";
+import { ClientMessage, MoveCommand, WS_MESSAGE_TYPES } from "@santorini/shared";
 import { Connection } from "../game/infra/Connection.ts";
 import { ConnectionManager } from "../game/infra/ConnectionManager.ts";
 import { GameService } from "../game/application/GameService.ts";
@@ -94,7 +94,7 @@ export class WsRouter {
 
       case WS_MESSAGE_TYPES.MAKE_MOVE:
         this.requireGameId(gameId);
-        return this.makeMove(connection, userId, gameId, payload?.move as GameMove);
+        return this.makeMove(connection, userId, gameId, payload?.move as MoveCommand);
 
       default:
         sendError(connection, `Unknown message type: ${type}`);
@@ -202,7 +202,7 @@ export class WsRouter {
     logger.info(`Ready status: user ${userId} in game ${gameId} = ${ready}`);
   }
 
-  private async makeMove(connection: Connection, userId: number, gameId: number, move: GameMove): Promise<void> {
+  private async makeMove(connection: Connection, userId: number, gameId: number, move: MoveCommand): Promise<void> {
     const result = await this.gameService.applyMove(gameId, userId, move);
 
     connection.send({

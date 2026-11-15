@@ -4,7 +4,7 @@
  */
 
 import * as helpers from "../helper/helpers.ts";
-import { ServerMessageOf, ServerMessageType } from "../../../../shared/src/websocket-types.ts";
+import { ServerMessageOf, ServerMessageType } from "@santorini/shared";
 import { server, wss } from "../../../src/main.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";

@@ -4,7 +4,7 @@ import { ConnectionManager } from "../infra/ConnectionManager.ts";
 import { Game } from "../domain/Game.ts";
 import { GameEvent } from "../domain/GameEvent.ts";
 import { Move } from "../domain/Move.ts";
-import { WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
+import { WS_MESSAGE_TYPES } from "@santorini/shared";
 import logger from "../../logger.ts";
 
 /**

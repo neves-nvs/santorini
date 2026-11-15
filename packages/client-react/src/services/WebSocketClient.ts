@@ -12,7 +12,7 @@
  * - Handle game-specific logic
  */
 
-import { WS_MESSAGE_TYPES } from '@shared/websocket-types'
+import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { apiService } from './ApiService'
 import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from './GameMessageHandler'
 import { RECONNECTION_DELAY } from '@/constants/gameConstants'
