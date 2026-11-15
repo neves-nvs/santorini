@@ -19,6 +19,13 @@ describe('mapToGameLifecycle', () => {
       expect(lifecycle.sub).toBe('VICTORY')
     })
 
+    it('should map completed game without a winner to FINISHED/ABORTED', () => {
+      const lifecycle = mapToGameLifecycle({ game_status: 'completed', winner_id: null })
+
+      expect(lifecycle.main).toBe('FINISHED')
+      expect(lifecycle.sub).toBe('ABORTED')
+    })
+
     it('should map game with winner to FINISHED/VICTORY', () => {
       const backendState = {
         game_status: 'in-progress',

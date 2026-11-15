@@ -51,11 +51,12 @@ export function mapToGameLifecycle(backendState: BackendGameState): GameLifecycl
   const playerCount = backendState.maxPlayers || backendState.player_count || 2
 
   // FINISHED state
-  if (gameStatus === 'completed' || backendState.winnerId || backendState.winner_id) {
-    return {
-      main: 'FINISHED',
-      sub: 'VICTORY'
-    }
+  const hasWinner = Boolean(backendState.winnerId || backendState.winner_id)
+  if (hasWinner) {
+    return { main: 'FINISHED', sub: 'VICTORY' }
+  }
+  if (gameStatus === 'completed') {
+    return { main: 'FINISHED', sub: 'ABORTED' }
   }
 
   // IN_PROGRESS state
