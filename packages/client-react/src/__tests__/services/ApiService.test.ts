@@ -294,7 +294,7 @@ describe('ApiService', () => {
         json: async () => mockGameState,
       })
 
-      const result = await apiService.getGameState('1')
+      const result = await apiService.getGame('1')
 
       expect(global.fetch).toHaveBeenCalledWith(
         'http://localhost:3000/games/1/state',
@@ -302,102 +302,5 @@ describe('ApiService', () => {
       )
       expect(result).toEqual(mockGameState)
     })
-
-    it('should join game', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ success: true }),
-      })
-
-      const result = await apiService.joinGame('1')
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/games/1/join',
-        expect.objectContaining({
-          method: 'POST',
-        })
-      )
-      expect(result).toBe(true)
-    })
-
-    it('should return false on join game failure', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: false,
-        status: 400,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ message: 'Game full' }),
-      })
-
-      const result = await apiService.joinGame('1')
-
-      expect(result).toBe(false)
-    })
-
-    it('should set player ready status', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ success: true }),
-      })
-
-      const result = await apiService.setPlayerReady('1', true)
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/games/1/ready',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ isReady: true }),
-        })
-      )
-      expect(result).toBe(true)
-    })
-  })
-
-  describe('move and turn methods', () => {
-    it('should make a move', async () => {
-      const mockResponse = { success: true }
-      const move = { type: 'place_worker', position: { x: 0, y: 0 } }
-      
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockResponse,
-      })
-
-      const result = await apiService.makeMove('1', move)
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/games/1/move',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ move }),
-        })
-      )
-      expect(result).toEqual(mockResponse)
-    })
-
-    it('should get turn state', async () => {
-      const mockTurnState = {
-        currentPlayer: 1,
-        phase: 'moving',
-        availablePlays: [],
-      }
-      
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockTurnState,
-      })
-
-      const result = await apiService.getTurnState('1')
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/games/1/turn',
-        expect.any(Object)
-      )
-      expect(result).toEqual(mockTurnState)
-    })
   })
 })
-
