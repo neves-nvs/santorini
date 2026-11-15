@@ -46,6 +46,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 - `scripts/worktree new <task> <branch>` fetches, creates `../<task>` next to the main clone from `origin/main` on a new branch (use a conventional prefix such as `fix/` or `feat/`) and installs dependencies.
 - `scripts/worktree done <task>` removes the worktree and the local branch, and the remote branch if it is still there, once the pull request is merged and the branch has nothing the pull request lacks. `scripts/worktree list` shows every worktree with its pull request.
 - Small pull requests with short imperative commit subjects and a prefix (`fix:`, `feat:`, `test:`, `docs:`, `chore:`).
+- The pull request title is the squash commit subject, so it carries the prefix too: CI checks it (`pr-title.yml`). The repository allows only squash merges, with the title and description of the pull request as the commit message.
 - The owner merges, by squash. After a squash merge, rebase a stacked branch with `git rebase --onto origin/main <old base tip>`. Force-push only branches other than `main`, and with `--force-with-lease`.
 
 ## Releases
