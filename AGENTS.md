@@ -18,6 +18,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 - `scripts/e2e` runs the Playwright suite against a throwaway database, server and client. `scripts/smoke` checks the dev setup.
 - `scripts/docker-check` builds both images and runs the stack through nginx. Run it after a dependency change.
 - `scripts/format-file <file>` formats one file the way CI checks it.
+- `scripts/worktree new|list|done` manages the task worktrees (see Git and pull requests).
 
 ## Style
 
@@ -33,7 +34,9 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 
 ## Git and pull requests
 
-- The project folder holds the main clone and one worktree per task: `santorini/main`, `santorini/<task>`. From `santorini/main`, run `git worktree add -b <branch> ../<task> origin/main`, then `scripts/install --if-needed` in the new folder. Start the agent inside the worktree, and keep `main` clean.
+- The project folder holds the main clone and one worktree per task: `santorini/main`, `santorini/<task>`. Keep `main` clean: do not edit files there or run `pull`, `checkout`, `reset` or `stash`. `git fetch` and `scripts/worktree` are fine.
+- Start a task with `scripts/worktree new <task> <branch>`. It fetches, creates `santorini/<task>` from `origin/main` on a new branch (give it a conventional prefix such as `fix/` or `feat/`) and installs dependencies. Work in that folder. Never create worktrees under `.claude/`.
+- When the owner says the pull request is merged, run `scripts/worktree done <task>`. It removes the worktree and the local branch, and the remote branch if it is still there, but only when the pull request is merged and the branch has nothing the pull request lacks. `scripts/worktree list` shows every worktree with its pull request.
 - Small pull requests with short imperative commit subjects and a prefix (`fix:`, `feat:`, `test:`, `docs:`, `chore:`). Say what changed, what was checked and what was not.
 - The owner merges, by squash. After a squash merge, rebase a stacked branch with `git rebase --onto origin/main <old base tip>`. Force-push only branches other than `main`, and with `--force-with-lease`.
 
