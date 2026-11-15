@@ -1,5 +1,6 @@
 import { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
 import { Server } from "http";
+import { WebSocketConnection } from "./WebSocketConnection.ts";
 import { WebSocketServer } from "ws";
 import logger from "../logger.ts";
 import { webSocketAuthUpgrade } from "../auth/webSocketAuth.ts";
@@ -15,16 +16,22 @@ export function createWebSocketServer(httpServer: Server): WebSocketServer {
   wss.on("connection", (ws: AuthenticatedWebSocket) => {
     logger.debug("[WS] New connection");
 
+    if (!ws.user) {
+      ws.close();
+      return;
+    }
+    const connection = new WebSocketConnection(ws, ws.user);
+
     ws.on("error", (error: Error) => {
       logger.error("[WS] Error:", error);
     });
 
     ws.on("message", (message: string) => {
-      void wsRouter.handleMessage(ws, message);
+      void wsRouter.handleMessage(connection, message);
     });
 
     ws.on("close", () => {
-      void wsRouter.handleDisconnect(ws);
+      void wsRouter.handleDisconnect(connection);
     });
   });
 

@@ -1,12 +1,11 @@
-import WebSocket from "ws";
+import { Connection, OutgoingMessage } from "./Connection.ts";
 
 import logger from "../../logger.ts";
 
 /**
- * WebSocket Connection Manager - Infrastructure Layer
+ * Connection Manager - Infrastructure Layer
  *
- * Manages WebSocket connections for games and provides broadcasting capabilities.
- * Replaces the legacy gameSession module with clean architecture.
+ * Tracks the connections subscribed to each game, whatever transport they use, and sends messages to them.
  */
 
 interface ConnectionContext {
@@ -14,20 +13,15 @@ interface ConnectionContext {
   gameId: number;
 }
 
-interface WebSocketMessage {
-  type: string;
-  [key: string]: unknown;
-}
+export class ConnectionManager {
+  // Primary: connection -> context (for cleanup on disconnect)
+  private connections = new Map<Connection, ConnectionContext>();
 
-export class WebSocketConnectionManager {
-  // Primary: WebSocket -> context (for cleanup on disconnect)
-  private connections = new Map<WebSocket, ConnectionContext>();
+  // Index 1: gameId -> Set<Connection> (for broadcasting)
+  private gameConnections = new Map<number, Set<Connection>>();
 
-  // Index 1: gameId -> Set<WebSocket> (for broadcasting)
-  private gameConnections = new Map<number, Set<WebSocket>>();
-
-  // Index 2: gameId -> userId -> Set<WebSocket> (for user-specific messages)
-  private userGameConnections = new Map<number, Map<number, Set<WebSocket>>>();
+  // Index 2: gameId -> userId -> Set<Connection> (for user-specific messages)
+  private userGameConnections = new Map<number, Map<number, Set<Connection>>>();
 
   // Map to store player ready status for each game
   private playerReadyStatus = new Map<number, Set<number>>();
@@ -51,7 +45,7 @@ export class WebSocketConnectionManager {
   /**
    * Add a client connection to a game
    */
-  addClient(gameId: number, userId: number, ws: WebSocket): void {
+  addClient(gameId: number, userId: number, connection: Connection): void {
     let gameConnection = this.gameConnections.get(gameId);
 
     if (!gameConnection) {
@@ -62,10 +56,10 @@ export class WebSocketConnectionManager {
     logger.info(`Adding client ${userId} to game ${gameId}`);
 
     // 1. Store connection context (primary index)
-    this.connections.set(ws, { userId, gameId });
+    this.connections.set(connection, { userId, gameId });
 
     // 2. Add to game's connection set (for broadcasting)
-    gameConnection.add(ws);
+    gameConnection.add(connection);
 
     // 3. Add to user-game index (for user-specific messages)
     let gameUsers = this.userGameConnections.get(gameId);
@@ -80,7 +74,7 @@ export class WebSocketConnectionManager {
       gameUsers.set(userId, userConnections);
     }
 
-    userConnections.add(ws);
+    userConnections.add(connection);
 
     logger.info(`Client ${userId} added to game ${gameId}. Total connections: ${gameConnection.size}`);
   }
@@ -88,16 +82,16 @@ export class WebSocketConnectionManager {
   /**
    * Remove a client from a specific game
    */
-  removeClient(gameId: number, userId: number, ws: WebSocket): void {
+  removeClient(gameId: number, userId: number, connection: Connection): void {
     logger.info(`Removing client ${userId} from game ${gameId}`);
 
     // Remove from connections map
-    this.connections.delete(ws);
+    this.connections.delete(connection);
 
     // Remove from game's connection set
     const gameConnection = this.gameConnections.get(gameId);
     if (gameConnection) {
-      gameConnection.delete(ws);
+      gameConnection.delete(connection);
     }
 
     // Remove from user-game index
@@ -105,7 +99,7 @@ export class WebSocketConnectionManager {
     if (gameUsers) {
       const userConnections = gameUsers.get(userId);
       if (userConnections) {
-        userConnections.delete(ws);
+        userConnections.delete(connection);
         if (userConnections.size === 0) {
           gameUsers.delete(userId);
         }
@@ -116,11 +110,11 @@ export class WebSocketConnectionManager {
   }
 
   /**
-   * Remove a single WebSocket connection (on disconnect).
+   * Remove a single connection (on disconnect).
    * Returns info about games where user lost their last connection.
    */
-  removeConnection(ws: WebSocket): { gameId: number; userId: number; wasLastConnection: boolean }[] {
-    const context = this.connections.get(ws);
+  removeConnection(connection: Connection): { gameId: number; userId: number; wasLastConnection: boolean }[] {
+    const context = this.connections.get(connection);
     if (!context) {
       return [];
     }
@@ -129,12 +123,12 @@ export class WebSocketConnectionManager {
     logger.info(`Removing connection for user ${userId} from game ${gameId}`);
 
     // Remove from primary index
-    this.connections.delete(ws);
+    this.connections.delete(connection);
 
     // Remove from game's connection set
     const gameConnection = this.gameConnections.get(gameId);
     if (gameConnection) {
-      gameConnection.delete(ws);
+      gameConnection.delete(connection);
     }
 
     // Remove from user-game index and check if it was the last connection
@@ -143,7 +137,7 @@ export class WebSocketConnectionManager {
     if (gameUsers) {
       const userConnections = gameUsers.get(userId);
       if (userConnections) {
-        userConnections.delete(ws);
+        userConnections.delete(connection);
         if (userConnections.size === 0) {
           gameUsers.delete(userId);
           wasLastConnection = true;
@@ -159,7 +153,7 @@ export class WebSocketConnectionManager {
   /**
    * Remove a client from all games (on disconnect).
    * Returns games where user lost their last connection.
-   * @deprecated Use removeConnection instead for single ws removal
+   * @deprecated Use removeConnection instead for single connection removal
    */
   removeClientFromAllGames(userId: number): { gameId: number; wasLastConnection: boolean }[] {
     logger.info(`Removing client ${userId} from all games due to connection close`);
@@ -168,27 +162,27 @@ export class WebSocketConnectionManager {
     const processedGames = new Set<number>();
 
     // Find all connections for this user
-    const connectionsToRemove: { ws: WebSocket; gameId: number }[] = [];
-    for (const [ws, context] of this.connections) {
+    const connectionsToRemove: { connection: Connection; gameId: number }[] = [];
+    for (const [connection, context] of this.connections) {
       if (context.userId === userId) {
-        connectionsToRemove.push({ ws, gameId: context.gameId });
+        connectionsToRemove.push({ connection, gameId: context.gameId });
       }
     }
 
     // Remove each connection
-    for (const { ws, gameId } of connectionsToRemove) {
-      this.connections.delete(ws);
+    for (const { connection, gameId } of connectionsToRemove) {
+      this.connections.delete(connection);
 
       const gameConnection = this.gameConnections.get(gameId);
       if (gameConnection) {
-        gameConnection.delete(ws);
+        gameConnection.delete(connection);
       }
 
       const gameUsers = this.userGameConnections.get(gameId);
       if (gameUsers) {
         const userConnections = gameUsers.get(userId);
         if (userConnections) {
-          userConnections.delete(ws);
+          userConnections.delete(connection);
           if (userConnections.size === 0) {
             gameUsers.delete(userId);
             if (!processedGames.has(gameId)) {
@@ -207,19 +201,18 @@ export class WebSocketConnectionManager {
   /**
    * Broadcast a message to all players in a game
    */
-  broadcastToGame(gameId: number, message: WebSocketMessage): void {
+  broadcastToGame(gameId: number, message: OutgoingMessage): void {
     const gameConnection = this.gameConnections.get(gameId);
     if (!gameConnection || gameConnection.size === 0) {
       logger.warn(`No connections found for game ${gameId} - cannot broadcast ${message.type}`);
       return;
     }
 
-    const messageStr = JSON.stringify(message);
     let sentCount = 0;
 
-    gameConnection.forEach((ws) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(messageStr);
+    gameConnection.forEach((connection) => {
+      if (connection.isOpen) {
+        connection.send(message);
         sentCount++;
       }
     });
@@ -230,7 +223,7 @@ export class WebSocketConnectionManager {
   /**
    * Send a message to a specific player in a game
    */
-  sendToPlayer(gameId: number, userId: number, message: WebSocketMessage): void {
+  sendToPlayer(gameId: number, userId: number, message: OutgoingMessage): void {
     const gameUsers = this.userGameConnections.get(gameId);
     if (!gameUsers) {
       logger.warn(`No game connection found for game ${gameId} - cannot send ${message.type} to player ${userId}`);
@@ -243,12 +236,11 @@ export class WebSocketConnectionManager {
       return;
     }
 
-    const messageStr = JSON.stringify(message);
     let sentCount = 0;
 
-    userConnections.forEach((ws) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(messageStr);
+    userConnections.forEach((connection) => {
+      if (connection.isOpen) {
+        connection.send(message);
         sentCount++;
       }
     });
@@ -318,5 +310,4 @@ export class WebSocketConnectionManager {
   }
 }
 
-// Singleton instance for backward compatibility
-export const webSocketConnectionManager = new WebSocketConnectionManager();
+export const connectionManager = new ConnectionManager();

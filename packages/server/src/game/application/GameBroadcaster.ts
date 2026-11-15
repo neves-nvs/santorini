@@ -1,10 +1,10 @@
 import { GameViewBuilder, toSharedMove } from "../domain/GameViewBuilder.ts";
 
+import { ConnectionManager } from "../infra/ConnectionManager.ts";
 import { Game } from "../domain/Game.ts";
 import { GameEvent } from "../domain/GameEvent.ts";
 import { Move } from "../domain/Move.ts";
 import { WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
-import { WebSocketConnectionManager } from "../infra/WebSocketConnectionManager.ts";
 import logger from "../../logger.ts";
 
 /**
@@ -14,7 +14,7 @@ import logger from "../../logger.ts";
 export class GameBroadcaster {
   constructor(
     private gameViewBuilder: GameViewBuilder = new GameViewBuilder(),
-    private wsConnectionManager: WebSocketConnectionManager = new WebSocketConnectionManager(),
+    private connectionManager: ConnectionManager = new ConnectionManager(),
   ) {}
 
   /**
@@ -36,7 +36,7 @@ export class GameBroadcaster {
         const playerMoves = isCurrentPlayer ? availableMoves : undefined;
         const view = this.gameViewBuilder.buildForPlayer(game, player.userId, playerMoves);
 
-        this.wsConnectionManager.sendToPlayer(game.id, player.userId, {
+        this.connectionManager.sendToPlayer(game.id, player.userId, {
           type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
           payload: {
             gameId: game.id,
@@ -83,7 +83,7 @@ export class GameBroadcaster {
     try {
       const view = this.gameViewBuilder.buildForPlayer(game, currentUserId, availableMoves);
 
-      this.wsConnectionManager.sendToPlayer(game.id, currentUserId, {
+      this.connectionManager.sendToPlayer(game.id, currentUserId, {
         type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
         payload: {
           gameId: game.id,
@@ -110,7 +110,7 @@ export class GameBroadcaster {
     for (const player of game.players.values()) {
       const isActivePlayer = game.currentPlayerId === player.id;
 
-      this.wsConnectionManager.sendToPlayer(game.id, player.userId, {
+      this.connectionManager.sendToPlayer(game.id, player.userId, {
         type: WS_MESSAGE_TYPES.GAME_START,
         payload: {
           gameId: game.id,
@@ -127,7 +127,7 @@ export class GameBroadcaster {
   async broadcastGameEnd(game: Game): Promise<void> {
     logger.info(`Broadcasting game end for game ${game.id}, winner: ${game.winnerId}`);
 
-    this.wsConnectionManager.broadcastToGame(game.id, {
+    this.connectionManager.broadcastToGame(game.id, {
       type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
       payload: {
         gameId: game.id,
