@@ -6,12 +6,14 @@ import logger from "../logger.ts";
 import { webSocketAuthUpgrade } from "../auth/webSocketAuth.ts";
 import { wsRouter } from "../composition-root.ts";
 
+const MAX_MESSAGE_BYTES = 16 * 1024;
+
 /**
  * Creates and configures a WebSocket server attached to an HTTP server.
  * Handles connection lifecycle and delegates message routing to WsRouter.
  */
 export function createWebSocketServer(httpServer: Server): WebSocketServer {
-  const wss = new WebSocketServer({ perMessageDeflate: false, noServer: true });
+  const wss = new WebSocketServer({ perMessageDeflate: false, noServer: true, maxPayload: MAX_MESSAGE_BYTES });
 
   wss.on("connection", (ws: AuthenticatedWebSocket) => {
     logger.debug("[WS] New connection");
