@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { useAppStore } from '../store/appStore'
-import { useIsConnected, useIsConnecting } from '../store/gameSelectors'
-import { webSocketClient } from '../services/WebSocketClient'
+import { useAppStore } from '@/store/appStore'
+import { useIsConnected, useIsConnecting } from '@/store/gameSelectors'
+import { webSocketClient } from '@/services/WebSocketClient'
 
 /**
  * useGameConnection - WebSocket connection lifecycle only

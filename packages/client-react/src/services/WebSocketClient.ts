@@ -15,7 +15,7 @@
 import { WS_MESSAGE_TYPES } from '@shared/websocket-types'
 import { apiService } from './ApiService'
 import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from './GameMessageHandler'
-import { RECONNECTION_DELAY } from '../constants/gameConstants'
+import { RECONNECTION_DELAY } from '@/constants/gameConstants'
 
 interface WebSocketMessage {
   type: string

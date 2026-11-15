@@ -4,7 +4,7 @@ import {
   createSampleBoard,
   gridToWorldCoords,
   worldToGridCoords,
-} from '../../components/game/board-types'
+} from '@/components/game/board-types'
 
 describe('createEmptyBoard', () => {
   it('should create a 5x5 board by default', () => {

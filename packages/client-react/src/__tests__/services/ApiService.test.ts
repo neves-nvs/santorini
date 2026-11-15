@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { apiService } from '../../services/ApiService'
-import { ErrorType, GameError } from '../../utils/errorHandler'
+import { apiService } from '@/services/ApiService'
+import { ErrorType, GameError } from '@/utils/errorHandler'
 
 describe('ApiService', () => {
   beforeEach(() => {
