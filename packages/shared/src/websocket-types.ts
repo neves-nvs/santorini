@@ -5,6 +5,8 @@
  * to ensure type safety and prevent message type mismatches.
  */
 
+import type { GameEndPayload, GameStateUpdatePayload, GameStatus, Move, PlayerGameView } from './game-types.ts';
+
 // ============================================================================
 // Base Types
 // ============================================================================
@@ -12,13 +14,6 @@
 export interface Position {
   x: number;
   y: number;
-}
-
-export interface PlayerReadyStatus {
-  userId: number;
-  isReady: boolean;
-  username?: string;
-  displayName?: string;
 }
 
 // ============================================================================
@@ -91,14 +86,12 @@ export type GameMove = PlaceWorkerMove | MoveWorkerMove | BuildMove;
 // Client -> Server Messages
 // ============================================================================
 
-export interface SubscribeGameMessage {
-  type: typeof WS_MESSAGE_TYPES.SUBSCRIBE_GAME;
-  payload: {
-    gameId: number;
+export interface CreateGameMessage {
+  type: typeof WS_MESSAGE_TYPES.CREATE_GAME;
+  payload?: {
+    maxPlayers?: number;
   };
 }
-
-
 
 export interface JoinGameMessage {
   type: typeof WS_MESSAGE_TYPES.JOIN_GAME;
@@ -107,11 +100,22 @@ export interface JoinGameMessage {
   };
 }
 
-export interface MakeMoveMessage {
-  type: typeof WS_MESSAGE_TYPES.MAKE_MOVE;
+export interface ListGamesMessage {
+  type: typeof WS_MESSAGE_TYPES.LIST_GAMES;
+  payload?: Record<string, never>;
+}
+
+export interface LeaveGameMessage {
+  type: typeof WS_MESSAGE_TYPES.LEAVE_GAME;
   payload: {
     gameId: number;
-    move: GameMove;
+  };
+}
+
+export interface SubscribeGameMessage {
+  type: typeof WS_MESSAGE_TYPES.SUBSCRIBE_GAME;
+  payload: {
+    gameId: number;
   };
 }
 
@@ -123,82 +127,103 @@ export interface SetReadyMessage {
   };
 }
 
+export interface MakeMoveMessage {
+  type: typeof WS_MESSAGE_TYPES.MAKE_MOVE;
+  payload: {
+    gameId: number;
+    move: GameMove;
+  };
+}
+
 // ============================================================================
-// Server -> Client Messages  
+// Server -> Client Messages
 // ============================================================================
 
+export interface GameCreatedMessage {
+  type: typeof WS_MESSAGE_TYPES.GAME_CREATED;
+  payload: {
+    gameId: number;
+    gameState: PlayerGameView;
+  };
+}
+
+export interface GameJoinedMessage {
+  type: typeof WS_MESSAGE_TYPES.GAME_JOINED;
+  payload: {
+    gameId: number;
+    gameState: PlayerGameView;
+  };
+}
+
+export interface GameSummaryView {
+  id: number;
+  status: GameStatus;
+  playerCount: number;
+  maxPlayers: number;
+  createdAt: string;
+}
+
+export interface GamesListMessage {
+  type: typeof WS_MESSAGE_TYPES.GAMES_LIST;
+  payload: {
+    games: GameSummaryView[];
+  };
+}
+
+export interface GameLeftMessage {
+  type: typeof WS_MESSAGE_TYPES.GAME_LEFT;
+  payload: {
+    gameId: number;
+  };
+}
+
+export interface PlayerPresencePayload {
+  gameId: number;
+  userId: number;
+  playerCount: number;
+  maxPlayers: number;
+}
+
+export interface PlayerJoinedMessage {
+  type: typeof WS_MESSAGE_TYPES.PLAYER_JOINED;
+  payload: PlayerPresencePayload;
+}
+
+export interface PlayerLeftMessage {
+  type: typeof WS_MESSAGE_TYPES.PLAYER_LEFT;
+  payload: PlayerPresencePayload;
+}
+
+/**
+ * Sent after every change to a game the socket is subscribed to. A finished game also gets one carrying
+ * GameEndPayload instead of a state, so check for `state` before using it.
+ */
 export interface GameStateUpdateMessage {
   type: typeof WS_MESSAGE_TYPES.GAME_STATE_UPDATE;
+  payload: GameStateUpdatePayload | GameEndPayload;
+}
+
+export interface ReadyStatusUpdateMessage {
+  type: typeof WS_MESSAGE_TYPES.READY_STATUS_UPDATE;
   payload: {
-    id: string;
-    board: any; // Board state - keeping flexible for now
-    players: any[]; // Player list - keeping flexible for now
-    currentPlayer: string;
-    phase: string;
-    game_status?: string;
-    game_phase?: string;
-    current_player_id?: number;
-    playersReadyStatus?: PlayerReadyStatus[];
-    [key: string]: any; // Allow additional fields for compatibility
+    ready: boolean;
+    allReady: boolean;
+    gameStarted: boolean;
   };
-}
-
-export interface AvailableMovesMessage {
-  type: typeof WS_MESSAGE_TYPES.AVAILABLE_MOVES;
-  payload: Array<{
-    type: string;
-    position?: Position;
-    from?: Position;
-    to?: Position;
-    workerId?: number;
-    validPositions?: Position[];
-  }>;
-}
-
-export interface PlayersInGameMessage {
-  type: typeof WS_MESSAGE_TYPES.PLAYERS_IN_GAME;
-  payload: Array<{
-    id: number;
-    username: string;
-    display_name?: string;
-  }>;
-}
-
-export interface ErrorMessage {
-  type: typeof WS_MESSAGE_TYPES.ERROR;
-  payload: string | {
-    message: string;
-    code?: string;
-  };
-}
-
-export interface ConnectedMessage {
-  type: typeof WS_MESSAGE_TYPES.CONNECTED;
-  payload: {
-    connected: boolean;
-  };
-}
-
-export interface DisconnectedMessage {
-  type: typeof WS_MESSAGE_TYPES.DISCONNECTED;
-  payload: {
-    reason?: string;
-  };
-}
-
-export interface PlayerReadyStatusMessage {
-  type: typeof WS_MESSAGE_TYPES.PLAYER_READY_STATUS;
-  payload: PlayerReadyStatus[];
 }
 
 export interface GameStartMessage {
   type: typeof WS_MESSAGE_TYPES.GAME_START;
-  payload: any;
+  payload: {
+    gameId: number;
+    activePlayerId: number | null;
+    availableMoves?: Move[];
+  };
 }
 
-export interface GameReadyForStartMessage {
-  type: typeof WS_MESSAGE_TYPES.GAME_READY_FOR_START;
-  payload: any;
+export interface ErrorMessage {
+  type: typeof WS_MESSAGE_TYPES.ERROR;
+  payload: string;
 }
 
 // ============================================================================
@@ -206,21 +231,25 @@ export interface GameReadyForStartMessage {
 // ============================================================================
 
 export type ClientMessage =
-  | SubscribeGameMessage
+  | CreateGameMessage
   | JoinGameMessage
-  | MakeMoveMessage
-  | SetReadyMessage;
+  | ListGamesMessage
+  | LeaveGameMessage
+  | SubscribeGameMessage
+  | SetReadyMessage
+  | MakeMoveMessage;
 
 export type ServerMessage =
+  | GameCreatedMessage
+  | GameJoinedMessage
+  | GamesListMessage
+  | GameLeftMessage
+  | PlayerJoinedMessage
+  | PlayerLeftMessage
   | GameStateUpdateMessage
-  | AvailableMovesMessage
-  | PlayersInGameMessage
-  | PlayerReadyStatusMessage
+  | ReadyStatusUpdateMessage
   | GameStartMessage
-  | GameReadyForStartMessage
-  | ErrorMessage
-  | ConnectedMessage
-  | DisconnectedMessage;
+  | ErrorMessage;
 
 export type WebSocketMessage = ClientMessage | ServerMessage;
 
@@ -230,7 +259,7 @@ export type WebSocketMessage = ClientMessage | ServerMessage;
 
 export interface GenericWSMessage {
   type: string;
-  payload: any;
+  payload?: any;
 }
 
 // ============================================================================
@@ -239,25 +268,29 @@ export interface GenericWSMessage {
 
 export function isClientMessage(message: GenericWSMessage): message is ClientMessage {
   const clientTypes: string[] = [
-    WS_MESSAGE_TYPES.SUBSCRIBE_GAME,
+    WS_MESSAGE_TYPES.CREATE_GAME,
     WS_MESSAGE_TYPES.JOIN_GAME,
-    WS_MESSAGE_TYPES.MAKE_MOVE,
-    WS_MESSAGE_TYPES.SET_READY
+    WS_MESSAGE_TYPES.LIST_GAMES,
+    WS_MESSAGE_TYPES.LEAVE_GAME,
+    WS_MESSAGE_TYPES.SUBSCRIBE_GAME,
+    WS_MESSAGE_TYPES.SET_READY,
+    WS_MESSAGE_TYPES.MAKE_MOVE
   ];
   return clientTypes.includes(message.type);
 }
 
 export function isServerMessage(message: GenericWSMessage): message is ServerMessage {
   const serverTypes: string[] = [
+    WS_MESSAGE_TYPES.GAME_CREATED,
+    WS_MESSAGE_TYPES.GAME_JOINED,
+    WS_MESSAGE_TYPES.GAMES_LIST,
+    WS_MESSAGE_TYPES.GAME_LEFT,
+    WS_MESSAGE_TYPES.PLAYER_JOINED,
+    WS_MESSAGE_TYPES.PLAYER_LEFT,
     WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
-    WS_MESSAGE_TYPES.AVAILABLE_MOVES,
-    WS_MESSAGE_TYPES.PLAYERS_IN_GAME,
-    WS_MESSAGE_TYPES.PLAYER_READY_STATUS,
+    WS_MESSAGE_TYPES.READY_STATUS_UPDATE,
     WS_MESSAGE_TYPES.GAME_START,
-    WS_MESSAGE_TYPES.GAME_READY_FOR_START,
-    WS_MESSAGE_TYPES.ERROR,
-    WS_MESSAGE_TYPES.CONNECTED,
-    WS_MESSAGE_TYPES.DISCONNECTED
+    WS_MESSAGE_TYPES.ERROR
   ];
   return serverTypes.includes(message.type);
 }

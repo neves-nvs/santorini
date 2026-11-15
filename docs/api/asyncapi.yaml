@@ -1,0 +1,488 @@
+asyncapi: 3.0.0
+info:
+  title: Santorini WebSocket API
+  version: 0.1.0
+  description: |
+    Live play: lobby actions, readiness, moves and the updates the server pushes. Accounts and the game lists are in
+    `openapi.yaml`. The TypeScript types for these messages are in `packages/shared/src/websocket-types.ts` and
+    `game-types.ts`.
+
+    Every message is JSON text shaped `{ "type": string, "payload": ... }`. A message that is not valid JSON, or whose
+    handler fails, is answered with an `error` message whose payload is a string.
+
+    **Joining and subscribing are separate.** `join_game` makes the user a player and replies `game_joined`.
+    `subscribe_game` registers this socket for the game's updates, as a player or as a watcher, and replies with the
+    current state. A client that is playing sends both. Only a subscribed socket receives `game_state_update`,
+    `player_joined`, `player_left` and `game_start`. A player who has not clicked ready is removed from a waiting game
+    when their last subscribed socket closes. A ready player keeps the seat.
+
+    Messages the server never sends, although `WS_MESSAGE_TYPES` still lists them: `available_moves`, `players_in_game`,
+    `player_ready_status`, `game_ready_for_start`, `connected`, `disconnected`, `ping`, `pong`, `start_game`.
+defaultContentType: application/json
+servers:
+  local:
+    host: localhost:3000
+    protocol: ws
+    description: Server run directly
+  compose:
+    host: localhost:8080
+    protocol: ws
+    pathname: /ws
+    description: Through the compose nginx
+    security:
+      - $ref: "#/components/securitySchemes/sessionCookie"
+channels:
+  game:
+    address: /
+    description: |
+      One connection per browser window. The upgrade is refused with 401 without a valid token and with 403 when the
+      `Origin` header is not an allowed origin or the server's own origin.
+    messages:
+      createGame: { $ref: "#/components/messages/createGame" }
+      joinGame: { $ref: "#/components/messages/joinGame" }
+      listGames: { $ref: "#/components/messages/listGames" }
+      leaveGame: { $ref: "#/components/messages/leaveGame" }
+      subscribeGame: { $ref: "#/components/messages/subscribeGame" }
+      setReady: { $ref: "#/components/messages/setReady" }
+      makeMove: { $ref: "#/components/messages/makeMove" }
+      gameCreated: { $ref: "#/components/messages/gameCreated" }
+      gameJoined: { $ref: "#/components/messages/gameJoined" }
+      gamesList: { $ref: "#/components/messages/gamesList" }
+      gameLeft: { $ref: "#/components/messages/gameLeft" }
+      playerJoined: { $ref: "#/components/messages/playerJoined" }
+      playerLeft: { $ref: "#/components/messages/playerLeft" }
+      gameStateUpdate: { $ref: "#/components/messages/gameStateUpdate" }
+      readyStatusUpdate: { $ref: "#/components/messages/readyStatusUpdate" }
+      gameStart: { $ref: "#/components/messages/gameStart" }
+      error: { $ref: "#/components/messages/error" }
+operations:
+  createGame:
+    action: receive
+    channel: { $ref: "#/channels/game" }
+    summary: Create a game and take the first seat
+    messages: [{ $ref: "#/channels/game/messages/createGame" }]
+    reply:
+      channel: { $ref: "#/channels/game" }
+      messages: [{ $ref: "#/channels/game/messages/gameCreated" }]
+  joinGame:
+    action: receive
+    channel: { $ref: "#/channels/game" }
+    summary: Take a seat in a game
+    description: |
+      Idempotent: a user already in the game gets `game_joined` again and no `player_joined` goes out. A full,
+      started or unknown game gives an `error`. Does not subscribe the socket.
+    messages: [{ $ref: "#/channels/game/messages/joinGame" }]
+    reply:
+      channel: { $ref: "#/channels/game" }
+      messages: [{ $ref: "#/channels/game/messages/gameJoined" }]
+  listGames:
+    action: receive
+    channel: { $ref: "#/channels/game" }
+    summary: Games that can still be joined
+    messages: [{ $ref: "#/channels/game/messages/listGames" }]
+    reply:
+      channel: { $ref: "#/channels/game" }
+      messages: [{ $ref: "#/channels/game/messages/gamesList" }]
+  leaveGame:
+    action: receive
+    channel: { $ref: "#/channels/game" }
+    summary: Give up a seat in a waiting game
+    messages: [{ $ref: "#/channels/game/messages/leaveGame" }]
+    reply:
+      channel: { $ref: "#/channels/game" }
+      messages: [{ $ref: "#/channels/game/messages/gameLeft" }]
+  subscribeGame:
+    action: receive
+    channel: { $ref: "#/channels/game" }
+    summary: Receive a game's updates
+    description: |
+      Open to any logged-in user, so someone who is not in the game can watch it. Replies with a `game_state_update`
+      carrying the user's view.
+    messages: [{ $ref: "#/channels/game/messages/subscribeGame" }]
+    reply:
+      channel: { $ref: "#/channels/game" }
+      messages: [{ $ref: "#/channels/game/messages/gameStateUpdate" }]
+  setReady:
+    action: receive
+    channel: { $ref: "#/channels/game" }
+    summary: Confirm or withdraw readiness
+    description: The game starts when every seat is taken and every player is ready.
+    messages: [{ $ref: "#/channels/game/messages/setReady" }]
+    reply:
+      channel: { $ref: "#/channels/game" }
+      messages: [{ $ref: "#/channels/game/messages/readyStatusUpdate" }]
+  makeMove:
+    action: receive
+    channel: { $ref: "#/channels/game" }
+    summary: Play a move
+    description: |
+      A position counts only with integer `x` and `y` from 0 to 4. Anything else, a move out of turn or a move the
+      rules forbid gives an `error`. On success every subscribed player receives a `game_state_update`.
+    messages: [{ $ref: "#/channels/game/messages/makeMove" }]
+    reply:
+      channel: { $ref: "#/channels/game" }
+      messages: [{ $ref: "#/channels/game/messages/gameStateUpdate" }]
+  receiveGameState:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    summary: A game changed
+    messages: [{ $ref: "#/channels/game/messages/gameStateUpdate" }]
+  receivePlayerJoined:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    summary: Someone took a seat
+    messages: [{ $ref: "#/channels/game/messages/playerJoined" }]
+  receivePlayerLeft:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    summary: Someone gave up or lost a seat
+    messages: [{ $ref: "#/channels/game/messages/playerLeft" }]
+  receiveGameStart:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    summary: The game started
+    messages: [{ $ref: "#/channels/game/messages/gameStart" }]
+  receiveError:
+    action: send
+    channel: { $ref: "#/channels/game" }
+    summary: A request failed
+    messages: [{ $ref: "#/channels/game/messages/error" }]
+components:
+  securitySchemes:
+    sessionCookie:
+      type: httpApiKey
+      in: cookie
+      name: token
+      description: |
+        The JWT from `POST /session`, which a browser sends by itself. Other clients send `Authorization: Bearer <jwt>`
+        (see `GET /token`). A `?token=` query parameter is also accepted for now and is due to be removed.
+  messages:
+    createGame:
+      name: create_game
+      payload:
+        type: object
+        required: [type]
+        properties:
+          type: { const: create_game }
+          payload:
+            type: object
+            properties:
+              maxPlayers: { type: integer, default: 2 }
+    joinGame:
+      name: join_game
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: join_game }
+          payload: { $ref: "#/components/schemas/GameIdPayload" }
+    listGames:
+      name: list_games
+      payload:
+        type: object
+        required: [type]
+        properties:
+          type: { const: list_games }
+    leaveGame:
+      name: leave_game
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: leave_game }
+          payload: { $ref: "#/components/schemas/GameIdPayload" }
+    subscribeGame:
+      name: subscribe_game
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: subscribe_game }
+          payload: { $ref: "#/components/schemas/GameIdPayload" }
+    setReady:
+      name: set_ready
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: set_ready }
+          payload:
+            type: object
+            required: [gameId, isReady]
+            properties:
+              gameId: { type: integer }
+              isReady: { type: boolean }
+    makeMove:
+      name: make_move
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: make_move }
+          payload:
+            type: object
+            required: [gameId, move]
+            properties:
+              gameId: { type: integer }
+              move: { $ref: "#/components/schemas/MoveCommand" }
+    gameCreated:
+      name: game_created
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: game_created }
+          payload:
+            type: object
+            required: [gameId, gameState]
+            properties:
+              gameId: { type: integer }
+              gameState: { $ref: "#/components/schemas/GameView" }
+    gameJoined:
+      name: game_joined
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: game_joined }
+          payload:
+            type: object
+            required: [gameId, gameState]
+            properties:
+              gameId: { type: integer }
+              gameState: { $ref: "#/components/schemas/GameView" }
+    gamesList:
+      name: games_list
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: games_list }
+          payload:
+            type: object
+            required: [games]
+            properties:
+              games:
+                type: array
+                items:
+                  type: object
+                  required: [id, status, playerCount, maxPlayers, createdAt]
+                  properties:
+                    id: { type: integer }
+                    status: { $ref: "#/components/schemas/GameStatus" }
+                    playerCount: { type: integer }
+                    maxPlayers: { type: integer }
+                    createdAt: { type: string, format: date-time }
+    gameLeft:
+      name: game_left
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: game_left }
+          payload: { $ref: "#/components/schemas/GameIdPayload" }
+    playerJoined:
+      name: player_joined
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: player_joined }
+          payload: { $ref: "#/components/schemas/PlayerPresence" }
+    playerLeft:
+      name: player_left
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: player_left }
+          payload: { $ref: "#/components/schemas/PlayerPresence" }
+    gameStateUpdate:
+      name: game_state_update
+      summary: The game as this user sees it, or the result of a finished game
+      description: |
+        Two shapes share this type. Most updates carry `state`. When a game finishes, one more update arrives with
+        the result and no `state`, so check for `state` first.
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: game_state_update }
+          payload:
+            oneOf:
+              - type: object
+                required: [gameId, version, state]
+                properties:
+                  gameId: { type: integer }
+                  version: { type: integer }
+                  state: { $ref: "#/components/schemas/GameView" }
+              - type: object
+                required: [gameId, version, status, winnerId, winReason, finishedAt]
+                properties:
+                  gameId: { type: integer }
+                  version: { type: integer }
+                  status: { $ref: "#/components/schemas/GameStatus" }
+                  winnerId: { type: [integer, "null"] }
+                  winReason: { type: [string, "null"] }
+                  finishedAt: { type: [string, "null"], format: date-time }
+    readyStatusUpdate:
+      name: ready_status_update
+      description: Sent to the player who changed their readiness.
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: ready_status_update }
+          payload:
+            type: object
+            required: [ready, allReady, gameStarted]
+            properties:
+              ready: { type: boolean }
+              allReady: { type: boolean }
+              gameStarted: { type: boolean }
+    gameStart:
+      name: game_start
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: game_start }
+          payload:
+            type: object
+            required: [gameId, activePlayerId]
+            properties:
+              gameId: { type: integer }
+              activePlayerId: { type: [integer, "null"] }
+              availableMoves:
+                type: array
+                description: Only for the player whose turn it is
+                items: { $ref: "#/components/schemas/Move" }
+    error:
+      name: error
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: error }
+          payload: { type: string }
+  schemas:
+    GameIdPayload:
+      type: object
+      required: [gameId]
+      properties:
+        gameId: { type: integer }
+    PlayerPresence:
+      type: object
+      required: [gameId, userId, playerCount, maxPlayers]
+      properties:
+        gameId: { type: integer }
+        userId: { type: integer }
+        playerCount: { type: integer }
+        maxPlayers: { type: integer }
+    GameStatus:
+      type: string
+      enum: [waiting, in-progress, completed]
+    GamePhase:
+      type: [string, "null"]
+      enum: [placing, moving, building, null]
+    Position:
+      type: object
+      required: [x, y]
+      properties:
+        x: { type: integer, minimum: 0, maximum: 4 }
+        y: { type: integer, minimum: 0, maximum: 4 }
+    MoveCommand:
+      description: A move sent by a client. `workerId` is optional for placement and movement.
+      oneOf:
+        - type: object
+          required: [type, position]
+          properties:
+            type: { const: place_worker }
+            workerId: { type: integer }
+            position: { $ref: "#/components/schemas/Position" }
+        - type: object
+          required: [type, fromPosition, position]
+          properties:
+            type: { const: move_worker }
+            workerId: { type: integer }
+            fromPosition: { $ref: "#/components/schemas/Position" }
+            position: { $ref: "#/components/schemas/Position" }
+        - type: object
+          required: [type, position]
+          properties:
+            type: { enum: [build_block, build_dome] }
+            position: { $ref: "#/components/schemas/Position" }
+            buildingLevel: { type: integer }
+    Move:
+      description: A move the server offers to the player whose turn it is.
+      oneOf:
+        - type: object
+          required: [type, workerId, position]
+          properties:
+            type: { const: place_worker }
+            workerId: { type: integer }
+            position: { $ref: "#/components/schemas/Position" }
+        - type: object
+          required: [type, workerId, fromPosition, position]
+          properties:
+            type: { const: move_worker }
+            workerId: { type: integer }
+            fromPosition: { $ref: "#/components/schemas/Position" }
+            position: { $ref: "#/components/schemas/Position" }
+        - type: object
+          required: [type, workerId, position]
+          properties:
+            type: { enum: [build_block, build_dome] }
+            workerId: { type: integer }
+            position: { $ref: "#/components/schemas/Position" }
+    GameView:
+      type: object
+      required: [gameId, status, phase, currentPlayerId, turnNumber, version, board, players, isCurrentPlayer]
+      properties:
+        gameId: { type: integer }
+        status: { $ref: "#/components/schemas/GameStatus" }
+        phase: { $ref: "#/components/schemas/GamePhase" }
+        currentPlayerId: { type: [integer, "null"] }
+        turnNumber: { type: integer }
+        version: { type: integer }
+        board:
+          type: object
+          required: [cells]
+          properties:
+            cells:
+              type: array
+              description: 5 columns of 5 cells, indexed `cells[x][y]`
+              items:
+                type: array
+                items:
+                  type: object
+                  required: [height, hasDome, worker]
+                  properties:
+                    height: { type: integer, minimum: 0, maximum: 3 }
+                    hasDome: { type: boolean }
+                    worker:
+                      oneOf:
+                        - type: "null"
+                        - type: object
+                          required: [playerId, workerId]
+                          properties:
+                            playerId: { type: integer }
+                            workerId: { type: integer }
+        players:
+          type: array
+          items:
+            type: object
+            required: [id, userId, seat, status, isReady]
+            properties:
+              id: { type: integer }
+              userId: { type: integer }
+              seat: { type: integer }
+              status: { type: string, enum: [active, disconnected, blocked, eliminated] }
+              isReady: { type: boolean }
+        availableMoves:
+          type: array
+          description: Only when it is this user's turn
+          items: { $ref: "#/components/schemas/Move" }
+        winnerId: { type: integer }
+        winReason: { type: string }
+        isCurrentPlayer: { type: boolean }

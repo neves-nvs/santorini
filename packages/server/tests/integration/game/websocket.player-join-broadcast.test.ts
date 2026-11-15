@@ -5,24 +5,16 @@
 
 import * as helpers from "../helper/helpers.ts";
 import { server, wss } from "../../../src/main.ts";
-import { PlayerGameView } from "../../../../shared/src/game-types.ts";
+import { ServerMessage } from "../../../../shared/src/websocket-types.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
-import { WS_MESSAGE_TYPES } from "../../../../shared/src/websocket-types.ts";
 import WebSocket from "ws";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
 
-// TODO: move to packages/shared; its ServerMessage lacks game_joined and player_joined, and its GameStateUpdateMessage payload differs from what WsRouter sends
-type ServerPayloads = {
-  [WS_MESSAGE_TYPES.GAME_JOINED]: { gameId: number; gameState: PlayerGameView };
-  [WS_MESSAGE_TYPES.PLAYER_JOINED]: { gameId: number; userId: number; playerCount: number; maxPlayers: number };
-  [WS_MESSAGE_TYPES.GAME_STATE_UPDATE]: { gameId: number; version: number; state: PlayerGameView };
-};
+type ServerMessageType = ServerMessage["type"];
 
-type ServerMessageType = keyof ServerPayloads;
-
-type WsMessage<K extends ServerMessageType> = { type: K; payload: ServerPayloads[K] };
+type WsMessage<K extends ServerMessageType> = Extract<ServerMessage, { type: K }>;
 
 interface TestPlayer {
   user: UserDTO;
@@ -194,9 +186,11 @@ describe("Player Join Broadcast Integration Test", () => {
     // Player 1 should receive game_state_update with both players
     const stateUpdate = await stateUpdatePromise;
     expect(stateUpdate.type).toBe("game_state_update");
-    expect(stateUpdate.payload.state.players).toHaveLength(2);
+    if (!("state" in stateUpdate.payload)) throw new Error("Expected a game state in the update");
+    const { players } = stateUpdate.payload.state;
+    expect(players).toHaveLength(2);
 
-    const playerIds = stateUpdate.payload.state.players.map((p) => p.userId);
+    const playerIds = players.map((p) => p.userId);
     expect(playerIds).toContain(player1.user.id);
     expect(playerIds).toContain(user2.id);
   }, 15000);
