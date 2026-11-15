@@ -10,7 +10,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-      in {
+      in rec {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
             nodejs_26 # includes npm
@@ -23,6 +23,17 @@
               echo ""
             fi
           '';
+        };
+
+        # The browsers for the Playwright tests: `nix develop .#e2e`. They only work with the Playwright version
+        # that this nixpkgs ships (playwright-driver.version), so keep @playwright/test in package.json at exactly
+        # that version when updating either one.
+        devShells.e2e = pkgs.mkShell {
+          inputsFrom = [ devShells.default ];
+          env = {
+            PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+            PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
+          };
         };
       });
 }
