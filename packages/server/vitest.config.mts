@@ -17,6 +17,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "unit",
+          env: { JWT_SECRET: "unit-test-secret" },
           include: ["tests/unit/**/*.test.ts"],
         },
       },
