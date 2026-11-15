@@ -16,7 +16,8 @@
     "test:coverage:open": "../../scripts/test-coverage client-react",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "test:smoke": "playwright test -c playwright.smoke.config.ts"
   },
   "keywords": [
     "santorini",

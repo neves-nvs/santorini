@@ -108,7 +108,7 @@ run_mode() {
   fi
 
   local status=0
-  (cd "$root/packages/client-react" && npx playwright test -c playwright.smoke.config.ts) || status=1
+  (cd "$root/packages/client-react" && npm run test:smoke) || status=1
   if [ "$status" -ne 0 ]; then
     show_logs
   fi
