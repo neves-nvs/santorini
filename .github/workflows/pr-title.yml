@@ -25,6 +25,12 @@ jobs:
           types: |
             feat
             fix
-            test
+            perf
+            revert
             docs
+            style
             chore
+            refactor
+            test
+            build
+            ci
