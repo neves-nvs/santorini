@@ -59,6 +59,14 @@ export function useGameSetup(gameId?: string): GameSetupResult {
     setGameId(gameId)
   }, [gameId, setGameId, setGameState, resetActionState])
 
+  // The server forgets a dropped socket, so the socket that replaces it has to join and subscribe again
+  useEffect(() => {
+    if (!gameId || isConnected) return
+
+    resetActionState(gameId)
+    initializingRef.current = false
+  }, [gameId, isConnected, resetActionState])
+
   // Initialize game when connected
   const initializeGame = useCallback(async () => {
     if (!gameId || !isConnected || initializingRef.current) return
@@ -93,10 +101,10 @@ export function useGameSetup(gameId?: string): GameSetupResult {
 
   // Trigger initialization when connected
   useEffect(() => {
-    if (gameId && isConnected && !initializingRef.current && !isReady) {
+    if (gameId && isConnected && !initializingRef.current) {
       initializeGame()
     }
-  }, [gameId, isConnected, isReady, initializeGame])
+  }, [gameId, isConnected, initializeGame])
 
   return {
     isLoading: isLoading || isConnecting,
