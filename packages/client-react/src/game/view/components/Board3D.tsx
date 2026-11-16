@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react'
 import DebugAxis from './DebugAxis'
 import { BoardBase, Block, Worker, Cell, BoundingBox, MovePreview, BuildingPreview } from './GamePieces'
-import { BoardState, createEmptyBoard, gridToWorldCoords } from '@/game/model/board-types'
+import { BoardState, createEmptyBoard } from '@/game/model/board-types'
+import { gridToWorldCoords } from './world-coords'
 import { webSocketClient } from '@/game/services/WebSocketClient'
 import {
   useSelectedWorker,

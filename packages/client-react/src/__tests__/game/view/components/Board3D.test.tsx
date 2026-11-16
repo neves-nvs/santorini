@@ -1,7 +1,7 @@
 import ReactThreeTestRenderer from '@react-three/test-renderer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Board3D from '@/game/view/components/Board3D'
-import { gridToWorldCoords } from '@/game/model/board-types'
+import { gridToWorldCoords } from '@/game/view/components/world-coords'
 import { useGameStore } from '@/game/model/gameStore'
 import { webSocketClient } from '@/game/services/WebSocketClient'
 import type { BoardCell } from '@/game/model/gameStore'
