@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run type-check && vite build",
     "preview": "vite preview",
     "knip": "knip --dependencies",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
-    "type-check": "tsc --noEmit",
+    "type-check": "node ../../node_modules/typescript-native/bin/tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
@@ -60,6 +60,7 @@
     "three-stdlib": "^2.36.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.2",
+    "typescript-native": "npm:typescript@^7.0.2",
     "vite": "^8.3.8",
     "vitest": "^5.1.0"
   }
