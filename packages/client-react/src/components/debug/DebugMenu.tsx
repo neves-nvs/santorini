@@ -135,7 +135,7 @@ const DebugMenu = memo(({ debugState, onDebugChange, cameraType, onToggleCamera,
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{
-          background: '#4CAF50',
+          background: '#2E7D32',
           color: 'white',
           border: 'none',
           padding: '10px 5px',

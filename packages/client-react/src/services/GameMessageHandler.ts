@@ -38,28 +38,6 @@ export function handleWebSocketMessage(type: string, payload: unknown): void {
       handleGameStateUpdate(payload as GameStateUpdatePayload, store)
       break
 
-    case WS_MESSAGE_TYPES.AVAILABLE_MOVES:
-      handleAvailableMoves(payload, store)
-      break
-
-    case WS_MESSAGE_TYPES.PLAYER_READY_STATUS:
-      handlePlayerReadyStatus(payload, store)
-      break
-
-    case WS_MESSAGE_TYPES.GAME_START:
-      log('Game started:', payload)
-      handleGameStart(payload, store)
-      break
-
-    case WS_MESSAGE_TYPES.GAME_READY_FOR_START:
-      log('Game ready for start:', payload)
-      break
-
-    case WS_MESSAGE_TYPES.PLAYERS_IN_GAME:
-      log('Players in game update:', payload)
-      // Game state update will follow with full state
-      break
-
     case WS_MESSAGE_TYPES.PLAYER_JOINED:
       log('Player joined:', payload)
       // Full game_state_update follows - UI will update from that
@@ -75,19 +53,12 @@ export function handleWebSocketMessage(type: string, payload: unknown): void {
       handleGameJoined(payload, store)
       break
 
-    case 'move_acknowledged':
-      log('Move acknowledged:', payload)
-      break
-
     case 'error':
       logError('Server error:', payload)
       break
 
     default:
-      // Unknown message type - log for debugging
-      if (type !== 'connected' && type !== 'disconnected') {
-        log('Unhandled message type:', type, payload)
-      }
+      log('Unhandled message type:', type, payload)
   }
 }
 
@@ -168,55 +139,6 @@ function handleGameStateUpdate(
   }
 }
 
-interface GameStartPayload {
-  gameId: number
-  activePlayerId: number | null
-  availableMoves?: PlayerGameView['availableMoves']
-}
-
-/**
- * Handle game_start messages
- * Payload: { gameId, activePlayerId, availableMoves? }
- */
-function handleGameStart(
-  payload: unknown,
-  store: ReturnType<typeof useGameStore.getState>
-): void {
-  const data = payload as GameStartPayload
-  log('Processing game start - activePlayerId:', data.activePlayerId)
-
-  // Check if current user is the active player
-  const currentUserId = useAppStore.getState().userId
-  const gameState = store.gameState
-  const currentPlayer = gameState?.players.find(p => p.userId === currentUserId)
-  const isCurrentPlayer = currentPlayer ? data.activePlayerId === currentPlayer.id : false
-
-  log('Is current player:', isCurrentPlayer, 'userId:', currentUserId, 'playerId:', currentPlayer?.id)
-
-  // Update game state with new status/phase
-  if (gameState) {
-    store.setGameState({
-      ...gameState,
-      status: 'in-progress',
-      phase: 'placing',
-      currentPlayerId: data.activePlayerId,
-      isCurrentPlayer,
-      isMyTurn: isCurrentPlayer
-    })
-  }
-
-  store.setMyTurn(isCurrentPlayer)
-
-  // Handle available moves (only present for active player)
-  if (isCurrentPlayer && data.availableMoves && data.availableMoves.length > 0) {
-    const transformedMoves = transformMovesToUIFormat(data.availableMoves)
-    store.setCurrentPlayerMoves(transformedMoves)
-    log('Set available moves:', transformedMoves.length)
-  } else {
-    store.setCurrentPlayerMoves([])
-  }
-}
-
 /**
  * Handle game_joined messages
  * Sent when a player joins/reconnects to a game
@@ -229,60 +151,6 @@ function handleGameJoined(
 ): void {
   // game_state_update from subscribe_game will handle the actual state update
   // This message just confirms we've joined the game
-}
-
-/**
- * Handle available_moves messages (legacy format)
- */
-function handleAvailableMoves(
-  payload: unknown,
-  store: ReturnType<typeof useGameStore.getState>
-): void {
-  let moves: unknown[] = []
-  
-  if (Array.isArray(payload)) {
-    moves = payload
-  } else if (payload && typeof payload === 'object' && 'moves' in payload) {
-    moves = (payload as { moves: unknown[] }).moves
-  }
-
-  const transformedMoves: AvailableMove[] = moves.map((move: unknown) => {
-    const m = move as { type: string; workerId?: number; position?: { x: number; y: number }; validPositions?: { x: number; y: number }[] }
-    return {
-      type: m.type as AvailableMove['type'],
-      workerId: m.workerId || 1,
-      validPositions: m.position ? [m.position] : (m.validPositions || [])
-    }
-  })
-
-  store.setCurrentPlayerMoves(transformedMoves)
-  store.setMyTurn(true)
-}
-
-/**
- * Handle player_ready_status messages
- */
-function handlePlayerReadyStatus(
-  payload: unknown,
-  store: ReturnType<typeof useGameStore.getState>
-): void {
-  if (!payload || !Array.isArray(payload)) return
-
-  const readyStatuses = payload as Array<{ userId: number; isReady: boolean }>
-  const readyCount = readyStatuses.filter(p => p.isReady).length
-  const totalPlayers = readyStatuses.length
-
-  log(`Ready status: ${readyCount}/${totalPlayers} players ready`)
-
-  const currentGameState = store.gameState
-  if (currentGameState) {
-    store.setGameState({
-      ...currentGameState,
-      playersReadyStatus: readyStatuses,
-      readyCount,
-      totalPlayers
-    })
-  }
 }
 
 /**

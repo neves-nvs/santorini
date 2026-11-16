@@ -26,10 +26,10 @@ const Toast: React.FC<ToastProps> = ({
 
   const getBackgroundColor = () => {
     switch (type) {
-      case 'success': return '#10B981'
-      case 'warning': return '#F59E0B'
-      case 'error': return '#EF4444'
-      default: return '#3B82F6'
+      case 'success': return '#047857'
+      case 'warning': return '#B45309'
+      case 'error': return '#B91C1C'
+      default: return '#1D4ED8'
     }
   }
 
@@ -44,6 +44,7 @@ const Toast: React.FC<ToastProps> = ({
 
   return (
     <div
+      role={type === 'error' ? 'alert' : undefined}
       style={{
         position: 'fixed',
         top: '20px',
@@ -65,9 +66,10 @@ const Toast: React.FC<ToastProps> = ({
         fontWeight: '500'
       }}
     >
-      <span style={{ fontSize: '16px' }}>{getIcon()}</span>
+      <span aria-hidden="true" style={{ fontSize: '16px' }}>{getIcon()}</span>
       <span>{message}</span>
       <button
+        aria-label="Dismiss notification"
         onClick={() => {
           setIsVisible(false)
           setTimeout(onClose, 300)

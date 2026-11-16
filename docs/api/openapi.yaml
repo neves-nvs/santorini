@@ -8,8 +8,13 @@ info:
 
     Behind the nginx in `docker-compose.yml` every path here is served under `/api`.
 
-    Errors do not have one shape yet: validation failures use `ValidationErrors`, the games routes use
-    `{ "error": string }`, and everything else uses `{ "message": string }`. A 5xx always carries a generic message.
+    The request and response bodies are the types in `packages/shared/src/rest-types.ts`; the schema names below are
+    the type names.
+
+    Errors do not have one shape yet: validation failures use `ValidationErrorResponse`, the games routes use
+    `{ "error": string }` (`GameErrorResponse`), and the rest use `{ "message": string }` (`MessageResponse`) or a
+    bare text. Outside the games routes a 5xx carries a generic message. The games routes put the message of an
+    unexpected error in `error`, so it can name an internal detail.
 servers:
   - url: http://localhost:3000
     description: Server run directly
@@ -84,9 +89,14 @@ paths:
           description: Invalid username or password
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Message" }
+              schema: { $ref: "#/components/schemas/MessageResponse" }
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          description: The JWT secret is not set, or the lookup failed
+          content:
+            text/plain:
+              schema: { type: string }
   /logout:
     post:
       tags: [Session]
@@ -98,7 +108,7 @@ paths:
           description: Logged out
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Message" }
+              schema: { $ref: "#/components/schemas/MessageResponse" }
   /me:
     get:
       tags: [Session]
@@ -114,6 +124,11 @@ paths:
                 properties:
                   id: { type: integer }
                   username: { type: string }
+        "400":
+          description: The user could not be read from the request
+          content:
+            text/plain:
+              schema: { type: string }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
   /ws-ticket:
@@ -153,6 +168,11 @@ paths:
                 required: [token]
                 properties:
                   token: { type: string }
+        "400":
+          description: The token could not be signed
+          content:
+            text/plain:
+              schema: { type: string }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
   /test-auth:
@@ -167,11 +187,17 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [id, username, display_name, created_at]
                 properties:
                   id: { type: integer }
                   username: { type: string }
-                  display_name: { type: [string, "null"] }
+                  display_name: { type: string }
                   created_at: { type: string, format: date-time }
+        "400":
+          description: The user could not be read from the request
+          content:
+            text/plain:
+              schema: { type: string }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
   /auth/google:
@@ -203,9 +229,14 @@ paths:
             application/json:
               schema:
                 type: array
-                items: { $ref: "#/components/schemas/User" }
+                items: { $ref: "#/components/schemas/UserView" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "500":
+          description: The lookup failed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MessageResponse" }
     post:
       tags: [Users]
       summary: Register
@@ -227,21 +258,26 @@ paths:
           description: The new user
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/User" }
+              schema: { $ref: "#/components/schemas/UserView" }
         "400":
           $ref: "#/components/responses/ValidationFailed"
         "403":
           description: Registration is disabled
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Message" }
+              schema: { $ref: "#/components/schemas/MessageResponse" }
         "409":
           description: The username is taken
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Message" }
+              schema: { $ref: "#/components/schemas/MessageResponse" }
         "429":
           $ref: "#/components/responses/TooManyRequests"
+        "500":
+          description: The database did not answer, or the insert failed
+          content:
+            text/plain:
+              schema: { type: string }
   /users/{username}:
     get:
       tags: [Users]
@@ -258,12 +294,24 @@ paths:
           description: The user
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/User" }
+              schema: { $ref: "#/components/schemas/UserView" }
+        "400":
+          $ref: "#/components/responses/ValidationFailed"
         "404":
           description: No such user
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Message" }
+              schema: { $ref: "#/components/schemas/MessageResponse" }
+        "409":
+          description: The database did not answer (the status is odd, but it is what the route sends)
+          content:
+            text/plain:
+              schema: { type: string }
+        "500":
+          description: The lookup failed
+          content:
+            text/plain:
+              schema: { type: string }
   /games:
     get:
       tags: [Games]
@@ -278,10 +326,12 @@ paths:
                 items: { $ref: "#/components/schemas/GameSummary" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/GameServerError" }
     post:
       tags: [Games]
       summary: Create a game
-      description: The creator is added as the first player.
+      description: |
+        The creator is added as the first player. The body may be left out: the defaults apply.
       requestBody:
         required: false
         content:
@@ -289,7 +339,7 @@ paths:
             schema:
               type: object
               properties:
-                maxPlayers: { type: integer, default: 2 }
+                maxPlayers: { type: integer, minimum: 2, maximum: 4, default: 2 }
       responses:
         "200":
           description: The new game
@@ -300,8 +350,10 @@ paths:
                 required: [gameId]
                 properties:
                   gameId: { type: integer }
+        "400": { $ref: "#/components/responses/GameError" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/GameServerError" }
   /games/my:
     get:
       tags: [Games]
@@ -316,6 +368,7 @@ paths:
                 items: { $ref: "#/components/schemas/GameSummary" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/GameServerError" }
   /games/{gameId}:
     get:
       tags: [Games]
@@ -328,10 +381,12 @@ paths:
           description: The game view
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/GameView" }
+              schema: { $ref: "#/components/schemas/PlayerGameView" }
+        "400": { $ref: "#/components/responses/GameError" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/GameError" }
+        "500": { $ref: "#/components/responses/GameServerError" }
   /games/{gameId}/join:
     post:
       tags: [Games]
@@ -350,6 +405,7 @@ paths:
                 required: [success]
                 properties:
                   success: { type: boolean }
+        "400": { $ref: "#/components/responses/GameError" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/GameError" }
@@ -357,7 +413,8 @@ paths:
           description: The game is full, already started, or the user is already in it
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/GameErrorBody" }
+              schema: { $ref: "#/components/schemas/GameErrorResponse" }
+        "500": { $ref: "#/components/responses/GameServerError" }
 components:
   securitySchemes:
     sessionCookie:
@@ -376,12 +433,12 @@ components:
       description: No token
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Message" }
+          schema: { $ref: "#/components/schemas/MessageResponse" }
     Forbidden:
       description: The token is invalid or expired, or its user no longer exists
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/Message" }
+          schema: { $ref: "#/components/schemas/MessageResponse" }
     TooManyRequests:
       description: |
         Over the limit. The global limit is 300 requests a minute per client. Login and registration also share 20
@@ -393,24 +450,30 @@ components:
       description: The body failed validation. The submitted values are not echoed.
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/ValidationErrors" }
+          schema: { $ref: "#/components/schemas/ValidationErrorResponse" }
     GameError:
-      description: A game rule or lookup failed
+      description: A game rule or lookup failed, or the game id or `maxPlayers` is not valid
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/GameErrorBody" }
+          schema: { $ref: "#/components/schemas/GameErrorResponse" }
+    GameServerError:
+      description: |
+        An unexpected failure. `error` holds the message of the failure, which can name an internal detail.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/GameErrorResponse" }
   schemas:
-    Message:
+    MessageResponse:
       type: object
       required: [message]
       properties:
         message: { type: string }
-    GameErrorBody:
+    GameErrorResponse:
       type: object
       required: [error]
       properties:
         error: { type: string, examples: [Game not found] }
-    ValidationErrors:
+    ValidationErrorResponse:
       type: object
       required: [errors]
       properties:
@@ -424,7 +487,7 @@ components:
               msg: { type: string, examples: [Username is required] }
               path: { type: string, examples: [username] }
               location: { type: string, examples: [body] }
-    User:
+    UserView:
       type: object
       required: [id, username, displayName, createdAt]
       properties:
@@ -455,7 +518,8 @@ components:
       enum: [placing, moving, building, null]
     GameSummary:
       type: object
-      required: [id, creatorId, maxPlayers, status, phase, currentPlayerId, turnNumber, version, playerCount, players]
+      required:
+        [id, creatorId, maxPlayers, status, phase, currentPlayerId, turnNumber, version, playerCount, players, createdAt, startedAt, finishedAt]
       properties:
         id: { type: integer }
         creatorId: { type: integer }
@@ -489,12 +553,12 @@ components:
             fromPosition: { $ref: "#/components/schemas/Position" }
             position: { $ref: "#/components/schemas/Position" }
         - type: object
-          required: [type, position]
+          required: [type, workerId, position]
           properties:
             type: { enum: [build_block, build_dome] }
             workerId: { type: integer }
             position: { $ref: "#/components/schemas/Position" }
-    GameView:
+    PlayerGameView:
       type: object
       required: [gameId, status, phase, currentPlayerId, turnNumber, version, board, players, isCurrentPlayer]
       properties:

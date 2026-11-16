@@ -1,32 +1,17 @@
 import { ErrorHandler, ErrorType } from '@/utils/errorHandler'
 import { logWarn } from '@/utils/log'
-import type { GameInfo, GameState } from '@/types/game'
-
-export interface LoginRequest {
-  username: string
-  password: string
-}
-
-export interface CreateGameRequest {
-  maxPlayers: number
-}
-
-export interface JoinGameRequest {
-  username: string
-  gameID: string
-}
-
-export interface CreateUserRequest {
-  username: string
-  password: string
-}
-
-export interface UserSummary {
-  id: number
-  username: string
-  displayName: string
-  createdAt: string
-}
+import type {
+  CreateGameRequest,
+  CreateGameResponse,
+  CreateUserRequest,
+  CurrentUserResponse,
+  GameSummary,
+  LoginRequest,
+  PlayerGameView,
+  TextResponse,
+  UserView,
+  WebSocketTicketResponse,
+} from '@santorini/shared'
 
 export class ApiService {
   private baseUrl = import.meta.env.VITE_API_URL ?? '/api'
@@ -57,7 +42,7 @@ export class ApiService {
         const error = await ErrorHandler.handleHttpError(response)
 
         // Handle specific error types with consistent actions
-        if (error.type === ErrorType.AUTHENTICATION) {
+        if (error.type === ErrorType.AUTHENTICATION && !expectedStatuses.includes(response.status)) {
           logWarn('Authentication failed - redirecting to auth.')
           if (window.location.pathname !== '/auth') {
             window.location.href = '/auth'
@@ -97,8 +82,8 @@ export class ApiService {
   }
 
   // Authentication
-  async login(credentials: LoginRequest): Promise<string> {
-    return this.request<string>('/session', {
+  async login(credentials: LoginRequest): Promise<TextResponse> {
+    return this.request<TextResponse>('/session', {
       method: 'POST',
       body: JSON.stringify(credentials),
     })
@@ -116,16 +101,16 @@ export class ApiService {
 
   // A one-time ticket for opening a WebSocket (browsers cannot set headers on the handshake)
   async createWebSocketTicket(): Promise<string> {
-    const { ticket } = await this.request<{ ticket: string }>('/ws-ticket', { method: 'POST' })
+    const { ticket } = await this.request<WebSocketTicketResponse>('/ws-ticket', { method: 'POST' })
     return ticket
   }
 
   // Check if user is authenticated and get user info
-  async checkAuth(): Promise<{ id: number; username: string } | null> {
+  async checkAuth(): Promise<CurrentUserResponse | null> {
     try {
       // This endpoint should return user info if authenticated, 401 if not
       // Being logged out is an expected answer here, not an error to log
-      return await this.request<{ id: number; username: string }>('/me', {}, [401, 403])
+      return await this.request<CurrentUserResponse>('/me', {}, [401, 403])
     } catch {
       // If 401 or any auth error, user is not authenticated
       return null
@@ -133,36 +118,36 @@ export class ApiService {
   }
 
   // User management
-  async createUser(userData: CreateUserRequest): Promise<UserSummary> {
-    return this.request<UserSummary>('/users', {
+  async createUser(userData: CreateUserRequest): Promise<UserView> {
+    return this.request<UserView>('/users', {
       method: 'POST',
       body: JSON.stringify(userData),
     })
   }
 
-  async getUsers(): Promise<UserSummary[]> {
-    return this.request<UserSummary[]>('/users')
+  async getUsers(): Promise<UserView[]> {
+    return this.request<UserView[]>('/users')
   }
 
   // Game management
-  async getGames(): Promise<GameInfo[]> {
-    return this.request<GameInfo[]>('/games')
+  async getGames(): Promise<GameSummary[]> {
+    return this.request<GameSummary[]>('/games')
   }
 
-  async getMyGames(): Promise<GameInfo[]> {
+  async getMyGames(): Promise<GameSummary[]> {
     // Get games where the current user is a player
-    return this.request<GameInfo[]>('/games/my')
+    return this.request<GameSummary[]>('/games/my')
   }
 
-  async createGame(gameData: CreateGameRequest): Promise<{ gameId: number }> {
-    return this.request<{ gameId: number }>('/games', {
+  async createGame(gameData: CreateGameRequest): Promise<CreateGameResponse> {
+    return this.request<CreateGameResponse>('/games', {
       method: 'POST',
       body: JSON.stringify(gameData),
     })
   }
 
-  async getGame(gameId: string): Promise<GameState> {
-    return this.request<GameState>(`/games/${gameId}`)
+  async getGame(gameId: string): Promise<PlayerGameView> {
+    return this.request<PlayerGameView>(`/games/${gameId}`)
   }
 }
 

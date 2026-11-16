@@ -74,14 +74,18 @@ const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cam
   const isOrtho = cameraType === 'orthographic'
 
   return (
-    <div style={{
-      width: '100vw',
-      height: '100vh',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      zIndex: 0
-    }}>
+    <div
+      role="img"
+      aria-label="3D Santorini board. The game status, players and controls are in the panels around it."
+      style={{
+        width: '100vw',
+        height: '100vh',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        zIndex: 0
+      }}
+    >
       <Canvas shadows style={{ width: '100%', height: '100%' }}>
         <Suspense fallback={
           <mesh position={[0, 1, 0]}>

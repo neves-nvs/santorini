@@ -3,7 +3,7 @@ import React from 'react'
 // Skeleton loader for the game board
 export const BoardSkeleton: React.FC = () => {
   return (
-    <div style={{
+    <div role="status" style={{
       width: '100%',
       height: '100%',
       display: 'flex',
@@ -62,6 +62,7 @@ export const LoadingSpinner: React.FC<{ size?: number; color?: string }> = ({
 }) => {
   return (
     <div
+      aria-hidden="true"
       style={{
         width: size,
         height: size,
@@ -88,7 +89,7 @@ export const ConnectionStatus: React.FC<{
 }> = ({ isConnected, isConnecting }) => {
   if (isConnecting) {
     return (
-      <div style={{
+      <div role="status" style={{
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
@@ -106,7 +107,7 @@ export const ConnectionStatus: React.FC<{
 
   if (!isConnected) {
     return (
-      <div style={{
+      <div role="status" style={{
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
@@ -128,7 +129,7 @@ export const ConnectionStatus: React.FC<{
   }
 
   return (
-    <div style={{
+    <div role="status" style={{
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
@@ -158,7 +159,7 @@ export const GameLoadingOverlay: React.FC<{
   progress 
 }) => {
   return (
-    <div style={{
+    <div role="status" style={{
       position: 'absolute',
       top: 0,
       left: 0,

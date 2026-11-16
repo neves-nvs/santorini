@@ -7,6 +7,7 @@ export interface Config {
   trustProxy: string | number;
   registrationEnabled: boolean;
   authRateLimit: number;
+  rateLimit: number;
   google: { clientId: string | undefined; clientSecret: string | undefined };
   db: { host: string; port: number; user: string; database: string; password: string | undefined };
   logging: { level: string; httpFormat: string; force: boolean };
@@ -16,6 +17,7 @@ const DEFAULT_PORT = 3000;
 const MAX_PORT = 65535;
 const DEFAULT_ALLOWED_ORIGINS = "http://localhost:5174";
 const DEFAULT_AUTH_RATE_LIMIT = 20;
+const DEFAULT_RATE_LIMIT = 300;
 const DEFAULT_TRUST_PROXY = "loopback, linklocal, uniquelocal";
 const DEFAULT_DB_HOST = "localhost";
 const DEFAULT_DB_PORT = 5432;
@@ -84,6 +86,7 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv, devSecretFile: string): Co
     trustProxy: parseTrustProxy(env.TRUST_PROXY ?? DEFAULT_TRUST_PROXY),
     registrationEnabled: env.REGISTRATION_ENABLED !== "false",
     authRateLimit: wholeNumber("AUTH_RATE_LIMIT", DEFAULT_AUTH_RATE_LIMIT),
+    rateLimit: wholeNumber("RATE_LIMIT", DEFAULT_RATE_LIMIT),
     google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
     db: {
       host: env.DB_HOST ?? DEFAULT_DB_HOST,

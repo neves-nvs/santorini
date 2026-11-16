@@ -118,10 +118,6 @@ class WebSocketClient {
     this.send(WS_MESSAGE_TYPES.JOIN_GAME, { gameId: parseInt(gameId) })
   }
 
-  makeMove(moveType: string, data: unknown): void {
-    this.send(moveType, data)
-  }
-
   setReady(gameId: string, isReady: boolean): void {
     if (!this.isConnected()) {
       console.warn('WebSocket not ready for setReady, retrying...')
@@ -256,10 +252,6 @@ export const webSocketClient = {
 
   joinGame(gameId: string): void {
     this.getInstance().joinGame(gameId)
-  },
-
-  makeMove(moveType: string, data: unknown): void {
-    this.getInstance().makeMove(moveType, data)
   },
 
   setReady(gameId: string, isReady: boolean): void {

@@ -26,7 +26,8 @@ const GameLobby = memo(({ className, style }: GameLobbyProps) => {
   }
 
   return (
-    <div
+    <section
+      aria-label="Game lobby"
       className={className}
       style={{
         position: 'absolute',
@@ -89,7 +90,7 @@ const GameLobby = memo(({ className, style }: GameLobbyProps) => {
           Game active!
         </div>
       )}
-    </div>
+    </section>
   )
 })
 

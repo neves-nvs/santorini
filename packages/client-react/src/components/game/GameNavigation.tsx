@@ -18,7 +18,8 @@ const GameNavigation = memo(({ className, style }: GameNavigationProps) => {
   const gameId = useGameId()
 
   return (
-    <div
+    <nav
+      aria-label="Game"
       className={className}
       style={{
         position: 'absolute',
@@ -41,7 +42,7 @@ const GameNavigation = memo(({ className, style }: GameNavigationProps) => {
           {username || 'Guest'}
         </div>
         <div style={{ fontSize: '0.8rem' }}>
-          <span style={{ color: isConnected ? '#4CAF50' : '#f44336' }}>
+          <span style={{ color: isConnected ? '#4CAF50' : '#ff6b5e' }}>
             ● {isConnected ? 'Connected' : 'Disconnected'}
           </span>
         </div>
@@ -80,7 +81,7 @@ const GameNavigation = memo(({ className, style }: GameNavigationProps) => {
         <Link 
           to="/" 
           style={{ 
-            color: '#2196F3', 
+            color: '#64B5F6', 
             textDecoration: 'none',
             padding: '0.5rem',
             background: 'rgba(33, 150, 243, 0.1)',
@@ -100,7 +101,7 @@ const GameNavigation = memo(({ className, style }: GameNavigationProps) => {
           Home
         </Link>
       </div>
-    </div>
+    </nav>
   )
 })
 

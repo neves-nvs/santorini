@@ -1,6 +1,37 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { apiService } from '@/services/ApiService'
 import { ErrorType, GameError } from '@/utils/errorHandler'
+import type {
+  CreateGameResponse,
+  CurrentUserResponse,
+  GameSummary,
+  PlayerGameView,
+  UserView,
+  WebSocketTicketResponse,
+} from '@santorini/shared'
+
+const aUser = (id: number): UserView => ({
+  id,
+  username: `user${id}`,
+  displayName: `user${id}`,
+  createdAt: '2026-01-01T00:00:00.000Z',
+})
+
+const aGame = (id: number, status: GameSummary['status']): GameSummary => ({
+  id,
+  creatorId: 1,
+  maxPlayers: 2,
+  status,
+  phase: null,
+  currentPlayerId: null,
+  turnNumber: 0,
+  version: 1,
+  playerCount: 1,
+  players: [{ id: 1, userId: 1, seat: 0, status: 'active', isReady: false }],
+  createdAt: '2026-01-01T00:00:00.000Z',
+  startedAt: null,
+  finishedAt: null,
+})
 
 describe('ApiService', () => {
   beforeEach(() => {
@@ -32,7 +63,7 @@ describe('ApiService', () => {
     })
 
     it('should make successful POST request', async () => {
-      const mockResponse = { gameId: 123 }
+      const mockResponse: CreateGameResponse = { gameId: 123 }
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
@@ -171,7 +202,7 @@ describe('ApiService', () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => ({ ticket: 'ticket-123' }),
+        json: async () => ({ ticket: 'ticket-123' }) satisfies WebSocketTicketResponse,
       })
 
       const ticket = await apiService.createWebSocketTicket()
@@ -184,7 +215,7 @@ describe('ApiService', () => {
     })
 
     it('should check authentication status', async () => {
-      const mockUser = { username: 'testuser' }
+      const mockUser: CurrentUserResponse = { id: 1, username: 'testuser' }
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
@@ -212,7 +243,7 @@ describe('ApiService', () => {
 
   describe('user management methods', () => {
     it('should create user', async () => {
-      const mockUser = { id: 1, username: 'newuser' }
+      const mockUser = { ...aUser(1), username: 'newuser' }
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
@@ -235,10 +266,7 @@ describe('ApiService', () => {
     })
 
     it('should get users list', async () => {
-      const mockUsers = [
-        { id: 1, username: 'user1' },
-        { id: 2, username: 'user2' },
-      ]
+      const mockUsers = [aUser(1), aUser(2)]
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
@@ -253,10 +281,7 @@ describe('ApiService', () => {
 
   describe('game management methods', () => {
     it('should get games list', async () => {
-      const mockGames = [
-        { id: 1, status: 'waiting' },
-        { id: 2, status: 'in-progress' },
-      ]
+      const mockGames = [aGame(1, 'waiting'), aGame(2, 'in-progress')]
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
@@ -269,7 +294,7 @@ describe('ApiService', () => {
     })
 
     it('should create game', async () => {
-      const mockResponse = { gameId: 123 }
+      const mockResponse: CreateGameResponse = { gameId: 123 }
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         headers: new Headers({ 'content-type': 'application/json' }),
@@ -282,10 +307,16 @@ describe('ApiService', () => {
     })
 
     it('should get game state', async () => {
-      const mockGameState = {
-        id: 1,
+      const mockGameState: PlayerGameView = {
+        gameId: 1,
         status: 'in-progress',
-        board: { spaces: [] },
+        phase: 'moving',
+        currentPlayerId: 1,
+        turnNumber: 3,
+        version: 7,
+        board: { cells: [] },
+        players: [],
+        isCurrentPlayer: true,
       }
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,

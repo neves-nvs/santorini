@@ -35,6 +35,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   return (
     <ToastContext value={{ showToast }}>
       {children}
+      <div role="status" aria-live="polite">
       {toasts.map((toast, index) => (
         <div
           key={toast.id}
@@ -53,6 +54,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
           />
         </div>
       ))}
+      </div>
     </ToastContext>
   )
 }

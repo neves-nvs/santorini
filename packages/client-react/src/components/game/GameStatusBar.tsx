@@ -15,6 +15,7 @@ const GameStatusBar = memo(({ className, style }: GameStatusBarProps) => {
 
   return (
     <div
+      role="status"
       className={className}
       style={{
         position: 'absolute',

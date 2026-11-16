@@ -22,6 +22,7 @@ describe("loadConfig", () => {
       trustProxy: "loopback, linklocal, uniquelocal",
       registrationEnabled: true,
       authRateLimit: 20,
+      rateLimit: 300,
       google: { clientId: undefined, clientSecret: undefined },
       db: { host: "localhost", port: 5432, user: "postgres", database: "postgres", password: undefined },
       logging: { level: "http", httpFormat: "dev", force: false },
@@ -69,6 +70,10 @@ describe("loadConfig", () => {
     expect(config.authRateLimit).toBe(5);
   });
 
+  it("reads the request limit", () => {
+    expect(loadConfig({ JWT_SECRET: "secret", RATE_LIMIT: "1000" }, devSecretFile).rateLimit).toBe(1000);
+  });
+
   it("fails without a JWT secret outside development", () => {
     expect(() => loadConfig({ NODE_ENV: "production" }, devSecretFile)).toThrow("JWT_SECRET is not set");
   });
@@ -111,7 +116,7 @@ describe("loadConfig", () => {
     });
   });
 
-  describe.each(["PORT", "DB_PORT", "AUTH_RATE_LIMIT"])("%s", (name) => {
+  describe.each(["PORT", "DB_PORT", "AUTH_RATE_LIMIT", "RATE_LIMIT"])("%s", (name) => {
     it.each(["abc", "12abc", "0", "-1", "1.5"])("rejects %s", (value) => {
       expect(() => loadConfig({ JWT_SECRET: "secret", [name]: value }, devSecretFile)).toThrow(
         `${name} must be a whole number`,

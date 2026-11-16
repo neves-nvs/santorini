@@ -14,9 +14,7 @@ export type {
   Move,
   PlayerGameView,
   SpectatorGameView,
-  GameStateUpdatePayload,
-  GameEndPayload,
-  GameStartPayload
+  GameStateUpdatePayload
 } from '@santorini/shared';
 
 import type {
@@ -51,23 +49,6 @@ export interface GamePiece {
 export interface PlayerReadyStatus {
   userId: number;
   isReady: boolean;
-}
-
-// Games list from API
-export interface GameInfo {
-  id: number;
-  creatorId: number;
-  maxPlayers: number;
-  status: GameStatus;
-  phase: GamePhase;
-  currentPlayerId: number | null;
-  turnNumber: number;
-  version: number;
-  playerCount: number;
-  players: PlayerView[];
-  createdAt: string;
-  startedAt: string | null;
-  finishedAt: string | null;
 }
 
 /**
