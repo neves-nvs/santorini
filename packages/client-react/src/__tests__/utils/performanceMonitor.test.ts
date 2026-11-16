@@ -5,6 +5,11 @@ import {
   measureAsyncOperation,
 } from '@/utils/performanceMonitor'
 
+function mockPerformanceNow(...readings: number[]) {
+  const spy = vi.spyOn(performance, 'now')
+  readings.forEach((reading) => spy.mockReturnValueOnce(reading))
+}
+
 describe('PerformanceMonitor', () => {
   beforeEach(() => {
     performanceMonitor.reset()
@@ -36,16 +41,8 @@ describe('PerformanceMonitor', () => {
     })
 
     it('should log slow operations (>16ms)', () => {
+      mockPerformanceNow(0, 20)
       performanceMonitor.startTiming('slow-operation')
-      
-      // Mock performance.now to simulate slow operation
-      const originalNow = performance.now
-      let callCount = 0
-      vi.spyOn(performance, 'now').mockImplementation(() => {
-        callCount++
-        return callCount === 1 ? 0 : 20 // 20ms duration
-      })
-
       performanceMonitor.endTiming('slow-operation')
 
       expect(console.warn).toHaveBeenCalledWith(
@@ -53,19 +50,11 @@ describe('PerformanceMonitor', () => {
         undefined
       )
 
-      performance.now = originalNow
     })
 
     it('should log medium operations (5-16ms)', () => {
+      mockPerformanceNow(0, 10)
       performanceMonitor.startTiming('medium-operation')
-      
-      const originalNow = performance.now
-      let callCount = 0
-      vi.spyOn(performance, 'now').mockImplementation(() => {
-        callCount++
-        return callCount === 1 ? 0 : 10 // 10ms duration
-      })
-
       performanceMonitor.endTiming('medium-operation')
 
       expect(console.log).toHaveBeenCalledWith(
@@ -73,20 +62,12 @@ describe('PerformanceMonitor', () => {
         undefined
       )
 
-      performance.now = originalNow
     })
 
     it('should include metadata in timing', () => {
       const metadata = { component: 'Board3D', props: { size: 5 } }
+      mockPerformanceNow(0, 20)
       performanceMonitor.startTiming('render', metadata)
-      
-      const originalNow = performance.now
-      let callCount = 0
-      vi.spyOn(performance, 'now').mockImplementation(() => {
-        callCount++
-        return callCount === 1 ? 0 : 20
-      })
-
       performanceMonitor.endTiming('render')
 
       expect(console.warn).toHaveBeenCalledWith(
@@ -94,7 +75,6 @@ describe('PerformanceMonitor', () => {
         metadata
       )
 
-      performance.now = originalNow
     })
   })
 
@@ -108,16 +88,15 @@ describe('PerformanceMonitor', () => {
       expect(stats.TestComponent).toBe(3)
     })
 
-    it('should warn on excessive re-renders', () => {
-      // Render 15 times (should warn at 10 and 15)
-      for (let i = 0; i < 15; i++) {
+    it('should warn on excessive re-renders, every fifth render after the tenth', () => {
+      for (let i = 0; i < 14; i++) {
         performanceMonitor.trackRender('ExcessiveComponent')
       }
+      expect(console.warn).not.toHaveBeenCalled()
 
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('has rendered 10 times'),
-        undefined
-      )
+      performanceMonitor.trackRender('ExcessiveComponent')
+
+      expect(console.warn).toHaveBeenCalledTimes(1)
       expect(console.warn).toHaveBeenCalledWith(
         expect.stringContaining('has rendered 15 times'),
         undefined

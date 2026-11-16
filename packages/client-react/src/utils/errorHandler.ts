@@ -103,7 +103,7 @@ export class ErrorHandler {
         errorDetails = body
         errorMessage = body.message || body.error || body.errors?.map((e) => e.msg).join(', ') || errorMessage
       } else {
-        errorMessage = await response.text() || errorMessage
+        errorMessage = await response.text() || response.statusText || errorMessage
       }
     } catch {
       // If we can't parse the error response, use status text

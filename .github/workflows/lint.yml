@@ -81,3 +81,7 @@ jobs:
       - name: Type-check
         run: npm run type-check
         working-directory: packages/client-react
+
+      - name: Unit tests
+        run: npm run test:unit
+        working-directory: packages/client-react
