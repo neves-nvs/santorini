@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
 
+const FADE_OUT_MS = 300
+
 interface ToastProps {
   message: string
   type?: 'success' | 'info' | 'warning' | 'error'
@@ -18,7 +20,7 @@ const Toast: React.FC<ToastProps> = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false)
-      setTimeout(onClose, 300) // Wait for fade out animation
+      setTimeout(onClose, FADE_OUT_MS)
     }, duration)
 
     return () => clearTimeout(timer)
@@ -61,7 +63,7 @@ const Toast: React.FC<ToastProps> = ({
         maxWidth: '400px',
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'all 0.3s ease-in-out',
+        transition: `all ${FADE_OUT_MS}ms ease-in-out`,
         fontSize: '14px',
         fontWeight: '500'
       }}
@@ -72,7 +74,7 @@ const Toast: React.FC<ToastProps> = ({
         aria-label="Dismiss notification"
         onClick={() => {
           setIsVisible(false)
-          setTimeout(onClose, 300)
+          setTimeout(onClose, FADE_OUT_MS)
         }}
         style={{
           background: 'none',

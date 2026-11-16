@@ -151,24 +151,6 @@ paths:
                   ticket: { type: string }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
-  /auth/google:
-    get:
-      tags: [Session]
-      summary: Start Google sign-in
-      description: Redirects to Google. Only works when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set.
-      security: []
-      responses:
-        "302":
-          description: Redirect to Google
-  /auth/google/callback:
-    get:
-      tags: [Session]
-      summary: Google sign-in callback
-      description: Sets the `token` cookie and redirects to the client.
-      security: []
-      responses:
-        "302":
-          description: Redirect to the client
   /users:
     post:
       tags: [Users]

@@ -14,10 +14,6 @@ export async function findUser(criteria: Partial<User>): Promise<User | undefine
     query = query.where("username", "=", criteria.username);
   }
 
-  if (criteria.google_id !== undefined) {
-    query = query.where("google_id", criteria.google_id === null ? "is" : "=", criteria.google_id);
-  }
-
   if (criteria.created_at) {
     query = query.where("created_at", "=", criteria.created_at);
   }
@@ -46,8 +42,4 @@ export async function updateUserByUsername(username: string, user: UserUpdate): 
 
 export async function deleteUser(id: number): Promise<void> {
   await db.deleteFrom("users").where("id", "=", id).execute();
-}
-
-export async function findUserByGoogleId(googleId: string): Promise<User | undefined> {
-  return await db.selectFrom("users").where("google_id", "=", googleId).selectAll().executeTakeFirst();
 }
