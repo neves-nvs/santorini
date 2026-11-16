@@ -1,4 +1,4 @@
-import { loadConfig } from "../../../src/configs/loadConfig.ts";
+import { loadConfig } from "@/configs/loadConfig.ts";
 
 const devSecretFile = "/nonexistent/.dev-jwt-secret";
 

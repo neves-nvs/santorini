@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 
 import { StatusCodes } from "http-status-codes";
-import logger from "../logger.ts";
+import logger from "@/logger.ts";
 
 interface HttpError extends Error {
   status?: number;

@@ -1,4 +1,4 @@
-import { db } from "../../../src/database.ts";
+import { db } from "@/database.ts";
 import { sql } from "kysely";
 
 /**

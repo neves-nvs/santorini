@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { param, validationResult } from "express-validator";
 
-import logger from "../logger.ts";
-import { sanitizeForLog } from "../logSanitizer.ts";
+import logger from "@/logger.ts";
+import { sanitizeForLog } from "@/logSanitizer.ts";
 
 export function deprecate(req: Request, res: Response, next: NextFunction) {
   res.setHeader("Warning", '299 - "Deprecated API"');

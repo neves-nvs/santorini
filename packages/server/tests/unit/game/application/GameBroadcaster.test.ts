@@ -1,10 +1,10 @@
-import { Connection } from "../../../../src/game/infra/Connection.ts";
-import { ConnectionManager } from "../../../../src/game/infra/ConnectionManager.ts";
-import { Game } from "../../../../src/game/domain/Game.ts";
-import { GameBroadcaster } from "../../../../src/game/application/GameBroadcaster.ts";
-import { Player } from "../../../../src/game/domain/Player.ts";
+import { Connection } from "@/game/infra/Connection.ts";
+import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
+import { Game } from "@/game/domain/Game.ts";
+import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
+import { Player } from "@/game/domain/Player.ts";
 import { ServerMessage } from "@santorini/shared";
-import { User } from "../../../../src/model.ts";
+import { User } from "@/model.ts";
 
 class RecordingConnection implements Connection {
   readonly isOpen = true;

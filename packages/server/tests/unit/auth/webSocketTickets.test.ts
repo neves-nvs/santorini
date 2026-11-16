@@ -1,4 +1,4 @@
-import { WebSocketTickets } from "../../../src/auth/webSocketTickets.ts";
+import { WebSocketTickets } from "@/auth/webSocketTickets.ts";
 
 describe("WebSocketTickets", () => {
   let now: number;

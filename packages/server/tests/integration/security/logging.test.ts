@@ -1,5 +1,5 @@
 import { Writable } from "stream";
-import { config } from "../../../src/configs/config.ts";
+import { config } from "@/configs/config.ts";
 import request from "supertest";
 import { transports } from "winston";
 
@@ -10,11 +10,11 @@ const password = "correct-horse-battery-staple";
 const username = "log-check";
 
 describe("Logging Integration Tests", () => {
-  let app: typeof import("../../../src/app.ts").app;
-  let db: typeof import("../../../src/database.ts").db;
+  let app: typeof import("@/app.ts").app;
+  let db: typeof import("@/database.ts").db;
 
   beforeAll(async () => {
-    const { default: logger } = await import("../../../src/logger.ts");
+    const { default: logger } = await import("@/logger.ts");
     const sink = new Writable({
       write(chunk, _encoding, done) {
         logged.push(chunk.toString());
@@ -23,8 +23,8 @@ describe("Logging Integration Tests", () => {
     });
     logger.add(new transports.Stream({ stream: sink }));
 
-    ({ app } = await import("../../../src/app.ts"));
-    ({ db } = await import("../../../src/database.ts"));
+    ({ app } = await import("@/app.ts"));
+    ({ db } = await import("@/database.ts"));
   });
 
   afterAll(async () => {
@@ -51,7 +51,7 @@ describe("Logging Integration Tests", () => {
   });
 
   test("redacts passwords, hashes and tokens when bodies and cookies are logged at debug level", async () => {
-    const { default: logger } = await import("../../../src/logger.ts");
+    const { default: logger } = await import("@/logger.ts");
     logged.length = 0;
     logger.level = "debug";
 

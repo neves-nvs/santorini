@@ -1,5 +1,5 @@
 import * as OpenApiValidator from "express-openapi-validator";
-import { app } from "../../../src/app.ts";
+import { app } from "@/app.ts";
 import express from "express";
 import { fileURLToPath } from "node:url";
 

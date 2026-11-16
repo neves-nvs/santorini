@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import logger, { toRedactedJson } from "../logger.ts";
+import logger, { toRedactedJson } from "@/logger.ts";
 
-import { config } from "../configs/config.ts";
+import { config } from "@/configs/config.ts";
 import morgan from "morgan";
 
 if (process.env.HTTP_LOG_FORMAT) {

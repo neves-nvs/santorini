@@ -1,14 +1,14 @@
-import { GameNotFoundError, PlayerNotInGameError } from "../../errors/GameErrors.ts";
-import { GameViewBuilder, PlayerGameView } from "../domain/GameViewBuilder.ts";
+import { GameNotFoundError, PlayerNotInGameError } from "@/errors/GameErrors.ts";
+import { GameViewBuilder, PlayerGameView } from "@/game/domain/GameViewBuilder.ts";
 
-import { Game } from "../domain/Game.ts";
+import { Game } from "@/game/domain/Game.ts";
 import { GameBroadcaster } from "./GameBroadcaster.ts";
-import { GameEvent } from "../domain/GameEvent.ts";
-import { GameRepositoryDb } from "../infra/GameRepositoryDb.ts";
+import { GameEvent } from "@/game/domain/GameEvent.ts";
+import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import type { MoveCommand } from "@santorini/shared";
-import { Player } from "../domain/Player.ts";
-import { createMove } from "../domain/Move.ts";
-import logger from "../../logger.ts";
+import { Player } from "@/game/domain/Player.ts";
+import { createMove } from "@/game/domain/Move.ts";
+import logger from "@/logger.ts";
 
 /**
  * Application service for game operations

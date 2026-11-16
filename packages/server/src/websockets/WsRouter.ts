@@ -1,11 +1,11 @@
 import { MoveCommand, ParsedClientMessage, WS_MESSAGE_TYPES, clientMessageSchema } from "@santorini/shared";
 import { describeInvalidMessage, sendError } from "./utils.ts";
-import { Connection } from "../game/infra/Connection.ts";
-import { ConnectionManager } from "../game/infra/ConnectionManager.ts";
-import { GameService } from "../game/application/GameService.ts";
-import { LobbyService } from "../game/application/LobbyService.ts";
-import logger from "../logger.ts";
-import { sanitizeForLog } from "../logSanitizer.ts";
+import { Connection } from "@/game/infra/Connection.ts";
+import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
+import { GameService } from "@/game/application/GameService.ts";
+import { LobbyService } from "@/game/application/LobbyService.ts";
+import logger from "@/logger.ts";
+import { sanitizeForLog } from "@/logSanitizer.ts";
 
 /**
  * WebSocket message router.

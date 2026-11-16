@@ -1,9 +1,9 @@
-import { server, wss } from "../../../src/main.ts";
+import { server, wss } from "@/main.ts";
 import WebSocket from "ws";
-import { cleanupTestData } from "../helper/testDb.ts";
-import { config } from "../../../src/configs/config.ts";
-import { createTestUserWithLogin } from "../helper/helpers.ts";
-import { db } from "../../../src/database.ts";
+import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
+import { config } from "@/configs/config.ts";
+import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
+import { db } from "@/database.ts";
 
 const TOO_BIG_CLOSE_CODE = 1009;
 

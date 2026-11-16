@@ -1,6 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  resolve: { alias: { "@tests": `${import.meta.dirname}/tests`, "@": `${import.meta.dirname}/src` } },
   test: {
     globals: true,
     environment: "node",

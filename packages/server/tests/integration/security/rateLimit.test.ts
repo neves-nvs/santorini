@@ -1,4 +1,4 @@
-import { app } from "../../../src/app.ts";
+import { app } from "@/app.ts";
 import request from "supertest";
 
 describe("Rate Limit Integration Tests", () => {

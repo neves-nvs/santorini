@@ -1,7 +1,7 @@
-import { specApp as app } from "../helper/specApp.ts";
-import { config } from "../../../src/configs/config.ts";
-import { db } from "../../../src/database.ts";
-import { findUserByUsername } from "../../../src/users/userRepository.ts";
+import { specApp as app } from "@tests/integration/helper/specApp.ts";
+import { config } from "@/configs/config.ts";
+import { db } from "@/database.ts";
+import { findUserByUsername } from "@/users/userRepository.ts";
 import request from "supertest";
 // Removed server import - not needed for HTTP tests using supertest
 

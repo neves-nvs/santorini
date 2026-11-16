@@ -2,18 +2,31 @@
   "compilerOptions": {
     "target": "ES2023",
     "module": "NodeNext",
-    "outDir": "./dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "strict": true,
     "isolatedModules": true,
-    "rewriteRelativeImportExtensions": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node", "vitest/globals"]
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@tests/*": [
+        "./tests/*"
+      ]
+    }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "tests/**/*",
+    "*.mts"
   ],
   "exclude": [
     "node_modules",
