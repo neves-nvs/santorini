@@ -62,30 +62,24 @@ packages/server/src/
 
 ```
 packages/client-react/src/
-├── main.tsx                # App entry point
+├── main.tsx                # Entry point
 ├── App.tsx                 # Root component with routing
-├── pages/                  # Route components
-│   ├── AuthPage.tsx        # Login/register
-│   ├── LobbyPage.tsx       # Game list
-│   └── GamePage.tsx        # Active game
-├── components/
-│   ├── 3d/                 # Three.js game board
-│   ├── game/               # Game UI components
-│   │   ├── GameLobby.tsx   # Pre-game lobby
-│   │   └── PlayerList.tsx  # Player display
-│   └── ui/                 # Reusable UI components
-├── services/
-│   ├── ApiService.ts       # HTTP API client
-│   └── WebSocketService.ts # WebSocket client
-├── store/
-│   ├── AppContext.tsx      # Global app state (auth)
-│   ├── gameStore.ts        # Game state (Zustand)
-│   └── gameSelectors.ts    # Derived state selectors
-├── hooks/                  # Custom React hooks
-│   ├── useGameConnection.ts    # WebSocket lifecycle
-│   ├── useGameLifecycle.ts     # Game phase logic
-│   └── useReadyState.ts        # Player ready state
-└── types/                  # TypeScript definitions
+├── pages/                  # App shell: LobbyPage (needs both game and user)
+├── game/                   # The board game
+│   ├── model/              # gameStore (Zustand), selectors, types, constants, board helpers
+│   ├── update/             # GameMessageHandler: server messages -> model changes
+│   ├── services/           # WebSocketClient, gameApi (games, WebSocket ticket)
+│   └── view/               # pages/GamePage, components/ (Board3D, pieces, lobby, status), hooks/, debug/ (menu, axes, performance)
+├── user/                   # Who the player is
+│   ├── model/              # appStore (current user)
+│   ├── services/           # userApi (login, logout, session check, users)
+│   └── view/               # AuthPage
+├── shared/                 # No domain
+│   ├── pages/              # HomePage, NotFoundPage
+│   ├── ui/                 # ErrorBoundary, Toast, LoadingStates
+│   ├── utils/              # errorHandler, log
+│   └── services/           # request: fetch and error handling shared by the API modules
+└── debug/                  # Developer test panels
 ```
 
 ## Communication Protocols
@@ -199,7 +193,7 @@ error             { message: string }
 - **Source of Truth**: Database for game state, memory for session state
 
 ### Frontend State
-- **AppContext**: User authentication, global UI state
+- **appStore (Zustand)**: The current user (`user/model`)
 - **gameStore (Zustand)**: Current game state, board state, moves
 - **Optimized Indices**: Worker position maps for O(1) lookups
 - **Derived State**: Computed via selectors, not stored

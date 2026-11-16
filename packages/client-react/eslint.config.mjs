@@ -4,6 +4,44 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
+const parentImports = { group: ["..", "../**"], message: "Import across folders through the @/ alias; ./ stays for the same folder." };
+
+// The src folders are domains (game, user) and shared. Inside a domain: model <- update <- view, and services
+// (the side effects) beside them. Lower layers never import upward, and a domain never reaches into another one.
+const processEnv = {
+  selector: "MemberExpression[object.name='process'][property.name='env']",
+  message: "Client code reads configuration from import.meta.env, not process.env.",
+};
+const parentPath = {
+  selector: "CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|doMock|importActual)$/] > Literal.arguments:first-child[value=/^\\.\\./], ImportExpression > Literal.source[value=/^\\.\\./]",
+  message: "Use the @/ alias instead of a ../ path.",
+};
+// no-restricted-imports does not see import(), so every layer rule is mirrored as a syntax selector
+const layer = (folders, message) => ({
+  group: folders.flatMap((folder) => [folder, `${folder}/**`]),
+  message,
+  selector: `ImportExpression > Literal.source[value=/^(${folders.map((folder) => folder.replaceAll("/", "\\/")).join("|")})(\\/|$)/]`,
+});
+const restricted = (...layers) => ({
+  "no-restricted-imports": ["error", { patterns: [parentImports, ...layers.map(({ group, message }) => ({ group, message }))] }],
+  "no-restricted-syntax": ["error", processEnv, parentPath, ...layers.map(({ selector, message }) => ({ selector, message }))],
+});
+const userInternals = ["update", "view", "services"].map((role) => `@/user/${role}`);
+const crossDomain = {
+  game: [layer(userInternals, "game reads the current user through user/model only.")],
+  user: [layer(["@/game"], "user must not import from game/.")],
+};
+const forbiddenWithinDomain = { model: ["update", "view", "services"], update: ["view", "services"], services: ["update", "view"], view: [] };
+const layerBlocks = Object.keys(crossDomain).flatMap((domain) =>
+  Object.entries(forbiddenWithinDomain).map(([role, forbidden]) => ({
+    files: [`src/${domain}/${role}/**/*.ts`, `src/${domain}/${role}/**/*.tsx`],
+    rules: restricted(
+      ...crossDomain[domain],
+      ...forbidden.map((other) => layer([`@/${domain}/${other}`], `${domain}/${role} must not import from ${domain}/${other}.`)),
+    ),
+  })),
+);
+
 export default [
   { ignores: ["dist/**/*", "node_modules/**/*", "coverage/**/*", "playwright-report/**/*", "test-results/**/*"] },
   js.configs.recommended,
@@ -20,23 +58,12 @@ export default [
   },
   {
     files: ["src/**/*.ts", "src/**/*.tsx"],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        { patterns: [{ group: ["..", "../**"], message: "Import across folders through the @/ alias; ./ stays for the same folder." }] },
-      ],
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "MemberExpression[object.name='process'][property.name='env']",
-          message: "Client code reads configuration from import.meta.env, not process.env.",
-        },
-        {
-          selector: "CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|doMock|importActual)$/] > Literal.arguments:first-child[value=/^\\.\\./], ImportExpression > Literal.source[value=/^\\.\\./]",
-          message: "Use the @/ alias instead of a ../ path.",
-        },
-      ],
-    },
+    rules: restricted(),
+  },
+  ...layerBlocks,
+  {
+    files: ["src/shared/**/*.ts", "src/shared/**/*.tsx"],
+    rules: restricted(layer(["@/game", "@/user"], "shared has no domain: it must not import from game/ or user/.")),
   },
   {
     files: ["scripts/**/*.mjs"],

@@ -1,16 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
-import { ToastProvider } from './store/ToastContext'
+import { ToastProvider } from './shared/ui/ToastContext'
 import { type ReactNode, lazy, Suspense, useEffect, useState } from 'react'
-import { useAppStore } from './store/appStore'
-import { apiService } from './services/ApiService'
-import HomePage from './pages/HomePage'
-import AuthPage from './pages/AuthPage'
+import { useAppStore } from './user/model/appStore'
+import { userApi } from './user/services/userApi'
+import HomePage from './shared/pages/HomePage'
+import AuthPage from './user/view/AuthPage'
 import LobbyPage from './pages/LobbyPage'
-import NotFoundPage from './pages/NotFoundPage'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import NotFoundPage from './shared/pages/NotFoundPage'
+import { ErrorBoundary } from './shared/ui/ErrorBoundary'
 import './App.css'
 
-const GamePage = lazy(() => import('./pages/GamePage'))
+const GamePage = lazy(() => import('./game/view/pages/GamePage'))
 
 const LoadingScreen = () => (
   <div role="status" style={{
@@ -50,7 +50,7 @@ const AppRoutes = () => {
   const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
-    apiService
+    userApi
       .checkAuth()
       .then((authInfo) => {
         if (authInfo) setUser(authInfo)

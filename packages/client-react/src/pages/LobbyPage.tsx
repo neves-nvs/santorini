@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAppStore } from '@/store/appStore'
-import { apiService } from '@/services/ApiService'
+import { useAppStore } from '@/user/model/appStore'
+import { userApi } from '@/user/services/userApi'
+import { gameApi } from '@/game/services/gameApi'
 import type { GameSummary } from '@santorini/shared'
 
 type GameTab = 'available' | 'my-games'
@@ -27,8 +28,8 @@ const LobbyPage = () => {
     try {
       // Fetch both available games and my games in parallel
       const [available, mine] = await Promise.all([
-        apiService.getGames(),
-        apiService.getMyGames()
+        gameApi.getGames(),
+        gameApi.getMyGames()
       ])
       setAvailableGames(available)
       setMyGames(mine)
@@ -78,7 +79,7 @@ const LobbyPage = () => {
     setError('')
 
     try {
-      const result = await apiService.createGame({ maxPlayers: playerCount })
+      const result = await gameApi.createGame({ maxPlayers: playerCount })
       if (result.gameId) {
         const gameId = result.gameId.toString()
         navigate(`/game/${gameId}`)
@@ -114,7 +115,7 @@ const LobbyPage = () => {
   const handleLogout = async () => {
     try {
       // Call server logout to clear cookies
-      await apiService.logout()
+      await userApi.logout()
     } catch (error) {
       console.error('Logout API call failed:', error)
       // Continue with client-side logout even if server call fails
