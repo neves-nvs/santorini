@@ -63,10 +63,30 @@ function waitForMessage<K extends ServerMessageType>(
   });
 }
 
+function waitForPlayerCount(ws: WebSocket, count: number) {
+  return new Promise<ServerMessageOf<"game_state">>((resolve, reject) => {
+    const timeoutId = setTimeout(
+      () => reject(new Error(`Timeout waiting for a game_state with ${count} players`)),
+      5000,
+    );
+
+    function onMessage(data: WebSocket.RawData) {
+      const message = JSON.parse(data.toString());
+      if (message.type === "game_state" && message.payload.players.length === count) {
+        clearTimeout(timeoutId);
+        ws.off("message", onMessage);
+        resolve(message);
+      }
+    }
+
+    ws.on("message", onMessage);
+  });
+}
+
 async function subscribe(ws: WebSocket, gameId: number) {
-  const subscribed = waitForMessage(ws, "game_state_update");
+  const subscribed = waitForMessage(ws, "game_state");
   ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
-  return (await subscribed).payload.state;
+  return (await subscribed).payload;
 }
 
 describe("Player Join Broadcast Integration Test", () => {
@@ -105,7 +125,7 @@ describe("Player Join Broadcast Integration Test", () => {
     await db.destroy();
   });
 
-  test("Player 1 should receive player_joined broadcast when Player 2 joins", async () => {
+  test("Player 1 should receive the new player list when Player 2 joins", async () => {
     if (!player1) throw new Error("Player 1 not initialized");
 
     // Player 1 joins via WebSocket (idempotent - already in game from creation)
@@ -114,8 +134,8 @@ describe("Player Join Broadcast Integration Test", () => {
     await joinPromise1;
     await subscribe(player1.ws, gameId);
 
-    // Set up listener for player_joined broadcast BEFORE Player 2 joins
-    const playerJoinedPromise = waitForMessage(player1.ws, "player_joined");
+    // Set up listener for the state with two players BEFORE Player 2 joins
+    const stateWithTwoPlayers = waitForPlayerCount(player1.ws, 2);
 
     // Player 2 creates connection and joins
     const { user: user2, token: token2 } = await helpers.createTestUserWithLogin();
@@ -126,15 +146,13 @@ describe("Player Join Broadcast Integration Test", () => {
     player2.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     await joinPromise2;
 
-    // Player 1 should receive player_joined broadcast
-    const broadcast = await playerJoinedPromise;
-    expect(broadcast.type).toBe("player_joined");
+    // Player 1 should receive the new state
+    const broadcast = await stateWithTwoPlayers;
     expect(broadcast.payload.gameId).toBe(gameId);
-    expect(broadcast.payload.userId).toBe(user2.id);
-    expect(broadcast.payload.playerCount).toBe(2);
+    expect(broadcast.payload.players.map((p) => p.userId)).toContain(user2.id);
   });
 
-  test("Player 1 should receive game_state_update with updated player list when Player 2 joins", async () => {
+  test("Player 1 should receive game_state with updated player list when Player 2 joins", async () => {
     if (!player1) throw new Error("Player 1 not initialized");
 
     // Player 1 joins via WebSocket
@@ -147,17 +165,17 @@ describe("Player Join Broadcast Integration Test", () => {
     expect(initialState.players).toHaveLength(1);
     expect(initialState.players[0].userId).toBe(player1.user.id);
 
-    // Set up listener for game_state_update with 2 players
+    // Set up listener for game_state with 2 players
     const ws1 = player1.ws;
-    const stateUpdatePromise = new Promise<ServerMessageOf<"game_state_update">>((resolve, reject) => {
+    const stateUpdatePromise = new Promise<ServerMessageOf<"game_state">>((resolve, reject) => {
       const timeoutId = setTimeout(() => {
-        reject(new Error("Timeout waiting for game_state_update with 2 players"));
+        reject(new Error("Timeout waiting for game_state with 2 players"));
       }, 5000);
 
       function onMessage(data: WebSocket.RawData) {
         try {
           const message = JSON.parse(data.toString());
-          if (message.type === "game_state_update" && message.payload?.state?.players?.length === 2) {
+          if (message.type === "game_state" && message.payload?.players?.length === 2) {
             clearTimeout(timeoutId);
             ws1.off("message", onMessage);
             resolve(message);
@@ -179,10 +197,10 @@ describe("Player Join Broadcast Integration Test", () => {
     player2.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     await joinPromise2;
 
-    // Player 1 should receive game_state_update with both players
+    // Player 1 should receive game_state with both players
     const stateUpdate = await stateUpdatePromise;
-    expect(stateUpdate.type).toBe("game_state_update");
-    const { players } = stateUpdate.payload.state;
+    expect(stateUpdate.type).toBe("game_state");
+    const { players } = stateUpdate.payload;
     expect(players).toHaveLength(2);
 
     const playerIds = players.map((p) => p.userId);

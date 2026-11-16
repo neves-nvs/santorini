@@ -10,7 +10,7 @@ info:
     **Commands and replies.** A client sends a command, JSON text shaped `{ "type": string, "id"?: string, "payload": object }`.
     `id` is a string of 1 to 64 characters that the client chooses; it is optional. The server answers every command with
     exactly one `ok` or `error` carrying the same `id` (no `id` when the command had none). When a command changes a game, the
-    resulting `game_state_update` reaches every subscribed socket, the sender included, before the `ok`.
+    resulting `game_state` reaches every subscribed socket, the sender included, before the `ok`.
 
     **Errors.** The payload of an `error` is `{ code, message, details? }`. `code` is stable and meant for programs, `message`
     for people, `details.issues` lists the invalid fields of an `invalid_payload`. A message that is not a JSON object has the
@@ -19,7 +19,7 @@ info:
 
     **Joining and subscribing are separate.** `join_game` makes the user a player. `subscribe_game` registers this socket
     for the game's updates, as a player or as a watcher, and sends the current state before it answers `ok`. A client that is
-    playing sends both. Only a subscribed socket receives `game_state_update`, `player_joined` and `player_left`. A player who
+    playing sends both. Only a subscribed socket receives `game_state`, after every change to the game: a join, a leave, a ready, a move. A player who
     has not clicked ready is removed from a waiting game when their last subscribed socket closes. A ready player keeps the seat.
 
 defaultContentType: application/json
@@ -49,16 +49,14 @@ channels:
       makeMove: { $ref: "#/components/messages/makeMove" }
       ok: { $ref: "#/components/messages/ok" }
       error: { $ref: "#/components/messages/error" }
-      playerJoined: { $ref: "#/components/messages/playerJoined" }
-      playerLeft: { $ref: "#/components/messages/playerLeft" }
-      gameStateUpdate: { $ref: "#/components/messages/gameStateUpdate" }
+      gameState: { $ref: "#/components/messages/gameState" }
 operations:
   joinGame:
     action: receive
     channel: { $ref: "#/channels/game" }
     summary: Take a seat in a game
     description: |
-      Idempotent: a user already in the game gets `ok` again and no `player_joined` goes out. A full, started or
+      Idempotent: a user already in the game gets `ok` again and nothing is published. A full, started or
       unknown game gives an `error`. Does not subscribe the socket. The `ok` carries the `gameId`.
     messages: [{ $ref: "#/channels/game/messages/joinGame" }]
     reply:
@@ -68,7 +66,7 @@ operations:
     action: receive
     channel: { $ref: "#/channels/game" }
     summary: Give up a seat in a waiting game
-    description: The `ok` carries the `gameId`. The other subscribers receive `player_left`.
+    description: The `ok` carries the `gameId`. The socket stops following the game, and the other subscribers receive the new `game_state`.
     messages: [{ $ref: "#/channels/game/messages/leaveGame" }]
     reply:
       channel: { $ref: "#/channels/game" }
@@ -78,7 +76,7 @@ operations:
     channel: { $ref: "#/channels/game" }
     summary: Receive a game's updates
     description: |
-      Open to any logged-in user, so someone who is not in the game can watch it. Sends a `game_state_update` with the
+      Open to any logged-in user, so someone who is not in the game can watch it. Sends a `game_state` with the
       user's view, then answers `ok` with the `gameId`. A connection follows one game: subscribing again, to the same game
       or another, gives an `error` (`invalid_game_state`), so a client opens a new connection for each game page.
     messages: [{ $ref: "#/channels/game/messages/subscribeGame" }]
@@ -91,7 +89,7 @@ operations:
     summary: Confirm or withdraw readiness
     description: |
       The game starts when every seat is taken and every player is ready. The new state reaches the subscribed sockets as
-      a `game_state_update`; the `ok` has an empty payload.
+      a `game_state`; the `ok` has an empty payload.
     messages: [{ $ref: "#/channels/game/messages/setReady" }]
     reply:
       channel: { $ref: "#/channels/game" }
@@ -103,7 +101,7 @@ operations:
     description: |
       A position counts only with integer `x` and `y` from 0 to 4. Anything else gives an `invalid_payload`; a move out of
       turn gives `not_your_turn` and a move the rules forbid gives `illegal_move`. On success every subscribed player
-      receives a `game_state_update`, then the sender gets an `ok` with an empty payload.
+      receives a `game_state`, then the sender gets an `ok` with an empty payload.
     messages: [{ $ref: "#/channels/game/messages/makeMove" }]
     reply:
       channel: { $ref: "#/channels/game" }
@@ -112,17 +110,7 @@ operations:
     action: send
     channel: { $ref: "#/channels/game" }
     summary: A game changed
-    messages: [{ $ref: "#/channels/game/messages/gameStateUpdate" }]
-  receivePlayerJoined:
-    action: send
-    channel: { $ref: "#/channels/game" }
-    summary: Someone took a seat
-    messages: [{ $ref: "#/channels/game/messages/playerJoined" }]
-  receivePlayerLeft:
-    action: send
-    channel: { $ref: "#/channels/game" }
-    summary: Someone gave up or lost a seat
-    messages: [{ $ref: "#/channels/game/messages/playerLeft" }]
+    messages: [{ $ref: "#/channels/game/messages/gameState" }]
 components:
   messages:
     joinGame:
@@ -203,38 +191,18 @@ components:
           type: { const: error }
           id: { $ref: "#/components/schemas/RequestId" }
           payload: { $ref: "#/components/schemas/WireError" }
-    playerJoined:
-      name: player_joined
-      payload:
-        type: object
-        required: [type, payload]
-        properties:
-          type: { const: player_joined }
-          payload: { $ref: "#/components/schemas/PlayerPresence" }
-    playerLeft:
-      name: player_left
-      payload:
-        type: object
-        required: [type, payload]
-        properties:
-          type: { const: player_left }
-          payload: { $ref: "#/components/schemas/PlayerPresence" }
-    gameStateUpdate:
-      name: game_state_update
+    gameState:
+      name: game_state
       summary: The game as this user sees it
-      description: A finished game is a state with `status` `completed`, `winnerId` and `winReason`.
+      description: |
+        Sent to every subscribed socket after every change to the game, and when a socket subscribes. A finished game is a
+        state with `status` `completed`, `winnerPlayerId` and `winReason`. A watcher gets it too, with `viewer.role` `spectator`.
       payload:
         type: object
         required: [type, payload]
         properties:
-          type: { const: game_state_update }
-          payload:
-            type: object
-            required: [gameId, version, state]
-            properties:
-              gameId: { type: integer }
-              version: { type: integer }
-              state: { $ref: "#/components/schemas/GameView" }
+          type: { const: game_state }
+          payload: { $ref: "#/components/schemas/GameView" }
   schemas:
     RequestId:
       type: string
@@ -276,14 +244,6 @@ components:
       required: [gameId]
       properties:
         gameId: { type: integer }
-    PlayerPresence:
-      type: object
-      required: [gameId, userId, playerCount, maxPlayers]
-      properties:
-        gameId: { type: integer }
-        userId: { type: integer }
-        playerCount: { type: integer }
-        maxPlayers: { type: integer }
     GameStatus:
       type: string
       enum: [waiting, in-progress, completed]
@@ -341,12 +301,15 @@ components:
             workerId: { type: integer }
             position: { $ref: "#/components/schemas/Position" }
     GameView:
+      description: |
+        A game as one user sees it. `currentPlayerId` and `winnerPlayerId` are per-game player ids, not user ids.
       type: object
-      required: [gameId, status, phase, currentPlayerId, turnNumber, version, board, players, isCurrentPlayer]
+      required: [gameId, status, phase, maxPlayers, currentPlayerId, turnNumber, version, board, players, winnerPlayerId, winReason, viewer]
       properties:
         gameId: { type: integer }
         status: { $ref: "#/components/schemas/GameStatus" }
         phase: { $ref: "#/components/schemas/GamePhase" }
+        maxPlayers: { type: integer }
         currentPlayerId: { type: [integer, "null"] }
         turnNumber: { type: integer }
         version: { type: integer }
@@ -384,10 +347,23 @@ components:
               seat: { type: integer }
               status: { type: string, enum: [active, disconnected, blocked, eliminated] }
               isReady: { type: boolean }
-        availableMoves:
-          type: array
-          description: Only when it is this user's turn
-          items: { $ref: "#/components/schemas/Move" }
-        winnerId: { type: integer }
-        winReason: { type: string }
-        isCurrentPlayer: { type: boolean }
+        winnerPlayerId: { type: [integer, "null"] }
+        winReason: { type: [string, "null"] }
+        viewer: { $ref: "#/components/schemas/Viewer" }
+    Viewer:
+      description: Who is looking. A player gets the moves they can play now; a watcher, or someone whose seat was freed, gets none.
+      oneOf:
+        - type: object
+          required: [role, playerId, isCurrentPlayer, availableMoves]
+          properties:
+            role: { const: player }
+            playerId: { type: integer }
+            isCurrentPlayer: { type: boolean }
+            availableMoves:
+              type: array
+              description: Empty unless it is this player's turn
+              items: { $ref: "#/components/schemas/Move" }
+        - type: object
+          required: [role]
+          properties:
+            role: { const: spectator }

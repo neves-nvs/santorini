@@ -157,13 +157,13 @@ describe("Full Game Integration Test", () => {
       }),
     );
 
-    // Wait for a game_state_update or error that arrives AFTER we sent the move
+    // Wait for a game_state or error that arrives AFTER we sent the move
     return waitForCondition(ws, (msg) => {
       const idx = queue.indexOf(msg);
       if (idx >= startIdx && msg.type === "error") {
         throw new Error(`Server error: ${msg.payload?.message || JSON.stringify(msg.payload)}`);
       }
-      return idx >= startIdx && msg.type === "game_state_update";
+      return idx >= startIdx && msg.type === "game_state";
     });
   }
 
@@ -180,7 +180,7 @@ describe("Full Game Integration Test", () => {
       await joinPromise;
       players[i].playerId = i + 1; // player ids follow the order of joining
 
-      const subscribePromise = waitForMessage(ws, "game_state_update");
+      const subscribePromise = waitForMessage(ws, "game_state");
       ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
       await subscribePromise;
     }
@@ -201,7 +201,7 @@ describe("Full Game Integration Test", () => {
   // Every player is subscribed, so the latest state the server pushed is the current one
   async function getGameState(ws: WebSocket): Promise<WsMessage> {
     const queue = messageQueues.get(ws) || [];
-    const latest = [...queue].reverse().find((message) => message.type === "game_state_update");
+    const latest = [...queue].reverse().find((message) => message.type === "game_state");
     if (!latest) throw new Error("No game state received");
     return latest;
   }
@@ -210,7 +210,7 @@ describe("Full Game Integration Test", () => {
     await setupGame();
 
     // Helper to extract state from response (handles nested structure)
-    const getState = (response: WsMessage) => response.payload?.state || response.payload;
+    const getState = (response: WsMessage) => response.payload;
 
     // Get initial state - should be in placing phase
     let response = await getGameState(players[0].ws);
@@ -458,14 +458,14 @@ describe("Full Game Integration Test", () => {
 
     // Game should be completed
     expect(state.status).toBe("completed");
-    expect(state.winnerId).toBe(players[0].playerId);
+    expect(state.winnerPlayerId).toBe(players[0].playerId);
     expect(state.winReason).toBe("win_condition");
   });
 
   test("should end game when player is trapped (lose condition)", async () => {
     await setupGame();
 
-    const getState = (response: WsMessage) => response.payload.state || response.payload;
+    const getState = (response: WsMessage) => response.payload;
 
     // === PLACING PHASE ===
     // Place P1 workers in corner, P2 workers nearby to build trap

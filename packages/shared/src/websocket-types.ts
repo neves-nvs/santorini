@@ -5,7 +5,7 @@
  * that carries the same `id`. Everything else the server sends is an event about a game (no `id`).
  */
 
-import type { GameStateUpdatePayload, MoveCommand } from './game-types.ts';
+import type { GameView, MoveCommand } from './game-types.ts';
 import type { ErrorCode } from './protocol.ts';
 
 export const WS_MESSAGE_TYPES = {
@@ -19,9 +19,7 @@ export const WS_MESSAGE_TYPES = {
   // Server -> Client
   OK: 'ok',
   ERROR: 'error',
-  GAME_STATE_UPDATE: 'game_state_update',
-  PLAYER_JOINED: 'player_joined',
-  PLAYER_LEFT: 'player_left'
+  GAME_STATE: 'game_state'
 } as const;
 
 // ============================================================================
@@ -64,35 +62,16 @@ export interface ErrorMessage {
   payload: WireError;
 }
 
-export interface PlayerPresencePayload {
-  gameId: number;
-  userId: number;
-  playerCount: number;
-  maxPlayers: number;
+/**
+ * The game as this user sees it. Sent to every subscribed socket after every change to the game (a join, a leave,
+ * a ready, a move), and when a socket subscribes. A finished game is a state with status `completed`.
+ */
+export interface GameStateMessage {
+  type: typeof WS_MESSAGE_TYPES.GAME_STATE;
+  payload: GameView;
 }
 
-export interface PlayerJoinedMessage {
-  type: typeof WS_MESSAGE_TYPES.PLAYER_JOINED;
-  payload: PlayerPresencePayload;
-}
-
-export interface PlayerLeftMessage {
-  type: typeof WS_MESSAGE_TYPES.PLAYER_LEFT;
-  payload: PlayerPresencePayload;
-}
-
-/** Sent after every change to a game the socket is subscribed to. A finished game is a state with status `completed`. */
-export interface GameStateUpdateMessage {
-  type: typeof WS_MESSAGE_TYPES.GAME_STATE_UPDATE;
-  payload: GameStateUpdatePayload;
-}
-
-export type ServerMessage =
-  | OkMessage
-  | ErrorMessage
-  | PlayerJoinedMessage
-  | PlayerLeftMessage
-  | GameStateUpdateMessage;
+export type ServerMessage = OkMessage | ErrorMessage | GameStateMessage;
 
 export type ServerMessageType = ServerMessage['type'];
 

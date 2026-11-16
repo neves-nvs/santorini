@@ -1,5 +1,4 @@
 import { Connection } from "./Connection.ts";
-import { ServerMessage } from "@santorini/shared";
 
 import logger from "@/logger.ts";
 
@@ -156,53 +155,13 @@ export class ConnectionManager {
   }
 
   /**
-   * Broadcast a message to all players in a game
+   * The open sockets subscribed to a game, with the user behind each
    */
-  broadcastToGame(gameId: number, message: ServerMessage): void {
-    const gameConnection = this.gameConnections.get(gameId);
-    if (!gameConnection || gameConnection.size === 0) {
-      logger.warn(`No connections found for game ${gameId} - cannot broadcast ${message.type}`);
-      return;
-    }
-
-    let sentCount = 0;
-
-    gameConnection.forEach((connection) => {
-      if (connection.isOpen) {
-        connection.send(message);
-        sentCount++;
-      }
+  subscribers(gameId: number): { connection: Connection; userId: number }[] {
+    return [...(this.gameConnections.get(gameId) ?? [])].flatMap((connection) => {
+      const context = this.connections.get(connection);
+      return context && connection.isOpen ? [{ connection, userId: context.userId }] : [];
     });
-
-    logger.info(`Broadcasted ${message.type} to ${sentCount}/${gameConnection.size} connections in game ${gameId}`);
-  }
-
-  /**
-   * Send a message to a specific player in a game
-   */
-  sendToPlayer(gameId: number, userId: number, message: ServerMessage): void {
-    const gameUsers = this.userGameConnections.get(gameId);
-    if (!gameUsers) {
-      logger.warn(`No game connection found for game ${gameId} - cannot send ${message.type} to player ${userId}`);
-      return;
-    }
-
-    const userConnections = gameUsers.get(userId);
-    if (!userConnections || userConnections.size === 0) {
-      logger.warn(`No connections found for user ${userId} in game ${gameId}`);
-      return;
-    }
-
-    let sentCount = 0;
-
-    userConnections.forEach((connection) => {
-      if (connection.isOpen) {
-        connection.send(message);
-        sentCount++;
-      }
-    });
-
-    logger.debug(`Sent ${message.type} to player ${userId} in game ${gameId} (${sentCount} connections)`);
   }
 
   /**

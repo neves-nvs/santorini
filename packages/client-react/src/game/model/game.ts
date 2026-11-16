@@ -12,9 +12,8 @@ export type {
   MoveWorkerMove,
   BuildMove,
   Move,
-  PlayerGameView,
-  SpectatorGameView,
-  GameStateUpdatePayload
+  GameView,
+  Viewer
 } from '@santorini/shared';
 
 import type {
@@ -55,7 +54,7 @@ export interface PlayerReadyStatus {
  * Client-side game state that combines server view with local state
  */
 export interface GameState {
-  // Core fields from PlayerGameView
+  // Core fields from GameView
   gameId: number;
   status: GameStatus;
   phase: GamePhase;

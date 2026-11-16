@@ -9,7 +9,22 @@ vi.mock('@/game/view/hooks/useGameConnection', () => ({
 }))
 
 vi.mock('@/game/services/gameApi', () => ({
-  gameApi: { getGame: vi.fn(async () => ({ gameId: 5 })) },
+  gameApi: {
+    getGame: vi.fn(async () => ({
+      gameId: 5,
+      status: 'waiting',
+      phase: null,
+      maxPlayers: 2,
+      currentPlayerId: null,
+      turnNumber: 0,
+      version: 1,
+      board: { cells: [] },
+      players: [],
+      winnerPlayerId: null,
+      winReason: null,
+      viewer: { role: 'spectator' },
+    })),
+  },
 }))
 
 vi.mock('@/game/services/WebSocketClient', () => ({

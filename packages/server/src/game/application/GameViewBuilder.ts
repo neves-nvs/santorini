@@ -13,14 +13,11 @@ import {
   CellView,
   GamePhase,
   GameStatus,
-  PlayerGameView,
+  GameView,
   PlayerView,
   Move as SharedMove,
-  SpectatorGameView,
+  Viewer,
 } from "@santorini/shared";
-
-// Re-export for backwards compatibility
-export type { BoardView, CellView, PlayerGameView, PlayerView, SpectatorGameView };
 
 /**
  * Convert domain Move to shared Move format
@@ -56,53 +53,42 @@ export function toSharedMove(move: Move): SharedMove {
 }
 
 /**
- * Domain service that builds different views of the game state
+ * Domain service that builds the view of a game for one user
  * Centralizes view generation logic with visibility policies
  */
 export class GameViewBuilder {
   constructor(private visibilityPolicy: VisibilityPolicy = new VisibilityPolicy()) {}
 
   /**
-   * Build a view for a specific player
+   * The game as this user sees it: a player gets the moves they can play now, anyone else watches
    */
-  buildForPlayer(game: Game, userId: number, availableMoves?: Move[]): PlayerGameView {
-    const filteredGameState = this.visibilityPolicy.filterGameState(game, userId);
+  buildFor(game: Game, userId: number): GameView {
+    const state = this.visibilityPolicy.filterGameState(game, userId);
 
-    // Find the player ID for this user to check if it's their turn
-    const player = Array.from(game.players.values()).find((p) => p.userId === userId);
-    const isCurrentPlayer = player ? game.currentPlayerId === player.id : false;
+    const player = state.players.find((p) => p.userId === userId);
+    const isCurrentPlayer = player !== undefined && game.currentPlayerId === player.id;
+    const viewer: Viewer = player
+      ? {
+          role: "player",
+          playerId: player.id,
+          isCurrentPlayer,
+          availableMoves: isCurrentPlayer ? game.getAvailableMoves().map(toSharedMove) : [],
+        }
+      : { role: "spectator" };
 
     return {
       gameId: game.id,
-      status: filteredGameState.status as GameStatus,
-      phase: filteredGameState.phase as GamePhase,
-      currentPlayerId: filteredGameState.currentPlayerId,
-      turnNumber: filteredGameState.turnNumber,
-      version: filteredGameState.version,
-      board: this.buildBoardView(filteredGameState.board),
-      players: this.buildPlayersView(filteredGameState.players),
-      availableMoves: isCurrentPlayer && availableMoves ? availableMoves.map(toSharedMove) : undefined,
-      winnerId: filteredGameState.winnerId ?? undefined,
-      winReason: filteredGameState.winReason ?? undefined,
-      isCurrentPlayer,
-    };
-  }
-
-  /**
-   * Build a view for spectators
-   */
-  buildForSpectator(game: Game): SpectatorGameView {
-    return {
-      gameId: game.id,
-      status: game.status as GameStatus,
-      phase: game.phase as GamePhase,
-      currentPlayerId: game.currentPlayerId,
-      turnNumber: game.turnNumber,
-      version: game.version,
-      board: this.buildBoardView(game.board),
-      players: this.buildPlayersView(Array.from(game.players.values())),
-      winnerId: game.winnerId,
-      winReason: game.winReason,
+      status: state.status as GameStatus,
+      phase: state.phase as GamePhase,
+      maxPlayers: game.maxPlayers,
+      currentPlayerId: state.currentPlayerId,
+      turnNumber: state.turnNumber,
+      version: state.version,
+      board: this.buildBoardView(state.board),
+      players: this.buildPlayersView(state.players),
+      winnerPlayerId: state.winnerId,
+      winReason: state.winReason,
+      viewer,
     };
   }
 

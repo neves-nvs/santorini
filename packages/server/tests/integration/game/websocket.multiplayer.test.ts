@@ -171,7 +171,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
       }
 
       // Player subscribes and receives game state
-      const statePromise = waitForMessage(players[0].ws, "game_state_update");
+      const statePromise = waitForMessage(players[0].ws, "game_state");
       players[0].ws.send(
         JSON.stringify({
           type: "subscribe_game",
@@ -180,7 +180,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
       );
 
       const response = await statePromise;
-      expect(response.type).toBe("game_state_update");
+      expect(response.type).toBe("game_state");
       expect(response.payload.gameId).toBe(gameId);
     });
   });
@@ -210,13 +210,13 @@ describe("WebSocket Multiplayer Game Tests", () => {
       );
       await messagePromise;
 
-      messagePromise = waitForMessage(players[1].ws, "game_state_update");
+      messagePromise = waitForMessage(players[1].ws, "game_state");
       players[1].ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
       const response = await messagePromise;
 
       // Verify the game state shows both players (by userId)
-      expect(response.payload.state.players).toHaveLength(2);
-      const playerUserIds = response.payload.state.players.map((p: { userId: number }) => p.userId);
+      expect(response.payload.players).toHaveLength(2);
+      const playerUserIds = response.payload.players.map((p: { userId: number }) => p.userId);
       expect(playerUserIds).toContain(players[0].user.id);
       expect(playerUserIds).toContain(players[1].user.id);
     });
@@ -244,7 +244,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Second player should still be able to receive messages
-      const messagePromise = waitForMessage(players[1].ws, "game_state_update");
+      const messagePromise = waitForMessage(players[1].ws, "game_state");
       players[1].ws.send(
         JSON.stringify({
           type: "subscribe_game",
@@ -253,7 +253,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
       );
 
       const response = await messagePromise;
-      expect(response.type).toBe("game_state_update");
+      expect(response.type).toBe("game_state");
     });
   });
 
@@ -273,7 +273,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
         );
         await messagePromise;
 
-        messagePromise = waitForMessage(player.ws, "game_state_update");
+        messagePromise = waitForMessage(player.ws, "game_state");
         player.ws.send(
           JSON.stringify({
             type: "subscribe_game",

@@ -12,11 +12,9 @@
 import { useCallback, useRef } from 'react'
 import { gameApi } from '@/game/services/gameApi'
 import { webSocketClient } from '@/game/services/WebSocketClient'
-import { useSetGameState } from '@/game/model/gameSelectors'
+import { applyGameView } from '@/game/update/GameMessageHandler'
 
 export function useGameActions() {
-  const setGameState = useSetGameState()
-  
   // Track join/subscribe state to prevent duplicates
   const joinedGamesRef = useRef<Set<string>>(new Set())
   const subscribedGamesRef = useRef<Set<string>>(new Set())
@@ -78,13 +76,12 @@ export function useGameActions() {
    */
   const fetchGameState = useCallback(async (gameId: string): Promise<void> => {
     try {
-      const state = await gameApi.getGame(gameId)
-      setGameState(state)
+      applyGameView(await gameApi.getGame(gameId))
     } catch (error) {
       console.error('Failed to fetch game state:', error)
       throw error
     }
-  }, [setGameState])
+  }, [])
 
   /**
    * Set player ready status

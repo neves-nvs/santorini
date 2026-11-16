@@ -60,7 +60,7 @@ export class GameRepositoryDb {
       currentPlayerId: gameRecord.current_player_id,
       turnNumber: gameRecord.turn_number || 0,
       placingTurnsCompleted: gameRecord.placing_turns_completed || 0,
-      version: 1, // Default version since not in database
+      version: gameRecord.version,
       winnerId: gameRecord.winner_id,
       winReason: gameRecord.win_reason,
       lastMovedWorkerId: gameRecord.last_moved_worker_id,
@@ -212,6 +212,7 @@ export class GameRepositoryDb {
       current_player_id: snapshot.currentPlayerId,
       turn_number: snapshot.turnNumber,
       placing_turns_completed: snapshot.placingTurnsCompleted,
+      version: snapshot.version,
       last_moved_worker_id: snapshot.lastMovedWorkerId,
       last_moved_worker_x: snapshot.lastMovedWorkerPosition?.x ?? null,
       last_moved_worker_y: snapshot.lastMovedWorkerPosition?.y ?? null,

@@ -3,7 +3,7 @@ import {
   CreateGameResponse,
   GameErrorResponse,
   GameSummary,
-  PlayerGameView,
+  GameView,
   createGamePayloadSchema,
   gameIdSchema,
 } from "@santorini/shared";
@@ -81,10 +81,10 @@ export function createGameRoutes(gameService: GameService, lobbyService: LobbySe
     res.json({ gameId: game.id });
   });
 
-  router.get<GameParams, PlayerGameView>("/:gameId", authenticate, async (req, res) => {
+  router.get<GameParams, GameView>("/:gameId", authenticate, async (req, res) => {
     const userId = getUser(req).id;
     const gameId = parseGameId(req.params.gameId);
-    const gameView = await gameService.getGameStateForPlayer(gameId, userId);
+    const gameView = await gameService.getGameView(gameId, userId);
     res.json(gameView);
   });
 

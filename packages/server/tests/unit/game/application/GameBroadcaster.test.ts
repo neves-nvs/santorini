@@ -6,7 +6,7 @@ import { ServerMessage } from "@santorini/shared";
 import { User } from "@/model.ts";
 
 class RecordingConnection implements Connection {
-  readonly isOpen = true;
+  isOpen = true;
   readonly sent: ServerMessage[] = [];
   readonly user: User;
 
@@ -19,28 +19,80 @@ class RecordingConnection implements Connection {
   }
 }
 
-function availableMovesSentTo(connection: RecordingConnection): unknown {
-  const update = connection.sent.find((message) => message.type === "game_state_update");
-  return (update?.payload as { state: { availableMoves?: unknown } }).state.availableMoves;
+function viewerSentTo(connection: RecordingConnection) {
+  const [update] = connection.sent;
+  if (update?.type !== "game_state") throw new Error("No game_state was sent");
+  return update.payload.viewer;
 }
 
-describe("GameBroadcaster available moves", () => {
-  it("sends the available moves only to the player whose turn it is", async () => {
-    const game = Game.create(1, 100, 2);
-    game.addPlayer(new Player(1, 100, 0));
-    game.addPlayer(new Player(2, 101, 1));
-    for (const [playerId] of game.players) {
-      game.setPlayerReady(playerId, true);
-    }
+function startedGame(): Game {
+  const game = Game.create(1, 100, 2);
+  game.addPlayer(new Player(1, 100, 0));
+  game.addPlayer(new Player(2, 101, 1));
+  for (const [playerId] of game.players) {
+    game.setPlayerReady(playerId, true);
+  }
+  return game;
+}
+
+describe("GameBroadcaster", () => {
+  it("sends the available moves only to the player whose turn it is", () => {
+    const game = startedGame();
     const connectionManager = new ConnectionManager();
     const currentPlayer = new RecordingConnection(100);
     const waitingPlayer = new RecordingConnection(101);
     connectionManager.addClient(game.id, 100, currentPlayer);
     connectionManager.addClient(game.id, 101, waitingPlayer);
 
-    await new GameBroadcaster(undefined, connectionManager).broadcastGameUpdate(game, []);
+    new GameBroadcaster(undefined, connectionManager).broadcastGameUpdate(game);
 
-    expect(availableMovesSentTo(currentPlayer)).toEqual(expect.any(Array));
-    expect(availableMovesSentTo(waitingPlayer)).toBeUndefined();
+    const current = viewerSentTo(currentPlayer);
+    expect(current.role === "player" && current.availableMoves.length).toBeGreaterThan(0);
+    expect(viewerSentTo(waitingPlayer)).toEqual({
+      role: "player",
+      playerId: 2,
+      isCurrentPlayer: false,
+      availableMoves: [],
+    });
+  });
+
+  it("sends a spectator the game too, as a spectator", () => {
+    const game = startedGame();
+    const connectionManager = new ConnectionManager();
+    const spectator = new RecordingConnection(999);
+    connectionManager.addClient(game.id, 999, spectator);
+
+    new GameBroadcaster(undefined, connectionManager).broadcastGameUpdate(game);
+
+    expect(viewerSentTo(spectator)).toEqual({ role: "spectator" });
+  });
+
+  it("sends nothing to a socket subscribed to another game, or already closed", () => {
+    const game = startedGame();
+    const connectionManager = new ConnectionManager();
+    const elsewhere = new RecordingConnection(100);
+    const closed = new RecordingConnection(101);
+    closed.isOpen = false;
+    connectionManager.addClient(2, 100, elsewhere);
+    connectionManager.addClient(game.id, 101, closed);
+
+    new GameBroadcaster(undefined, connectionManager).broadcastGameUpdate(game);
+
+    expect(elsewhere.sent).toEqual([]);
+    expect(closed.sent).toEqual([]);
+  });
+
+  it("sends each subscribed socket one message", () => {
+    const game = startedGame();
+    const connectionManager = new ConnectionManager();
+    const first = new RecordingConnection(100);
+    const second = new RecordingConnection(100);
+    connectionManager.addClient(game.id, 100, first);
+    connectionManager.addClient(game.id, 100, second);
+
+    new GameBroadcaster(undefined, connectionManager).broadcastGameUpdate(game);
+
+    expect(first.sent).toHaveLength(1);
+    expect(second.sent).toHaveLength(1);
   });
 });

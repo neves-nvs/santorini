@@ -15,37 +15,21 @@
 
 import { useGameStore } from '@/game/model/gameStore'
 import { useAppStore } from '@/user/model/appStore'
-import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '@/game/model/game'
+import type { AvailableMove, GameState, GameView, Move } from '@/game/model/game'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
-import { log, logError, logWarn } from '@/shared/utils/log'
+import { log, logError } from '@/shared/utils/log'
 
-// Type guard for PlayerGameView (has isCurrentPlayer field)
-function isPlayerGameView(view: GameStateUpdatePayload['state']): view is PlayerGameView {
-  return 'isCurrentPlayer' in view
-}
-
-// Track last state hash to prevent duplicate updates
-let lastGameStateHash: string | null = null
+// The newest version of each game this client has shown. Every game_state is a whole snapshot, so one that is not
+// newer (an old one, or the same one twice) changes nothing and is dropped.
+const lastVersionByGame = new Map<number, number>()
 
 /**
  * Main message handler - called from WebSocketClient.onmessage
  */
 export function handleWebSocketMessage(type: string, payload: unknown): void {
-  const store = useGameStore.getState()
-
   switch (type) {
-    case WS_MESSAGE_TYPES.GAME_STATE_UPDATE:
-      handleGameStateUpdate(payload as GameStateUpdatePayload, store)
-      break
-
-    case WS_MESSAGE_TYPES.PLAYER_JOINED:
-      log('Player joined:', payload)
-      // Full game_state_update follows - UI will update from that
-      break
-
-    case WS_MESSAGE_TYPES.PLAYER_LEFT:
-      log('Player left:', payload)
-      // Full game_state_update follows - UI will update from that
+    case WS_MESSAGE_TYPES.GAME_STATE:
+      applyGameView(payload as GameView)
       break
 
     case WS_MESSAGE_TYPES.ERROR:
@@ -58,52 +42,26 @@ export function handleWebSocketMessage(type: string, payload: unknown): void {
 }
 
 /**
- * Handle game_state_update messages
+ * Show a game as the server sees it for this user. Used for game_state messages and for the REST snapshot.
  */
-function handleGameStateUpdate(
-  payload: GameStateUpdatePayload,
-  store: ReturnType<typeof useGameStore.getState>
-): void {
-  const gameView = payload.state
-  if (!gameView) {
-    logWarn('Game state update missing state field:', payload)
+export function applyGameView(gameView: GameView): void {
+  if (gameView.version <= (lastVersionByGame.get(gameView.gameId) ?? -1)) {
+    log('Ignoring a game state that is not newer than the one shown')
     return
   }
+  lastVersionByGame.set(gameView.gameId, gameView.version)
 
-  // Deduplicate by hashing key fields including board state
-  const stateHash = JSON.stringify({
-    gameId: gameView.gameId,
-    version: gameView.version,
-    phase: gameView.phase,
-    currentPlayerId: gameView.currentPlayerId,
-    turnNumber: gameView.turnNumber,
-    playerCount: gameView.players.length,
-    // Include board hash to detect worker placements
-    boardHash: gameView.board?.cells ? JSON.stringify(gameView.board.cells) : ''
-  })
-
-  if (lastGameStateHash === stateHash) {
-    log('Skipping duplicate game state update')
-    return
-  }
-  lastGameStateHash = stateHash
-
-  // Determine if current user is the active player
-  const isPlayer = isPlayerGameView(gameView)
-  const isCurrentPlayer = isPlayer ? gameView.isCurrentPlayer : false
-  const availableMoves = isPlayer ? gameView.availableMoves : undefined
+  const store = useGameStore.getState()
+  const { viewer } = gameView
+  const isCurrentPlayer = viewer.role === 'player' && viewer.isCurrentPlayer
+  const availableMoves = viewer.role === 'player' ? viewer.availableMoves : []
 
   log('Processing game state - phase:', gameView.phase, 'isCurrentPlayer:', isCurrentPlayer)
 
-  // Compute currentUserReady from players array
-  // Get the current user's ID from the app store (single source of truth)
+  // The current user's ready status comes from the players list
   const currentUserId = useAppStore.getState().userId
   const currentUserPlayer = currentUserId ? gameView.players.find(p => p.userId === currentUserId) : undefined
-  const currentUserReady = currentUserPlayer?.isReady ?? false
 
-  log('Current user ready status:', { currentUserId, currentUserReady, players: gameView.players })
-
-  // Convert to GameState format
   const gameState: GameState = {
     gameId: gameView.gameId,
     status: gameView.status,
@@ -113,20 +71,19 @@ function handleGameStateUpdate(
     version: gameView.version,
     board: gameView.board,
     players: gameView.players,
-    availableMoves: availableMoves,
-    winnerId: gameView.winnerId ?? undefined,
+    availableMoves,
+    winnerId: gameView.winnerPlayerId ?? undefined,
     winReason: gameView.winReason ?? undefined,
-    isCurrentPlayer: isCurrentPlayer,
+    isCurrentPlayer,
     isMyTurn: isCurrentPlayer,
-    currentUserReady: currentUserReady
+    currentUserReady: currentUserPlayer?.isReady ?? false,
+    totalPlayers: gameView.maxPlayers
   }
 
   store.setGameState(gameState)
 
-  // Handle available moves
-  if (isCurrentPlayer && availableMoves && availableMoves.length > 0) {
-    const transformedMoves = transformMovesToUIFormat(availableMoves)
-    store.setCurrentPlayerMoves(transformedMoves)
+  if (isCurrentPlayer && availableMoves.length > 0) {
+    store.setCurrentPlayerMoves(transformMovesToUIFormat(availableMoves))
     store.setMyTurn(true)
   } else {
     store.setCurrentPlayerMoves([])
@@ -138,8 +95,8 @@ function handleGameStateUpdate(
  * Transform server moves to UI format (grouped by worker with valid positions)
  * For move_worker moves, stores the fromPosition in each valid position entry
  */
-function transformMovesToUIFormat(moves: PlayerGameView['availableMoves']): AvailableMove[] {
-  if (!moves || moves.length === 0) return []
+function transformMovesToUIFormat(moves: Move[]): AvailableMove[] {
+  if (moves.length === 0) return []
 
   // Group moves by type and workerId
   const grouped = new Map<string, AvailableMove>()
@@ -171,7 +128,7 @@ function transformMovesToUIFormat(moves: PlayerGameView['availableMoves']): Avai
  * Reset message handler state (call on disconnect/game change)
  */
 export function resetMessageHandlerState(): void {
-  lastGameStateHash = null
+  lastVersionByGame.clear()
 }
 
 /**

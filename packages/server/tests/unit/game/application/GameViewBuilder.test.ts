@@ -1,4 +1,5 @@
 import { Game, Player } from "@santorini/engine";
+import { GameView } from "@santorini/shared";
 import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
 
 const CURRENT_USER = 100;
@@ -15,33 +16,50 @@ function startedGame(): Game {
   return game;
 }
 
-describe("GameViewBuilder available moves", () => {
+describe("GameViewBuilder viewer", () => {
   const builder = new GameViewBuilder();
 
   it("gives the available moves to the player whose turn it is", () => {
-    const game = startedGame();
+    const { viewer } = builder.buildFor(startedGame(), CURRENT_USER);
 
-    const view = builder.buildForPlayer(game, CURRENT_USER, game.getAvailableMoves());
-
-    expect(view.isCurrentPlayer).toBe(true);
-    expect(view.availableMoves?.length).toBeGreaterThan(0);
+    expect(viewer).toMatchObject({ role: "player", playerId: 1, isCurrentPlayer: true });
+    expect(viewer.role === "player" && viewer.availableMoves.length).toBeGreaterThan(0);
   });
 
-  it("withholds the available moves from a player whose turn it is not, even when they are passed in", () => {
-    const game = startedGame();
+  it("gives a player whose turn it is not an empty list of moves", () => {
+    const { viewer } = builder.buildFor(startedGame(), WAITING_USER);
 
-    const view = builder.buildForPlayer(game, WAITING_USER, game.getAvailableMoves());
-
-    expect(view.isCurrentPlayer).toBe(false);
-    expect(view.availableMoves).toBeUndefined();
+    expect(viewer).toEqual({ role: "player", playerId: 2, isCurrentPlayer: false, availableMoves: [] });
   });
 
-  it("withholds the available moves from a user who is not in the game", () => {
+  it("shows a user who is not in the game as a spectator, with no moves", () => {
+    const { viewer } = builder.buildFor(startedGame(), OUTSIDER);
+
+    expect(viewer).toEqual({ role: "spectator" });
+  });
+});
+
+describe("GameViewBuilder game", () => {
+  const builder = new GameViewBuilder();
+
+  it("names the game limits and has no winner while the game is on", () => {
+    const view = builder.buildFor(startedGame(), CURRENT_USER);
+
+    expect(view).toMatchObject({
+      gameId: 1,
+      status: "in-progress",
+      maxPlayers: 2,
+      winnerPlayerId: null,
+      winReason: null,
+    });
+    expect(view.players.map((player) => player.userId)).toEqual([CURRENT_USER, WAITING_USER]);
+  });
+
+  it("is the same game for everyone, whoever looks", () => {
     const game = startedGame();
 
-    const view = builder.buildForPlayer(game, OUTSIDER, game.getAvailableMoves());
+    const sameGame = (view: GameView) => ({ ...view, viewer: undefined });
 
-    expect(view.isCurrentPlayer).toBe(false);
-    expect(view.availableMoves).toBeUndefined();
+    expect(sameGame(builder.buildFor(game, OUTSIDER))).toEqual(sameGame(builder.buildFor(game, CURRENT_USER)));
   });
 });
