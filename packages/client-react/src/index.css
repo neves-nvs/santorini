@@ -70,6 +70,15 @@ button:hover {
   box-shadow: 0 0 0 5px rgba(0, 0, 0, 0.6);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

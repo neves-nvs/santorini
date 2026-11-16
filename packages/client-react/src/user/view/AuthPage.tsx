@@ -2,6 +2,7 @@ import { useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { userApi } from '@/user/services/userApi'
 import { useAppStore } from '@/user/model/appStore'
+import { usePageTitle } from '@/shared/utils/usePageTitle'
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true)
@@ -9,6 +10,7 @@ const AuthPage = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  usePageTitle(isLogin ? 'Login' : 'Register')
   const navigate = useNavigate()
   const usernameId = useId()
   const passwordId = useId()

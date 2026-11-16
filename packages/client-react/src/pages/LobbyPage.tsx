@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/user/model/appStore'
 import { userApi } from '@/user/services/userApi'
 import { gameApi } from '@/game/services/gameApi'
+import { usePageTitle } from '@/shared/utils/usePageTitle'
 import type { GameSummary } from '@santorini/shared'
 
 type GameTab = 'available' | 'my-games'
@@ -10,6 +11,7 @@ type GameTab = 'available' | 'my-games'
 const LobbyPage = () => {
   const username = useAppStore((s) => s.username)
   const logout = useAppStore((s) => s.logout)
+  usePageTitle('Lobby')
   const navigate = useNavigate()
   const playerCountId = useId()
 

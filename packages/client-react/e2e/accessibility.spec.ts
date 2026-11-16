@@ -168,3 +168,88 @@ test.describe('Game page', () => {
     await expectNoAxeViolations(page)
   })
 })
+
+test.describe('Page titles', () => {
+  test('tell the routes apart', async ({ page }) => {
+    await page.goto('/')
+    await expect(page).toHaveTitle('Board Game - Santorini')
+
+    await page.getByRole('link', { name: 'Login / Register' }).click()
+    await expect(page).toHaveTitle('Login - Santorini')
+    await page.getByRole('button', { name: /need an account\? register/i }).click()
+    await expect(page).toHaveTitle('Register - Santorini')
+
+    await page.goto('/this-route-does-not-exist')
+    await expect(page).toHaveTitle('Page not found - Santorini')
+  })
+})
+
+test.describe('Signed-in polish', () => {
+  useSignedInUser()
+
+  const KEYBOARD_NOTICE = /Keyboard play isn't available yet/
+
+  async function openNewGame(page: Page): Promise<string> {
+    await page.goto('/lobby')
+    await page.getByRole('button', { name: 'Create Game' }).click()
+    await page.waitForURL(/\/game\/\d+/)
+    await expect(page.getByRole('img', { name: /3D Santorini board/ })).toBeVisible()
+    return page.url().split('/game/')[1]
+  }
+
+  async function pressOnPageBackground(page: Page, key: string) {
+    await page.locator('body').click({ position: { x: 1, y: 1 } })
+    await page.keyboard.press(key)
+  }
+
+  test('titles the lobby and the game', async ({ page }) => {
+    await page.goto('/lobby')
+    await expect(page).toHaveTitle('Lobby - Santorini')
+
+    const gameId = await openNewGame(page)
+
+    await expect(page).toHaveTitle(`Game ${gameId} - Santorini`)
+  })
+
+  test('says once that keyboard play is not available when a play key is pressed', async ({ page }) => {
+    await openNewGame(page)
+    await expect(page.getByRole('img', { name: /3D Santorini board/ })).toBeVisible()
+
+    await page.keyboard.press('Tab')
+    await expect(page.getByText(KEYBOARD_NOTICE)).toHaveCount(0)
+
+    await pressOnPageBackground(page, 'ArrowDown')
+    await expect(page.getByRole('status').getByText(KEYBOARD_NOTICE)).toBeVisible()
+
+    await page.keyboard.press('ArrowDown')
+    await expect(page.getByText(KEYBOARD_NOTICE)).toHaveCount(1)
+  })
+
+  test('stops animating the notice when the user prefers reduced motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await openNewGame(page)
+    await pressOnPageBackground(page, 'Enter')
+
+    const notice = page.getByText(KEYBOARD_NOTICE).locator('..')
+    await expect(notice).toBeVisible()
+    await expect(notice).toHaveCSS('transition-duration', '0s')
+  })
+
+  test('animates the notice when motion is not reduced', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await openNewGame(page)
+    await pressOnPageBackground(page, 'Enter')
+
+    await expect(page.getByText(KEYBOARD_NOTICE).locator('..')).toHaveCSS('transition-duration', '0.3s')
+  })
+
+  test('keeps the debug panels accessible when they are open', async ({ page }) => {
+    await openNewGame(page)
+    await page.getByRole('button', { name: 'DEBUG' }).click()
+    await page.keyboard.press('Control+Shift+P')
+    await expect(page.getByRole('heading', { name: 'Performance Monitor' })).toBeVisible()
+
+    await expectNoAxeViolations(page)
+    await expect(page.getByRole('button', { name: 'Close performance monitor' })).toBeVisible()
+  })
+})

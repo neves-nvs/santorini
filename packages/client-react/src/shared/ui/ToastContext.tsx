@@ -1,18 +1,6 @@
-import React, { createContext, useState, ReactNode } from 'react'
+import React, { useState, ReactNode } from 'react'
 import Toast from './Toast'
-
-interface ToastMessage {
-  id: string
-  message: string
-  type?: 'success' | 'info' | 'warning' | 'error'
-  duration?: number
-}
-
-interface ToastContextType {
-  showToast: (message: string, type?: ToastMessage['type'], duration?: number) => void
-}
-
-const ToastContext = createContext<ToastContextType | undefined>(undefined)
+import { ToastContext, type ToastMessage } from './useToast'
 
 interface ToastProviderProps {
   children: ReactNode

@@ -1,5 +1,6 @@
 import { type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
+import { usePageTitle } from '@/shared/utils/usePageTitle'
 
 const linkButtonStyle: CSSProperties = {
   flex: '1 1 140px',
@@ -15,6 +16,7 @@ const linkButtonStyle: CSSProperties = {
 }
 
 const HomePage = () => {
+  usePageTitle('Board Game')
   return (
     <main className="page" style={{
       display: 'flex',

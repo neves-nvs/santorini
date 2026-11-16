@@ -63,7 +63,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ visi
             onClick={resetStats}
             style={{
               padding: '4px 8px',
-              backgroundColor: '#ff4444',
+              backgroundColor: '#B91C1C',
               color: 'white',
               border: 'none',
               borderRadius: '3px',
@@ -75,6 +75,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({ visi
             Reset
           </button>
           <button
+            aria-label="Close performance monitor"
             onClick={onToggle}
             style={{
               padding: '4px 8px',
