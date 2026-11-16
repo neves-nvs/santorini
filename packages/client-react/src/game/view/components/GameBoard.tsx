@@ -4,6 +4,7 @@ import { OrbitControls, PerspectiveCamera, OrthographicCamera } from '@react-thr
 import { OrthographicCamera as OrthoImpl, PerspectiveCamera as PerspImpl } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import Board3D from './Board3D'
+import { useToast } from '@/shared/ui/useToast'
 
 interface DebugState {
   showAxis: boolean
@@ -69,6 +70,7 @@ const CameraResizeHandler: React.FC<{
 }
 
 const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cameraType = 'orthographic' }) => {
+  const { showToast } = useToast()
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
   const orthoRef = useRef<OrthoImpl | null>(null)
   const perspRef = useRef<PerspImpl | null>(null)
@@ -134,7 +136,7 @@ const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cam
           <hemisphereLight args={['#87CEEB', '#8B4513', 0.6]} />
 
           {/* 3D Board */}
-          <Board3D debugState={debugState} onCellClick={onCellClick} />
+          <Board3D debugState={debugState} onCellClick={onCellClick} onMoveError={(message) => showToast(message, 'error')} />
 
           {/* Camera Controls */}
           <OrbitControls

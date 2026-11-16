@@ -3,7 +3,7 @@
  * 
  * This service ONLY handles:
  * - Connection lifecycle (connect, disconnect, reconnect)
- * - Sending messages
+ * - Sending commands and matching each `ok` or `error` to its request by id
  * - Emitting raw messages to handlers
  * 
  * It does NOT:
@@ -13,12 +13,20 @@
  */
 
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
+import type { OkMessage, WireError } from '@santorini/shared'
+import { ErrorType, GameError } from '@/shared/utils/errorHandler'
 import { gameApi } from './gameApi'
 import { RECONNECTION_DELAY } from '@/game/model/gameConstants'
 
 interface WebSocketMessage {
   type: string
+  id?: string
   payload: unknown
+}
+
+interface PendingRequest {
+  resolve: (result: OkMessage['payload']) => void
+  reject: (error: Error) => void
 }
 
 export type MessageHandler = (type: string, payload: unknown) => void
@@ -50,6 +58,8 @@ class WebSocketClient {
   private maxReconnectAttempts = 5
   private reconnectDelay = RECONNECTION_DELAY
   private shouldReconnect = false
+  private pending = new Map<string, PendingRequest>()
+  private lastRequestId = 0
 
   /**
    * Open the socket and keep it open across drops. A browser cannot set headers on the handshake, so each
@@ -68,6 +78,7 @@ class WebSocketClient {
     console.log('WebSocketClient disconnecting')
     this.shouldReconnect = false
     this.reconnectAttempts = 0
+    this.rejectPendingRequests(new Error('Disconnected'))
 
     if (this.socket) {
       this.socket.close()
@@ -86,54 +97,38 @@ class WebSocketClient {
   }
 
   /**
-   * Send a message to the server
+   * Send a command and wait for the server's answer: the `ok` payload, or a rejection with the server's error.
    */
-  send(type: string, payload: unknown): void {
+  request(type: string, payload: unknown): Promise<OkMessage['payload']> {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket not connected, cannot send:', type)
-      throw new Error(`WebSocket not connected. State: ${this.socket?.readyState ?? 'null'}`)
+      return Promise.reject(new Error(`WebSocket not connected. State: ${this.socket?.readyState ?? 'null'}`))
     }
 
-    this.socket.send(JSON.stringify({ type, payload }))
-    console.log('Sent:', type)
+    const id = String(++this.lastRequestId)
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject })
+      this.socket?.send(JSON.stringify({ type, id, payload }))
+    })
   }
 
   // ─────────────────────────────────────────────────────────────
   // Game-specific convenience methods (just wrap send)
   // ─────────────────────────────────────────────────────────────
 
-  subscribeToGame(gameId: string): void {
-    if (!this.isConnected()) {
-      console.warn('WebSocket not ready for subscription, retrying...')
-      this.retryWhenReady(() => this.subscribeToGame(gameId))
-      return
-    }
-    console.log('Subscribing to game:', gameId)
-    this.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: parseInt(gameId) })
+  subscribeToGame(gameId: string): Promise<OkMessage['payload']> {
+    return this.request(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: parseInt(gameId) })
   }
 
   unsubscribeFromGame(gameId: string): void {
     console.log('Unsubscribe requested (cleanup on disconnect):', gameId)
   }
 
-  joinGame(gameId: string): void {
-    if (!this.isConnected()) {
-      console.warn('WebSocket not ready for join, retrying...')
-      this.retryWhenReady(() => this.joinGame(gameId))
-      return
-    }
-    console.log('Joining game:', gameId)
-    this.send(WS_MESSAGE_TYPES.JOIN_GAME, { gameId: parseInt(gameId) })
+  joinGame(gameId: string): Promise<OkMessage['payload']> {
+    return this.request(WS_MESSAGE_TYPES.JOIN_GAME, { gameId: parseInt(gameId) })
   }
 
-  setReady(gameId: string, isReady: boolean): void {
-    if (!this.isConnected()) {
-      console.warn('WebSocket not ready for setReady, retrying...')
-      this.retryWhenReady(() => this.setReady(gameId, isReady))
-      return
-    }
-    console.log('Setting ready status:', { gameId, isReady })
-    this.send(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady })
+  setReady(gameId: string, isReady: boolean): Promise<OkMessage['payload']> {
+    return this.request(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady })
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -174,7 +169,9 @@ class WebSocketClient {
     this.socket.onmessage = (event) => {
       try {
         const message: WebSocketMessage = JSON.parse(event.data)
-        events.onMessage(message.type, message.payload)
+        if (!this.settleRequest(message)) {
+          events.onMessage(message.type, message.payload)
+        }
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error)
       }
@@ -182,6 +179,7 @@ class WebSocketClient {
 
     this.socket.onclose = (event) => {
       console.log('WebSocket closed:', event.code, event.reason)
+      this.rejectPendingRequests(new Error('Connection closed'))
       events.onConnectionChange(false)
       this.attemptReconnect()
     }
@@ -205,18 +203,24 @@ class WebSocketClient {
     }, this.reconnectDelay * this.reconnectAttempts)
   }
 
-  private retryWhenReady(action: () => void, attempts = 0): void {
-    if (attempts >= 5) {
-      console.error('Max retry attempts reached')
-      return
-    }
+  // An ok or error that answers a request is handed to its caller. Anything else is an event for the update layer.
+  private settleRequest(message: WebSocketMessage): boolean {
+    const request = message.id === undefined ? undefined : this.pending.get(message.id)
+    if (!request || message.id === undefined) return false
 
-    if (this.socket?.readyState === WebSocket.CONNECTING) {
-      setTimeout(() => action(), 500)
-    } else if (!this.socket) {
-      void this.connect()
-      setTimeout(() => action(), 1000)
+    this.pending.delete(message.id)
+    if (message.type === WS_MESSAGE_TYPES.OK) {
+      request.resolve(message.payload as OkMessage['payload'])
+    } else {
+      const { code, message: text, details } = message.payload as WireError
+      request.reject(new GameError(ErrorType.WEBSOCKET, text, code, details))
     }
+    return true
+  }
+
+  private rejectPendingRequests(reason: Error): void {
+    this.pending.forEach((request) => request.reject(reason))
+    this.pending.clear()
   }
 }
 
@@ -250,24 +254,24 @@ export const webSocketClient = {
     return instance?.isConnected() ?? false
   },
 
-  send(type: string, payload: unknown): void {
-    this.getInstance().send(type, payload)
+  request(type: string, payload: unknown): Promise<OkMessage['payload']> {
+    return this.getInstance().request(type, payload)
   },
 
-  subscribeToGame(gameId: string): void {
-    this.getInstance().subscribeToGame(gameId)
+  subscribeToGame(gameId: string): Promise<OkMessage['payload']> {
+    return this.getInstance().subscribeToGame(gameId)
   },
 
   unsubscribeFromGame(gameId: string): void {
     this.getInstance().unsubscribeFromGame(gameId)
   },
 
-  joinGame(gameId: string): void {
-    this.getInstance().joinGame(gameId)
+  joinGame(gameId: string): Promise<OkMessage['payload']> {
+    return this.getInstance().joinGame(gameId)
   },
 
-  setReady(gameId: string, isReady: boolean): void {
-    this.getInstance().setReady(gameId, isReady)
+  setReady(gameId: string, isReady: boolean): Promise<OkMessage['payload']> {
+    return this.getInstance().setReady(gameId, isReady)
   }
 }
 

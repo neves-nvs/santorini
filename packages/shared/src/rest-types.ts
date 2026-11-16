@@ -1,4 +1,5 @@
 import type { GamePhase, GameStatus, PlayerView } from './game-types.ts';
+import type { ErrorCode } from './protocol.ts';
 
 // ============================================================================
 // Errors
@@ -9,9 +10,9 @@ export interface MessageResponse {
   message: string;
 }
 
-/** The error body of the games routes. */
+/** The error body of the games routes: the same `{ code, message }` as a WebSocket `error`. */
 export interface GameErrorResponse {
-  error: string;
+  error: { code: ErrorCode; message: string };
 }
 
 export interface ValidationFieldError {
@@ -91,10 +92,6 @@ export interface CreateGameRequest {
 
 export interface CreateGameResponse {
   gameId: number;
-}
-
-export interface JoinGameResponse {
-  success: boolean;
 }
 
 /** One entry of `GET /games` and `GET /games/my`. */

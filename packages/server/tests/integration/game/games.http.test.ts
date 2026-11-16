@@ -18,7 +18,7 @@ describe("Games HTTP error responses", () => {
 
     const response = await request(app).get("/games/999999").set("Cookie", `token=${token}`).expect(404);
 
-    expect(response.body).toEqual({ error: "Game not found" });
+    expect(response.body).toEqual({ error: { code: "game_not_found", message: "Game not found" } });
   });
 
   test("creates a two player game when the request has no body", async () => {
@@ -37,13 +37,14 @@ describe("Games HTTP error responses", () => {
 
     const response = await request(app).post("/games").set("Cookie", `token=${token}`).send({ maxPlayers }).expect(400);
 
-    expect(response.body).toEqual({ error: expect.stringContaining("maxPlayers") });
+    expect(response.body).toEqual({
+      error: { code: "invalid_payload", message: expect.stringContaining("maxPlayers") },
+    });
   });
 
   test.each(["abc", "0", "-1", "1.5"])("400 when the game id is %j", async (gameId) => {
     const { token } = await createTestUserWithLogin();
 
     await request(app).get(`/games/${gameId}`).set("Cookie", `token=${token}`).expect(400);
-    await request(app).post(`/games/${gameId}/join`).set("Cookie", `token=${token}`).expect(400);
   });
 });

@@ -15,7 +15,10 @@ const ConnectionTest = () => {
   const testWebSocketConnection = () => {
     addResult(`WebSocket connected: ${isConnected}`)
     if (isConnected) {
-      webSocketClient.send('test_message', { test: 'Hello from React!' })
+      webSocketClient.request('test_message', { test: 'Hello from React!' }).then(
+        () => addResult('The server accepted the test message'),
+        (error: unknown) => addResult(`The server answered: ${error instanceof Error ? error.message : error}`),
+      )
       addResult('Sent test message to WebSocket')
     }
   }

@@ -106,6 +106,21 @@ describe('ErrorHandler.handleHttpError', () => {
     expect(error.message).toBe('Forbidden')
   })
 
+  it('should read the message of a { code, message } error body', async () => {
+    const response = new Response(
+      JSON.stringify({ error: { code: 'game_not_found', message: 'Game not found' } }),
+      {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      }
+    )
+
+    const error = await ErrorHandler.handleHttpError(response)
+
+    expect(error.message).toBe('Game not found')
+    expect(error.code).toBe(404)
+  })
+
   it('should handle 400 validation error', async () => {
     const response = new Response(
       JSON.stringify({ message: 'Invalid move' }),

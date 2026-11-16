@@ -13,11 +13,6 @@ interface TestPlayer {
   playerId?: number;
 }
 
-interface GamePlayer {
-  id: number;
-  userId: number;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WsMessage = Record<string, any>;
 
@@ -180,15 +175,19 @@ describe("Full Game Integration Test", () => {
       const ws = await createPlayerConnection(user, token);
       players.push({ user, token, ws });
 
-      const joinPromise = waitForMessage(ws, "game_joined");
+      const joinPromise = waitForMessage(ws, "ok");
       ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
-      const joinResponse = await joinPromise;
-      players[i].playerId = joinResponse.payload?.gameState?.players?.find((p: GamePlayer) => p.userId === user.id)?.id;
+      await joinPromise;
+      players[i].playerId = i + 1; // player ids follow the order of joining
+
+      const subscribePromise = waitForMessage(ws, "game_state_update");
+      ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
+      await subscribePromise;
     }
 
     // Both players set ready - game auto-starts
     for (const player of players) {
-      const readyPromise = waitForMessage(player.ws, "ready_status_update");
+      const readyPromise = waitForMessage(player.ws, "ok");
       player.ws.send(
         JSON.stringify({
           type: "set_ready",
@@ -199,10 +198,12 @@ describe("Full Game Integration Test", () => {
     }
   }
 
+  // Every player is subscribed, so the latest state the server pushed is the current one
   async function getGameState(ws: WebSocket): Promise<WsMessage> {
-    const promise = waitForMessage(ws, "game_state_update");
-    ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
-    return promise;
+    const queue = messageQueues.get(ws) || [];
+    const latest = [...queue].reverse().find((message) => message.type === "game_state_update");
+    if (!latest) throw new Error("No game state received");
+    return latest;
   }
 
   test("should play a complete game from start to win condition", async () => {

@@ -91,6 +91,12 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
     });
   }
 
+  async function readGameState(ws: WebSocket) {
+    const statePromise = waitForMessage(ws, "game_state_update");
+    ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
+    return (await statePromise).payload.state;
+  }
+
   async function createAndJoinPlayers(count: number): Promise<TestPlayer[]> {
     const testPlayers: TestPlayer[] = [];
 
@@ -102,7 +108,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       testPlayers.push({ user, token, ws });
 
       // Join game via WebSocket (creator reconnects, others join fresh)
-      const joinPromise = waitForMessage(ws, "game_joined");
+      const joinPromise = waitForMessage(ws, "ok");
       ws.send(
         JSON.stringify({
           type: "join_game",
@@ -116,10 +122,10 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
   }
 
   describe("Ready Confirmation Flow", () => {
-    test("should receive ready_status_update when setting ready", async () => {
+    test("should confirm ready and show it in the state", async () => {
       players = await createAndJoinPlayers(2);
 
-      const readyPromise = waitForMessage(players[0].ws, "ready_status_update");
+      const readyPromise = waitForMessage(players[0].ws, "ok");
       players[0].ws.send(
         JSON.stringify({
           type: "set_ready",
@@ -127,18 +133,18 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
         }),
       );
 
-      const response = await readyPromise;
-      expect(response.type).toBe("ready_status_update");
-      expect(response.payload.ready).toBe(true);
-      expect(response.payload.allReady).toBe(false); // Only 1 of 2 ready
-      expect(response.payload.gameStarted).toBe(false);
+      await readyPromise;
+      const state = await readGameState(players[0].ws);
+      expect(state.players.find((p: { userId: number }) => p.userId === players[0].user.id).isReady).toBe(true);
+      expect(state.players.every((p: { isReady: boolean }) => p.isReady)).toBe(false); // Only 1 of 2 ready
+      expect(state.status).toBe("waiting");
     });
 
     test("should auto-start game when all players confirm ready", async () => {
       players = await createAndJoinPlayers(2);
 
       // Player 1 sets ready
-      let readyPromise = waitForMessage(players[0].ws, "ready_status_update");
+      let readyPromise = waitForMessage(players[0].ws, "ok");
       players[0].ws.send(
         JSON.stringify({
           type: "set_ready",
@@ -148,7 +154,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       await readyPromise;
 
       // Player 2 sets ready - should trigger auto-start
-      readyPromise = waitForMessage(players[1].ws, "ready_status_update");
+      readyPromise = waitForMessage(players[1].ws, "ok");
       players[1].ws.send(
         JSON.stringify({
           type: "set_ready",
@@ -156,17 +162,17 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
         }),
       );
 
-      const response = await readyPromise;
-      expect(response.payload.ready).toBe(true);
-      expect(response.payload.allReady).toBe(true);
-      expect(response.payload.gameStarted).toBe(true);
+      await readyPromise;
+      const state = await readGameState(players[0].ws);
+      expect(state.players.every((p: { isReady: boolean }) => p.isReady)).toBe(true);
+      expect(state.status).toBe("in-progress");
     });
 
     test("should allow player to unset ready before game starts", async () => {
       players = await createAndJoinPlayers(2);
 
       // Player 1 sets ready
-      let readyPromise = waitForMessage(players[0].ws, "ready_status_update");
+      let readyPromise = waitForMessage(players[0].ws, "ok");
       players[0].ws.send(
         JSON.stringify({
           type: "set_ready",
@@ -176,7 +182,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       await readyPromise;
 
       // Player 1 unsets ready
-      readyPromise = waitForMessage(players[0].ws, "ready_status_update");
+      readyPromise = waitForMessage(players[0].ws, "ok");
       players[0].ws.send(
         JSON.stringify({
           type: "set_ready",
@@ -184,9 +190,10 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
         }),
       );
 
-      const response = await readyPromise;
-      expect(response.payload.ready).toBe(false);
-      expect(response.payload.gameStarted).toBe(false);
+      await readyPromise;
+      const state = await readGameState(players[0].ws);
+      expect(state.players.find((p: { userId: number }) => p.userId === players[0].user.id).isReady).toBe(false);
+      expect(state.status).toBe("waiting");
     });
 
     test("should not auto-start when game is not full", async () => {
@@ -194,7 +201,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       players = await createAndJoinPlayers(1);
 
       // Player sets ready
-      const readyPromise = waitForMessage(players[0].ws, "ready_status_update");
+      const readyPromise = waitForMessage(players[0].ws, "ok");
       players[0].ws.send(
         JSON.stringify({
           type: "set_ready",
@@ -202,10 +209,10 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
         }),
       );
 
-      const response = await readyPromise;
-      expect(response.payload.ready).toBe(true);
-      expect(response.payload.allReady).toBe(false);
-      expect(response.payload.gameStarted).toBe(false);
+      await readyPromise;
+      const state = await readGameState(players[0].ws);
+      expect(state.players.every((p: { isReady: boolean }) => p.isReady)).toBe(true);
+      expect(state.status).toBe("waiting"); // one seat is still empty
     });
   });
 
@@ -215,7 +222,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
 
       // Both players set ready
       for (const player of players) {
-        const readyPromise = waitForMessage(player.ws, "ready_status_update");
+        const readyPromise = waitForMessage(player.ws, "ok");
         player.ws.send(
           JSON.stringify({
             type: "set_ready",
@@ -254,7 +261,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       const ws1 = await createPlayerConnection(creator.user, creator.token);
       players.push({ user: creator.user, token: creator.token, ws: ws1 });
 
-      let joinPromise = waitForMessage(ws1, "game_joined");
+      let joinPromise = waitForMessage(ws1, "ok");
       ws1.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
       await joinPromise;
 
@@ -271,7 +278,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       const ws2 = await createPlayerConnection(user2, token2);
       players.push({ user: user2, token: token2, ws: ws2 });
 
-      joinPromise = waitForMessage(ws2, "game_joined");
+      joinPromise = waitForMessage(ws2, "ok");
       ws2.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
       await joinPromise;
 
@@ -289,7 +296,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       const ws1 = await createPlayerConnection(creator.user, creator.token);
       players.push({ user: creator.user, token: creator.token, ws: ws1 });
 
-      let joinPromise = waitForMessage(ws1, "game_joined");
+      let joinPromise = waitForMessage(ws1, "ok");
       ws1.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
       await joinPromise;
 
@@ -303,7 +310,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       players.push({ user: user2, token: token2, ws: ws2 });
 
       const playerJoinedPromise = waitForMessage(ws1, "player_joined");
-      joinPromise = waitForMessage(ws2, "game_joined");
+      joinPromise = waitForMessage(ws2, "ok");
       ws2.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
       await joinPromise;
       await playerJoinedPromise;
@@ -335,7 +342,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       await subscribePromise;
 
       // Player 2 sets ready
-      const readyPromise = waitForMessage(players[1].ws, "ready_status_update");
+      const readyPromise = waitForMessage(players[1].ws, "ok");
       players[1].ws.send(
         JSON.stringify({
           type: "set_ready",

@@ -1,4 +1,4 @@
-import { GameNotFoundError, PlayerNotInGameError } from "@/errors/GameErrors.ts";
+import { GameNotFoundError, PlayerAlreadyInGameError, PlayerNotInGameError } from "@/errors/GameErrors.ts";
 import { GameViewBuilder, PlayerGameView } from "@/game/domain/GameViewBuilder.ts";
 
 import { Game } from "@/game/domain/Game.ts";
@@ -28,7 +28,7 @@ export class GameService {
     gameId: number,
     userId: number,
     moveCommand: MoveCommand,
-  ): Promise<{ game: Game; events: GameEvent[]; view: PlayerGameView }> {
+  ): Promise<{ game: Game; events: GameEvent[] }> {
     logger.info(`Processing move for game ${gameId}, user ${userId}:`, moveCommand);
 
     // Load game from repository
@@ -63,11 +63,8 @@ export class GameService {
     // Broadcast the update to all players
     await this.gameBroadcaster.broadcastGameUpdate(game, events);
 
-    // Build view for the player
-    const view = this.gameViewBuilder.buildForPlayer(game, userId);
-
     logger.info(`Move processed successfully for game ${gameId}, generated ${events.length} events`);
-    return { game, events, view };
+    return { game, events };
   }
 
   /**
@@ -91,9 +88,7 @@ export class GameService {
     // Check if player already in game
     for (const player of game.players.values()) {
       if (player.userId === userId) {
-        const error = new Error(`Player ${userId} is already in game ${gameId}`);
-        error.name = "PlayerAlreadyInGameError";
-        throw error;
+        throw new PlayerAlreadyInGameError(gameId, userId);
       }
     }
 

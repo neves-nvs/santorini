@@ -48,12 +48,7 @@ export function handleWebSocketMessage(type: string, payload: unknown): void {
       // Full game_state_update follows - UI will update from that
       break
 
-    case WS_MESSAGE_TYPES.GAME_JOINED:
-      log('Game joined:', payload)
-      handleGameJoined(payload, store)
-      break
-
-    case 'error':
+    case WS_MESSAGE_TYPES.ERROR:
       logError('Server error:', payload)
       break
 
@@ -137,20 +132,6 @@ function handleGameStateUpdate(
     store.setCurrentPlayerMoves([])
     store.setMyTurn(false)
   }
-}
-
-/**
- * Handle game_joined messages
- * Sent when a player joins/reconnects to a game
- * Note: subscribe_game also sends game_state_update with the same data,
- * so we just log here. The game_state_update handler will process the state.
- */
-function handleGameJoined(
-  _payload: unknown,
-  _store: ReturnType<typeof useGameStore.getState>
-): void {
-  // game_state_update from subscribe_game will handle the actual state update
-  // This message just confirms we've joined the game
 }
 
 /**

@@ -3,7 +3,6 @@ import {
   CurrentUserResponse,
   GameErrorResponse,
   GameSummary,
-  JoinGameResponse,
   LogoutResponse,
   MessageResponse,
   PlayerGameView,
@@ -198,16 +197,6 @@ describe("REST responses carry the shape of the shared types", () => {
 
       expect(response.body).toStrictEqual({ ...waitingGameView, gameId });
     });
-
-    test("POST /games/:gameId/join", async () => {
-      const { token: creator } = await createTestUserWithLogin();
-      const { token: joiner } = await createTestUserWithLogin();
-      const gameId = await createTestGame(creator);
-
-      const response = await request(app).post(`/games/${gameId}/join`).set("Cookie", `token=${joiner}`).expect(200);
-
-      expect(response.body).toStrictEqual({ success: true } satisfies Record<keyof JoinGameResponse, unknown>);
-    });
   });
 
   describe("errors", () => {
@@ -233,7 +222,9 @@ describe("REST responses carry the shape of the shared types", () => {
 
       const response = await request(app).get("/games/999999").set("Cookie", `token=${token}`).expect(404);
 
-      expect(response.body).toStrictEqual({ error: "Game not found" } satisfies GameErrorResponse);
+      expect(response.body).toStrictEqual({
+        error: { code: "game_not_found", message: "Game not found" },
+      } satisfies GameErrorResponse);
     });
   });
 });

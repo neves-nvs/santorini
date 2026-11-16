@@ -130,7 +130,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
       // Both players join the game
       const joinPromises = players.map(async (player) => {
-        const messagePromise = waitForMessage(player.ws, "game_joined");
+        const messagePromise = waitForMessage(player.ws, "ok");
 
         player.ws.send(
           JSON.stringify({
@@ -142,13 +142,13 @@ describe("WebSocket Multiplayer Game Tests", () => {
         return messagePromise;
       });
 
-      // Wait for both players to receive game_joined confirmation
+      // Wait for both players to receive the ok
       const responses = await Promise.all(joinPromises);
 
       // Verify both players joined successfully
       expect(responses).toHaveLength(2);
       responses.forEach((response) => {
-        expect(response.type).toBe("game_joined");
+        expect(response.type).toBe("ok");
         expect(response.payload).toBeDefined();
         expect(response.payload.gameId).toBe(gameId);
       });
@@ -160,7 +160,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
       // Both players join the game
       for (const player of players) {
-        const messagePromise = waitForMessage(player.ws, "game_joined");
+        const messagePromise = waitForMessage(player.ws, "ok");
         player.ws.send(
           JSON.stringify({
             type: "join_game",
@@ -191,7 +191,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
       players = await createMultiplePlayers(2);
 
       // First player joins
-      let messagePromise = waitForMessage(players[0].ws, "game_joined");
+      let messagePromise = waitForMessage(players[0].ws, "ok");
       players[0].ws.send(
         JSON.stringify({
           type: "join_game",
@@ -200,19 +200,23 @@ describe("WebSocket Multiplayer Game Tests", () => {
       );
       await messagePromise;
 
-      // Second player joins - game_joined includes gameState with players
-      messagePromise = waitForMessage(players[1].ws, "game_joined");
+      // Second player joins and subscribes
+      messagePromise = waitForMessage(players[1].ws, "ok");
       players[1].ws.send(
         JSON.stringify({
           type: "join_game",
           payload: { gameId },
         }),
       );
+      await messagePromise;
+
+      messagePromise = waitForMessage(players[1].ws, "game_state_update");
+      players[1].ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
       const response = await messagePromise;
 
-      // Verify game state in join response shows both players (by userId)
-      expect(response.payload.gameState.players).toHaveLength(2);
-      const playerUserIds = response.payload.gameState.players.map((p: { userId: number }) => p.userId);
+      // Verify the game state shows both players (by userId)
+      expect(response.payload.state.players).toHaveLength(2);
+      const playerUserIds = response.payload.state.players.map((p: { userId: number }) => p.userId);
       expect(playerUserIds).toContain(players[0].user.id);
       expect(playerUserIds).toContain(players[1].user.id);
     });
@@ -223,7 +227,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
       // Both players join
       for (const player of players) {
-        const messagePromise = waitForMessage(player.ws, "game_joined");
+        const messagePromise = waitForMessage(player.ws, "ok");
         player.ws.send(
           JSON.stringify({
             type: "join_game",
@@ -260,7 +264,7 @@ describe("WebSocket Multiplayer Game Tests", () => {
 
       // Both players join and subscribe
       for (const player of players) {
-        let messagePromise = waitForMessage(player.ws, "game_joined");
+        let messagePromise = waitForMessage(player.ws, "ok");
         player.ws.send(
           JSON.stringify({
             type: "join_game",

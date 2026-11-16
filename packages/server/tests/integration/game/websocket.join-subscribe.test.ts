@@ -70,13 +70,13 @@ describe("Join and Subscribe Integration Tests", () => {
     ownerConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, gameId);
     await waitFor(ownerConnection, WS_MESSAGE_TYPES.GAME_STATE_UPDATE);
     guestConnection.send(WS_MESSAGE_TYPES.JOIN_GAME, gameId);
-    await waitFor(guestConnection, WS_MESSAGE_TYPES.GAME_JOINED);
+    await waitFor(guestConnection, WS_MESSAGE_TYPES.OK);
 
     ownerConnection.send(WS_MESSAGE_TYPES.LEAVE_GAME, gameId);
     await waitFor(ownerConnection, WS_MESSAGE_TYPES.PLAYER_LEFT);
     await settle();
 
-    expect(guestConnection.messages.map((m) => m.type)).toEqual([WS_MESSAGE_TYPES.GAME_JOINED]);
+    expect(guestConnection.messages.map((m) => m.type)).toEqual([WS_MESSAGE_TYPES.OK]);
   });
 
   test("a player who is not in the game can subscribe and watch it", async () => {
@@ -113,7 +113,8 @@ describe("Join and Subscribe Integration Tests", () => {
     watcherConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, secondGameId);
     const error = await waitFor(watcherConnection, WS_MESSAGE_TYPES.ERROR);
 
-    expect(error.payload).toContain("Already subscribed");
+    expect(error.payload.code).toBe("invalid_game_state");
+    expect(error.payload.message).toContain("Already subscribed");
   });
 
   test("rejects a game id that is not a number", async () => {
@@ -124,6 +125,25 @@ describe("Join and Subscribe Integration Tests", () => {
     connection.ws.send(JSON.stringify({ type: WS_MESSAGE_TYPES.SUBSCRIBE_GAME, payload: { gameId: String(gameId) } }));
     const error = await waitFor(connection, WS_MESSAGE_TYPES.ERROR);
 
-    expect(error.payload).toContain("Invalid subscribe_game payload: gameId");
+    expect(error.payload.code).toBe("invalid_payload");
+    expect(error.payload.message).toContain("Invalid subscribe_game payload: gameId");
+  });
+
+  test("answers each command with an ok or an error that carries its id", async () => {
+    const owner = await helpers.createTestUserWithLogin();
+    const gameId = await helpers.createTestGame(owner.token);
+    const connection = await connectUser(owner.token);
+
+    connection.ws.send(JSON.stringify({ type: WS_MESSAGE_TYPES.JOIN_GAME, id: "a1", payload: { gameId } }));
+    await waitFor(connection, WS_MESSAGE_TYPES.OK);
+    connection.ws.send(
+      JSON.stringify({ type: WS_MESSAGE_TYPES.JOIN_GAME, id: "a2", payload: { gameId: gameId + 1000 } }),
+    );
+    await waitFor(connection, WS_MESSAGE_TYPES.ERROR);
+
+    expect(connection.messages).toEqual([
+      { type: WS_MESSAGE_TYPES.OK, id: "a1", payload: { gameId } },
+      { type: WS_MESSAGE_TYPES.ERROR, id: "a2", payload: { code: "game_not_found", message: "Game not found" } },
+    ]);
   });
 });
