@@ -1,5 +1,5 @@
 import { NewUser, User } from "../../../src/model.ts";
-import { app } from "../../../src/app.ts";
+import { specApp as app } from "../helper/specApp.ts";
 import bcrypt from "bcryptjs";
 import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";

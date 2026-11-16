@@ -16,7 +16,7 @@ import {
   WebSocketTicketResponse,
 } from "@santorini/shared";
 import { createTestGame, createTestUserWithLogin, generateTestUser } from "../helper/helpers.ts";
-import { app } from "../../../src/app.ts";
+import { specApp as app } from "../helper/specApp.ts";
 import { cleanupTestData } from "../helper/testDb.ts";
 import { db } from "../../../src/database.ts";
 import request from "supertest";

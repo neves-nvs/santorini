@@ -1,4 +1,4 @@
-import { app } from "../../../src/app.ts";
+import { specApp as app } from "../helper/specApp.ts";
 import { config } from "../../../src/configs/config.ts";
 import { db } from "../../../src/database.ts";
 import { findUserByUsername } from "../../../src/users/userRepository.ts";
