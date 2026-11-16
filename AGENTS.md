@@ -7,7 +7,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 - `packages/server/src`: `app.ts`, `main.ts` and `composition-root.ts` wire things up. `auth/`, `users/`, `middlewares/`, `configs/`, `websockets/` (the WebSocket server and `WsRouter`), `game/` (`domain` rules, `application` services, `infra` repository and connection manager, `transport` HTTP routes), `migrations/` (Kysely). ES modules: relative imports end in `.ts`.
 - `packages/client-react/src` is split by domain, then by role. `game/` is the board game (Board3D and the pieces, the game page, the debug tools in `view/debug`, the game store, the server-message handler, the WebSocket client), `user/` is who the player is (login page, the current-user store, user API), `shared/` has no domain (`pages/` for the home and not-found pages, `ui/`, `utils/`, the base REST `request`). Inside a domain: `model/` (state, types, selectors, constants, pure helpers), `update/` (what changes the model, such as `GameMessageHandler`), `services/` (network side effects) and `view/` (`pages/`, `components/`, `hooks/`). `App.tsx`, `main.tsx`, `pages/LobbyPage` (it lists games and logs out, so it needs both domains) and `debug/` (developer test panels) are the app shell. End-to-end tests are in `e2e/` (Playwright); unit tests are in `src/__tests__`, mirroring `src`.
 - `packages/shared/src`: `websocket-types.ts`, `game-types.ts` and `rest-types.ts`, the message, game and HTTP request and response shapes used by both sides. It is the workspace package `@santorini/shared`, compiled to `dist`: export new modules from `src/index.ts`, import from `@santorini/shared`, and rebuild after a change (`npm run build` there, or `scripts/install --if-needed`).
-- `docs/api/openapi.yaml` and `docs/api/asyncapi.yaml` describe the REST routes and the WebSocket messages. Change them together with the code.
+- `packages/shared/api/openapi.yaml` and `packages/shared/api/asyncapi.yaml` describe the REST routes and the WebSocket messages. Change them together with the code.
 - `scripts/`: the shell helpers below.
 
 ## Commands (from the repository root)
@@ -36,7 +36,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 
 ## Definition of done
 
-- Read what surrounds a change before planning it: its callers and tests, and, when behaviour or configuration changes, `docs/api`, `.env.example` and the README.
+- Read what surrounds a change before planning it: its callers and tests, and, when behaviour or configuration changes, `packages/shared/api`, `.env.example` and the README.
 - A fix or feature starts with a test that fails for the right reason. Then implement until it passes.
 - `scripts/check` passes. After a dependency, Dockerfile, compose or configuration change, `scripts/docker-check` passes too.
 - Stay inside the task. A behaviour change beyond it is either left out or named in the pull request.

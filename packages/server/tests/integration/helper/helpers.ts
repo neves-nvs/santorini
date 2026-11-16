@@ -1,7 +1,7 @@
 import { NewGame } from "../../../src/model.ts";
 import { UserDTO } from "../../../src/users/userDTO.ts";
 import WebSocket from "ws";
-import { app } from "../../../src/app.ts";
+import { specApp as app } from "./specApp.ts";
 import { randomBytes } from "crypto";
 import request from "supertest";
 

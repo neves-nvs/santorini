@@ -1,4 +1,4 @@
-import { app } from "../../../src/app.ts";
+import { specApp as app } from "../helper/specApp.ts";
 import { createTestUserWithLogin } from "../helper/helpers.ts";
 import { db } from "../../../src/database.ts";
 import request from "supertest";
