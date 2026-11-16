@@ -101,6 +101,7 @@ export function createMove(playerId: number, moveData: MoveInput): Move {
         playerId,
         moveData.position,
         moveData.type === "build_block" ? "block" : "dome",
+        0,
         moveData.buildingLevel,
       );
 

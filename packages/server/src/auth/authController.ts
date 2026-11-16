@@ -11,13 +11,13 @@ import {
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import { User } from "@/model.ts";
-import { authRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
 import bcrypt from "bcryptjs";
 import { body } from "express-validator";
 import { checkValidation } from "@/middlewares/middleware.ts";
 import { config } from "@/configs/config.ts";
 import { findUserByUsername } from "@/users/userRepository.ts";
 import logger from "@/logger.ts";
+import { loginRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
 import passport from "passport";
 import { randomBytes } from "crypto";
 import { webSocketTickets } from "./webSocketTickets.ts";
@@ -80,7 +80,7 @@ type NoParams = Record<string, string>;
 
 router.post<NoParams, TextResponse | MessageResponse | ValidationErrorResponse, LoginRequest>(
   "/session",
-  authRateLimitMiddleware,
+  loginRateLimitMiddleware,
   body("username").isString().notEmpty().withMessage("Username is required"),
   body("password").isString().notEmpty().withMessage("Password is required"),
   checkValidation,
