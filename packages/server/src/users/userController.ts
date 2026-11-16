@@ -6,11 +6,11 @@ import { createUser, findUserByUsername } from "./userRepository.ts";
 import { NewUser } from "@/model.ts";
 import { StatusCodes } from "http-status-codes";
 import { UserDTO } from "./userDTO.ts";
-import { authRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
 import bcrypt from "bcryptjs";
 import { checkValidation } from "@/middlewares/middleware.ts";
 import { config } from "@/configs/config.ts";
 import logger from "@/logger.ts";
+import { registrationRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
 
 const router = Router();
 
@@ -27,7 +27,7 @@ const requireRegistrationEnabled = (_req: Request, res: Response, next: NextFunc
 
 router.post<NoParams, UserView | TextResponse | MessageResponse | ValidationErrorResponse, CreateUserRequest>(
   "/",
-  authRateLimitMiddleware,
+  registrationRateLimitMiddleware,
   requireRegistrationEnabled,
   body("username").isString().notEmpty().withMessage("Username is required"),
   body("password")

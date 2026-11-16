@@ -61,7 +61,7 @@ paths:
       summary: Log in
       description: |
         Sets the `token` cookie (a JWT valid for 5 hours). An unknown user, a wrong password and an account without a
-        password all give the same 401. Counted against the login and registration limit.
+        password all give the same 401. Only failed logins count against the limit, per client and username.
       security: []
       requestBody:
         required: true
@@ -156,7 +156,7 @@ paths:
       tags: [Users]
       summary: Register
       description: |
-        Counted against the login and registration limit. `REGISTRATION_ENABLED=false` makes this answer 403.
+        Counted against the registration limit, per client. `REGISTRATION_ENABLED=false` makes this answer 403.
       security: []
       requestBody:
         required: true
@@ -328,8 +328,8 @@ components:
           schema: { $ref: "#/components/schemas/MessageResponse" }
     TooManyRequests:
       description: |
-        Over the limit. The global limit is 300 requests a minute per client. Login and registration also share 20
-        requests per 15 minutes (`AUTH_RATE_LIMIT`).
+        Over the limit. The global limit is 300 requests a minute per client. Failed logins (per client and
+        username) and registrations (per client) are also limited to 20 each per 15 minutes (`AUTH_RATE_LIMIT`).
       content:
         text/plain:
           schema: { type: string }
