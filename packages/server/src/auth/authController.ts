@@ -1,4 +1,15 @@
 import { CookieOptions, NextFunction, Request, Response, Router } from "express";
+import {
+  CurrentUserResponse,
+  LoginRequest,
+  LogoutResponse,
+  MessageResponse,
+  TestAuthResponse,
+  TextResponse,
+  TokenResponse,
+  ValidationErrorResponse,
+  WebSocketTicketResponse,
+} from "@santorini/shared";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import { User } from "../model.ts";
@@ -67,7 +78,9 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
 const router = Router();
 
-router.post(
+type NoParams = Record<string, string>;
+
+router.post<NoParams, TextResponse | MessageResponse | ValidationErrorResponse, LoginRequest>(
   "/session",
   authRateLimitMiddleware,
   body("username").isString().notEmpty().withMessage("Username is required"),
@@ -104,7 +117,7 @@ router.post(
 );
 
 // Logout endpoint to clear the authentication cookie
-router.post("/logout", (req: Request, res: Response) => {
+router.post<NoParams, LogoutResponse>("/logout", (req, res) => {
   res.clearCookie("token", sessionCookieOptions(req));
   res.status(200).json({ message: "Logged out successfully" });
 });
@@ -132,7 +145,7 @@ router.get("/auth/google/callback", passport.authenticate("google", { session: f
 });
 
 // Endpoint to get JWT token for WebSocket authentication
-router.get("/token", authenticate, async (req, res) => {
+router.get<NoParams, TokenResponse | TextResponse>("/token", authenticate, async (req, res) => {
   try {
     const user = req.user as User;
     const token = jwt.sign({ username: user.username }, config.jwtSecret, {
@@ -147,12 +160,12 @@ router.get("/token", authenticate, async (req, res) => {
 });
 
 // A one-time ticket for opening a WebSocket from a browser, which cannot set headers on the handshake
-router.post("/ws-ticket", authenticate, (req, res) => {
+router.post<NoParams, WebSocketTicketResponse>("/ws-ticket", authenticate, (req, res) => {
   res.status(200).json({ ticket: webSocketTickets.issue(getUser(req).username) });
 });
 
 // Endpoint to check authentication status and get user info
-router.get("/me", authenticate, async (req, res) => {
+router.get<NoParams, CurrentUserResponse | TextResponse>("/me", authenticate, async (req, res) => {
   try {
     const user = req.user as User;
     res.status(200).json({ id: user.id, username: user.username });
@@ -164,14 +177,14 @@ router.get("/me", authenticate, async (req, res) => {
 });
 
 // Test endpoint for authentication testing
-router.get("/test-auth", authenticate, async (req, res) => {
+router.get<NoParams, TestAuthResponse | TextResponse>("/test-auth", authenticate, async (req, res) => {
   try {
     const user = req.user as User;
     res.status(200).json({
       id: user.id,
       username: user.username,
       display_name: user.display_name,
-      created_at: user.created_at,
+      created_at: user.created_at.toISOString(),
     });
   } catch (e: unknown) {
     const error = e as Error;

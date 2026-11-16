@@ -1,3 +1,4 @@
+import { CreateUserRequest, MessageResponse, TextResponse, UserView, ValidationErrorResponse } from "@santorini/shared";
 import { NextFunction, Request, Response, Router } from "express";
 import { body, param } from "express-validator";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository.ts";
@@ -14,6 +15,8 @@ import logger from "../logger.ts";
 
 export const router = Router();
 
+type NoParams = Record<string, string>;
+
 const MIN_PASSWORD_LENGTH = 8;
 
 const requireRegistrationEnabled = (_req: Request, res: Response, next: NextFunction) => {
@@ -23,7 +26,7 @@ const requireRegistrationEnabled = (_req: Request, res: Response, next: NextFunc
   next();
 };
 
-router.get("/", authenticate, async (req, res) => {
+router.get<NoParams, UserView[] | MessageResponse>("/", authenticate, async (_req, res) => {
   try {
     const users = await findAllUsers();
     return res.status(200).json(users.map((user) => new UserDTO(user)));
@@ -33,7 +36,7 @@ router.get("/", authenticate, async (req, res) => {
   }
 });
 
-router.post(
+router.post<NoParams, UserView | TextResponse | MessageResponse | ValidationErrorResponse, CreateUserRequest>(
   "/",
   authRateLimitMiddleware,
   requireRegistrationEnabled,
@@ -90,7 +93,7 @@ router.post(
   },
 );
 
-router.get(
+router.get<{ username: string }, UserView | TextResponse | MessageResponse | ValidationErrorResponse>(
   "/:username",
   param("username").isString().notEmpty().withMessage("Username is required"),
   checkValidation,

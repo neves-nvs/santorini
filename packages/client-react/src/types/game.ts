@@ -53,23 +53,6 @@ export interface PlayerReadyStatus {
   isReady: boolean;
 }
 
-// Games list from API
-export interface GameInfo {
-  id: number;
-  creatorId: number;
-  maxPlayers: number;
-  status: GameStatus;
-  phase: GamePhase;
-  currentPlayerId: number | null;
-  turnNumber: number;
-  version: number;
-  playerCount: number;
-  players: PlayerView[];
-  createdAt: string;
-  startedAt: string | null;
-  finishedAt: string | null;
-}
-
 /**
  * Client-side game state that combines server view with local state
  */

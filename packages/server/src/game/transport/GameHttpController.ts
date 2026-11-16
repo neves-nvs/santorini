@@ -1,3 +1,11 @@
+import {
+  CreateGameRequest,
+  CreateGameResponse,
+  GameErrorResponse,
+  GameSummary,
+  JoinGameResponse,
+  PlayerGameView,
+} from "@santorini/shared";
 import { NextFunction, Request, Response, Router } from "express";
 import { authenticate, getUser } from "../../auth/authController.ts";
 import { getHttpStatus, getUserMessage } from "../../errors/GameErrors.ts";
@@ -8,8 +16,7 @@ import { GameService } from "../application/GameService.ts";
 import { LobbyService } from "../application/LobbyService.ts";
 import logger from "../../logger.ts";
 
-// Convert Game domain object to DTO for API responses
-function gameToDto(game: Game) {
+function gameToDto(game: Game): GameSummary {
   return {
     id: game.id,
     creatorId: game.creatorId,
@@ -27,9 +34,9 @@ function gameToDto(game: Game) {
       status: p.status,
       isReady: p.isReady,
     })),
-    createdAt: game.createdAt,
-    startedAt: game.startedAt,
-    finishedAt: game.finishedAt,
+    createdAt: game.createdAt.toISOString(),
+    startedAt: game.startedAt?.toISOString() ?? null,
+    finishedAt: game.finishedAt?.toISOString() ?? null,
   };
 }
 
@@ -40,19 +47,22 @@ export function createGameRoutes(
 ): Router {
   const router = Router();
 
-  router.get("/", authenticate, async (_req, res) => {
+  type NoParams = Record<string, string>;
+  type GameParams = { gameId: string };
+
+  router.get<NoParams, GameSummary[]>("/", authenticate, async (_req, res) => {
     const games = await lobbyService.findAvailableGames();
     res.json(games.map(gameToDto));
   });
 
   // Get games where the current user is a player
-  router.get("/my", authenticate, async (req, res) => {
+  router.get<NoParams, GameSummary[]>("/my", authenticate, async (req, res) => {
     const userId = getUser(req).id;
     const games = await lobbyService.findMyGames(userId);
     res.json(games.map(gameToDto));
   });
 
-  router.post("/", authenticate, async (req, res) => {
+  router.post<NoParams, CreateGameResponse, CreateGameRequest>("/", authenticate, async (req, res) => {
     const userId = getUser(req).id;
     const { maxPlayers = 2 } = req.body;
     const game = await lobbyService.createGame(userId, maxPlayers);
@@ -60,14 +70,14 @@ export function createGameRoutes(
     res.json({ gameId: game.id });
   });
 
-  router.get("/:gameId", authenticate, async (req, res) => {
+  router.get<GameParams, PlayerGameView>("/:gameId", authenticate, async (req, res) => {
     const userId = getUser(req).id;
     const gameId = parseInt(String(req.params.gameId));
     const gameView = await gameService.getGameStateForPlayer(gameId, userId);
     res.json(gameView);
   });
 
-  router.post("/:gameId/join", authenticate, async (req, res) => {
+  router.post<GameParams, JoinGameResponse>("/:gameId/join", authenticate, async (req, res) => {
     const userId = getUser(req).id;
     const gameId = parseInt(String(req.params.gameId));
     const game = await lobbyService.joinGame(gameId, userId);
@@ -75,7 +85,7 @@ export function createGameRoutes(
     res.json({ success: true });
   });
 
-  router.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
+  router.use((error: unknown, req: Request, res: Response<GameErrorResponse>, _next: NextFunction) => {
     logger.error("Games route failed", { method: req.method, route: req.route?.path, error });
     res.status(getHttpStatus(error)).json({ error: getUserMessage(error) });
   });
