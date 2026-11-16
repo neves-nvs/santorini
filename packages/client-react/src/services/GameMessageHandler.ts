@@ -17,7 +17,6 @@ import { useGameStore } from '@/store/gameStore'
 import { useAppStore } from '@/store/appStore'
 import type { AvailableMove, GameState } from '@/types/game'
 import type {
-  GameEndPayload,
   GameStartPayload,
   GameStateUpdatePayload,
   Move,
@@ -32,10 +31,6 @@ type GameStoreState = ReturnType<typeof useGameStore.getState>
 
 function isPlayerGameView(view: PlayerGameView | SpectatorGameView): view is PlayerGameView {
   return 'isCurrentPlayer' in view
-}
-
-function hasState(payload: GameStateUpdatePayload | GameEndPayload): payload is GameStateUpdatePayload {
-  return 'state' in payload
 }
 
 function assertNever(message: never): never {
@@ -66,10 +61,7 @@ export function handleWebSocketMessage(message: ServerMessage): void {
       break
 
     // The next game_state_update carries the state these messages announce
-    case WS_MESSAGE_TYPES.GAME_CREATED:
     case WS_MESSAGE_TYPES.GAME_JOINED:
-    case WS_MESSAGE_TYPES.GAMES_LIST:
-    case WS_MESSAGE_TYPES.GAME_LEFT:
     case WS_MESSAGE_TYPES.PLAYER_JOINED:
     case WS_MESSAGE_TYPES.PLAYER_LEFT:
     case WS_MESSAGE_TYPES.READY_STATUS_UPDATE:
@@ -84,12 +76,7 @@ export function handleWebSocketMessage(message: ServerMessage): void {
 /**
  * Handle game_state_update messages
  */
-function handleGameStateUpdate(payload: GameStateUpdatePayload | GameEndPayload, store: GameStoreState): void {
-  if (!hasState(payload)) {
-    log('Game ended:', payload)
-    return
-  }
-
+function handleGameStateUpdate(payload: GameStateUpdatePayload, store: GameStoreState): void {
   const gameView = payload.state
 
   // Deduplicate by hashing key fields including board state
