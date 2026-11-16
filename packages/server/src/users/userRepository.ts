@@ -32,10 +32,6 @@ export async function findUserByUsername(
   return await trx.selectFrom("users").where("username", "=", username).selectAll().executeTakeFirst();
 }
 
-export async function findAllUsers(): Promise<User[]> {
-  return await db.selectFrom("users").selectAll().execute();
-}
-
 export async function createUser(user: NewUser): Promise<User> {
   return await db.insertInto("users").values(user).returningAll().executeTakeFirstOrThrow();
 }

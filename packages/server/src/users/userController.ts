@@ -1,13 +1,12 @@
 import { CreateUserRequest, MessageResponse, TextResponse, UserView, ValidationErrorResponse } from "@santorini/shared";
 import { NextFunction, Request, Response, Router } from "express";
 import { body, param } from "express-validator";
-import { createUser, findAllUsers, findUserByUsername } from "./userRepository.ts";
+import { createUser, findUserByUsername } from "./userRepository.ts";
 
 import { NewUser } from "@/model.ts";
 import { StatusCodes } from "http-status-codes";
 import { UserDTO } from "./userDTO.ts";
 import { authRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
-import { authenticate } from "@/auth/authController.ts";
 import bcrypt from "bcryptjs";
 import { checkValidation } from "@/middlewares/middleware.ts";
 import { config } from "@/configs/config.ts";
@@ -25,16 +24,6 @@ const requireRegistrationEnabled = (_req: Request, res: Response, next: NextFunc
   }
   next();
 };
-
-router.get<NoParams, UserView[] | MessageResponse>("/", authenticate, async (_req, res) => {
-  try {
-    const users = await findAllUsers();
-    return res.status(200).json(users.map((user) => new UserDTO(user)));
-  } catch (e: unknown) {
-    logger.error((e as Error).message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
 
 router.post<NoParams, UserView | TextResponse | MessageResponse | ValidationErrorResponse, CreateUserRequest>(
   "/",

@@ -127,15 +127,10 @@ describe("REST responses carry the shape of the shared types", () => {
   });
 
   describe("users", () => {
-    test("POST /users, GET /users and GET /users/:username return a UserView", async () => {
+    test("POST /users and GET /users/:username return a UserView", async () => {
       const { user } = await generateTestUser();
-      const { token } = await createTestUserWithLogin();
 
       expect(user).toStrictEqual(userView);
-
-      const list = await request(app).get("/users").set("Cookie", `token=${token}`).expect(200);
-      expect(list.body).toHaveLength(2);
-      for (const entry of list.body) expect(entry).toStrictEqual(userView);
 
       const single = await request(app).get(`/users/${user.username}`).expect(200);
       expect(single.body).toStrictEqual(userView);

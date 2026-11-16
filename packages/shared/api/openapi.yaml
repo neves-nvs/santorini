@@ -170,24 +170,6 @@ paths:
         "302":
           description: Redirect to the client
   /users:
-    get:
-      tags: [Users]
-      summary: List users
-      responses:
-        "200":
-          description: All users
-          content:
-            application/json:
-              schema:
-                type: array
-                items: { $ref: "#/components/schemas/UserView" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "500":
-          description: The lookup failed
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/MessageResponse" }
     post:
       tags: [Users]
       summary: Register

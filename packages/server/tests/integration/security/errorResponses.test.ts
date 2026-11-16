@@ -33,7 +33,7 @@ describe("Error Response Integration Tests", () => {
         throw new Error("connection to 10.0.0.5:5432 refused");
       }) as never);
 
-    const response = await request(app).get("/users").set("Cookie", `token=${token}`).expect(500);
+    const response = await request(app).get("/me").set("Cookie", `token=${token}`).expect(500);
 
     expect(response.body).toEqual({ message: "Internal server error" });
   });
