@@ -8,22 +8,28 @@ on:
       - "v*.*.*"
     paths:
       - docker-bake.hcl
+      - .dockerignore
       - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
       - packages/server/**
       - packages/client-react/**
       - packages/shared/**
+      - package.json
+      - package-lock.json
       - .github/workflows/docker.yml
   pull_request:
     paths:
       - docker-bake.hcl
+      - .dockerignore
       - scripts/docker-build
       - scripts/docker-check
       - .github/scripts/summarize-images
       - packages/server/**
       - packages/client-react/**
       - packages/shared/**
+      - package.json
+      - package-lock.json
       - .github/workflows/docker.yml
 
 permissions:

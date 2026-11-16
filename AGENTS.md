@@ -6,13 +6,14 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 
 - `packages/server/src`: `app.ts`, `main.ts` and `composition-root.ts` wire things up. `auth/`, `users/`, `middlewares/`, `configs/`, `websockets/` (the WebSocket server and `WsRouter`), `game/` (`domain` rules, `application` services, `infra` repository and connection manager, `transport` HTTP routes), `migrations/` (Kysely). ES modules: relative imports end in `.ts`.
 - `packages/client-react/src`: `pages/`, `components/`, `hooks/`, `services/` (`ApiService`, `WebSocketClient`), `store/`. End-to-end tests are in `e2e/` (Playwright).
-- `packages/shared/src`: `websocket-types.ts` and `game-types.ts`, the message and game shapes used by both sides. It is the package `@santorini/shared` (`file:../shared` in the server and the client, compiled to `dist`): export new modules from `src/index.ts`, import from `@santorini/shared`, and rebuild after a change (`npm run build` there, or `scripts/install --if-needed`).
+- `packages/shared/src`: `websocket-types.ts` and `game-types.ts`, the message and game shapes used by both sides. It is the workspace package `@santorini/shared`, compiled to `dist`: export new modules from `src/index.ts`, import from `@santorini/shared`, and rebuild after a change (`npm run build` there, or `scripts/install --if-needed`).
 - `docs/api/openapi.yaml` and `docs/api/asyncapi.yaml` describe the REST routes and the WebSocket messages. Change them together with the code.
 - `scripts/`: the shell helpers below.
 
 ## Commands (from the repository root)
 
-- `scripts/install` runs `npm ci` in every package and builds `packages/shared`. `scripts/install --if-needed` does it only where `node_modules` is out of date, and rebuilds `shared` when its `dist` is missing or older than its sources.
+- The three packages are npm workspaces with one `package-lock.json` at the root: install and update dependencies from the root (`npm install <name> -w packages/server`), and run a package's scripts from its folder or with `npm run <script> -w packages/<name>`.
+- `scripts/install` runs `npm ci` once at the root and builds `packages/shared`. `scripts/install --if-needed` does it only when `node_modules` is out of date, and rebuilds `shared` when its `dist` is missing or older than its sources.
 - `scripts/dev` starts Postgres, the server on :3000, the client on :5174 and a watcher that rebuilds `packages/shared`, installing missing dependencies first.
 - `scripts/check [shared|server|client|all]` runs the checks CI runs, quietly. The server integration tests need Docker.
 - `scripts/e2e` runs the Playwright suite against a throwaway database, server and client. `scripts/smoke` checks the dev setup.
@@ -23,7 +24,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 ## Style
 
 - TypeScript with Prettier and ESLint. The `sort-imports` rule is on: imports with several members first, then single-member imports, each group sorted case-sensitively by first member.
-- Client imports: `./` within a folder, `@/` (the `src` folder) across folders, `@shared/` for the shared package. No `../`.
+- Client imports: `./` within a folder, `@/` (the `src` folder) across folders, `@santorini/shared` for the shared package. No `../`, and no `process.env` (use `import.meta.env`): ESLint enforces both.
 - `camelCase` for functions, `PascalCase` for components and classes, `SCREAMING_SNAKE_CASE` for constants.
 - Code explains itself through names and structure. Add a comment only for a "why" the code cannot show.
 

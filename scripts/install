@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# scripts/install               npm ci in every package, then build packages/shared
-# scripts/install --if-needed   only in the packages whose installed dependencies do not match package.json,
-#                               and only build packages/shared when its dist is missing or older than its sources
+# scripts/install               npm ci at the repository root (one workspace install), then build packages/shared
+# scripts/install --if-needed   npm ci only when the installed dependencies do not match the package.json files and the
+#                               lockfile, and build packages/shared only when its dist is missing or older than its sources
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 if ! command -v npm >/dev/null 2>&1; then
@@ -23,14 +23,14 @@ shared_is_built() {
   [ -f dist/index.js ] && [ -z "$(find src package.json tsconfig.json -newer dist/index.js -print -quit)" ]
 }
 
-for package in shared server client-react; do
-  cd "$root/packages/$package"
-  if [ "$only_if_needed" = false ] || [ ! -d node_modules ] || ! npm ls --depth=0 >/dev/null 2>&1; then
-    echo "npm ci: packages/$package"
-    npm ci
-  fi
-  if [ "$package" = shared ] && { [ "$only_if_needed" = false ] || ! shared_is_built; }; then
-    echo "build: packages/shared"
-    npm run build
-  fi
-done
+cd "$root"
+if [ "$only_if_needed" = false ] || [ ! -d node_modules ] || ! npm ls --depth=0 --workspaces --include-workspace-root >/dev/null 2>&1; then
+  echo "npm ci"
+  npm ci
+fi
+
+cd "$root/packages/shared"
+if [ "$only_if_needed" = false ] || ! shared_is_built; then
+  echo "build: packages/shared"
+  npm run build
+fi

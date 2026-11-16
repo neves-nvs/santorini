@@ -48,6 +48,7 @@ env_args=(
 
 echo "== image contents"
 unwanted="$(docker run --rm --entrypoint sh "$server_image" -c '
+  cd /app
   find . -path ./node_modules -prune -o \( -name "*.test.*" -o -name tests \) -print
   ls -d node_modules/typescript node_modules/jest 2>/dev/null || true
 ')"
