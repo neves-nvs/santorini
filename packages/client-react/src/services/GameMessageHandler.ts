@@ -15,13 +15,31 @@
 
 import { useGameStore } from '@/store/gameStore'
 import { useAppStore } from '@/store/appStore'
-import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '@/types/game'
+import type { AvailableMove, GameState } from '@/types/game'
+import type {
+  GameEndPayload,
+  GameStartPayload,
+  GameStateUpdatePayload,
+  Move,
+  PlayerGameView,
+  ServerMessage,
+  SpectatorGameView,
+} from '@santorini/shared'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
-import { log, logError, logWarn } from '@/utils/log'
+import { log, logError } from '@/utils/log'
 
-// Type guard for PlayerGameView (has isCurrentPlayer field)
-function isPlayerGameView(view: GameStateUpdatePayload['state']): view is PlayerGameView {
+type GameStoreState = ReturnType<typeof useGameStore.getState>
+
+function isPlayerGameView(view: PlayerGameView | SpectatorGameView): view is PlayerGameView {
   return 'isCurrentPlayer' in view
+}
+
+function hasState(payload: GameStateUpdatePayload | GameEndPayload): payload is GameStateUpdatePayload {
+  return 'state' in payload
+}
+
+function assertNever(message: never): never {
+  throw new Error(`Unhandled server message: ${JSON.stringify(message)}`)
 }
 
 // Track last state hash to prevent duplicate updates
@@ -30,79 +48,49 @@ let lastGameStateHash: string | null = null
 /**
  * Main message handler - called from WebSocketClient.onmessage
  */
-export function handleWebSocketMessage(type: string, payload: unknown): void {
+export function handleWebSocketMessage(message: ServerMessage): void {
   const store = useGameStore.getState()
 
-  switch (type) {
+  switch (message.type) {
     case WS_MESSAGE_TYPES.GAME_STATE_UPDATE:
-      handleGameStateUpdate(payload as GameStateUpdatePayload, store)
-      break
-
-    case WS_MESSAGE_TYPES.AVAILABLE_MOVES:
-      handleAvailableMoves(payload, store)
-      break
-
-    case WS_MESSAGE_TYPES.PLAYER_READY_STATUS:
-      handlePlayerReadyStatus(payload, store)
+      handleGameStateUpdate(message.payload, store)
       break
 
     case WS_MESSAGE_TYPES.GAME_START:
-      log('Game started:', payload)
-      handleGameStart(payload, store)
+      log('Game started:', message.payload)
+      handleGameStart(message.payload, store)
       break
 
-    case WS_MESSAGE_TYPES.GAME_READY_FOR_START:
-      log('Game ready for start:', payload)
+    case WS_MESSAGE_TYPES.ERROR:
+      logError('Server error:', message.payload)
       break
 
-    case WS_MESSAGE_TYPES.PLAYERS_IN_GAME:
-      log('Players in game update:', payload)
-      // Game state update will follow with full state
-      break
-
-    case WS_MESSAGE_TYPES.PLAYER_JOINED:
-      log('Player joined:', payload)
-      // Full game_state_update follows - UI will update from that
-      break
-
-    case WS_MESSAGE_TYPES.PLAYER_LEFT:
-      log('Player left:', payload)
-      // Full game_state_update follows - UI will update from that
-      break
-
+    // The next game_state_update carries the state these messages announce
+    case WS_MESSAGE_TYPES.GAME_CREATED:
     case WS_MESSAGE_TYPES.GAME_JOINED:
-      log('Game joined:', payload)
-      handleGameJoined(payload, store)
-      break
-
-    case 'move_acknowledged':
-      log('Move acknowledged:', payload)
-      break
-
-    case 'error':
-      logError('Server error:', payload)
+    case WS_MESSAGE_TYPES.GAMES_LIST:
+    case WS_MESSAGE_TYPES.GAME_LEFT:
+    case WS_MESSAGE_TYPES.PLAYER_JOINED:
+    case WS_MESSAGE_TYPES.PLAYER_LEFT:
+    case WS_MESSAGE_TYPES.READY_STATUS_UPDATE:
+      log(message.type, message.payload)
       break
 
     default:
-      // Unknown message type - log for debugging
-      if (type !== 'connected' && type !== 'disconnected') {
-        log('Unhandled message type:', type, payload)
-      }
+      assertNever(message)
   }
 }
 
 /**
  * Handle game_state_update messages
  */
-function handleGameStateUpdate(
-  payload: GameStateUpdatePayload,
-  store: ReturnType<typeof useGameStore.getState>
-): void {
-  const gameView = payload.state
-  if (!gameView) {
-    logWarn('Game state update missing state field:', payload)
+function handleGameStateUpdate(payload: GameStateUpdatePayload | GameEndPayload, store: GameStoreState): void {
+  if (!hasState(payload)) {
+    log('Game ended:', payload)
     return
   }
+
+  const gameView = payload.state
 
   // Deduplicate by hashing key fields including board state
   const stateHash = JSON.stringify({
@@ -137,7 +125,6 @@ function handleGameStateUpdate(
 
   log('Current user ready status:', { currentUserId, currentUserReady, players: gameView.players })
 
-  // Convert to GameState format
   const gameState: GameState = {
     gameId: gameView.gameId,
     status: gameView.status,
@@ -151,7 +138,6 @@ function handleGameStateUpdate(
     winnerId: gameView.winnerId ?? undefined,
     winReason: gameView.winReason ?? undefined,
     isCurrentPlayer: isCurrentPlayer,
-    isMyTurn: isCurrentPlayer,
     currentUserReady: currentUserReady
   }
 
@@ -168,21 +154,10 @@ function handleGameStateUpdate(
   }
 }
 
-interface GameStartPayload {
-  gameId: number
-  activePlayerId: number | null
-  availableMoves?: PlayerGameView['availableMoves']
-}
-
 /**
  * Handle game_start messages
- * Payload: { gameId, activePlayerId, availableMoves? }
  */
-function handleGameStart(
-  payload: unknown,
-  store: ReturnType<typeof useGameStore.getState>
-): void {
-  const data = payload as GameStartPayload
+function handleGameStart(data: GameStartPayload, store: GameStoreState): void {
   log('Processing game start - activePlayerId:', data.activePlayerId)
 
   // Check if current user is the active player
@@ -200,8 +175,7 @@ function handleGameStart(
       status: 'in-progress',
       phase: 'placing',
       currentPlayerId: data.activePlayerId,
-      isCurrentPlayer,
-      isMyTurn: isCurrentPlayer
+      isCurrentPlayer
     })
   }
 
@@ -218,101 +192,23 @@ function handleGameStart(
 }
 
 /**
- * Handle game_joined messages
- * Sent when a player joins/reconnects to a game
- * Note: subscribe_game also sends game_state_update with the same data,
- * so we just log here. The game_state_update handler will process the state.
- */
-function handleGameJoined(
-  _payload: unknown,
-  _store: ReturnType<typeof useGameStore.getState>
-): void {
-  // game_state_update from subscribe_game will handle the actual state update
-  // This message just confirms we've joined the game
-}
-
-/**
- * Handle available_moves messages (legacy format)
- */
-function handleAvailableMoves(
-  payload: unknown,
-  store: ReturnType<typeof useGameStore.getState>
-): void {
-  let moves: unknown[] = []
-  
-  if (Array.isArray(payload)) {
-    moves = payload
-  } else if (payload && typeof payload === 'object' && 'moves' in payload) {
-    moves = (payload as { moves: unknown[] }).moves
-  }
-
-  const transformedMoves: AvailableMove[] = moves.map((move: unknown) => {
-    const m = move as { type: string; workerId?: number; position?: { x: number; y: number }; validPositions?: { x: number; y: number }[] }
-    return {
-      type: m.type as AvailableMove['type'],
-      workerId: m.workerId || 1,
-      validPositions: m.position ? [m.position] : (m.validPositions || [])
-    }
-  })
-
-  store.setCurrentPlayerMoves(transformedMoves)
-  store.setMyTurn(true)
-}
-
-/**
- * Handle player_ready_status messages
- */
-function handlePlayerReadyStatus(
-  payload: unknown,
-  store: ReturnType<typeof useGameStore.getState>
-): void {
-  if (!payload || !Array.isArray(payload)) return
-
-  const readyStatuses = payload as Array<{ userId: number; isReady: boolean }>
-  const readyCount = readyStatuses.filter(p => p.isReady).length
-  const totalPlayers = readyStatuses.length
-
-  log(`Ready status: ${readyCount}/${totalPlayers} players ready`)
-
-  const currentGameState = store.gameState
-  if (currentGameState) {
-    store.setGameState({
-      ...currentGameState,
-      playersReadyStatus: readyStatuses,
-      readyCount,
-      totalPlayers
-    })
-  }
-}
-
-/**
  * Transform server moves to UI format (grouped by worker with valid positions)
- * For move_worker moves, stores the fromPosition in each valid position entry
+ * A move_worker group keeps the square the worker moves from
  */
-function transformMovesToUIFormat(moves: PlayerGameView['availableMoves']): AvailableMove[] {
-  if (!moves || moves.length === 0) return []
-
-  // Group moves by type and workerId
+function transformMovesToUIFormat(moves: Move[]): AvailableMove[] {
   const grouped = new Map<string, AvailableMove>()
 
   for (const move of moves) {
     const key = `${move.type}-${move.workerId}`
+    const group = grouped.get(key)
 
-    if (!grouped.has(key)) {
-      // For move_worker moves, include fromPosition at the group level
-      const baseMove: AvailableMove = {
-        type: move.type,
-        workerId: move.workerId,
-        validPositions: []
-      }
-      // Store fromPosition for move_worker moves (all moves for same worker have same fromPosition)
-      if (move.type === 'move_worker' && 'fromPosition' in move) {
-        baseMove.fromPosition = move.fromPosition
-      }
-      grouped.set(key, baseMove)
+    if (group) {
+      group.validPositions.push(move.position)
+    } else if (move.type === 'move_worker') {
+      grouped.set(key, { type: move.type, workerId: move.workerId, fromPosition: move.fromPosition, validPositions: [move.position] })
+    } else {
+      grouped.set(key, { type: move.type, workerId: move.workerId, validPositions: [move.position] })
     }
-
-    grouped.get(key)!.validPositions.push(move.position)
   }
 
   return Array.from(grouped.values())

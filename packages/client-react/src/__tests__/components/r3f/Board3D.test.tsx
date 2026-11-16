@@ -7,7 +7,7 @@ import { webSocketClient } from '@/services/WebSocketClient'
 import type { BoardCell } from '@/store/gameStore'
 import type { AvailableMove, GameState } from '@/types/game'
 
-vi.mock('@/services/WebSocketClient', () => ({ webSocketClient: { send: vi.fn() } }))
+vi.mock('@/services/WebSocketClient', () => ({ webSocketClient: { makeMove: vi.fn() } }))
 
 type Renderer = Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>
 type SceneNode = Renderer['scene']
@@ -58,7 +58,7 @@ const previewAt = (r: Renderer, x: number, z: number) => previews(r).find((n) =>
 const isBuildingPreview = (preview: SceneNode) => preview.findAll((n) => Boolean(n.props.geometry)).length > 0
 
 const click = async (r: Renderer, node: SceneNode) => r.fireEvent(node, 'click')
-const sent = () => vi.mocked(webSocketClient.send)
+const sent = () => vi.mocked(webSocketClient.makeMove)
 
 const place = (...positions: Array<[number, number]>): AvailableMove => ({
   type: 'place_worker',
@@ -146,11 +146,7 @@ describe('placing workers', () => {
 
     await click(renderer, cellAt(renderer, 2, 3))
 
-    expect(sent()).toHaveBeenCalledWith('make_move', {
-      gameId: GAME_ID,
-      moveIndex: 0,
-      move: { type: 'place_worker', workerId: 0, position: { x: 2, y: 3 } },
-    })
+    expect(sent()).toHaveBeenCalledWith(GAME_ID, { type: 'place_worker', workerId: 0, position: { x: 2, y: 3 } })
     expect(useGameStore.getState().selectedWorker).toBeNull()
   })
 
@@ -161,7 +157,7 @@ describe('placing workers', () => {
     await click(renderer, previewAt(renderer, 2, 3))
 
     expect(sent()).toHaveBeenCalledOnce()
-    expect(sent().mock.calls[0][1]).toMatchObject({ move: { position: { x: 2, y: 3 } } })
+    expect(sent().mock.calls[0][1]).toMatchObject({ position: { x: 2, y: 3 } })
   })
 
   it('ignores a click on a square that is not valid, but still tells the page', async () => {
@@ -255,15 +251,16 @@ describe('moving and building', () => {
 
     await click(renderer, cellAt(renderer, 0, 1))
 
-    expect(sent()).toHaveBeenCalledWith('make_move', {
-      gameId: GAME_ID,
-      moveIndex: 0,
-      move: { type: 'move_worker', workerId: 10, position: { x: 0, y: 1 }, fromPosition: { x: 0, y: 0 } },
+    expect(sent()).toHaveBeenCalledWith(GAME_ID, {
+      type: 'move_worker',
+      workerId: 10,
+      position: { x: 0, y: 1 },
+      fromPosition: { x: 0, y: 0 },
     })
     expect(useGameStore.getState().selectedWorker).toEqual(selected)
   })
 
-  it('sends the index of the matching move, and clears the selection after a build', async () => {
+  it('sends a build without naming a worker, and clears the selection after it', async () => {
     seed({
       cells: withWorkers(mine),
       moves: [move(10, [0, 0], [1, 1]), build(10, 'build_block', [1, 0])],
@@ -273,7 +270,7 @@ describe('moving and building', () => {
 
     await click(renderer, cellAt(renderer, 1, 0))
 
-    expect(sent().mock.calls[0][1]).toMatchObject({ moveIndex: 1, move: { type: 'build_block', position: { x: 1, y: 0 } } })
+    expect(sent()).toHaveBeenCalledWith(GAME_ID, { type: 'build_block', position: { x: 1, y: 0 } })
     expect(useGameStore.getState().selectedWorker).toBeNull()
   })
 

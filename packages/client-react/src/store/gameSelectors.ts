@@ -59,9 +59,6 @@ export const useGameId = () =>
 export const useGameState = () => 
   useGameStore(state => state.gameState)
 
-export const useCurrentPlayer = () => 
-  useGameStore(state => state.gameState?.currentPlayer)
-
 export const useGamePhase = () =>
   useGameStore(state => state.gameState?.phase)
 
@@ -188,8 +185,7 @@ export const useGameActions = () =>
 // Shallow comparison selectors for complex objects
 export const useGameStateShallow = () =>
   useGameStore(state => ({
-    id: state.gameState?.id,
-    currentPlayer: state.gameState?.currentPlayer,
+    currentPlayerId: state.gameState?.currentPlayerId,
     phase: state.gameState?.phase,
     cellCount: state.gameState?.board?.cells?.length
   }))

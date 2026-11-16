@@ -29,6 +29,7 @@ const boardWithWorkerAt = (x: number, y: number): BoardView => {
 const moveWorkerTo = (x: number, y: number): AvailableMove => ({
   type: 'move_worker',
   workerId: 1,
+  fromPosition: { x: 0, y: 0 },
   validPositions: [{ x, y }],
 })
 

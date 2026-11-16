@@ -10,19 +10,8 @@ import {
 import { useGameStore } from '@/store/gameStore'
 import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '@/constants/gameConstants'
 import { useRenderTracker } from '@/utils/performanceMonitor'
-import type { AvailableMove, BuildPosition, Move } from '@/types/game'
-
-interface MoveSubmission {
-  gameId: number
-  moveIndex: number
-  move: {
-    type: AvailableMove['type']
-    workerId: number
-    position: { x: number; y: number }
-    fromPosition?: { x: number; y: number }
-  }
-  serverMoveObject?: Move
-}
+import { toMoveCommand } from './move-command'
+import type { AvailableMove } from '@/types/game'
 
 interface DebugState {
   showAxis: boolean
@@ -160,12 +149,10 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     console.log('Selected worker:', currentSelectedWorker)
 
     // Simple validation: find if clicked position matches any available move
-    let validMove: (AvailableMove & { selectedPosition: BuildPosition }) | null = null
-    let moveIndex = -1
+    let validMove: AvailableMove | null = null
 
     if (Array.isArray(moves)) {
-      for (let i = 0; i < moves.length; i++) {
-        const move = moves[i]
+      for (const move of moves) {
 
         // For move_worker and build moves, require worker selection first
         if (move.type === 'move_worker' || move.type === 'build_block' || move.type === 'build_dome') {
@@ -175,12 +162,8 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
         }
 
         if (move.validPositions && Array.isArray(move.validPositions)) {
-          const matchingPosition: BuildPosition | undefined = move.validPositions.find((pos) =>
-            pos.x === gridX && pos.y === gridZ
-          )
-          if (matchingPosition) {
-            validMove = { ...move, selectedPosition: matchingPosition }
-            moveIndex = i
+          if (move.validPositions.some((pos) => pos.x === gridX && pos.y === gridZ)) {
+            validMove = move
             break
           }
         }
@@ -190,27 +173,11 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     if (validMove && gameId) {
       console.log('Valid move found:', validMove)
 
-      // Simple, direct submission to server
-      const moveData: MoveSubmission = {
-        gameId: parseInt(gameId, 10), // Convert string to number for backend
-        moveIndex: moveIndex, // Server can validate this was actually sent
-        move: {
-          type: validMove.type,
-          workerId: validMove.workerId,
-          position: { x: gridX, y: gridZ },
-          fromPosition: validMove.fromPosition
-        }
-      }
-
-      // Include server move object if available (preferred)
-      if (validMove.selectedPosition?.serverMoveObject) {
-        moveData.serverMoveObject = validMove.selectedPosition.serverMoveObject
-        console.log('Using server move object:', validMove.selectedPosition.serverMoveObject)
-      }
+      const command = toMoveCommand(validMove, { x: gridX, y: gridZ })
 
       try {
-        console.log('Submitting move:', moveData)
-        webSocketClient.send('make_move', moveData)
+        console.log('Submitting move:', command)
+        webSocketClient.makeMove(parseInt(gameId, 10), command)
         console.log('Move submitted successfully')
 
         // For move_worker, keep selection - building phase needs the same worker

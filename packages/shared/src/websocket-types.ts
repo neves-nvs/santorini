@@ -7,9 +7,9 @@
 
 import type {
   GameEndPayload,
+  GameStartPayload,
   GameStateUpdatePayload,
   GameStatus,
-  Move,
   MoveCommand,
   PlayerGameView,
 } from './game-types.ts';
@@ -186,11 +186,7 @@ export interface ReadyStatusUpdateMessage {
 
 export interface GameStartMessage {
   type: typeof WS_MESSAGE_TYPES.GAME_START;
-  payload: {
-    gameId: number;
-    activePlayerId: number | null;
-    availableMoves?: Move[];
-  };
+  payload: GameStartPayload;
 }
 
 export interface ErrorMessage {
