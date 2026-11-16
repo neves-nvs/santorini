@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/store/appStore'
 import { apiService } from '@/services/ApiService'
@@ -10,6 +10,7 @@ const LobbyPage = () => {
   const username = useAppStore((s) => s.username)
   const logout = useAppStore((s) => s.logout)
   const navigate = useNavigate()
+  const playerCountId = useId()
 
   const [loading, setLoading] = useState(Boolean(username))
   const [error, setError] = useState('')
@@ -127,8 +128,8 @@ const LobbyPage = () => {
   // Authentication is now guaranteed by App-level routing
 
   return (
-    <div className="page" style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    <main className="page" style={{
+      background: 'var(--brand-gradient)',
       color: 'white',
       padding: 'clamp(1rem, 4vw, 2rem)',
       overflowY: 'auto'
@@ -149,7 +150,7 @@ const LobbyPage = () => {
               <strong>Player:</strong> {username}
             </div>
             <button onClick={handleLogout} style={{
-              background: 'rgba(255, 255, 255, 0.2)',
+              background: 'rgba(0, 0, 0, 0.3)',
               border: '1px solid white',
               color: 'white',
               padding: '0.4rem 0.75rem',
@@ -162,9 +163,11 @@ const LobbyPage = () => {
           </div>
         </div>
 
+        <p role="status" className="visually-hidden">{loading ? 'Loading games' : ''}</p>
+
         {/* Error Display */}
         {error && (
-          <div style={{
+          <div role="alert" style={{
             background: 'rgba(255, 0, 0, 0.2)',
             border: '1px solid rgba(255, 0, 0, 0.5)',
             color: 'white',
@@ -191,10 +194,11 @@ const LobbyPage = () => {
             <h2 style={{ marginTop: 0, marginBottom: '1rem' }}>Create New Game</h2>
 
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
-                Number of Players:
+              <label htmlFor={playerCountId} style={{ display: 'block', marginBottom: '0.5rem', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
+                Number of Players
               </label>
               <select
+                id={playerCountId}
                 value={playerCount}
                 onChange={(e) => setPlayerCount(Number(e.target.value))}
                 style={{
@@ -219,7 +223,7 @@ const LobbyPage = () => {
                 width: '100%',
                 padding: '0.75rem',
                 fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
-                background: loading ? '#666' : '#4CAF50',
+                background: loading ? '#666' : '#2E7D32',
                 color: 'white',
                 border: 'none',
                 borderRadius: '8px',
@@ -250,11 +254,12 @@ const LobbyPage = () => {
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
                   onClick={() => setActiveTab('available')}
+                  aria-pressed={activeTab === 'available'}
                   style={{
                     padding: '0.5rem 1rem',
-                    background: activeTab === 'available' ? 'rgba(255, 255, 255, 0.3)' : 'transparent',
-                    border: '1px solid rgba(255, 255, 255, 0.5)',
-                    color: 'white',
+                    background: activeTab === 'available' ? 'white' : 'transparent',
+                    border: '1px solid white',
+                    color: activeTab === 'available' ? 'var(--brand-accent)' : 'white',
                     borderRadius: '4px',
                     cursor: 'pointer',
                     fontWeight: activeTab === 'available' ? 'bold' : 'normal'
@@ -264,11 +269,12 @@ const LobbyPage = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('my-games')}
+                  aria-pressed={activeTab === 'my-games'}
                   style={{
                     padding: '0.5rem 1rem',
-                    background: activeTab === 'my-games' ? 'rgba(255, 255, 255, 0.3)' : 'transparent',
-                    border: '1px solid rgba(255, 255, 255, 0.5)',
-                    color: 'white',
+                    background: activeTab === 'my-games' ? 'white' : 'transparent',
+                    border: '1px solid white',
+                    color: activeTab === 'my-games' ? 'var(--brand-accent)' : 'white',
                     borderRadius: '4px',
                     cursor: 'pointer',
                     fontWeight: activeTab === 'my-games' ? 'bold' : 'normal'
@@ -282,7 +288,7 @@ const LobbyPage = () => {
                 disabled={loading}
                 style={{
                   padding: '0.4rem 0.75rem',
-                  background: 'rgba(255, 255, 255, 0.2)',
+                  background: 'rgba(0, 0, 0, 0.3)',
                   border: '1px solid white',
                   color: 'white',
                   borderRadius: '4px',
@@ -290,12 +296,12 @@ const LobbyPage = () => {
                   fontSize: 'clamp(0.8rem, 2vw, 1rem)'
                 }}
               >
-                {loading ? '...' : 'Refresh'}
+                {loading ? 'Refreshing...' : 'Refresh'}
               </button>
             </div>
 
             {/* Games List */}
-            <div style={{
+            <div aria-busy={loading} style={{
               maxHeight: 'clamp(200px, 40vh, 300px)',
               overflowY: 'auto',
               border: '1px solid rgba(255, 255, 255, 0.3)',
@@ -304,7 +310,7 @@ const LobbyPage = () => {
             }}>
               {activeTab === 'available' ? (
                 availableGames.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>
+                  <div style={{ textAlign: 'center' }}>
                     No games available. Create one to get started!
                   </div>
                 ) : (
@@ -320,15 +326,16 @@ const LobbyPage = () => {
                       }}>
                         <div>
                           <div><strong>Game {game.id}</strong></div>
-                          <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                          <div style={{ fontSize: '0.9rem' }}>
                             {game.playerCount}/{game.maxPlayers} players • {game.status}
                           </div>
                         </div>
                         <button
                           onClick={() => handleJoinGame(game)}
+                          aria-label={`Join game ${game.id}`}
                           style={{
                             padding: '0.5rem 1rem',
-                            background: '#2196F3',
+                            background: '#1565C0',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
@@ -343,7 +350,7 @@ const LobbyPage = () => {
                 )
               ) : (
                 myGames.length === 0 ? (
-                  <div style={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>
+                  <div style={{ textAlign: 'center' }}>
                     You haven't joined any games yet.
                   </div>
                 ) : (
@@ -359,15 +366,16 @@ const LobbyPage = () => {
                       }}>
                         <div>
                           <div><strong>Game {game.id}</strong></div>
-                          <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                          <div style={{ fontSize: '0.9rem' }}>
                             {game.playerCount}/{game.maxPlayers} players • {game.status}
                           </div>
                         </div>
                         <button
                           onClick={() => handleJoinGame(game)}
+                          aria-label={`${game.status === 'in-progress' ? 'Resume' : (game.status === 'waiting' ? 'Enter' : 'View')} game ${game.id}`}
                           style={{
                             padding: '0.5rem 1rem',
-                            background: game.status === 'in-progress' ? '#FF9800' : '#4CAF50',
+                            background: game.status === 'in-progress' ? '#B45309' : '#2E7D32',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
@@ -396,7 +404,7 @@ const LobbyPage = () => {
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
 

@@ -40,12 +40,12 @@ const GameUI = memo(() => {
 
       {/* Error Display */}
       {appError && (
-        <div style={{
+        <div role="alert" style={{
           position: 'absolute',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          background: 'rgba(255, 0, 0, 0.9)',
+          background: '#b91c1c',
           color: 'white',
           padding: '1rem',
           borderRadius: '8px',

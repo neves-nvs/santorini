@@ -1,13 +1,27 @@
+import { type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
+
+const linkButtonStyle: CSSProperties = {
+  flex: '1 1 140px',
+  maxWidth: '200px',
+  boxSizing: 'border-box',
+  fontSize: 'clamp(0.9rem, 3vw, 1.2rem)',
+  fontWeight: 500,
+  padding: '0.75rem 1.5rem',
+  border: '2px solid white',
+  borderRadius: '8px',
+  textAlign: 'center',
+  textDecoration: 'none'
+}
 
 const HomePage = () => {
   return (
-    <div className="page" style={{
+    <main className="page" style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'var(--brand-gradient)',
       color: 'white',
       padding: '1rem'
     }}>
@@ -27,7 +41,7 @@ const HomePage = () => {
         The Strategic Board Game in 3D
       </h2>
 
-      <nav style={{
+      <nav aria-label="Main" style={{
         display: 'flex',
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -36,32 +50,22 @@ const HomePage = () => {
         width: '100%',
         maxWidth: '500px'
       }}>
-        <Link to="/auth" style={{ flex: '1 1 140px', maxWidth: '200px' }}>
-          <button style={{
-            fontSize: 'clamp(0.9rem, 3vw, 1.2rem)',
-            padding: '0.75rem 1.5rem',
-            background: 'rgba(255, 255, 255, 0.2)',
-            border: '2px solid white',
-            color: 'white',
-            width: '100%'
-          }}>
-            Login / Register
-          </button>
+        <Link to="/auth" style={{
+          ...linkButtonStyle,
+          background: 'rgba(0, 0, 0, 0.3)',
+          color: 'white'
+        }}>
+          Login / Register
         </Link>
-        <Link to="/lobby" style={{ flex: '1 1 140px', maxWidth: '200px' }}>
-          <button style={{
-            fontSize: 'clamp(0.9rem, 3vw, 1.2rem)',
-            padding: '0.75rem 1.5rem',
-            background: 'rgba(255, 255, 255, 0.9)',
-            border: '2px solid white',
-            color: '#333',
-            width: '100%'
-          }}>
-            Game Lobby
-          </button>
+        <Link to="/lobby" style={{
+          ...linkButtonStyle,
+          background: 'rgba(255, 255, 255, 0.9)',
+          color: '#333'
+        }}>
+          Game Lobby
         </Link>
       </nav>
-    </div>
+    </main>
   )
 }
 
