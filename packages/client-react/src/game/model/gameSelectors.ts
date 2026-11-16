@@ -1,5 +1,4 @@
 import { useGameStore } from './gameStore'
-import type { BuildPosition } from './game'
 
 // Optimized selectors for R3F components to prevent unnecessary re-renders
 
@@ -81,55 +80,6 @@ export const useMovableWorkers = (currentPlayerId: number) =>
     return playerWorkers.filter(worker =>
       moveWorkerMoves.some(move => move.workerId === worker.workerId)
     )
-  })
-
-export const useValidPositions = (selectedWorkerId?: number) =>
-  useGameStore(state => {
-    const moves = state.currentPlayerMoves
-    const positions: Array<{
-      x: number
-      y: number
-      workerId: number
-      type: string
-      buildingLevel?: number
-      buildingType?: string
-      moveType?: string
-      serverMoveObject?: unknown
-    }> = []
-
-    if (!Array.isArray(moves)) return positions
-
-    for (const move of moves) {
-      // For placement phase, show all positions
-      if (move.type === 'place_worker') {
-        for (const pos of move.validPositions) {
-          positions.push({
-            x: pos.x,
-            y: pos.y,
-            workerId: move.workerId,
-            type: move.type
-          })
-        }
-      }
-      // For movement/building phase, only show positions for selected worker
-      else if (!selectedWorkerId || move.workerId === selectedWorkerId) {
-        for (const pos of move.validPositions) {
-          const posWithBuilding = pos as BuildPosition
-          positions.push({
-            x: pos.x,
-            y: pos.y,
-            workerId: move.workerId,
-            type: move.type,
-            buildingLevel: posWithBuilding.buildingLevel,
-            buildingType: posWithBuilding.buildingType,
-            moveType: posWithBuilding.moveType,
-            serverMoveObject: posWithBuilding.serverMoveObject
-          })
-        }
-      }
-    }
-
-    return positions
   })
 
 // Specific position validation

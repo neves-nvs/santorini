@@ -12,7 +12,9 @@ import {
 import { useGameStore } from '@/game/model/gameStore'
 import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '@/game/model/gameConstants'
 import { useRenderTracker } from '@/game/view/debug/performanceMonitor'
+import type { DebugState } from '@/game/model/debugState'
 import type { AvailableMove, BuildPosition, Move } from '@/game/model/game'
+import { validPositionsFor } from '@/game/model/validPositions'
 
 interface MoveSubmission {
   gameId: number
@@ -26,17 +28,8 @@ interface MoveSubmission {
   serverMoveObject?: Move
 }
 
-interface DebugState {
-  showAxis: boolean
-  showGrid: boolean
-  showWireframe: boolean
-  showStats: boolean
-  showBoundingBoxes: boolean
-  useSampleBoard: boolean
-}
-
 interface Board3DProps {
-  debugState?: DebugState
+  debugState?: Pick<DebugState, 'showAxis' | 'showBoundingBoxes' | 'useSampleBoard'>
   onCellClick?: (x: number, y: number) => void
   // The board is drawn inside the canvas, where React context is not available, so the caller shows the error
   onMoveError?: (message: string) => void
@@ -68,50 +61,12 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
   const selectedWorker = useSelectedWorker()
   const setSelectedWorker = useSetSelectedWorker()
 
-  // Get all current player moves and compute valid positions manually to avoid unstable selectors
   const currentPlayerMoves = useGameStore(state => state.currentPlayerMoves)
 
-  // Memoize valid positions calculation to prevent infinite re-renders
-  const validPositions = useMemo(() => {
-    const selectedWorkerId = selectedWorker?.workerId
-    const moves = currentPlayerMoves
-    const positions: Array<{
-      x: number
-      y: number
-      workerId: number
-      type: string
-    }> = []
-
-    if (!Array.isArray(moves)) return positions
-
-    for (const move of moves) {
-      // For placement phase, show all positions (no worker selection needed)
-      if (move.type === 'place_worker') {
-        for (const pos of move.validPositions) {
-          positions.push({
-            x: pos.x,
-            y: pos.y,
-            workerId: move.workerId,
-            type: move.type
-          })
-        }
-      }
-      // For movement/building phase, ONLY show positions for selected worker
-      // User must click a worker first to see available moves
-      else if (selectedWorkerId && move.workerId === selectedWorkerId) {
-        for (const pos of move.validPositions) {
-          positions.push({
-            x: pos.x,
-            y: pos.y,
-            workerId: move.workerId,
-            type: move.type
-          })
-        }
-      }
-    }
-
-    return positions
-  }, [currentPlayerMoves, selectedWorker?.workerId])
+  const validPositions = useMemo(
+    () => validPositionsFor(currentPlayerMoves, selectedWorker?.workerId),
+    [currentPlayerMoves, selectedWorker?.workerId]
+  )
 
   // Handle worker click for selection
   const handleWorkerClick = (workerId: number, playerId: number, x: number, y: number) => {

@@ -1,17 +1,7 @@
 import { useState, memo } from 'react'
 import type { CameraType } from '@/game/view/components/GameBoard'
+import type { DebugState } from '@/game/model/debugState'
 import type { AvailableMove, GameState } from '@/game/model/game'
-
-// Debug state interface
-export interface DebugState {
-  showAxis: boolean
-  showGrid: boolean
-  showWireframe: boolean
-  showStats: boolean
-  showBoundingBoxes: boolean
-  useSampleBoard: boolean
-  showPerformance: boolean
-}
 
 interface DebugMenuProps {
   debugState: DebugState

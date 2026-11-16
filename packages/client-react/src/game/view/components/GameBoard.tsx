@@ -4,21 +4,13 @@ import { OrbitControls, PerspectiveCamera, OrthographicCamera } from '@react-thr
 import { OrthographicCamera as OrthoImpl, PerspectiveCamera as PerspImpl } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import Board3D from './Board3D'
+import type { DebugState } from '@/game/model/debugState'
 import { useToast } from '@/shared/ui/useToast'
-
-interface DebugState {
-  showAxis: boolean
-  showGrid: boolean
-  showWireframe: boolean
-  showStats: boolean
-  showBoundingBoxes: boolean
-  useSampleBoard: boolean
-}
 
 export type CameraType = 'perspective' | 'orthographic'
 
 interface GameBoardProps {
-  debugState?: DebugState
+  debugState?: Pick<DebugState, 'showAxis' | 'showBoundingBoxes' | 'useSampleBoard'>
   onCellClick?: (x: number, y: number) => void
   cameraType?: CameraType
 }
