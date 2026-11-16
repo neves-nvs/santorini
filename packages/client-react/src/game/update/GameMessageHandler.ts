@@ -13,11 +13,11 @@
  * - Clear data flow: WS → Handler → Store → Components
  */
 
-import { useGameStore } from '@/store/gameStore'
-import { useAppStore } from '@/store/appStore'
-import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '@/types/game'
+import { useGameStore } from '@/game/model/gameStore'
+import { useAppStore } from '@/user/model/appStore'
+import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '@/game/model/game'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
-import { log, logError, logWarn } from '@/utils/log'
+import { log, logError, logWarn } from '@/shared/utils/log'
 
 // Type guard for PlayerGameView (has isCurrentPlayer field)
 function isPlayerGameView(view: GameStateUpdatePayload['state']): view is PlayerGameView {

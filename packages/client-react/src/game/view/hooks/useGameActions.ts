@@ -10,10 +10,10 @@
  */
 
 import { useCallback, useRef } from 'react'
-import { apiService } from '@/services/ApiService'
-import { webSocketClient } from '@/services/WebSocketClient'
+import { apiService } from '@/shared/services/request'
+import { webSocketClient } from '@/game/services/WebSocketClient'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
-import { useSetGameState } from '@/store/gameSelectors'
+import { useSetGameState } from '@/game/model/gameSelectors'
 
 export function useGameActions() {
   const setGameState = useSetGameState()

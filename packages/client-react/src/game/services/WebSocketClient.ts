@@ -13,9 +13,9 @@
  */
 
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
-import { apiService } from './ApiService'
-import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from './GameMessageHandler'
-import { RECONNECTION_DELAY } from '@/constants/gameConstants'
+import { apiService } from '@/shared/services/request'
+import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from '@/game/update/GameMessageHandler'
+import { RECONNECTION_DELAY } from '@/game/model/gameConstants'
 
 interface WebSocketMessage {
   type: string

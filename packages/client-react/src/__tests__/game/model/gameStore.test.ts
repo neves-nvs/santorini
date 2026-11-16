@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useGameStore } from '@/store/gameStore'
-import type { AvailableMove, BoardView, GameState } from '@/types/game'
+import { useGameStore } from '@/game/model/gameStore'
+import type { AvailableMove, BoardView, GameState } from '@/game/model/game'
 
 const emptyBoard = (): BoardView => ({
   cells: Array.from({ length: 5 }, () =>

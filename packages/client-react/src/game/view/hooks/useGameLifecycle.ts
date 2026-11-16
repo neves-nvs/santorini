@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
-import { useGameState, useIsMyTurn } from '@/store/gameSelectors'
+import { useGameState, useIsMyTurn } from '@/game/model/gameSelectors'
 import { 
   GameLifecycle, 
   mapToGameLifecycle, 
   getGameStatusMessage, 
   getUIComponents 
-} from '@/types/gameLifecycle'
+} from '@/game/model/gameLifecycle'
 
 /**
  * Hook that provides clean game lifecycle state management

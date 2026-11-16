@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
-import { useGameState, useGameId } from '@/store/gameSelectors'
-import { useAppStore } from '@/store/appStore'
-import { webSocketClient } from '@/services/WebSocketClient'
+import { useGameState, useGameId } from '@/game/model/gameSelectors'
+import { useAppStore } from '@/user/model/appStore'
+import { webSocketClient } from '@/game/services/WebSocketClient'
 
 /**
  * Hook to manage player ready state

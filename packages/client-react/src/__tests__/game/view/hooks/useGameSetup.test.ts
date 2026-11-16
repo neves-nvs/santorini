@@ -1,18 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { useGameSetup } from '@/hooks/useGameSetup'
+import { useGameSetup } from '@/game/view/hooks/useGameSetup'
 
 const connection = vi.hoisted(() => ({ isConnected: true }))
 
-vi.mock('@/hooks/useGameConnection', () => ({
+vi.mock('@/game/view/hooks/useGameConnection', () => ({
   useGameConnection: () => ({ isConnected: connection.isConnected, isConnecting: false }),
 }))
 
-vi.mock('@/services/ApiService', () => ({
+vi.mock('@/shared/services/request', () => ({
   apiService: { getGame: vi.fn(async () => ({ gameId: 5 })) },
 }))
 
-vi.mock('@/services/WebSocketClient', () => ({
+vi.mock('@/game/services/WebSocketClient', () => ({
   webSocketClient: {
     joinGame: vi.fn(),
     subscribeToGame: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('@/services/WebSocketClient', () => ({
   },
 }))
 
-const { webSocketClient } = await import('@/services/WebSocketClient')
+const { webSocketClient } = await import('@/game/services/WebSocketClient')
 
 describe('useGameSetup', () => {
   beforeEach(() => {

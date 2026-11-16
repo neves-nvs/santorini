@@ -1,7 +1,7 @@
 import ReactThreeTestRenderer from '@react-three/test-renderer'
 import { describe, expect, it, vi } from 'vitest'
-import { BoundingBox, Cell, Worker } from '@/components/game/GamePieces'
-import { PLAYER_COLORS } from '@/constants/gameConstants'
+import { BoundingBox, Cell, Worker } from '@/game/view/components/GamePieces'
+import { PLAYER_COLORS } from '@/game/model/gameConstants'
 
 type Renderer = Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>
 

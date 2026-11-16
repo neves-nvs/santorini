@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAppStore } from '@/store/appStore'
-import { apiService } from '@/services/ApiService'
+import { useAppStore } from '@/user/model/appStore'
+import { apiService } from '@/shared/services/request'
 import type { GameSummary } from '@santorini/shared'
 
 type GameTab = 'available' | 'my-games'

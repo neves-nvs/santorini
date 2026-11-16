@@ -1,13 +1,13 @@
 import ReactThreeTestRenderer from '@react-three/test-renderer'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import Board3D from '@/components/game/Board3D'
-import { gridToWorldCoords } from '@/components/game/board-types'
-import { useGameStore } from '@/store/gameStore'
-import { webSocketClient } from '@/services/WebSocketClient'
-import type { BoardCell } from '@/store/gameStore'
-import type { AvailableMove, GameState } from '@/types/game'
+import Board3D from '@/game/view/components/Board3D'
+import { gridToWorldCoords } from '@/game/model/board-types'
+import { useGameStore } from '@/game/model/gameStore'
+import { webSocketClient } from '@/game/services/WebSocketClient'
+import type { BoardCell } from '@/game/model/gameStore'
+import type { AvailableMove, GameState } from '@/game/model/game'
 
-vi.mock('@/services/WebSocketClient', () => ({ webSocketClient: { send: vi.fn() } }))
+vi.mock('@/game/services/WebSocketClient', () => ({ webSocketClient: { send: vi.fn() } }))
 
 type Renderer = Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>
 type SceneNode = Renderer['scene']

@@ -1,16 +1,16 @@
 import React, { useMemo } from 'react'
 import DebugAxis from './DebugAxis'
 import { BoardBase, Block, Worker, Cell, BoundingBox, MovePreview, BuildingPreview } from './GamePieces'
-import { BoardState, createEmptyBoard, gridToWorldCoords } from './board-types'
-import { webSocketClient } from '@/services/WebSocketClient'
+import { BoardState, createEmptyBoard, gridToWorldCoords } from '@/game/model/board-types'
+import { webSocketClient } from '@/game/services/WebSocketClient'
 import {
   useSelectedWorker,
   useSetSelectedWorker
-} from '@/store/gameSelectors'
-import { useGameStore } from '@/store/gameStore'
-import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '@/constants/gameConstants'
-import { useRenderTracker } from '@/utils/performanceMonitor'
-import type { AvailableMove, BuildPosition, Move } from '@/types/game'
+} from '@/game/model/gameSelectors'
+import { useGameStore } from '@/game/model/gameStore'
+import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '@/game/model/gameConstants'
+import { useRenderTracker } from '@/shared/utils/performanceMonitor'
+import type { AvailableMove, BuildPosition, Move } from '@/game/model/game'
 
 interface MoveSubmission {
   gameId: number

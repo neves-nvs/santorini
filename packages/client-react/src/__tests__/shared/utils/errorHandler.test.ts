@@ -5,7 +5,7 @@ import {
   ErrorHandler,
   ERROR_MESSAGES,
   withErrorHandling,
-} from '@/utils/errorHandler'
+} from '@/shared/utils/errorHandler'
 
 describe('GameError', () => {
   it('should create a GameError with all properties', () => {

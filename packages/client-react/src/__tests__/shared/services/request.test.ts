@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { apiService } from '@/services/ApiService'
-import { ErrorType, GameError } from '@/utils/errorHandler'
+import { apiService } from '@/shared/services/request'
+import { ErrorType, GameError } from '@/shared/utils/errorHandler'
 import type {
   CreateGameResponse,
   CurrentUserResponse,

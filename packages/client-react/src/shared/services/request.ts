@@ -1,5 +1,5 @@
-import { ErrorHandler, ErrorType } from '@/utils/errorHandler'
-import { logWarn } from '@/utils/log'
+import { ErrorHandler, ErrorType } from '@/shared/utils/errorHandler'
+import { logWarn } from '@/shared/utils/log'
 import type {
   CreateGameRequest,
   CreateGameResponse,
