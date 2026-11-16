@@ -64,19 +64,20 @@ packages/server/src/
 packages/client-react/src/
 ├── main.tsx                # Entry point; registers the update layer with the WebSocket client
 ├── App.tsx                 # Root component with routing
-├── pages/                  # App shell: HomePage, LobbyPage, NotFoundPage (they compose both domains)
+├── pages/                  # App shell: LobbyPage (needs both game and user)
 ├── game/                   # The board game
 │   ├── model/              # gameStore (Zustand), selectors, types, constants, board helpers
 │   ├── update/             # GameMessageHandler: server messages -> model changes
 │   ├── services/           # WebSocketClient, gameApi (games, WebSocket ticket)
-│   └── view/               # pages/GamePage, components/ (Board3D, pieces, lobby, status), hooks/
+│   └── view/               # pages/GamePage, components/ (Board3D, pieces, lobby, status), hooks/, debug/ (menu, axes, performance)
 ├── user/                   # Who the player is
 │   ├── model/              # appStore (current user)
 │   ├── services/           # userApi (login, logout, session check, users)
 │   └── view/               # AuthPage
 ├── shared/                 # No domain
+│   ├── pages/              # HomePage, NotFoundPage
 │   ├── ui/                 # ErrorBoundary, Toast, LoadingStates
-│   ├── utils/              # errorHandler, log, performanceMonitor
+│   ├── utils/              # errorHandler, log
 │   └── services/           # request: fetch and error handling shared by the API modules
 └── debug/                  # Developer test panels
 ```
