@@ -128,7 +128,7 @@ export class WsRouter {
       status: g.status,
       playerCount: g.players.size,
       maxPlayers: g.maxPlayers,
-      createdAt: g.createdAt,
+      createdAt: g.createdAt.toISOString(),
     }));
 
     connection.send({ type: WS_MESSAGE_TYPES.GAMES_LIST, payload: { games: gamesList } });

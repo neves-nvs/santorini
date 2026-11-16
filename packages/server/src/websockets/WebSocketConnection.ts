@@ -1,4 +1,5 @@
-import { Connection, OutgoingMessage } from "../game/infra/Connection.ts";
+import { Connection } from "../game/infra/Connection.ts";
+import { ServerMessage } from "@santorini/shared";
 import { User } from "../model.ts";
 import WebSocket from "ws";
 
@@ -12,7 +13,7 @@ export class WebSocketConnection implements Connection {
     return this.socket.readyState === WebSocket.OPEN;
   }
 
-  send(message: OutgoingMessage): void {
+  send(message: ServerMessage): void {
     this.socket.send(JSON.stringify(message));
   }
 }

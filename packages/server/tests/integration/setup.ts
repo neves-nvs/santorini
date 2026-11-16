@@ -5,6 +5,8 @@ import { FileMigrationProvider, Migrator } from "kysely/migration";
 import { Kysely, PostgresDialect } from "kysely";
 
 import { ConnectionInfo } from "./globalSetup.ts";
+import { WebSocketConnection } from "../../src/websockets/WebSocketConnection.ts";
+import { checkAgainstAsyncApi } from "./helper/asyncApiContract.ts";
 import { fileURLToPath } from "url";
 import { promises as fs } from "fs";
 import { randomUUID } from "crypto";
@@ -106,3 +108,16 @@ async function setup() {
 }
 
 beforeAll(setup);
+
+// Contract: every message the real server sends must be described by packages/shared/api/asyncapi.yaml.
+const contractViolations: string[] = [];
+const sendOnSocket = WebSocketConnection.prototype.send;
+WebSocketConnection.prototype.send = function (message) {
+  const violation = checkAgainstAsyncApi(JSON.parse(JSON.stringify(message)));
+  if (violation) contractViolations.push(violation);
+  sendOnSocket.call(this, message);
+};
+
+afterEach(() => {
+  expect(contractViolations.splice(0)).toEqual([]);
+});

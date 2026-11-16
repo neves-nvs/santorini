@@ -1,20 +1,21 @@
-import { Connection, OutgoingMessage } from "../../../../src/game/infra/Connection.ts";
+import { Connection } from "../../../../src/game/infra/Connection.ts";
 import { ConnectionManager } from "../../../../src/game/infra/ConnectionManager.ts";
 import { Game } from "../../../../src/game/domain/Game.ts";
 import { GameBroadcaster } from "../../../../src/game/application/GameBroadcaster.ts";
 import { Player } from "../../../../src/game/domain/Player.ts";
+import { ServerMessage } from "@santorini/shared";
 import { User } from "../../../../src/model.ts";
 
 class RecordingConnection implements Connection {
   readonly isOpen = true;
-  readonly sent: OutgoingMessage[] = [];
+  readonly sent: ServerMessage[] = [];
   readonly user: User;
 
   constructor(userId: number) {
     this.user = { id: userId, username: `user-${userId}` } as User;
   }
 
-  send(message: OutgoingMessage): void {
+  send(message: ServerMessage): void {
     this.sent.push(message);
   }
 }

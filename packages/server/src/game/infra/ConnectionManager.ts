@@ -1,4 +1,5 @@
-import { Connection, OutgoingMessage } from "./Connection.ts";
+import { Connection } from "./Connection.ts";
+import { ServerMessage } from "@santorini/shared";
 
 import logger from "../../logger.ts";
 
@@ -157,7 +158,7 @@ export class ConnectionManager {
   /**
    * Broadcast a message to all players in a game
    */
-  broadcastToGame(gameId: number, message: OutgoingMessage): void {
+  broadcastToGame(gameId: number, message: ServerMessage): void {
     const gameConnection = this.gameConnections.get(gameId);
     if (!gameConnection || gameConnection.size === 0) {
       logger.warn(`No connections found for game ${gameId} - cannot broadcast ${message.type}`);
@@ -179,7 +180,7 @@ export class ConnectionManager {
   /**
    * Send a message to a specific player in a game
    */
-  sendToPlayer(gameId: number, userId: number, message: OutgoingMessage): void {
+  sendToPlayer(gameId: number, userId: number, message: ServerMessage): void {
     const gameUsers = this.userGameConnections.get(gameId);
     if (!gameUsers) {
       logger.warn(`No game connection found for game ${gameId} - cannot send ${message.type} to player ${userId}`);
