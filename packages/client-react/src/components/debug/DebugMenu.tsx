@@ -3,7 +3,7 @@ import type { CameraType } from '@/components/game/GameBoard'
 import type { AvailableMove, GameState } from '@/types/game'
 
 // Debug state interface
-export interface DebugState {
+interface DebugState {
   showAxis: boolean
   showGrid: boolean
   showWireframe: boolean

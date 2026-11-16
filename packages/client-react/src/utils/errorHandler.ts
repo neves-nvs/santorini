@@ -1,6 +1,8 @@
 // Centralized Error Handling System
 // Provides consistent error handling patterns across the application
 
+import { logError } from './log'
+
 export enum ErrorType {
   NETWORK = 'NETWORK',
   VALIDATION = 'VALIDATION', 
@@ -8,14 +10,6 @@ export enum ErrorType {
   GAME_LOGIC = 'GAME_LOGIC',
   WEBSOCKET = 'WEBSOCKET',
   UNKNOWN = 'UNKNOWN'
-}
-
-export interface AppError {
-  type: ErrorType
-  message: string
-  code?: string | number
-  details?: unknown
-  timestamp: Date
 }
 
 export class GameError extends Error {
@@ -142,14 +136,12 @@ export class ErrorHandler {
     const contextStr = context ? `[${context}] ` : ''
     
     if (error instanceof GameError) {
-      console.error(`${timestamp} ${contextStr}GameError [${error.type}]:`, {
-        message: error.message,
+      logError(`${timestamp} ${contextStr}GameError [${error.type}]: ${error.message}`, {
         code: error.code,
-        details: error.details,
         stack: error.stack
       })
     } else {
-      console.error(`${timestamp} ${contextStr}Error:`, error)
+      logError(`${timestamp} ${contextStr}Error:`, error)
     }
   }
 

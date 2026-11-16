@@ -16,13 +16,12 @@ import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { apiService } from './ApiService'
 import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from './GameMessageHandler'
 import { RECONNECTION_DELAY } from '@/constants/gameConstants'
+import { logError, logWarn } from '@/utils/log'
 
 interface WebSocketMessage {
   type: string
   payload: unknown
 }
-
-export type MessageHandler = (type: string, payload: unknown) => void
 
 function getWebSocketUrl(): string {
   const envUrl = import.meta.env.VITE_WS_URL
@@ -48,7 +47,6 @@ class WebSocketClient {
    * connection asks the server for a one-time ticket first.
    */
   async connect(): Promise<void> {
-    console.log('WebSocketClient.connect called')
     this.shouldReconnect = true
     await this.openSocket()
   }
@@ -57,7 +55,6 @@ class WebSocketClient {
    * Disconnect and cleanup
    */
   disconnect(): void {
-    console.log('WebSocketClient disconnecting')
     this.shouldReconnect = false
     this.reconnectAttempts = 0
 
@@ -82,12 +79,10 @@ class WebSocketClient {
    */
   send(type: string, payload: unknown): void {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket not connected, cannot send:', type)
       throw new Error(`WebSocket not connected. State: ${this.socket?.readyState ?? 'null'}`)
     }
 
     this.socket.send(JSON.stringify({ type, payload }))
-    console.log('Sent:', type)
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -96,25 +91,19 @@ class WebSocketClient {
 
   subscribeToGame(gameId: string): void {
     if (!this.isConnected()) {
-      console.warn('WebSocket not ready for subscription, retrying...')
+      logWarn('WebSocket not ready for subscription, retrying...')
       this.retryWhenReady(() => this.subscribeToGame(gameId))
       return
     }
-    console.log('Subscribing to game:', gameId)
     this.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: parseInt(gameId) })
-  }
-
-  unsubscribeFromGame(gameId: string): void {
-    console.log('Unsubscribe requested (cleanup on disconnect):', gameId)
   }
 
   joinGame(gameId: string): void {
     if (!this.isConnected()) {
-      console.warn('WebSocket not ready for join, retrying...')
+      logWarn('WebSocket not ready for join, retrying...')
       this.retryWhenReady(() => this.joinGame(gameId))
       return
     }
-    console.log('Joining game:', gameId)
     this.send(WS_MESSAGE_TYPES.JOIN_GAME, { gameId: parseInt(gameId) })
   }
 
@@ -124,11 +113,10 @@ class WebSocketClient {
 
   setReady(gameId: string, isReady: boolean): void {
     if (!this.isConnected()) {
-      console.warn('WebSocket not ready for setReady, retrying...')
+      logWarn('WebSocket not ready for setReady, retrying...')
       this.retryWhenReady(() => this.setReady(gameId, isReady))
       return
     }
-    console.log('Setting ready status:', { gameId, isReady })
     this.send(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady })
   }
 
@@ -142,7 +130,6 @@ class WebSocketClient {
 
   private async openSocket(): Promise<void> {
     if (this.isOpenOrOpening()) {
-      console.log('WebSocket already connecting/connected')
       return
     }
 
@@ -150,7 +137,7 @@ class WebSocketClient {
     try {
       ticket = await apiService.createWebSocketTicket()
     } catch (error) {
-      console.error('Failed to get a WebSocket ticket:', error)
+      logError('Failed to get a WebSocket ticket:', error)
       this.attemptReconnect()
       return
     }
@@ -158,11 +145,9 @@ class WebSocketClient {
     // disconnect() may have run, or another call may have opened the socket, while the ticket was on its way
     if (!this.shouldReconnect || this.isOpenOrOpening()) return
 
-    console.log('Creating WebSocket connection')
     this.socket = new WebSocket(`${this.serverAddress}?ticket=${ticket}`)
 
     this.socket.onopen = () => {
-      console.log('WebSocket connected')
       this.reconnectAttempts = 0
       handleConnectionChange(true)
     }
@@ -172,29 +157,29 @@ class WebSocketClient {
         const message: WebSocketMessage = JSON.parse(event.data)
         handleWebSocketMessage(message.type, message.payload)
       } catch (error) {
-        console.error('Failed to parse WebSocket message:', error)
+        logError('Failed to parse WebSocket message:', error)
       }
     }
 
-    this.socket.onclose = (event) => {
-      console.log('WebSocket closed:', event.code, event.reason)
+    this.socket.onclose = () => {
       handleConnectionChange(false)
       this.attemptReconnect()
     }
 
-    this.socket.onerror = (error) => {
-      console.error('WebSocket error:', error)
+    this.socket.onerror = () => {
+      logError('WebSocket error')
     }
   }
 
   private attemptReconnect(): void {
-    if (!this.shouldReconnect || this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Reconnecting is off or the maximum number of attempts was reached')
+    if (!this.shouldReconnect) return
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      logError('Giving up reconnecting the WebSocket after the maximum number of attempts')
       return
     }
 
     this.reconnectAttempts++
-    console.log(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
 
     setTimeout(() => {
       void this.openSocket()
@@ -203,7 +188,7 @@ class WebSocketClient {
 
   private retryWhenReady(action: () => void, attempts = 0): void {
     if (attempts >= 5) {
-      console.error('Max retry attempts reached')
+      logError('Max retry attempts reached')
       return
     }
 
@@ -248,10 +233,6 @@ export const webSocketClient = {
 
   subscribeToGame(gameId: string): void {
     this.getInstance().subscribeToGame(gameId)
-  },
-
-  unsubscribeFromGame(gameId: string): void {
-    this.getInstance().unsubscribeFromGame(gameId)
   },
 
   joinGame(gameId: string): void {
