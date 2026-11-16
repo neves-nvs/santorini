@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface ToastProps {
   message: string
@@ -13,6 +14,7 @@ const Toast: React.FC<ToastProps> = ({
   duration = 4000, 
   onClose 
 }) => {
+  const { t } = useTranslation()
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
@@ -69,7 +71,7 @@ const Toast: React.FC<ToastProps> = ({
       <span aria-hidden="true" style={{ fontSize: '16px' }}>{getIcon()}</span>
       <span>{message}</span>
       <button
-        aria-label="Dismiss notification"
+        aria-label={t('toast.dismiss')}
         onClick={() => {
           setIsVisible(false)
           setTimeout(onClose, 300)

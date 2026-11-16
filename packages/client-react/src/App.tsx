@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { ToastProvider } from './shared/ui/ToastContext'
 import { type ReactNode, lazy, Suspense, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAppStore } from './user/model/appStore'
 import { userApi } from './user/services/userApi'
 import HomePage from './shared/pages/HomePage'
@@ -8,30 +9,35 @@ import AuthPage from './user/view/AuthPage'
 import LobbyPage from './pages/LobbyPage'
 import NotFoundPage from './shared/pages/NotFoundPage'
 import { ErrorBoundary } from './shared/ui/ErrorBoundary'
+import { LanguageSwitcher } from './shared/ui/LanguageSwitcher'
 import './App.css'
 
 const GamePage = lazy(() => import('./game/view/pages/GamePage'))
 
-const LoadingScreen = () => (
-  <div role="status" style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    color: '#333',
-    zIndex: 9999
-  }}>
-    <div style={{ textAlign: 'center' }}>
-      <h3>Loading...</h3>
-      <p>Initializing application</p>
+const LoadingScreen = () => {
+  const { t } = useTranslation()
+
+  return (
+    <div role="status" style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      color: '#333',
+      zIndex: 9999
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <h3>{t('app.loading.title')}</h3>
+        <p>{t('app.loading.status')}</p>
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 const RequireAuth = ({ children }: { children: ReactNode }) => {
   const username = useAppStore((s) => s.username)
@@ -84,6 +90,7 @@ function App() {
         <Router>
           <div className="app">
             <AppRoutes />
+            <LanguageSwitcher />
           </div>
         </Router>
       </ToastProvider>

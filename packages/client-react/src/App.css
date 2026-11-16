@@ -62,3 +62,18 @@
   bottom: 0;
   right: 0;
 }
+
+.language-switcher {
+  position: fixed;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #333;
+  font-size: 0.875rem;
+}

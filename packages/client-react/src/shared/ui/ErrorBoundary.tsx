@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react'
+import { i18n } from '@/shared/i18n'
 import { ErrorHandler, ErrorType } from '@/shared/utils/errorHandler'
 
 interface Props {
@@ -64,10 +65,10 @@ export class ErrorBoundary extends Component<Props, State> {
           backgroundColor: '#fff5f5',
           color: '#cc0000'
         }}>
-          <h1>Something went wrong</h1>
-          <p>An unexpected error occurred in the game interface.</p>
+          <h1>{i18n.t('errorBoundary.title')}</h1>
+          <p>{i18n.t('errorBoundary.message')}</p>
           <details style={{ marginTop: '10px' }}>
-            <summary>Error Details</summary>
+            <summary>{i18n.t('errorBoundary.details')}</summary>
             <pre style={{ 
               marginTop: '10px', 
               padding: '10px', 
@@ -93,7 +94,7 @@ export class ErrorBoundary extends Component<Props, State> {
               cursor: 'pointer'
             }}
           >
-            Reload Page
+            {i18n.t('errorBoundary.reload')}
           </button>
         </div>
       )

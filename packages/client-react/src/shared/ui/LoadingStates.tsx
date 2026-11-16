@@ -1,7 +1,9 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 // Skeleton loader for the game board
 export const BoardSkeleton: React.FC = () => {
+  const { t } = useTranslation()
   return (
     <div role="status" style={{
       width: '100%',
@@ -42,7 +44,7 @@ export const BoardSkeleton: React.FC = () => {
         fontSize: '14px',
         fontWeight: 'bold'
       }}>
-        Loading game board...
+        {t('loading.board')}
       </div>
 
       <style>{`
@@ -87,6 +89,7 @@ export const ConnectionStatus: React.FC<{
   isConnected: boolean
   isConnecting: boolean 
 }> = ({ isConnected, isConnecting }) => {
+  const { t } = useTranslation()
   if (isConnecting) {
     return (
       <div role="status" style={{
@@ -100,7 +103,7 @@ export const ConnectionStatus: React.FC<{
         fontSize: '12px'
       }}>
         <LoadingSpinner size={16} color="#856404" />
-        Connecting to game server...
+        {t('loading.connecting')}
       </div>
     )
   }
@@ -123,7 +126,7 @@ export const ConnectionStatus: React.FC<{
           backgroundColor: '#dc3545',
           borderRadius: '50%'
         }} />
-        Disconnected from server
+        {t('loading.disconnected')}
       </div>
     )
   }
@@ -145,7 +148,7 @@ export const ConnectionStatus: React.FC<{
         backgroundColor: '#28a745',
         borderRadius: '50%'
       }} />
-      Connected
+      {t('loading.connected')}
     </div>
   )
 }
@@ -155,9 +158,10 @@ export const GameLoadingOverlay: React.FC<{
   message?: string
   progress?: number 
 }> = ({ 
-  message = 'Loading game...', 
+  message, 
   progress 
 }) => {
+  const { t } = useTranslation()
   return (
     <div role="status" style={{
       position: 'absolute',
@@ -179,7 +183,7 @@ export const GameLoadingOverlay: React.FC<{
         fontWeight: 'bold',
         color: '#333'
       }}>
-        {message}
+        {message ?? t('loading.game')}
       </div>
       
       {progress !== undefined && (

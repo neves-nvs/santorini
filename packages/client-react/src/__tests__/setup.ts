@@ -1,6 +1,10 @@
 import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom/vitest'
+import { i18nReady } from '@/i18n'
+
+// Components render in the source language (English) unless a test switches it
+await i18nReady
 
 // STL files are not loaded in tests: every useLoader call returns a box
 vi.mock('@react-three/fiber', async () => {

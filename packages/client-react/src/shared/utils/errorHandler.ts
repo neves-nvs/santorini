@@ -1,5 +1,6 @@
 // Centralized Error Handling System
 // Provides consistent error handling patterns across the application
+import { i18n } from '@/shared/i18n'
 
 export enum ErrorType {
   NETWORK = 'NETWORK',
@@ -34,37 +35,6 @@ export class GameError extends Error {
   }
 }
 
-// Error message templates for consistency
-export const ERROR_MESSAGES = {
-  NETWORK: {
-    CONNECTION_FAILED: 'Failed to connect to server. Please check your internet connection.',
-    REQUEST_TIMEOUT: 'Request timed out. Please try again.',
-    SERVER_ERROR: 'Server error occurred. Please try again later.',
-    OFFLINE: 'You appear to be offline. Please check your connection.'
-  },
-  VALIDATION: {
-    INVALID_MOVE: 'Invalid move. Please select a valid position.',
-    INVALID_INPUT: 'Invalid input provided.',
-    MISSING_REQUIRED: 'Required information is missing.'
-  },
-  AUTHENTICATION: {
-    TOKEN_EXPIRED: 'Your session has expired. Please log in again.',
-    UNAUTHORIZED: 'You are not authorized to perform this action.',
-    LOGIN_FAILED: 'Login failed. Please check your credentials.'
-  },
-  GAME_LOGIC: {
-    NOT_YOUR_TURN: 'It is not your turn to move.',
-    GAME_NOT_FOUND: 'Game not found or no longer available.',
-    INVALID_GAME_STATE: 'Invalid game state detected.',
-    MOVE_REJECTED: 'Move was rejected by the server.'
-  },
-  WEBSOCKET: {
-    CONNECTION_LOST: 'Connection to game server lost. Attempting to reconnect...',
-    RECONNECTION_FAILED: 'Failed to reconnect to game server.',
-    MESSAGE_FAILED: 'Failed to send message to server.'
-  }
-} as const
-
 // Error handling utilities
 interface HttpErrorBody {
   message?: string
@@ -93,7 +63,7 @@ export class ErrorHandler {
    * Handle HTTP response errors consistently
    */
   static async handleHttpError(response: Response): Promise<GameError> {
-    let errorMessage = 'Unknown server error'
+    let errorMessage = i18n.t('errors.unknownServer')
     let errorDetails: HttpErrorBody | null = null
 
     try {
@@ -129,7 +99,7 @@ export class ErrorHandler {
   static handleWebSocketError(error: Event | Error): GameError {
     const message = error instanceof Error 
       ? error.message 
-      : ERROR_MESSAGES.WEBSOCKET.CONNECTION_LOST
+      : i18n.t('errors.connectionLost')
 
     return new GameError(ErrorType.WEBSOCKET, message, undefined, error)
   }
@@ -162,7 +132,7 @@ export class ErrorHandler {
     }
     
     // Fallback for generic errors
-    return 'An unexpected error occurred. Please try again.'
+    return i18n.t('errors.unexpected')
   }
 }
 

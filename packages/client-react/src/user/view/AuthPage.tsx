@@ -1,9 +1,11 @@
 import { useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 import { userApi } from '@/user/services/userApi'
 import { useAppStore } from '@/user/model/appStore'
 
 const AuthPage = () => {
+  const { t } = useTranslation('user')
   const [isLogin, setIsLogin] = useState(true)
   const [usernameInput, setUsernameInput] = useState('')
   const [password, setPassword] = useState('')
@@ -44,7 +46,7 @@ const AuthPage = () => {
       }
     } catch (err) {
       console.error('Auth error:', err)
-      setError(err instanceof Error ? err.message : 'Authentication failed')
+      setError(err instanceof Error ? err.message : t('auth.failed'))
     } finally {
       setLoading(false)
     }
@@ -72,7 +74,7 @@ const AuthPage = () => {
           marginBottom: '2rem',
           color: '#333'
         }}>
-          {isLogin ? 'Login' : 'Register'}
+          {isLogin ? t('auth.login') : t('auth.register')}
         </h1>
         
         <form onSubmit={handleSubmit}>
@@ -91,7 +93,7 @@ const AuthPage = () => {
 
           <div style={{ marginBottom: '1.5rem' }}>
             <label htmlFor={usernameId} style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
-              Username
+              {t('auth.username')}
             </label>
             <input
               id={usernameId}
@@ -115,7 +117,7 @@ const AuthPage = () => {
 
           <div style={{ marginBottom: '2rem' }}>
             <label htmlFor={passwordId} style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
-              Password
+              {t('auth.password')}
             </label>
             <input
               id={passwordId}
@@ -152,7 +154,7 @@ const AuthPage = () => {
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
-            {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Register')}
+            {loading ? t('auth.submitting') : (isLogin ? t('auth.login') : t('auth.register'))}
           </button>
         </form>
         
@@ -168,13 +170,13 @@ const AuthPage = () => {
               marginBottom: '1rem'
             }}
           >
-            {isLogin ? 'Need an account? Register' : 'Have an account? Login'}
+            {isLogin ? t('auth.switchToRegister') : t('auth.switchToLogin')}
           </button>
         </div>
         
         <div style={{ textAlign: 'center' }}>
           <Link to="/" style={{ color: 'var(--brand-accent)', textDecoration: 'underline' }}>
-            ← Back to Home
+            {t('auth.backHome')}
           </Link>
         </div>
       </div>

@@ -1,0 +1,47 @@
+{
+  "app": {
+    "name": "Santorini",
+    "title": "Santorini - Board Game",
+    "description": "Play Santorini online: the strategic board game of building towers, in 3D, with friends.",
+    "loading": {
+      "title": "Loading...",
+      "status": "Initializing application"
+    }
+  },
+  "home": {
+    "tagline": "The Strategic Board Game in 3D",
+    "navLabel": "Main",
+    "login": "Login / Register",
+    "lobby": "Game Lobby"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "message": "There is nothing at this address.",
+    "back": "Back to Home"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "message": "An unexpected error occurred in the game interface.",
+    "details": "Error Details",
+    "reload": "Reload Page"
+  },
+  "toast": {
+    "dismiss": "Dismiss notification"
+  },
+  "loading": {
+    "board": "Loading game board...",
+    "game": "Loading game...",
+    "connecting": "Connecting to game server...",
+    "disconnected": "Disconnected from server",
+    "connected": "Connected"
+  },
+  "errors": {
+    "unknownServer": "Unknown server error",
+    "connectionLost": "Connection to game server lost. Attempting to reconnect...",
+    "unexpected": "An unexpected error occurred. Please try again."
+  },
+  "language": {
+    "label": "Language",
+    "pseudo": "Pseudo-locale (development)"
+  }
+}

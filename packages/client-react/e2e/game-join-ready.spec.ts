@@ -17,7 +17,7 @@ async function createGame(page: Page, playerCount: number = 2): Promise<string> 
   await page.goto('/lobby')
   
   // Select player count
-  await page.locator('select').selectOption(playerCount.toString())
+  await page.getByLabel('Number of Players').selectOption(playerCount.toString())
   
   // Click create game
   await page.getByRole('button', { name: /create game/i }).click()

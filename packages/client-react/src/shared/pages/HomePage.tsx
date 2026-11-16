@@ -1,4 +1,5 @@
 import { type CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 const linkButtonStyle: CSSProperties = {
@@ -15,6 +16,7 @@ const linkButtonStyle: CSSProperties = {
 }
 
 const HomePage = () => {
+  const { t } = useTranslation()
   return (
     <main className="page" style={{
       display: 'flex',
@@ -30,7 +32,7 @@ const HomePage = () => {
         marginBottom: '1rem',
         textAlign: 'center'
       }}>
-        Santorini
+        {t('app.name')}
       </h1>
       <h2 style={{
         fontSize: 'clamp(1rem, 4vw, 1.5rem)',
@@ -38,10 +40,10 @@ const HomePage = () => {
         textAlign: 'center',
         padding: '0 1rem'
       }}>
-        The Strategic Board Game in 3D
+        {t('home.tagline')}
       </h2>
 
-      <nav aria-label="Main" style={{
+      <nav aria-label={t('home.navLabel')} style={{
         display: 'flex',
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -55,14 +57,14 @@ const HomePage = () => {
           background: 'rgba(0, 0, 0, 0.3)',
           color: 'white'
         }}>
-          Login / Register
+          {t('home.login')}
         </Link>
         <Link to="/lobby" style={{
           ...linkButtonStyle,
           background: 'rgba(255, 255, 255, 0.9)',
           color: '#333'
         }}>
-          Game Lobby
+          {t('home.lobby')}
         </Link>
       </nav>
     </main>

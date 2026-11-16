@@ -3,9 +3,9 @@ import {
   ErrorType,
   GameError,
   ErrorHandler,
-  ERROR_MESSAGES,
   withErrorHandling,
 } from '@/shared/utils/errorHandler'
+import { i18n } from '@/shared/i18n'
 
 describe('GameError', () => {
   it('should create a GameError with all properties', () => {
@@ -220,7 +220,7 @@ describe('ErrorHandler.handleWebSocketError', () => {
     const error = ErrorHandler.handleWebSocketError(event)
 
     expect(error.type).toBe(ErrorType.WEBSOCKET)
-    expect(error.message).toBe(ERROR_MESSAGES.WEBSOCKET.CONNECTION_LOST)
+    expect(error.message).toBe(i18n.t('errors.connectionLost'))
   })
 })
 

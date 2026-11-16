@@ -1,0 +1,13 @@
+{
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "username": "Username",
+    "password": "Password",
+    "submitting": "Please wait...",
+    "switchToRegister": "Need an account? Register",
+    "switchToLogin": "Have an account? Login",
+    "backHome": "← Back to Home",
+    "failed": "Authentication failed"
+  }
+}

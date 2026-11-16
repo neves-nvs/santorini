@@ -1,4 +1,5 @@
 import globals from "globals";
+import i18next from "eslint-plugin-i18next";
 import js from "@eslint/js";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
@@ -64,6 +65,19 @@ export default [
   {
     files: ["src/shared/**/*.ts", "src/shared/**/*.tsx"],
     rules: restricted(layer(["@/game", "@/user"], "shared has no domain: it must not import from game/ or user/.")),
+  },
+  {
+    // Every user-facing string in these folders goes through t(). game/ and the lobby are not converted yet.
+    files: ["src/shared/**/*.tsx", "src/user/**/*.tsx", "src/App.tsx"],
+    plugins: { i18next },
+    rules: {
+      "i18next/no-literal-string": ["error", {
+        mode: "jsx-only",
+        "jsx-attributes": {
+          exclude: ["className", "styleName", "style", "type", "key", "id", "width", "height", "role", "path", "to", "htmlFor", "autoComplete", "lang", "rel", "target", "href", "src", "name", "viewBox", "d", "fill", "stroke", "aria-live", "aria-invalid", "aria-describedby", "aria-hidden", "aria-current", "aria-busy"],
+        },
+      }],
+    },
   },
   {
     files: ["scripts/**/*.mjs"],

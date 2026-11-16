@@ -19,8 +19,10 @@ RUN npm run build -w packages/shared
 COPY packages/server packages/server
 RUN npm run build -w packages/server
 
+# --omit=optional as well: typescript is an optional peer of i18next (a client dependency), which makes npm keep it in a
+# production install. The only optional package the server really has is pg-cloudflare, for Cloudflare Workers.
 FROM manifests AS production-dependencies
-RUN --mount=type=cache,target=/root/.npm npm ci -w packages/server --omit=dev
+RUN --mount=type=cache,target=/root/.npm npm ci -w packages/server --omit=dev --omit=optional
 
 FROM node:${NODE_VERSION}-slim
 WORKDIR /app
