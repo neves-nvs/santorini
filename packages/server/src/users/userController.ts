@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import { body, param } from "express-validator";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository.ts";
 
+import type { CreateUserRequest } from "@santorini/shared";
 import { NewUser } from "../model.ts";
 import { StatusCodes } from "http-status-codes";
 import { UserDTO } from "./userDTO.ts";
@@ -45,7 +46,7 @@ router.post(
     .withMessage(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`),
   checkValidation,
   async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password }: CreateUserRequest = req.body;
 
     try {
       const user = await findUserByUsername(username);

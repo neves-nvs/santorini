@@ -1,5 +1,6 @@
 import { CookieOptions, NextFunction, Request, Response, Router } from "express";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
+import type { LoginRequest } from "@santorini/shared";
 import { StatusCodes } from "http-status-codes";
 import { User } from "../model.ts";
 import { authRateLimitMiddleware } from "../middlewares/authRateLimitMiddleware.ts";
@@ -74,7 +75,7 @@ router.post(
   body("password").isString().notEmpty().withMessage("Password is required"),
   checkValidation,
   async (req: Request, res: Response) => {
-    const { username, password } = req.body;
+    const { username, password }: LoginRequest = req.body;
 
     try {
       const user = await findUserByUsername(username);

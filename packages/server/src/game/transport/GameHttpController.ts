@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import { authenticate, getUser } from "../../auth/authController.ts";
 import { getHttpStatus, getUserMessage } from "../../errors/GameErrors.ts";
 
+import type { CreateGameRequest } from "@santorini/shared";
 import { Game } from "../domain/Game.ts";
 import { GameBroadcaster } from "../application/GameBroadcaster.ts";
 import { GameService } from "../application/GameService.ts";
@@ -54,7 +55,7 @@ export function createGameRoutes(
 
   router.post("/", authenticate, async (req, res) => {
     const userId = getUser(req).id;
-    const { maxPlayers = 2 } = req.body;
+    const { maxPlayers = 2 }: Partial<CreateGameRequest> = req.body;
     const game = await lobbyService.createGame(userId, maxPlayers);
     await gameService.addPlayer(game.id, userId);
     res.json({ gameId: game.id });

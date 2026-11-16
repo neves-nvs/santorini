@@ -1,27 +1,7 @@
 import { ErrorHandler, ErrorType } from '@/utils/errorHandler'
 import { logWarn } from '@/utils/log'
 import type { GameInfo, GameState } from '@/types/game'
-
-interface LoginRequest {
-  username: string
-  password: string
-}
-
-interface CreateGameRequest {
-  maxPlayers: number
-}
-
-interface CreateUserRequest {
-  username: string
-  password: string
-}
-
-interface UserSummary {
-  id: number
-  username: string
-  displayName: string
-  createdAt: string
-}
+import type { CreateGameRequest, CreateUserRequest, LoginRequest, UserSummary } from '@santorini/shared'
 
 class ApiService {
   private baseUrl = import.meta.env.VITE_API_URL ?? '/api'
