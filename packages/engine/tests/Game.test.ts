@@ -1,4 +1,4 @@
-import { BuildMove, MoveWorkerMove, PlaceWorkerMove, createMove } from "../src/Move.ts";
+import { BuildMove, MoveWorkerMove, PlaceWorkerMove } from "../src/Move.ts";
 
 import { Game } from "../src/Game.ts";
 import { Player } from "../src/Player.ts";
@@ -473,13 +473,5 @@ describe("Game Domain", () => {
       expect(testGame.winReason).toBe("opponent_trapped");
       expect(events.some((e) => e.type === "GameFinished")).toBe(true);
     });
-  });
-});
-
-describe("createMove", () => {
-  it("keeps the building level apart from the worker id", () => {
-    const move = createMove(1, { type: "build_block", position: { x: 1, y: 1 }, buildingLevel: 2 });
-
-    expect(move).toMatchObject({ workerId: 0, buildingLevel: 2 });
   });
 });

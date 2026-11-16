@@ -14,7 +14,7 @@ export interface Position {
 export type MoveInput =
   | { type: "place_worker"; position: Position; workerId?: number }
   | { type: "move_worker"; position: Position; fromPosition: Position; workerId?: number }
-  | { type: "build_block" | "build_dome"; position: Position; buildingLevel?: number };
+  | { type: "build_block" | "build_dome"; position: Position };
 
 const BOARD_SIZE = 5;
 
@@ -75,7 +75,6 @@ export class BuildMove extends Move {
     position: Position,
     public readonly buildingType: "block" | "dome",
     public readonly workerId: number = 0,
-    public readonly buildingLevel?: number,
   ) {
     super(buildingType === "block" ? "build_block" : "build_dome", playerId, position);
   }
@@ -97,13 +96,7 @@ export function createMove(playerId: number, moveData: MoveInput): Move {
 
     case "build_block":
     case "build_dome":
-      return new BuildMove(
-        playerId,
-        moveData.position,
-        moveData.type === "build_block" ? "block" : "dome",
-        0,
-        moveData.buildingLevel,
-      );
+      return new BuildMove(playerId, moveData.position, moveData.type === "build_block" ? "block" : "dome");
 
     default:
       throw new Error(`Unknown move type: ${(moveData as { type: string }).type}`);

@@ -277,7 +277,6 @@ components:
           properties:
             type: { enum: [build_block, build_dome] }
             position: { $ref: "#/components/schemas/Position" }
-            buildingLevel: { type: integer }
     Move:
       description: A move the server offers to the player whose turn it is.
       oneOf:

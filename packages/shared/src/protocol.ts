@@ -21,7 +21,6 @@ export const moveCommandSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.enum(['build_block', 'build_dome']),
     position: positionSchema,
-    buildingLevel: z.number().int().optional(),
   }),
 ])
 
