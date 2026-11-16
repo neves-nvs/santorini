@@ -11,8 +11,6 @@ export interface UserTable {
   id: Generated<number>;
   username: string;
   display_name: string;
-  // google auth
-  google_id: string | null;
   // password auth
   password_hash: string | null;
   password_salt: string | null;
