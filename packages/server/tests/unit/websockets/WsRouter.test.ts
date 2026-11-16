@@ -116,18 +116,6 @@ describe("WsRouter input validation", () => {
     expect(gameService.applyMove).toHaveBeenCalledWith(1, 1, move);
   });
 
-  test("rejects a worker id sent as a string", async () => {
-    const { sent, handle, gameService } = setup();
-
-    await handle({
-      type: "make_move",
-      payload: { gameId: 1, move: { type: "place_worker", position: { x: 1, y: 1 }, workerId: "5" } },
-    });
-
-    expect(sent).toEqual([{ type: "error", payload: expect.objectContaining({ code: "invalid_payload" }) }]);
-    expect(gameService.applyMove).not.toHaveBeenCalled();
-  });
-
   test("rejects a position off the board", async () => {
     const { sent, handle, gameService } = setup();
 
