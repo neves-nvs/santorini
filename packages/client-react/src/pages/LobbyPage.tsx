@@ -5,8 +5,59 @@ import { userApi } from '@/user/services/userApi'
 import { gameApi } from '@/game/services/gameApi'
 import { usePageTitle } from '@/shared/utils/usePageTitle'
 import type { GameSummary } from '@santorini/shared'
+import './LobbyPage.css'
 
 type GameTab = 'available' | 'my-games'
+
+type ActionTone = 'join' | 'open' | 'resume'
+
+interface GameAction {
+  label: string
+  tone: ActionTone
+}
+
+const myGameAction = (game: GameSummary): GameAction => {
+  if (game.status === 'in-progress') return { label: 'Resume', tone: 'resume' }
+  return { label: game.status === 'waiting' ? 'Enter' : 'View', tone: 'open' }
+}
+
+interface GameListProps {
+  games: GameSummary[]
+  emptyText: string
+  actionFor: (game: GameSummary) => GameAction
+  onOpen: (game: GameSummary) => void
+}
+
+const GameList = ({ games, emptyText, actionFor, onOpen }: GameListProps) => {
+  if (games.length === 0) {
+    return <div className="lobby-empty">{emptyText}</div>
+  }
+
+  return (
+    <div className="lobby-game-list">
+      {games.map((game) => {
+        const { label, tone } = actionFor(game)
+        return (
+          <div key={game.id} className="lobby-game">
+            <div>
+              <div><strong>Game {game.id}</strong></div>
+              <div className="lobby-game-status">
+                {game.playerCount}/{game.maxPlayers} players • {game.status}
+              </div>
+            </div>
+            <button
+              onClick={() => onOpen(game)}
+              aria-label={`${label} game ${game.id}`}
+              className={`lobby-game-action lobby-game-action--${tone}`}
+            >
+              {label}
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 const LobbyPage = () => {
   const username = useAppStore((s) => s.username)
@@ -131,36 +182,15 @@ const LobbyPage = () => {
   // Authentication is now guaranteed by App-level routing
 
   return (
-    <main className="page" style={{
-      background: 'var(--brand-gradient)',
-      color: 'white',
-      padding: 'clamp(1rem, 4vw, 2rem)',
-      overflowY: 'auto'
-    }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '1rem',
-          marginBottom: 'clamp(1.5rem, 4vw, 3rem)'
-        }}>
-          <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.5rem)', margin: 0 }}>Game Lobby</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 'clamp(0.85rem, 2.5vw, 1rem)' }}>
+    <main className="page lobby-page">
+      <div className="lobby-content">
+        <div className="lobby-header">
+          <h1 className="lobby-title">Game Lobby</h1>
+          <div className="lobby-user">
+            <div className="lobby-username">
               <strong>Player:</strong> {username}
             </div>
-            <button onClick={handleLogout} style={{
-              background: 'rgba(0, 0, 0, 0.3)',
-              border: '1px solid white',
-              color: 'white',
-              padding: '0.4rem 0.75rem',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: 'clamp(0.8rem, 2vw, 1rem)'
-            }}>
+            <button onClick={handleLogout} className="lobby-chip-button">
               Logout
             </button>
           </div>
@@ -168,50 +198,25 @@ const LobbyPage = () => {
 
         <p role="status" className="visually-hidden">{loading ? 'Loading games' : ''}</p>
 
-        {/* Error Display */}
         {error && (
-          <div role="alert" style={{
-            background: 'rgba(255, 0, 0, 0.2)',
-            border: '1px solid rgba(255, 0, 0, 0.5)',
-            color: 'white',
-            padding: '1rem',
-            borderRadius: '8px',
-            marginBottom: '2rem'
-          }}>
+          <div role="alert" className="lobby-error">
             {error}
           </div>
         )}
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: 'clamp(1rem, 3vw, 2rem)'
-        }}>
-          {/* Create Game Section */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            padding: 'clamp(1rem, 3vw, 2rem)',
-            borderRadius: '12px',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <h2 style={{ marginTop: 0, marginBottom: '1rem' }}>Create New Game</h2>
+        <div className="lobby-panels">
+          <div className="lobby-panel">
+            <h2 className="lobby-panel-title">Create New Game</h2>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label htmlFor={playerCountId} style={{ display: 'block', marginBottom: '0.5rem', fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)' }}>
+            <div className="lobby-field">
+              <label htmlFor={playerCountId} className="lobby-label">
                 Number of Players
               </label>
               <select
                 id={playerCountId}
+                className="lobby-select"
                 value={playerCount}
                 onChange={(e) => setPlayerCount(Number(e.target.value))}
-                style={{
-                  width: '100%',
-                  padding: '0.6rem',
-                  fontSize: '1rem',
-                  borderRadius: '4px',
-                  border: '1px solid #ccc',
-                  background: 'white'
-                }}
               >
                 <option value={2}>2 Players</option>
                 <option value={3}>3 Players</option>
@@ -219,190 +224,56 @@ const LobbyPage = () => {
               </select>
             </div>
 
-            <button
-              onClick={handleCreateGame}
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
-                background: loading ? '#666' : '#2E7D32',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'background-color 0.3s'
-              }}
-            >
+            <button onClick={handleCreateGame} disabled={loading} className="lobby-create">
               {loading ? 'Creating...' : 'Create Game'}
             </button>
           </div>
 
-          {/* Games Section with Tabs */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            padding: 'clamp(1rem, 3vw, 2rem)',
-            borderRadius: '12px',
-            backdropFilter: 'blur(10px)'
-          }}>
-            {/* Tabs and Refresh */}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '0.5rem',
-              marginBottom: '1rem'
-            }}>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="lobby-panel">
+            <div className="lobby-toolbar">
+              <div className="lobby-tabs">
                 <button
                   onClick={() => setActiveTab('available')}
                   aria-pressed={activeTab === 'available'}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    background: activeTab === 'available' ? 'white' : 'transparent',
-                    border: '1px solid white',
-                    color: activeTab === 'available' ? 'var(--brand-accent)' : 'white',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: activeTab === 'available' ? 'bold' : 'normal'
-                  }}
+                  className="lobby-tab"
                 >
                   Available ({availableGames.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('my-games')}
                   aria-pressed={activeTab === 'my-games'}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    background: activeTab === 'my-games' ? 'white' : 'transparent',
-                    border: '1px solid white',
-                    color: activeTab === 'my-games' ? 'var(--brand-accent)' : 'white',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: activeTab === 'my-games' ? 'bold' : 'normal'
-                  }}
+                  className="lobby-tab"
                 >
                   My Games ({myGames.length})
                 </button>
               </div>
-              <button
-                onClick={handleRefreshGames}
-                disabled={loading}
-                style={{
-                  padding: '0.4rem 0.75rem',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid white',
-                  color: 'white',
-                  borderRadius: '4px',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontSize: 'clamp(0.8rem, 2vw, 1rem)'
-                }}
-              >
+              <button onClick={handleRefreshGames} disabled={loading} className="lobby-chip-button">
                 {loading ? 'Refreshing...' : 'Refresh'}
               </button>
             </div>
 
-            {/* Games List */}
-            <div aria-busy={loading} style={{
-              maxHeight: 'clamp(200px, 40vh, 300px)',
-              overflowY: 'auto',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '8px',
-              padding: '0.75rem'
-            }}>
+            <div aria-busy={loading} className="lobby-games">
               {activeTab === 'available' ? (
-                availableGames.length === 0 ? (
-                  <div style={{ textAlign: 'center' }}>
-                    No games available. Create one to get started!
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {availableGames.map((game) => (
-                      <div key={game.id} style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.75rem',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        borderRadius: '6px'
-                      }}>
-                        <div>
-                          <div><strong>Game {game.id}</strong></div>
-                          <div style={{ fontSize: '0.9rem' }}>
-                            {game.playerCount}/{game.maxPlayers} players • {game.status}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleJoinGame(game)}
-                          aria-label={`Join game ${game.id}`}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            background: '#1565C0',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Join
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )
+                <GameList
+                  games={availableGames}
+                  emptyText="No games available. Create one to get started!"
+                  actionFor={() => ({ label: 'Join', tone: 'join' })}
+                  onOpen={handleJoinGame}
+                />
               ) : (
-                myGames.length === 0 ? (
-                  <div style={{ textAlign: 'center' }}>
-                    You haven't joined any games yet.
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {myGames.map((game) => (
-                      <div key={game.id} style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.75rem',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        borderRadius: '6px'
-                      }}>
-                        <div>
-                          <div><strong>Game {game.id}</strong></div>
-                          <div style={{ fontSize: '0.9rem' }}>
-                            {game.playerCount}/{game.maxPlayers} players • {game.status}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleJoinGame(game)}
-                          aria-label={`${game.status === 'in-progress' ? 'Resume' : (game.status === 'waiting' ? 'Enter' : 'View')} game ${game.id}`}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            background: game.status === 'in-progress' ? '#B45309' : '#2E7D32',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {game.status === 'in-progress' ? 'Resume' : (game.status === 'waiting' ? 'Enter' : 'View')}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )
+                <GameList
+                  games={myGames}
+                  emptyText="You haven't joined any games yet."
+                  actionFor={myGameAction}
+                  onOpen={handleJoinGame}
+                />
               )}
             </div>
           </div>
         </div>
 
-        {/* Navigation */}
-        <div style={{ textAlign: 'center', marginTop: '3rem' }}>
-          <Link to="/" style={{
-            color: 'white',
-            textDecoration: 'none',
-            fontSize: '1.1rem'
-          }}>
+        <div className="lobby-nav">
+          <Link to="/" className="lobby-nav-link">
             ← Back to Home
           </Link>
         </div>
