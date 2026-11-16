@@ -13,7 +13,7 @@
  */
 
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
-import { apiService } from '@/shared/services/request'
+import { gameApi } from './gameApi'
 import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from '@/game/update/GameMessageHandler'
 import { RECONNECTION_DELAY } from '@/game/model/gameConstants'
 
@@ -144,7 +144,7 @@ class WebSocketClient {
 
     let ticket: string
     try {
-      ticket = await apiService.createWebSocketTicket()
+      ticket = await gameApi.createWebSocketTicket()
     } catch (error) {
       console.error('Failed to get a WebSocket ticket:', error)
       this.attemptReconnect()

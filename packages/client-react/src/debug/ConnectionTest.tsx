@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useIsConnected } from '@/game/model/gameSelectors'
 import { webSocketClient } from '@/game/services/WebSocketClient'
-import { apiService } from '@/shared/services/request'
+import { gameApi } from '@/game/services/gameApi'
 
 const ConnectionTest = () => {
   const isConnected = useIsConnected()
@@ -22,7 +22,7 @@ const ConnectionTest = () => {
 
   const testHttpConnection = async () => {
     try {
-      const games = await apiService.getGames()
+      const games = await gameApi.getGames()
       addResult(`HTTP API working - Found ${games.length} games`)
     } catch (error) {
       addResult(`HTTP API error: ${error}`)

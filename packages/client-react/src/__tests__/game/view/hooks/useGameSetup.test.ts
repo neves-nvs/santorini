@@ -8,8 +8,8 @@ vi.mock('@/game/view/hooks/useGameConnection', () => ({
   useGameConnection: () => ({ isConnected: connection.isConnected, isConnecting: false }),
 }))
 
-vi.mock('@/shared/services/request', () => ({
-  apiService: { getGame: vi.fn(async () => ({ gameId: 5 })) },
+vi.mock('@/game/services/gameApi', () => ({
+  gameApi: { getGame: vi.fn(async () => ({ gameId: 5 })) },
 }))
 
 vi.mock('@/game/services/WebSocketClient', () => ({

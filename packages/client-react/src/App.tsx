@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'rea
 import { ToastProvider } from './shared/ui/ToastContext'
 import { type ReactNode, lazy, Suspense, useEffect, useState } from 'react'
 import { useAppStore } from './user/model/appStore'
-import { apiService } from './shared/services/request'
+import { userApi } from './user/services/userApi'
 import HomePage from './pages/HomePage'
 import AuthPage from './user/view/AuthPage'
 import LobbyPage from './pages/LobbyPage'
@@ -50,7 +50,7 @@ const AppRoutes = () => {
   const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
-    apiService
+    userApi
       .checkAuth()
       .then((authInfo) => {
         if (authInfo) setUser(authInfo)

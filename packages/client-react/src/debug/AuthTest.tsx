@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { apiService } from '@/shared/services/request'
+import { userApi } from '@/user/services/userApi'
+import { gameApi } from '@/game/services/gameApi'
 
 const AuthTest = () => {
   const [result, setResult] = useState('')
@@ -12,7 +13,7 @@ const AuthTest = () => {
       const password = 'testpass123'
       
       console.log('Creating user:', { username, password })
-      const result = await apiService.createUser({ username, password })
+      const result = await userApi.createUser({ username, password })
       console.log('User created:', result)
       setResult(`User created: ${JSON.stringify(result)}`)
     } catch (error) {
@@ -26,7 +27,7 @@ const AuthTest = () => {
   const testLogin = async () => {
     setLoading(true)
     try {
-      const result = await apiService.login({ username: 'testuser', password: 'testpass123' })
+      const result = await userApi.login({ username: 'testuser', password: 'testpass123' })
       console.log('Login result:', result)
       setResult(`Login successful: ${JSON.stringify(result)}`)
     } catch (error) {
@@ -40,7 +41,7 @@ const AuthTest = () => {
   const testGetGames = async () => {
     setLoading(true)
     try {
-      const games = await apiService.getGames()
+      const games = await gameApi.getGames()
       console.log('Games:', games)
       setResult(`Games: ${JSON.stringify(games)}`)
     } catch (error) {

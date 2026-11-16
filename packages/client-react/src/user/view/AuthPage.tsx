@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { apiService } from '@/shared/services/request'
+import { userApi } from '@/user/services/userApi'
 import { useAppStore } from '@/user/model/appStore'
 
 const AuthPage = () => {
@@ -23,20 +23,20 @@ const AuthPage = () => {
     try {
       if (isLogin) {
         // Login
-        await apiService.login({ username: usernameInput, password })
+        await userApi.login({ username: usernameInput, password })
         // Get user info after login
-        const userInfo = await apiService.checkAuth()
+        const userInfo = await userApi.checkAuth()
         if (userInfo) {
           setUser(userInfo)
         }
         navigate('/lobby')
       } else {
         // Register
-        await apiService.createUser({ username: usernameInput, password })
+        await userApi.createUser({ username: usernameInput, password })
         // After successful registration, automatically login
-        await apiService.login({ username: usernameInput, password })
+        await userApi.login({ username: usernameInput, password })
         // Get user info after login
-        const userInfo = await apiService.checkAuth()
+        const userInfo = await userApi.checkAuth()
         if (userInfo) {
           setUser(userInfo)
         }

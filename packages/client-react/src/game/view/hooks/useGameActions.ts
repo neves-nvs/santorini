@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useRef } from 'react'
-import { apiService } from '@/shared/services/request'
+import { gameApi } from '@/game/services/gameApi'
 import { webSocketClient } from '@/game/services/WebSocketClient'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { useSetGameState } from '@/game/model/gameSelectors'
@@ -69,7 +69,7 @@ export function useGameActions() {
    */
   const fetchGameState = useCallback(async (gameId: string): Promise<void> => {
     try {
-      const state = await apiService.getGame(gameId)
+      const state = await gameApi.getGame(gameId)
       setGameState(state)
     } catch (error) {
       console.error('Failed to fetch game state:', error)
