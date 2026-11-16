@@ -14,11 +14,9 @@ info:
     **Joining and subscribing are separate.** `join_game` makes the user a player and replies `game_joined`.
     `subscribe_game` registers this socket for the game's updates, as a player or as a watcher, and replies with the
     current state. A client that is playing sends both. A client leaves a game by closing its socket. Only a subscribed socket receives `game_state_update`,
-    `player_joined`, `player_left` and `game_start`. A player who has not clicked ready is removed from a waiting game
+    `player_joined` and `player_left`. A player who has not clicked ready is removed from a waiting game
     when their last subscribed socket closes. A ready player keeps the seat.
 
-    Messages the server never sends, although `WS_MESSAGE_TYPES` still lists them: `available_moves`, `players_in_game`,
-    `player_ready_status`, `game_ready_for_start`, `connected`, `disconnected`, `ping`, `pong`, `start_game`.
 defaultContentType: application/json
 servers:
   local:
@@ -54,7 +52,6 @@ channels:
       playerLeft: { $ref: "#/components/messages/playerLeft" }
       gameStateUpdate: { $ref: "#/components/messages/gameStateUpdate" }
       readyStatusUpdate: { $ref: "#/components/messages/readyStatusUpdate" }
-      gameStart: { $ref: "#/components/messages/gameStart" }
       error: { $ref: "#/components/messages/error" }
 operations:
   createGame:
@@ -139,11 +136,6 @@ operations:
     channel: { $ref: "#/channels/game" }
     summary: Someone gave up or lost a seat
     messages: [{ $ref: "#/channels/game/messages/playerLeft" }]
-  receiveGameStart:
-    action: send
-    channel: { $ref: "#/channels/game" }
-    summary: The game started
-    messages: [{ $ref: "#/channels/game/messages/gameStart" }]
   receiveError:
     action: send
     channel: { $ref: "#/channels/game" }
@@ -309,32 +301,20 @@ components:
           payload: { $ref: "#/components/schemas/PlayerPresence" }
     gameStateUpdate:
       name: game_state_update
-      summary: The game as this user sees it, or the result of a finished game
-      description: |
-        Two shapes share this type. Most updates carry `state`. When a game finishes, one more update arrives with
-        the result and no `state`, so check for `state` first.
+      summary: The game as this user sees it
+      description: A finished game is a state with `status` `completed`, `winnerId` and `winReason`.
       payload:
         type: object
         required: [type, payload]
         properties:
           type: { const: game_state_update }
           payload:
-            oneOf:
-              - type: object
-                required: [gameId, version, state]
-                properties:
-                  gameId: { type: integer }
-                  version: { type: integer }
-                  state: { $ref: "#/components/schemas/GameView" }
-              - type: object
-                required: [gameId, version, status, winnerId, winReason, finishedAt]
-                properties:
-                  gameId: { type: integer }
-                  version: { type: integer }
-                  status: { $ref: "#/components/schemas/GameStatus" }
-                  winnerId: { type: [integer, "null"] }
-                  winReason: { type: [string, "null"] }
-                  finishedAt: { type: [string, "null"], format: date-time }
+            type: object
+            required: [gameId, version, state]
+            properties:
+              gameId: { type: integer }
+              version: { type: integer }
+              state: { $ref: "#/components/schemas/GameView" }
     readyStatusUpdate:
       name: ready_status_update
       description: Sent to the player who changed their readiness.
@@ -350,23 +330,6 @@ components:
               ready: { type: boolean }
               allReady: { type: boolean }
               gameStarted: { type: boolean }
-    gameStart:
-      name: game_start
-      payload:
-        type: object
-        required: [type, payload]
-        properties:
-          type: { const: game_start }
-          payload:
-            type: object
-            required: [gameId, activePlayerId]
-            properties:
-              gameId: { type: integer }
-              activePlayerId: { type: [integer, "null"] }
-              availableMoves:
-                type: array
-                description: Only for the player whose turn it is
-                items: { $ref: "#/components/schemas/Move" }
     error:
       name: error
       payload:

@@ -5,7 +5,6 @@
  * - joinGame (via API)
  * - subscribeToGame (via WebSocket)
  * - setReady
- * - makeMove
  * 
  * Components call these actions; this hook handles service coordination.
  */
@@ -15,7 +14,6 @@ import { apiService } from '@/services/ApiService'
 import { webSocketClient } from '@/services/WebSocketClient'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { useSetGameState } from '@/store/gameSelectors'
-import type { Move } from '@/types/game'
 
 export function useGameActions() {
   const setGameState = useSetGameState()
@@ -91,14 +89,6 @@ export function useGameActions() {
   }, [])
 
   /**
-   * Make a game move
-   */
-  const makeMove = useCallback((moveType: string, data: Move | { workerId: number; position: { x: number; y: number } }): void => {
-    console.log('Making move:', moveType, data)
-    webSocketClient.makeMove(moveType, data)
-  }, [])
-
-  /**
    * Reset action state (call on game change/disconnect)
    */
   const resetActionState = useCallback((gameId?: string): void => {
@@ -117,7 +107,6 @@ export function useGameActions() {
     unsubscribeFromGame,
     fetchGameState,
     setReady,
-    makeMove,
     resetActionState
   }
 }

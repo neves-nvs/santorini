@@ -157,25 +157,3 @@ export interface GameStateUpdatePayload {
   version: number;
   state: PlayerGameView | SpectatorGameView;
 }
-
-/**
- * Payload for game end notifications
- */
-export interface GameEndPayload {
-  gameId: number;
-  version: number;
-  status: GameStatus;
-  winnerId: number | null;
-  winReason: string | null;
-  finishedAt: Date | null;
-}
-
-/**
- * Payload for game start notifications
- */
-export interface GameStartPayload {
-  gameId: number;
-  startedAt: Date | null;
-  currentPlayerId: number | null;
-}
-

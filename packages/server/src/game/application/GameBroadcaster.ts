@@ -1,9 +1,7 @@
-import { GameViewBuilder, toSharedMove } from "../domain/GameViewBuilder.ts";
-
 import { ConnectionManager } from "../infra/ConnectionManager.ts";
 import { Game } from "../domain/Game.ts";
 import { GameEvent } from "../domain/GameEvent.ts";
-import { Move } from "../domain/Move.ts";
+import { GameViewBuilder } from "../domain/GameViewBuilder.ts";
 import { WS_MESSAGE_TYPES } from "@santorini/shared";
 import logger from "../../logger.ts";
 
@@ -57,86 +55,5 @@ export class GameBroadcaster {
     if (events.length > 0) {
       logger.info(`Broadcast triggered by events: ${events.map((e) => e.type).join(", ")}`);
     }
-  }
-
-  /**
-   * Broadcast game state with available moves to current player only
-   */
-  async broadcastGameStateWithMoves(game: Game, availableMoves: Move[]): Promise<void> {
-    if (!game.currentPlayerId) {
-      logger.warn(`No current player for game ${game.id}, skipping moves broadcast`);
-      return;
-    }
-
-    // Get the current player's userId from their playerId
-    const currentPlayer = game.players.get(game.currentPlayerId);
-    if (!currentPlayer) {
-      logger.warn(`Current player ${game.currentPlayerId} not found in game ${game.id}`);
-      return;
-    }
-    const currentUserId = currentPlayer.userId;
-
-    logger.info(
-      `Broadcasting available moves to current player ${game.currentPlayerId} (userId: ${currentUserId}) in game ${game.id}`,
-    );
-
-    try {
-      const view = this.gameViewBuilder.buildForPlayer(game, currentUserId, availableMoves);
-
-      this.connectionManager.sendToPlayer(game.id, currentUserId, {
-        type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
-        payload: {
-          gameId: game.id,
-          version: game.version,
-          state: view,
-        },
-      });
-
-      logger.debug(`Sent ${availableMoves.length} available moves to player ${game.currentPlayerId}`);
-    } catch (error) {
-      logger.error(`Failed to send available moves to player ${game.currentPlayerId}:`, error);
-    }
-  }
-
-  /**
-   * Broadcast game start to all players
-   * Each player gets: type, activePlayer, and availableMoves (only if they're active)
-   */
-  async broadcastGameStart(game: Game, availableMoves: Move[]): Promise<void> {
-    logger.info(`Broadcasting game start for game ${game.id}`);
-
-    const sharedMoves = availableMoves.map(toSharedMove);
-
-    for (const player of game.players.values()) {
-      const isActivePlayer = game.currentPlayerId === player.id;
-
-      this.connectionManager.sendToPlayer(game.id, player.userId, {
-        type: WS_MESSAGE_TYPES.GAME_START,
-        payload: {
-          gameId: game.id,
-          activePlayerId: game.currentPlayerId,
-          availableMoves: isActivePlayer ? sharedMoves : undefined,
-        },
-      });
-    }
-  }
-
-  /**
-   * Broadcast game completion to all players
-   */
-  async broadcastGameEnd(game: Game): Promise<void> {
-    logger.info(`Broadcasting game end for game ${game.id}, winner: ${game.winnerId}`);
-
-    this.connectionManager.broadcastToGame(game.id, {
-      type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
-      payload: {
-        gameId: game.id,
-        version: game.version,
-        status: game.status,
-        winnerId: game.winnerId,
-        winReason: game.winReason,
-        finishedAt: game.finishedAt,
-      },
-    });
   }
 }

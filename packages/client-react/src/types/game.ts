@@ -14,9 +14,7 @@ export type {
   Move,
   PlayerGameView,
   SpectatorGameView,
-  GameStateUpdatePayload,
-  GameEndPayload,
-  GameStartPayload
+  GameStateUpdatePayload
 } from '@santorini/shared';
 
 import type {
