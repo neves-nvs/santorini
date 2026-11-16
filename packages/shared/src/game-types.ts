@@ -159,18 +159,6 @@ export interface GameStateUpdatePayload {
 }
 
 /**
- * Payload for game end notifications
- */
-export interface GameEndPayload {
-  gameId: number;
-  version: number;
-  status: GameStatus;
-  winnerId: number | null;
-  winReason: string | null;
-  finishedAt: Date | null;
-}
-
-/**
  * Payload for game start notifications. `availableMoves` is only sent to the player who moves first.
  */
 export interface GameStartPayload {

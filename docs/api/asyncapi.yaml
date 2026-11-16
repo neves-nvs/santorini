@@ -16,9 +16,6 @@ info:
     current state. A client that is playing sends both. A client leaves a game by closing its socket. Only a subscribed socket receives `game_state_update`,
     `player_joined`, `player_left` and `game_start`. A player who has not clicked ready is removed from a waiting game
     when their last subscribed socket closes. A ready player keeps the seat.
-
-    Messages the server never sends, although `WS_MESSAGE_TYPES` still lists them: `available_moves`, `players_in_game`,
-    `player_ready_status`, `game_ready_for_start`, `connected`, `disconnected`, `ping`, `pong`, `start_game`.
 defaultContentType: application/json
 servers:
   local:
@@ -39,17 +36,12 @@ channels:
       One connection per browser window. The upgrade is refused with 401 without a valid token and with 403 when the
       `Origin` header is not an allowed origin or the server's own origin.
     messages:
-      createGame: { $ref: "#/components/messages/createGame" }
       joinGame: { $ref: "#/components/messages/joinGame" }
-      listGames: { $ref: "#/components/messages/listGames" }
       leaveGame: { $ref: "#/components/messages/leaveGame" }
       subscribeGame: { $ref: "#/components/messages/subscribeGame" }
       setReady: { $ref: "#/components/messages/setReady" }
       makeMove: { $ref: "#/components/messages/makeMove" }
-      gameCreated: { $ref: "#/components/messages/gameCreated" }
       gameJoined: { $ref: "#/components/messages/gameJoined" }
-      gamesList: { $ref: "#/components/messages/gamesList" }
-      gameLeft: { $ref: "#/components/messages/gameLeft" }
       playerJoined: { $ref: "#/components/messages/playerJoined" }
       playerLeft: { $ref: "#/components/messages/playerLeft" }
       gameStateUpdate: { $ref: "#/components/messages/gameStateUpdate" }
@@ -57,14 +49,6 @@ channels:
       gameStart: { $ref: "#/components/messages/gameStart" }
       error: { $ref: "#/components/messages/error" }
 operations:
-  createGame:
-    action: receive
-    channel: { $ref: "#/channels/game" }
-    summary: Create a game and take the first seat
-    messages: [{ $ref: "#/channels/game/messages/createGame" }]
-    reply:
-      channel: { $ref: "#/channels/game" }
-      messages: [{ $ref: "#/channels/game/messages/gameCreated" }]
   joinGame:
     action: receive
     channel: { $ref: "#/channels/game" }
@@ -76,22 +60,12 @@ operations:
     reply:
       channel: { $ref: "#/channels/game" }
       messages: [{ $ref: "#/channels/game/messages/gameJoined" }]
-  listGames:
-    action: receive
-    channel: { $ref: "#/channels/game" }
-    summary: Games that can still be joined
-    messages: [{ $ref: "#/channels/game/messages/listGames" }]
-    reply:
-      channel: { $ref: "#/channels/game" }
-      messages: [{ $ref: "#/channels/game/messages/gamesList" }]
   leaveGame:
     action: receive
     channel: { $ref: "#/channels/game" }
     summary: Give up a seat in a waiting game
+    description: Everyone subscribed to the game gets `player_left`. There is no direct reply.
     messages: [{ $ref: "#/channels/game/messages/leaveGame" }]
-    reply:
-      channel: { $ref: "#/channels/game" }
-      messages: [{ $ref: "#/channels/game/messages/gameLeft" }]
   subscribeGame:
     action: receive
     channel: { $ref: "#/channels/game" }
@@ -167,17 +141,6 @@ components:
         Clients that can set headers on the handshake send `Authorization: Bearer <jwt>` (see `GET /token`).
         The session cookie alone is not accepted on the handshake, and neither is a JWT in the query string.
   messages:
-    createGame:
-      name: create_game
-      payload:
-        type: object
-        required: [type]
-        properties:
-          type: { const: create_game }
-          payload:
-            type: object
-            properties:
-              maxPlayers: { type: integer, default: 2 }
     joinGame:
       name: join_game
       payload:
@@ -186,13 +149,6 @@ components:
         properties:
           type: { const: join_game }
           payload: { $ref: "#/components/schemas/GameIdPayload" }
-    listGames:
-      name: list_games
-      payload:
-        type: object
-        required: [type]
-        properties:
-          type: { const: list_games }
     leaveGame:
       name: leave_game
       payload:
@@ -235,19 +191,6 @@ components:
             properties:
               gameId: { type: integer }
               move: { $ref: "#/components/schemas/MoveCommand" }
-    gameCreated:
-      name: game_created
-      payload:
-        type: object
-        required: [type, payload]
-        properties:
-          type: { const: game_created }
-          payload:
-            type: object
-            required: [gameId, gameState]
-            properties:
-              gameId: { type: integer }
-              gameState: { $ref: "#/components/schemas/GameView" }
     gameJoined:
       name: game_joined
       payload:
@@ -261,36 +204,6 @@ components:
             properties:
               gameId: { type: integer }
               gameState: { $ref: "#/components/schemas/GameView" }
-    gamesList:
-      name: games_list
-      payload:
-        type: object
-        required: [type, payload]
-        properties:
-          type: { const: games_list }
-          payload:
-            type: object
-            required: [games]
-            properties:
-              games:
-                type: array
-                items:
-                  type: object
-                  required: [id, status, playerCount, maxPlayers, createdAt]
-                  properties:
-                    id: { type: integer }
-                    status: { $ref: "#/components/schemas/GameStatus" }
-                    playerCount: { type: integer }
-                    maxPlayers: { type: integer }
-                    createdAt: { type: string, format: date-time }
-    gameLeft:
-      name: game_left
-      payload:
-        type: object
-        required: [type, payload]
-        properties:
-          type: { const: game_left }
-          payload: { $ref: "#/components/schemas/GameIdPayload" }
     playerJoined:
       name: player_joined
       payload:
@@ -309,32 +222,22 @@ components:
           payload: { $ref: "#/components/schemas/PlayerPresence" }
     gameStateUpdate:
       name: game_state_update
-      summary: The game as this user sees it, or the result of a finished game
+      summary: The game as this user sees it
       description: |
-        Two shapes share this type. Most updates carry `state`. When a game finishes, one more update arrives with
-        the result and no `state`, so check for `state` first.
+        Sent after every change to the game, including the move that ends it: `status` is then `completed`, with
+        `winnerId` and `winReason` in the state.
       payload:
         type: object
         required: [type, payload]
         properties:
           type: { const: game_state_update }
           payload:
-            oneOf:
-              - type: object
-                required: [gameId, version, state]
-                properties:
-                  gameId: { type: integer }
-                  version: { type: integer }
-                  state: { $ref: "#/components/schemas/GameView" }
-              - type: object
-                required: [gameId, version, status, winnerId, winReason, finishedAt]
-                properties:
-                  gameId: { type: integer }
-                  version: { type: integer }
-                  status: { $ref: "#/components/schemas/GameStatus" }
-                  winnerId: { type: [integer, "null"] }
-                  winReason: { type: [string, "null"] }
-                  finishedAt: { type: [string, "null"], format: date-time }
+            type: object
+            required: [gameId, version, state]
+            properties:
+              gameId: { type: integer }
+              version: { type: integer }
+              state: { $ref: "#/components/schemas/GameView" }
     readyStatusUpdate:
       name: ready_status_update
       description: Sent to the player who changed their readiness.

@@ -2,7 +2,6 @@ import { ClientMessage, MoveCommand, WS_MESSAGE_TYPES } from "@santorini/shared"
 import { Connection } from "../game/infra/Connection.ts";
 import { ConnectionManager } from "../game/infra/ConnectionManager.ts";
 import { GameService } from "../game/application/GameService.ts";
-import { LobbyService } from "../game/application/LobbyService.ts";
 import logger from "../logger.ts";
 import { sendError } from "./utils.ts";
 
@@ -16,7 +15,6 @@ import { sendError } from "./utils.ts";
 export class WsRouter {
   constructor(
     private gameService: GameService,
-    private lobbyService: LobbyService,
     private connectionManager: ConnectionManager,
   ) {}
 
@@ -65,19 +63,13 @@ export class WsRouter {
 
     switch (type) {
       // Lobby
-      case WS_MESSAGE_TYPES.CREATE_GAME:
-        return this.createGame(connection, userId, payload?.maxPlayers as number | undefined);
-
       case WS_MESSAGE_TYPES.JOIN_GAME:
         this.requireGameId(gameId);
         return this.joinGame(connection, userId, gameId);
 
-      case WS_MESSAGE_TYPES.LIST_GAMES:
-        return this.listGames(connection);
-
       case WS_MESSAGE_TYPES.LEAVE_GAME:
         this.requireGameId(gameId);
-        return this.leaveGame(connection, userId, gameId);
+        return this.leaveGame(userId, gameId);
 
       // Game
       case WS_MESSAGE_TYPES.SUBSCRIBE_GAME:
@@ -105,16 +97,6 @@ export class WsRouter {
     if (!Number.isInteger(gameId) || (gameId as number) < 1) throw new Error("Game ID must be a positive whole number");
   }
 
-  private async createGame(connection: Connection, userId: number, maxPlayers = 2): Promise<void> {
-    const game = await this.lobbyService.createGame(userId, maxPlayers);
-    await this.gameService.addPlayer(game.id, userId);
-
-    const gameView = await this.gameService.getGameStateForPlayer(game.id, userId);
-    connection.send({ type: WS_MESSAGE_TYPES.GAME_CREATED, payload: { gameId: game.id, gameState: gameView } });
-
-    logger.info(`Game ${game.id} created by user ${userId}`);
-  }
-
   private async joinGame(connection: Connection, userId: number, gameId: number): Promise<void> {
     const { game, isNewPlayer } = await this.addPlayerIfNew(gameId, userId);
 
@@ -128,23 +110,8 @@ export class WsRouter {
     logger.info(`User ${userId} ${isNewPlayer ? "joined" : "reconnected to"} game ${gameId}`);
   }
 
-  private async listGames(connection: Connection): Promise<void> {
-    const games = await this.lobbyService.findAvailableGames();
-
-    const gamesList = games.map((g) => ({
-      id: g.id,
-      status: g.status,
-      playerCount: g.players.size,
-      maxPlayers: g.maxPlayers,
-      createdAt: g.createdAt,
-    }));
-
-    connection.send({ type: WS_MESSAGE_TYPES.GAMES_LIST, payload: { games: gamesList } });
-  }
-
-  private async leaveGame(connection: Connection, userId: number, gameId: number): Promise<void> {
+  private async leaveGame(userId: number, gameId: number): Promise<void> {
     const { game } = await this.gameService.removePlayer(gameId, userId);
-    connection.send({ type: WS_MESSAGE_TYPES.GAME_LEFT, payload: { gameId } });
 
     this.connectionManager.broadcastToGame(gameId, {
       type: WS_MESSAGE_TYPES.PLAYER_LEFT,

@@ -4,7 +4,6 @@ import { useAppStore } from '@/store/appStore'
 import { useGameStore } from '@/store/gameStore'
 import type {
   BoardView,
-  GameEndPayload,
   Move,
   PlayerGameView,
   PlayerView,
@@ -140,15 +139,6 @@ describe('game_state_update', () => {
     unsubscribe()
   })
 
-  it('leaves the state alone for the game-ended notice that carries no state', () => {
-    handleWebSocketMessage(stateUpdate(playerView()))
-    const before = store().gameState
-    const ended: GameEndPayload = { gameId: 7, version: 5, status: 'completed', winnerId: ME.id, winReason: 'reached level 3', finishedAt: null }
-
-    expect(() => handleWebSocketMessage({ type: 'game_state_update', payload: ended })).not.toThrow()
-
-    expect(store().gameState).toBe(before)
-  })
 })
 
 describe('game_start', () => {
@@ -188,10 +178,7 @@ describe('game_start', () => {
 
 describe('messages the client takes no action on', () => {
   const informational: ServerMessage[] = [
-    { type: 'game_created', payload: { gameId: 7, gameState: playerView() } },
     { type: 'game_joined', payload: { gameId: 7, gameState: playerView() } },
-    { type: 'games_list', payload: { games: [] } },
-    { type: 'game_left', payload: { gameId: 7 } },
     { type: 'player_joined', payload: { gameId: 7, userId: 2, playerCount: 2, maxPlayers: 2 } },
     { type: 'player_left', payload: { gameId: 7, userId: 2, playerCount: 1, maxPlayers: 2 } },
     { type: 'ready_status_update', payload: { ready: true, allReady: false, gameStarted: false } },

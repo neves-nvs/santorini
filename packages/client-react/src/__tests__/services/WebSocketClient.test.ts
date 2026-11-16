@@ -7,7 +7,7 @@ describe('webSocketClient.send', () => {
   })
 
   it('throws when the socket is not connected', () => {
-    expect(() => webSocketClient.send({ type: 'list_games' })).toThrow('WebSocket not connected')
+    expect(() => webSocketClient.send({ type: 'leave_game', payload: { gameId: 1 } })).toThrow('WebSocket not connected')
   })
 
   it('only takes messages the server understands', () => {

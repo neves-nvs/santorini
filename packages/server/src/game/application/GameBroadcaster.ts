@@ -120,23 +120,4 @@ export class GameBroadcaster {
       });
     }
   }
-
-  /**
-   * Broadcast game completion to all players
-   */
-  async broadcastGameEnd(game: Game): Promise<void> {
-    logger.info(`Broadcasting game end for game ${game.id}, winner: ${game.winnerId}`);
-
-    this.connectionManager.broadcastToGame(game.id, {
-      type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
-      payload: {
-        gameId: game.id,
-        version: game.version,
-        status: game.status,
-        winnerId: game.winnerId,
-        winReason: game.winReason,
-        finishedAt: game.finishedAt,
-      },
-    });
-  }
 }

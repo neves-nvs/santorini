@@ -30,7 +30,7 @@ const gameService = new GameService(gameRepository, gameViewBuilder, gameBroadca
 const lobbyService = new LobbyService(gameRepository);
 
 // Transport
-const wsRouter = new WsRouter(gameService, lobbyService, connectionManager);
+const wsRouter = new WsRouter(gameService, connectionManager);
 const gameRoutes = createGameRoutes(gameService, lobbyService, gameBroadcaster);
 
 export {

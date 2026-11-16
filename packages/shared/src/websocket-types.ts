@@ -6,10 +6,8 @@
  */
 
 import type {
-  GameEndPayload,
   GameStartPayload,
   GameStateUpdatePayload,
-  GameStatus,
   MoveCommand,
   PlayerGameView,
 } from './game-types.ts';
@@ -24,32 +22,16 @@ export const WS_MESSAGE_TYPES = {
   JOIN_GAME: 'join_game',
   MAKE_MOVE: 'make_move',
   SET_READY: 'set_ready',
-  CREATE_GAME: 'create_game',
-  LIST_GAMES: 'list_games',
   LEAVE_GAME: 'leave_game',
-  START_GAME: 'start_game',
 
   // Server -> Client
   GAME_STATE_UPDATE: 'game_state_update',
   READY_STATUS_UPDATE: 'ready_status_update',
-  AVAILABLE_MOVES: 'available_moves',
-  PLAYERS_IN_GAME: 'players_in_game',
-  PLAYER_READY_STATUS: 'player_ready_status',
   PLAYER_JOINED: 'player_joined',
   PLAYER_LEFT: 'player_left',
   GAME_START: 'game_start',
-  GAME_READY_FOR_START: 'game_ready_for_start',
-  GAME_CREATED: 'game_created',
   GAME_JOINED: 'game_joined',
-  GAMES_LIST: 'games_list',
-  GAME_LEFT: 'game_left',
-  ERROR: 'error',
-  CONNECTED: 'connected',
-  DISCONNECTED: 'disconnected',
-
-  // Bidirectional
-  PING: 'ping',
-  PONG: 'pong'
+  ERROR: 'error'
 } as const;
 
 export type WSMessageType = typeof WS_MESSAGE_TYPES[keyof typeof WS_MESSAGE_TYPES];
@@ -58,23 +40,11 @@ export type WSMessageType = typeof WS_MESSAGE_TYPES[keyof typeof WS_MESSAGE_TYPE
 // Client -> Server Messages
 // ============================================================================
 
-export interface CreateGameMessage {
-  type: typeof WS_MESSAGE_TYPES.CREATE_GAME;
-  payload?: {
-    maxPlayers?: number;
-  };
-}
-
 export interface JoinGameMessage {
   type: typeof WS_MESSAGE_TYPES.JOIN_GAME;
   payload: {
     gameId: number;
   };
-}
-
-export interface ListGamesMessage {
-  type: typeof WS_MESSAGE_TYPES.LIST_GAMES;
-  payload?: Record<string, never>;
 }
 
 export interface LeaveGameMessage {
@@ -111,41 +81,11 @@ export interface MakeMoveMessage {
 // Server -> Client Messages
 // ============================================================================
 
-export interface GameCreatedMessage {
-  type: typeof WS_MESSAGE_TYPES.GAME_CREATED;
-  payload: {
-    gameId: number;
-    gameState: PlayerGameView;
-  };
-}
-
 export interface GameJoinedMessage {
   type: typeof WS_MESSAGE_TYPES.GAME_JOINED;
   payload: {
     gameId: number;
     gameState: PlayerGameView;
-  };
-}
-
-export interface GameSummaryView {
-  id: number;
-  status: GameStatus;
-  playerCount: number;
-  maxPlayers: number;
-  createdAt: string;
-}
-
-export interface GamesListMessage {
-  type: typeof WS_MESSAGE_TYPES.GAMES_LIST;
-  payload: {
-    games: GameSummaryView[];
-  };
-}
-
-export interface GameLeftMessage {
-  type: typeof WS_MESSAGE_TYPES.GAME_LEFT;
-  payload: {
-    gameId: number;
   };
 }
 
@@ -167,12 +107,12 @@ export interface PlayerLeftMessage {
 }
 
 /**
- * Sent after every change to a game the socket is subscribed to. A finished game also gets one carrying
- * GameEndPayload instead of a state, so check for `state` before using it.
+ * Sent after every change to a game the socket is subscribed to, including the move that ends it
+ * (`status` is then `completed`, with `winnerId` and `winReason`).
  */
 export interface GameStateUpdateMessage {
   type: typeof WS_MESSAGE_TYPES.GAME_STATE_UPDATE;
-  payload: GameStateUpdatePayload | GameEndPayload;
+  payload: GameStateUpdatePayload;
 }
 
 export interface ReadyStatusUpdateMessage {
@@ -199,19 +139,14 @@ export interface ErrorMessage {
 // ============================================================================
 
 export type ClientMessage =
-  | CreateGameMessage
   | JoinGameMessage
-  | ListGamesMessage
   | LeaveGameMessage
   | SubscribeGameMessage
   | SetReadyMessage
   | MakeMoveMessage;
 
 export type ServerMessage =
-  | GameCreatedMessage
   | GameJoinedMessage
-  | GamesListMessage
-  | GameLeftMessage
   | PlayerJoinedMessage
   | PlayerLeftMessage
   | GameStateUpdateMessage
@@ -240,9 +175,7 @@ export interface GenericWSMessage {
 
 export function isClientMessage(message: GenericWSMessage): message is ClientMessage {
   const clientTypes: string[] = [
-    WS_MESSAGE_TYPES.CREATE_GAME,
     WS_MESSAGE_TYPES.JOIN_GAME,
-    WS_MESSAGE_TYPES.LIST_GAMES,
     WS_MESSAGE_TYPES.LEAVE_GAME,
     WS_MESSAGE_TYPES.SUBSCRIBE_GAME,
     WS_MESSAGE_TYPES.SET_READY,
@@ -253,10 +186,7 @@ export function isClientMessage(message: GenericWSMessage): message is ClientMes
 
 export function isServerMessage(message: GenericWSMessage): message is ServerMessage {
   const serverTypes: string[] = [
-    WS_MESSAGE_TYPES.GAME_CREATED,
     WS_MESSAGE_TYPES.GAME_JOINED,
-    WS_MESSAGE_TYPES.GAMES_LIST,
-    WS_MESSAGE_TYPES.GAME_LEFT,
     WS_MESSAGE_TYPES.PLAYER_JOINED,
     WS_MESSAGE_TYPES.PLAYER_LEFT,
     WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
