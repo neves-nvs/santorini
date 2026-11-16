@@ -1,4 +1,4 @@
-import { CreateUserRequest, MessageResponse, TextResponse, UserView, ValidationErrorResponse } from "@santorini/shared";
+import { CreateUserRequest, ErrorResponse, UserView } from "@santorini/shared";
 import { NextFunction, Request, Response, Router } from "express";
 import { body, param } from "express-validator";
 import { createUser, findUserByUsername } from "./userRepository.ts";
@@ -11,6 +11,7 @@ import { checkValidation } from "@/middlewares/middleware.ts";
 import { config } from "@/configs/config.ts";
 import logger from "@/logger.ts";
 import { registrationRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
+import { sendError } from "@/errors/httpError.ts";
 
 const router = Router();
 
@@ -18,14 +19,25 @@ type NoParams = Record<string, string>;
 
 const MIN_PASSWORD_LENGTH = 8;
 
+function respondWithUnexpectedError(res: Response<ErrorResponse>, e: unknown) {
+  if (e instanceof AggregateError) {
+    e.errors.forEach((error) => logger.warn(error.message));
+  } else if (e instanceof Error) {
+    logger.error(e.message);
+  } else {
+    logger.error("Unknown error", { error: e });
+  }
+  sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
+}
+
 const requireRegistrationEnabled = (_req: Request, res: Response, next: NextFunction) => {
   if (!config.registrationEnabled) {
-    return res.status(StatusCodes.FORBIDDEN).json({ message: "Registration is disabled" });
+    return sendError(res, StatusCodes.FORBIDDEN, "forbidden", "Registration is disabled");
   }
   next();
 };
 
-router.post<NoParams, UserView | TextResponse | MessageResponse | ValidationErrorResponse, CreateUserRequest>(
+router.post<NoParams, UserView | ErrorResponse, CreateUserRequest>(
   "/",
   registrationRateLimitMiddleware,
   requireRegistrationEnabled,
@@ -44,9 +56,7 @@ router.post<NoParams, UserView | TextResponse | MessageResponse | ValidationErro
 
       if (user) {
         logger.error("User already exists");
-        return res.status(StatusCodes.CONFLICT).json({
-          message: "User already exists",
-        });
+        return sendError(res, StatusCodes.CONFLICT, "user_exists", "User already exists");
       }
 
       const salt = await bcrypt.genSalt(10);
@@ -66,23 +76,12 @@ router.post<NoParams, UserView | TextResponse | MessageResponse | ValidationErro
 
       res.status(StatusCodes.CREATED).json(userDTO);
     } catch (e: unknown) {
-      if (e instanceof AggregateError) {
-        e.errors.forEach((error) => {
-          logger.warn(error.message);
-        });
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Database connection error");
-      } else if (e instanceof Error) {
-        logger.error(e.message);
-        res.status(500).send("Internal server error");
-      } else {
-        logger.error("Unknown error", { error: e });
-        return res.status(500).json({ message: "Unknown error occurred" });
-      }
+      respondWithUnexpectedError(res, e);
     }
   },
 );
 
-router.get<{ username: string }, UserView | TextResponse | MessageResponse | ValidationErrorResponse>(
+router.get<{ username: string }, UserView | ErrorResponse>(
   "/:username",
   param("username").isString().notEmpty().withMessage("Username is required"),
   checkValidation,
@@ -91,23 +90,12 @@ router.get<{ username: string }, UserView | TextResponse | MessageResponse | Val
       const username = String(req.params.username);
       const user = await findUserByUsername(username);
       if (user === null || user === undefined) {
-        return res.status(404).json({ message: "User not found" });
+        return sendError(res, 404, "user_not_found", "User not found");
       }
       const userDTO = new UserDTO(user);
       res.json(userDTO);
     } catch (e: unknown) {
-      if (e instanceof AggregateError) {
-        e.errors.forEach((error) => {
-          logger.warn(error.message);
-        });
-        res.status(409).send("Database connection error");
-      } else if (e instanceof Error) {
-        logger.error(e.message);
-        res.status(500).send("Internal server error");
-      } else {
-        logger.error("Unknown error", { error: e });
-        return res.status(500).json({ message: "Unknown error occurred" });
-      }
+      respondWithUnexpectedError(res, e);
     }
   },
 );

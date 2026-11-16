@@ -56,7 +56,7 @@ describe("Auth Controller Integration Tests", () => {
         .send({ username: "nonexistent", password: "password" })
         .expect(401);
 
-      expect(response.body).toHaveProperty("message", "Invalid username or password");
+      expect(response.body.error.message).toBe("Invalid username or password");
     });
 
     test("401 Unauthorized for incorrect password", async () => {
@@ -65,7 +65,7 @@ describe("Auth Controller Integration Tests", () => {
         .send({ username: userData.username, password: "wrongpassword" })
         .expect(401);
 
-      expect(response.body).toHaveProperty("message", "Invalid username or password");
+      expect(response.body.error.message).toBe("Invalid username or password");
     });
 
     test("answers an unknown user and an incorrect password identically", async () => {
@@ -92,25 +92,25 @@ describe("Auth Controller Integration Tests", () => {
         .send({ username: "no-password", password: "password" })
         .expect(401);
 
-      expect(response.body).toHaveProperty("message", "Invalid username or password");
+      expect(response.body.error.message).toBe("Invalid username or password");
       expect(response.headers["set-cookie"]).toBeUndefined();
     });
 
     test("400 Bad Request if username is missing", async () => {
       const response = await request(app).post("/session").send({ password: password }).expect(400);
 
-      expect(response.body).toHaveProperty("errors");
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([expect.objectContaining({ msg: "Username is required" })]),
+      expect(response.body.error.code).toBe("validation_failed");
+      expect(response.body.error.details.issues).toEqual(
+        expect.arrayContaining([expect.objectContaining({ message: "Username is required" })]),
       );
     });
 
     test("400 Bad Request if password is missing", async () => {
       const response = await request(app).post("/session").send({ username: userData.username }).expect(400);
 
-      expect(response.body).toHaveProperty("errors");
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([expect.objectContaining({ msg: "Password is required" })]),
+      expect(response.body.error.code).toBe("validation_failed");
+      expect(response.body.error.details.issues).toEqual(
+        expect.arrayContaining([expect.objectContaining({ message: "Password is required" })]),
       );
     });
   });
@@ -119,7 +119,7 @@ describe("Auth Controller Integration Tests", () => {
     test("401 Unauthorized if token is missing", async () => {
       const response = await request(app).get("/me").expect(401);
 
-      expect(response.body).toHaveProperty("message", "Unauthorized");
+      expect(response.body.error.message).toBe("Unauthorized");
     });
 
     test("403 Forbidden if token is invalid", async () => {
@@ -127,7 +127,7 @@ describe("Auth Controller Integration Tests", () => {
 
       const response = await request(app).get("/me").set("Cookie", `token=${invalidToken}`).expect(403);
 
-      expect(response.body).toHaveProperty("message", "Forbidden");
+      expect(response.body.error.message).toBe("Forbidden");
     });
 
     test("403 Forbidden for malformed token", async () => {
@@ -135,7 +135,7 @@ describe("Auth Controller Integration Tests", () => {
 
       const response = await request(app).get("/me").set("Cookie", `token=${malformedToken}`).expect(403);
 
-      expect(response.body).toHaveProperty("message", "Forbidden");
+      expect(response.body.error.message).toBe("Forbidden");
     });
   });
 });

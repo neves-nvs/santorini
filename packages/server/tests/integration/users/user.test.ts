@@ -36,23 +36,23 @@ describe("Users API Integration Tests", () => {
 
       const response = await request(app).post("/users").send(userData).expect(409);
 
-      expect(response.body).toHaveProperty("message", "User already exists");
+      expect(response.body.error.message).toBe("User already exists");
     });
 
     test("400 Bad Request for missing username", async () => {
       const response = await request(app).post("/users").send({ password: "password" }).expect(400);
 
-      expect(response.body).toHaveProperty("errors");
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([expect.objectContaining({ msg: "Username is required" })]),
+      expect(response.body.error.code).toBe("validation_failed");
+      expect(response.body.error.details.issues).toEqual(
+        expect.arrayContaining([expect.objectContaining({ message: "Username is required" })]),
       );
     });
 
     test("400 Bad Request for a password that is too short", async () => {
       const response = await request(app).post("/users").send({ username: "johndoe", password: "short" }).expect(400);
 
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([expect.objectContaining({ msg: "Password must be at least 8 characters" })]),
+      expect(response.body.error.details.issues).toEqual(
+        expect.arrayContaining([expect.objectContaining({ message: "Password must be at least 8 characters" })]),
       );
     });
 
@@ -68,9 +68,9 @@ describe("Users API Integration Tests", () => {
     test("400 Bad Request for missing password", async () => {
       const response = await request(app).post("/users").send({ username: "johndoe" }).expect(400);
 
-      expect(response.body).toHaveProperty("errors");
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([expect.objectContaining({ msg: "Password is required" })]),
+      expect(response.body.error.code).toBe("validation_failed");
+      expect(response.body.error.details.issues).toEqual(
+        expect.arrayContaining([expect.objectContaining({ message: "Password is required" })]),
       );
     });
 
@@ -99,7 +99,7 @@ describe("Users API Integration Tests", () => {
     test("404 Not Found if user does not exist", async () => {
       const getResponse = await request(app).get(`/users/999`).expect(404);
 
-      expect(getResponse.body).toHaveProperty("message", "User not found");
+      expect(getResponse.body.error.message).toBe("User not found");
     });
   });
 });

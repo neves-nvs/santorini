@@ -43,6 +43,12 @@ export const ERROR_CODES = [
   'invalid_game_state',
   'not_your_turn',
   'illegal_move',
+  'validation_failed',
+  'unauthorized',
+  'forbidden',
+  'user_exists',
+  'user_not_found',
+  'rate_limited',
   'internal',
 ] as const
 

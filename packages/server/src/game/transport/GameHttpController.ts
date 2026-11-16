@@ -1,7 +1,7 @@
 import {
   CreateGameRequest,
   CreateGameResponse,
-  GameErrorResponse,
+  ErrorResponse,
   GameSummary,
   GameView,
   createGamePayloadSchema,
@@ -89,7 +89,7 @@ export function createGameRoutes(gameService: GameService, lobbyService: LobbySe
     res.json(gameView);
   });
 
-  router.use((error: unknown, req: Request, res: Response<GameErrorResponse>, _next: NextFunction) => {
+  router.use((error: unknown, req: Request, res: Response<ErrorResponse>, _next: NextFunction) => {
     logger.error("Games route failed", { method: req.method, route: req.route?.path, error });
     res.status(getHttpStatus(error)).json({ error: toWireError(error) });
   });

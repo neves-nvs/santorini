@@ -1,30 +1,18 @@
 import type { GamePhase, GameStatus, PlayerView } from './game-types.ts';
-import type { ErrorCode } from './protocol.ts';
+import type { WireError } from './websocket-types.ts';
 
 // ============================================================================
 // Errors
 // ============================================================================
 
-/** The error body of the session, user and middleware routes. */
+/** The body of a success that only carries a message, such as the answer to a logout. */
 export interface MessageResponse {
   message: string;
 }
 
-/** The error body of the games routes: the same `{ code, message }` as a WebSocket `error`. */
-export interface GameErrorResponse {
-  error: { code: ErrorCode; message: string };
-}
-
-export interface ValidationFieldError {
-  type: string;
-  msg: string;
-  path?: string;
-  location?: string;
-}
-
-/** A 400 from a request body that failed validation. */
-export interface ValidationErrorResponse {
-  errors: ValidationFieldError[];
+/** The error body of every route: the same `{ code, message, details? }` as a WebSocket `error`. */
+export interface ErrorResponse {
+  error: WireError;
 }
 
 /** Some routes answer with a bare string instead of JSON (`POST /session` answers `OK`). */
