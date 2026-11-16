@@ -85,7 +85,7 @@ export interface UserView {
 // ============================================================================
 
 export interface CreateGameRequest {
-  /** The server uses 2 when this is left out. */
+  /** An integer from 2 to 4. The server uses 2 when this is left out. */
   maxPlayers?: number;
 }
 

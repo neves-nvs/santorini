@@ -124,6 +124,6 @@ describe("Join and Subscribe Integration Tests", () => {
     connection.ws.send(JSON.stringify({ type: WS_MESSAGE_TYPES.SUBSCRIBE_GAME, payload: { gameId: String(gameId) } }));
     const error = await waitFor(connection, WS_MESSAGE_TYPES.ERROR);
 
-    expect(error.payload).toContain("whole number");
+    expect(error.payload).toContain("Invalid subscribe_game payload: gameId");
   });
 });

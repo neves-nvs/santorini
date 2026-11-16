@@ -331,16 +331,15 @@ paths:
       tags: [Games]
       summary: Create a game
       description: |
-        The creator is added as the first player. Send a JSON body, `{}` for the defaults: a request without a body
-        gets a 500.
+        The creator is added as the first player. The body may be left out: the defaults apply.
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               type: object
               properties:
-                maxPlayers: { type: integer, default: 2 }
+                maxPlayers: { type: integer, minimum: 2, maximum: 4, default: 2 }
       responses:
         "200":
           description: The new game
@@ -351,6 +350,7 @@ paths:
                 required: [gameId]
                 properties:
                   gameId: { type: integer }
+        "400": { $ref: "#/components/responses/GameError" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "500": { $ref: "#/components/responses/GameServerError" }
@@ -382,6 +382,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PlayerGameView" }
+        "400": { $ref: "#/components/responses/GameError" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/GameError" }
@@ -404,6 +405,7 @@ paths:
                 required: [success]
                 properties:
                   success: { type: boolean }
+        "400": { $ref: "#/components/responses/GameError" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/GameError" }
@@ -450,14 +452,13 @@ components:
         application/json:
           schema: { $ref: "#/components/schemas/ValidationErrorResponse" }
     GameError:
-      description: A game rule or lookup failed
+      description: A game rule or lookup failed, or the game id or `maxPlayers` is not valid
       content:
         application/json:
           schema: { $ref: "#/components/schemas/GameErrorResponse" }
     GameServerError:
       description: |
-        An unexpected failure. `error` holds the message of the failure, which can name an internal detail: a request
-        without a body, a `maxPlayers` that is not a number and a `gameId` that is not a number all end here.
+        An unexpected failure. `error` holds the message of the failure, which can name an internal detail.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/GameErrorResponse" }
