@@ -159,28 +159,6 @@ export class GameService {
   }
 
   /**
-   * Start a game
-   */
-  async startGame(gameId: number): Promise<{ game: Game; events: GameEvent[] }> {
-    logger.info(`Starting game ${gameId}`);
-
-    const game = await this.gameRepository.findById(gameId);
-    if (!game) {
-      throw new GameNotFoundError(gameId);
-    }
-
-    const events = game.startGame();
-    await this.gameRepository.save(game);
-
-    // Broadcast game start to all players (active player gets availableMoves)
-    const availableMoves = game.getAvailableMoves();
-    await this.gameBroadcaster.broadcastGameStart(game, availableMoves);
-
-    logger.info(`Game ${gameId} started successfully`);
-    return { game, events };
-  }
-
-  /**
    * Get game state for a specific player
    */
   async getGameStateForPlayer(gameId: number, userId: number): Promise<PlayerGameView> {

@@ -23,9 +23,6 @@ export class ConnectionManager {
   // Index 2: gameId -> userId -> Set<Connection> (for user-specific messages)
   private userGameConnections = new Map<number, Map<number, Set<Connection>>>();
 
-  // Map to store player ready status for each game
-  private playerReadyStatus = new Map<number, Set<number>>();
-
   /**
    * Create a new game connection pool
    */
@@ -158,54 +155,6 @@ export class ConnectionManager {
   }
 
   /**
-   * Remove a client from all games (on disconnect).
-   * Returns games where user lost their last connection.
-   * @deprecated Use removeConnection instead for single connection removal
-   */
-  removeClientFromAllGames(userId: number): { gameId: number; wasLastConnection: boolean }[] {
-    logger.info(`Removing client ${userId} from all games due to connection close`);
-
-    const results: { gameId: number; wasLastConnection: boolean }[] = [];
-    const processedGames = new Set<number>();
-
-    // Find all connections for this user
-    const connectionsToRemove: { connection: Connection; gameId: number }[] = [];
-    for (const [connection, context] of this.connections) {
-      if (context.userId === userId) {
-        connectionsToRemove.push({ connection, gameId: context.gameId });
-      }
-    }
-
-    // Remove each connection
-    for (const { connection, gameId } of connectionsToRemove) {
-      this.connections.delete(connection);
-
-      const gameConnection = this.gameConnections.get(gameId);
-      if (gameConnection) {
-        gameConnection.delete(connection);
-      }
-
-      const gameUsers = this.userGameConnections.get(gameId);
-      if (gameUsers) {
-        const userConnections = gameUsers.get(userId);
-        if (userConnections) {
-          userConnections.delete(connection);
-          if (userConnections.size === 0) {
-            gameUsers.delete(userId);
-            if (!processedGames.has(gameId)) {
-              results.push({ gameId, wasLastConnection: true });
-              processedGames.add(gameId);
-            }
-          }
-        }
-      }
-    }
-
-    logger.info(`Client ${userId} removed from games: [${results.map((r) => r.gameId).join(", ")}]`);
-    return results;
-  }
-
-  /**
    * Broadcast a message to all players in a game
    */
   broadcastToGame(gameId: number, message: OutgoingMessage): void {
@@ -256,49 +205,6 @@ export class ConnectionManager {
   }
 
   /**
-   * Set a player as ready in a game
-   */
-  setPlayerReady(gameId: number, userId: number): void {
-    let readyPlayers = this.playerReadyStatus.get(gameId);
-    if (!readyPlayers) {
-      readyPlayers = new Set();
-      this.playerReadyStatus.set(gameId, readyPlayers);
-    }
-
-    readyPlayers.add(userId);
-    logger.info(`Player ${userId} is ready in game ${gameId}. Ready players: ${Array.from(readyPlayers).join(", ")}`);
-  }
-
-  /**
-   * Set a player as not ready in a game
-   */
-  setPlayerNotReady(gameId: number, userId: number): void {
-    const readyPlayers = this.playerReadyStatus.get(gameId);
-    if (readyPlayers) {
-      readyPlayers.delete(userId);
-      logger.info(
-        `Player ${userId} is no longer ready in game ${gameId}. Ready players: ${Array.from(readyPlayers).join(", ")}`,
-      );
-    }
-  }
-
-  /**
-   * Get ready players for a game
-   */
-  getReadyPlayers(gameId: number): number[] {
-    const readyPlayers = this.playerReadyStatus.get(gameId);
-    return readyPlayers ? Array.from(readyPlayers) : [];
-  }
-
-  /**
-   * Clear all ready status for a game
-   */
-  clearPlayerReadyStatus(gameId: number): void {
-    logger.info(`Clearing ready status for game ${gameId}`);
-    this.playerReadyStatus.delete(gameId);
-  }
-
-  /**
    * Get the number of connected players in a game
    */
   getConnectedPlayersCount(gameId: number): number {
@@ -313,7 +219,6 @@ export class ConnectionManager {
     this.connections.clear();
     this.gameConnections.clear();
     this.userGameConnections.clear();
-    this.playerReadyStatus.clear();
   }
 }
 
