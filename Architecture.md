@@ -62,7 +62,7 @@ packages/server/src/
 
 ```
 packages/client-react/src/
-├── main.tsx                # Entry point; registers the update layer with the WebSocket client
+├── main.tsx                # Entry point
 ├── App.tsx                 # Root component with routing
 ├── pages/                  # App shell: LobbyPage (needs both game and user)
 ├── game/                   # The board game

@@ -1,7 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { useAppStore } from '@/user/model/appStore'
 import { useIsConnected, useIsConnecting } from '@/game/model/gameSelectors'
+import { handleConnectionChange, handleWebSocketMessage, resetMessageHandlerState } from '@/game/update/GameMessageHandler'
 import { webSocketClient } from '@/game/services/WebSocketClient'
+
+// The view joins the layers: services never import update. This module loads with the lazy game page, so the
+// game code stays out of the entry bundle, and it runs before the first connect().
+webSocketClient.setEvents({
+  onMessage: handleWebSocketMessage,
+  onConnectionChange: handleConnectionChange,
+  onReset: resetMessageHandlerState,
+})
 
 /**
  * useGameConnection - WebSocket connection lifecycle only
