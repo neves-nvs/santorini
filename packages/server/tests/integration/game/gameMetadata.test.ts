@@ -1,6 +1,5 @@
-import { Game } from "@santorini/engine/Game";
+import { Game, Player } from "@santorini/engine";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
-import { Player } from "@santorini/engine/Player";
 import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 import { db } from "@/database.ts";
 import { generateTestUser } from "@tests/integration/helper/helpers.ts";

@@ -1,9 +1,6 @@
-import { BoardCellSnapshot, BoardSnapshot } from "@santorini/engine/Board";
+import { BoardCellSnapshot, BoardSnapshot, Game, GamePhase, GameSnapshot, GameStatus, Player } from "@santorini/engine";
 import { Database, Game as GameRecord, NewPiece, Piece } from "@/model.ts";
-import { Game, GameSnapshot } from "@santorini/engine/Game";
-import { GamePhase, GameStatus } from "@santorini/engine/types";
 import { Kysely, Transaction } from "kysely";
-import { Player } from "@santorini/engine/Player";
 import { db } from "@/database.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";

@@ -1,6 +1,5 @@
-import { Game } from "@santorini/engine/Game";
+import { Game, Player } from "@santorini/engine";
 import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
-import { Player } from "@santorini/engine/Player";
 
 const CURRENT_USER = 100;
 const WAITING_USER = 101;

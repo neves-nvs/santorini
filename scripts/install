@@ -20,7 +20,7 @@ if [ "${1:-}" = "--if-needed" ]; then
 fi
 
 library_is_built() {
-  [ -f "$1" ] && [ -z "$(find src package.json tsconfig.json -newer "$1" -print -quit)" ]
+  [ -f dist/index.js ] && [ -z "$(find src package.json tsconfig.json -newer dist/index.js -print -quit)" ]
 }
 
 cd "$root"
@@ -29,10 +29,10 @@ if [ "$only_if_needed" = false ] || [ ! -d node_modules ] || ! npm ls --depth=0 
   npm ci
 fi
 
-for library in shared:dist/index.js engine:dist/Game.js; do
-  cd "$root/packages/${library%%:*}"
-  if [ "$only_if_needed" = false ] || ! library_is_built "${library#*:}"; then
-    echo "build: packages/${library%%:*}"
+for library in shared engine; do
+  cd "$root/packages/$library"
+  if [ "$only_if_needed" = false ] || ! library_is_built; then
+    echo "build: packages/$library"
     npm run build
   fi
 done

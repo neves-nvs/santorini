@@ -1,6 +1,5 @@
+import { Game, GameEvent } from "@santorini/engine";
 import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
-import { Game } from "@santorini/engine/Game";
-import { GameEvent } from "@santorini/engine/GameEvent";
 import { GameViewBuilder } from "./GameViewBuilder.ts";
 import { WS_MESSAGE_TYPES } from "@santorini/shared";
 import logger from "@/logger.ts";

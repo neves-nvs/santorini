@@ -1,5 +1,5 @@
 import { GameRepositoryDb, StoredGame } from "@/game/infra/GameRepositoryDb.ts";
-import { Game } from "@santorini/engine/Game";
+import { Game } from "@santorini/engine";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 
