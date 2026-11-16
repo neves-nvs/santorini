@@ -8,5 +8,8 @@ set -euo pipefail
 #   Set SMOKE_BROWSER_CHANNEL=chrome to use an installed Google Chrome instead of Playwright's Chromium.
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# The suite sends far more requests than a person would: the server's default limits would answer it with 429
+export AUTH_RATE_LIMIT="${AUTH_RATE_LIMIT:-1000}"
+export RATE_LIMIT="${RATE_LIMIT:-100000}"
 export SMOKE_TEST_COMMAND="npx playwright test"
 exec "$here/smoke" scripts
