@@ -1,10 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { param, validationResult } from "express-validator";
 
-import { StatusCodes } from "http-status-codes";
+import { ValidationFailedError } from "@/errors/HttpErrors.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
-import { sendError } from "@/errors/httpError.ts";
 
 export function deprecate(req: Request, res: Response, next: NextFunction) {
   res.setHeader("Warning", '299 - "Deprecated API"');
@@ -12,20 +11,15 @@ export function deprecate(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-export const checkValidation = (req: Request, res: Response, next: NextFunction) => {
+export const checkValidation = (req: Request, _res: Response, next: NextFunction) => {
   // The submitted value is left out: it can be a password, and the log redaction cannot see it under this key.
   const errors = validationResult(req).formatWith((error) => ({
     msg: error.msg,
     path: error.type === "field" ? error.path : "",
   }));
   if (!errors.isEmpty()) {
-    const issues = errors.array().map(({ path, msg }) => ({ path: path ? [path] : [], message: String(msg) }));
-    return sendError(
-      res,
-      StatusCodes.BAD_REQUEST,
-      "validation_failed",
-      issues.map((issue) => issue.message).join(", "),
-      { issues },
+    throw new ValidationFailedError(
+      errors.array().map(({ path, msg }) => ({ path: path ? [path] : [], message: String(msg) })),
     );
   }
   next();

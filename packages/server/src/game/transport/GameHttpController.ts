@@ -1,21 +1,19 @@
 import {
   CreateGameRequest,
   CreateGameResponse,
-  ErrorResponse,
   GameSummary,
   GameView,
   createGamePayloadSchema,
 } from "@santorini/shared";
-import { GameError, getHttpStatus, toWireError } from "@/errors/GameErrors.ts";
-import { NextFunction, Request, Response, Router } from "express";
 import { authenticate, getUser } from "@/auth/authController.ts";
 
+import { GameError } from "@/errors/GameErrors.ts";
 import { GameId } from "@santorini/engine";
 import { GameService } from "@/game/application/GameService.ts";
 import { LobbyService } from "@/game/application/LobbyService.ts";
+import { Router } from "express";
 import { StoredGame } from "@/game/infra/GameRepositoryDb.ts";
 import { gameIdSchema } from "@/idSchemas.ts";
-import logger from "@/logger.ts";
 
 function parseGameId(raw: unknown): GameId {
   const parsed = gameIdSchema.safeParse(Number(raw));
@@ -87,11 +85,6 @@ export function createGameRoutes(gameService: GameService, lobbyService: LobbySe
     const gameId = parseGameId(req.params.gameId);
     const gameView = await gameService.getGameView(gameId, userId);
     res.json(gameView);
-  });
-
-  router.use((error: unknown, req: Request, res: Response<ErrorResponse>, _next: NextFunction) => {
-    logger.error("Games route failed", { method: req.method, route: req.route?.path, error });
-    res.status(getHttpStatus(error)).json({ error: toWireError(error) });
   });
 
   return router;

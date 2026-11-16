@@ -37,7 +37,7 @@ describe("Error Response Integration Tests", () => {
 
     const response = await request(app).get("/me").set("Cookie", `token=${token}`).expect(500);
 
-    expect(response.body).toEqual({ error: { code: "internal", message: "Internal server error" } });
+    expect(response.body).toEqual({ error: { code: "internal", message: "Something went wrong" } });
   });
 
   describe("error middleware", () => {
@@ -51,14 +51,14 @@ describe("Error Response Integration Tests", () => {
       const res = respondTo(Object.assign(new Error("relation users_pkey is broken"), { status: 500 }));
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: { code: "internal", message: "Internal Server Error" } });
+      expect(res.json).toHaveBeenCalledWith({ error: { code: "internal", message: "Something went wrong" } });
     });
 
     test("hides the message of an error without a status", () => {
       const res = respondTo(new Error("connection to 10.0.0.5:5432 refused"));
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: { code: "internal", message: "Internal Server Error" } });
+      expect(res.json).toHaveBeenCalledWith({ error: { code: "internal", message: "Something went wrong" } });
     });
 
     test("keeps the message of a client error and never sends the stack", () => {

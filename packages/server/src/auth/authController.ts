@@ -7,6 +7,7 @@ import {
   TextResponse,
   WebSocketTicketResponse,
 } from "@santorini/shared";
+import { ForbiddenError, UnauthorizedError } from "@/errors/HttpErrors.ts";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import { User } from "@/model.ts";
@@ -19,7 +20,6 @@ import logger from "@/logger.ts";
 import { loginRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
 import passport from "passport";
 import { randomBytes } from "crypto";
-import { sendError } from "@/errors/httpError.ts";
 import { webSocketTickets } from "./webSocketTickets.ts";
 
 // Compared against when there is no hash to check, so an unknown user takes as long as a wrong password.
@@ -40,7 +40,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   passport.authenticate("jwt", { session: false }, async (err: Error, user: unknown, info: VerifyErrors) => {
     if (info && info.message === "No auth token") {
       logger.debug("No auth token");
-      return sendError(res, StatusCodes.UNAUTHORIZED, "unauthorized", "Unauthorized");
+      return next(new UnauthorizedError());
     } else if (info) {
       // Reduce spam for common token expiration errors
       if (info.name === "TokenExpiredError") {
@@ -48,28 +48,27 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
       } else {
         logger.error("Forbidden", info);
       }
-      return sendError(res, StatusCodes.FORBIDDEN, "forbidden", "Forbidden");
+      return next(new ForbiddenError());
     } else if (err) {
       logger.error("Unauthorized", err);
-      return sendError(res, StatusCodes.UNAUTHORIZED, "unauthorized", "Unauthorized");
+      return next(new UnauthorizedError());
     } else if (!user) {
       logger.debug("No user found");
-      return sendError(res, StatusCodes.UNAUTHORIZED, "unauthorized", "Unauthorized");
+      return next(new UnauthorizedError());
     }
 
     try {
       const validUser = await findUserByUsername((user as JwtPayload).username);
       logger.debug("Checked if user exists", { user: validUser });
       if (!validUser) {
-        return sendError(res, StatusCodes.FORBIDDEN, "forbidden", "User not found or inactive");
+        return next(new ForbiddenError("User not found or inactive"));
       }
 
       req.user = validUser;
 
       next();
     } catch (e: unknown) {
-      logger.error("Failed to look up the authenticated user", e);
-      return sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
+      next(e);
     }
   })(req, res, next);
 };
@@ -87,30 +86,24 @@ router.post<NoParams, TextResponse | ErrorResponse, LoginRequest>(
   async (req: Request, res: Response) => {
     const { username, password } = req.body;
 
-    try {
-      const user = await findUserByUsername(username);
-      const passwordHash = user?.password_hash;
-      const passwordMatches = await bcrypt.compare(password, passwordHash ?? UNUSED_PASSWORD_HASH);
-      if (!user || !passwordHash || !passwordMatches) {
-        logger.warn("Login rejected", { reason: user ? "invalid password" : "unknown user" });
-        return sendError(res, StatusCodes.UNAUTHORIZED, "unauthorized", "Invalid username or password");
-      }
-
-      if (!config.jwtSecret) {
-        logger.error("JWT secret not set");
-        return sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
-      }
-
-      const token = jwt.sign({ username: user.username }, config.jwtSecret, {
-        expiresIn: "5h",
-      });
-
-      res.cookie("token", token, sessionCookieOptions(req));
-      res.status(StatusCodes.OK).send("OK");
-    } catch (err) {
-      logger.error("An error occurred during authentication", err);
-      sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
+    const user = await findUserByUsername(username);
+    const passwordHash = user?.password_hash;
+    const passwordMatches = await bcrypt.compare(password, passwordHash ?? UNUSED_PASSWORD_HASH);
+    if (!user || !passwordHash || !passwordMatches) {
+      logger.warn("Login rejected", { reason: user ? "invalid password" : "unknown user" });
+      throw new UnauthorizedError("Invalid username or password");
     }
+
+    if (!config.jwtSecret) {
+      throw new Error("JWT secret not set");
+    }
+
+    const token = jwt.sign({ username: user.username }, config.jwtSecret, {
+      expiresIn: "5h",
+    });
+
+    res.cookie("token", token, sessionCookieOptions(req));
+    res.status(StatusCodes.OK).send("OK");
   },
 );
 
@@ -126,15 +119,9 @@ router.post<NoParams, WebSocketTicketResponse>("/ws-ticket", authenticate, (req,
 });
 
 // Endpoint to check authentication status and get user info
-router.get<NoParams, CurrentUserResponse | ErrorResponse>("/me", authenticate, async (req, res) => {
-  try {
-    const user = req.user as User;
-    res.status(StatusCodes.OK).json({ id: user.id, username: user.username });
-  } catch (e: unknown) {
-    const error = e as Error;
-    logger.error(error.message);
-    sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
-  }
+router.get<NoParams, CurrentUserResponse | ErrorResponse>("/me", authenticate, (req, res) => {
+  const user = getUser(req);
+  res.status(StatusCodes.OK).json({ id: user.id, username: user.username });
 });
 
 export default router;
