@@ -1,3 +1,4 @@
+import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { useState } from 'react'
 import { useIsConnected } from '@/store/gameSelectors'
 import { webSocketClient } from '@/services/WebSocketClient'
@@ -15,7 +16,7 @@ const ConnectionTest = () => {
   const testWebSocketConnection = () => {
     addResult(`WebSocket connected: ${isConnected}`)
     if (isConnected) {
-      webSocketClient.send('test_message', { test: 'Hello from React!' })
+      webSocketClient.send({ type: WS_MESSAGE_TYPES.LIST_GAMES })
       addResult('Sent test message to WebSocket')
     }
   }

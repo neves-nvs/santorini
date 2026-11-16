@@ -1,108 +1,24 @@
-// Re-export shared types
-export type {
-  Position,
-  WorkerRef,
-  CellView,
-  BoardView,
-  PlayerStatus,
-  PlayerView,
-  GameStatus,
-  GamePhase,
-  PlaceWorkerMove,
-  MoveWorkerMove,
-  BuildMove,
-  Move,
-  PlayerGameView,
-  SpectatorGameView,
-  GameStateUpdatePayload,
-  GameEndPayload,
-  GameStartPayload
-} from '@santorini/shared';
+export type { BoardView, Move, PlayerGameView, PlayerView } from '@santorini/shared'
 
-import type {
-  Position,
-  BoardView,
-  PlayerView,
-  GameStatus,
-  GamePhase,
-  Move
-} from '@santorini/shared';
-
-// ============================================================================
-// Extended Frontend Types
-// ============================================================================
+import type { Move, PlayerGameView, Position } from '@santorini/shared'
 
 export interface BuildPosition extends Position {
-  buildingLevel?: number;
-  buildingType?: string;
-  moveType?: 'build_block' | 'build_dome';
-  serverMoveObject?: Move;
+  buildingLevel?: number
+  buildingType?: string
+  moveType?: 'build_block' | 'build_dome'
+  serverMoveObject?: Move
 }
 
-export type BlockType = 'BASE' | 'MID' | 'TOP' | 'DOME';
-export type PieceType = BlockType | 'WORKER';
+/** What the store keeps of a game: the view the server sent, plus what the client works out from it. */
+export type GameState = PlayerGameView & { currentUserReady?: boolean }
 
-export interface GamePiece {
-  type: PieceType;
-  position: Position;
-  playerId?: string;
+interface MoveOptions<T extends Move['type']> {
+  type: T
+  workerId: number
+  validPositions: Position[]
 }
 
-export interface PlayerReadyStatus {
-  userId: number;
-  isReady: boolean;
-}
-
-/**
- * Client-side game state that combines server view with local state
- */
-export interface GameState {
-  // Core fields from PlayerGameView
-  gameId: number;
-  status: GameStatus;
-  phase: GamePhase;
-  currentPlayerId: number | null;
-  turnNumber: number;
-  version: number;
-  board: BoardView;
-  players: PlayerView[];
-  availableMoves?: Move[];
-  winnerId?: number;
-  winReason?: string;
-  isCurrentPlayer: boolean;
-
-  // Legacy fields for backwards compatibility during migration
-  id?: string;
-  currentPlayer?: string;
-
-  // Ready status fields
-  currentUserReady?: boolean;
-  playersReadyStatus?: PlayerReadyStatus[];
-  readyCount?: number;
-  totalPlayers?: number;
-
-  // Turn state tracking
-  isMyTurn?: boolean;
-}
-
-// Available move format for UI (transformed from server moves)
-export interface AvailableMove {
-  type: 'place_worker' | 'move_worker' | 'build_block' | 'build_dome';
-  workerId: number;
-  validPositions: (Position | BuildPosition)[];
-  // For move_worker moves: the worker's current position (where they're moving FROM)
-  fromPosition?: Position;
-}
-
-// WebSocket message wrapper
-export interface WebSocketMessage {
-  type: string;
-  payload: unknown;
-}
-
-export interface AvailablePlay {
-  type: string;
-  position?: Position;
-  from?: Position;
-  to?: Position;
-}
+/** The server's moves, grouped by type and worker so the board can show every square one worker can reach. */
+export type AvailableMove =
+  | MoveOptions<'place_worker' | 'build_block' | 'build_dome'>
+  | (MoveOptions<'move_worker'> & { fromPosition: Position })

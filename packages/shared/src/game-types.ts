@@ -171,11 +171,10 @@ export interface GameEndPayload {
 }
 
 /**
- * Payload for game start notifications
+ * Payload for game start notifications. `availableMoves` is only sent to the player who moves first.
  */
 export interface GameStartPayload {
   gameId: number;
-  startedAt: Date | null;
-  currentPlayerId: number | null;
+  activePlayerId: number | null;
+  availableMoves?: Move[];
 }
-

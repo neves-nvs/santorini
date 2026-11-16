@@ -12,17 +12,11 @@
  * - Handle game-specific logic
  */
 
-import { WS_MESSAGE_TYPES } from '@santorini/shared'
+import { type ClientMessage, type MoveCommand, WS_MESSAGE_TYPES } from '@santorini/shared'
 import { apiService } from './ApiService'
 import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from './GameMessageHandler'
+import { parseServerMessage } from './parseServerMessage'
 import { RECONNECTION_DELAY } from '@/constants/gameConstants'
-
-interface WebSocketMessage {
-  type: string
-  payload: unknown
-}
-
-export type MessageHandler = (type: string, payload: unknown) => void
 
 function getWebSocketUrl(): string {
   const envUrl = import.meta.env.VITE_WS_URL
@@ -80,14 +74,14 @@ class WebSocketClient {
   /**
    * Send a message to the server
    */
-  send(type: string, payload: unknown): void {
+  send(message: ClientMessage): void {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket not connected, cannot send:', type)
+      console.error('WebSocket not connected, cannot send:', message.type)
       throw new Error(`WebSocket not connected. State: ${this.socket?.readyState ?? 'null'}`)
     }
 
-    this.socket.send(JSON.stringify({ type, payload }))
-    console.log('Sent:', type)
+    this.socket.send(JSON.stringify(message))
+    console.log('Sent:', message.type)
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -101,7 +95,7 @@ class WebSocketClient {
       return
     }
     console.log('Subscribing to game:', gameId)
-    this.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: parseInt(gameId) })
+    this.send({ type: WS_MESSAGE_TYPES.SUBSCRIBE_GAME, payload: { gameId: parseInt(gameId) } })
   }
 
   unsubscribeFromGame(gameId: string): void {
@@ -115,11 +109,11 @@ class WebSocketClient {
       return
     }
     console.log('Joining game:', gameId)
-    this.send(WS_MESSAGE_TYPES.JOIN_GAME, { gameId: parseInt(gameId) })
+    this.send({ type: WS_MESSAGE_TYPES.JOIN_GAME, payload: { gameId: parseInt(gameId) } })
   }
 
-  makeMove(moveType: string, data: unknown): void {
-    this.send(moveType, data)
+  makeMove(gameId: number, move: MoveCommand): void {
+    this.send({ type: WS_MESSAGE_TYPES.MAKE_MOVE, payload: { gameId, move } })
   }
 
   setReady(gameId: string, isReady: boolean): void {
@@ -129,7 +123,7 @@ class WebSocketClient {
       return
     }
     console.log('Setting ready status:', { gameId, isReady })
-    this.send(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady })
+    this.send({ type: WS_MESSAGE_TYPES.SET_READY, payload: { gameId: parseInt(gameId), isReady } })
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -168,11 +162,16 @@ class WebSocketClient {
     }
 
     this.socket.onmessage = (event) => {
+      const message = parseServerMessage(event.data)
+      if (!message) {
+        console.warn('Ignoring a WebSocket message the client does not recognise')
+        return
+      }
+
       try {
-        const message: WebSocketMessage = JSON.parse(event.data)
-        handleWebSocketMessage(message.type, message.payload)
+        handleWebSocketMessage(message)
       } catch (error) {
-        console.error('Failed to parse WebSocket message:', error)
+        console.error('Failed to handle WebSocket message:', message.type, error)
       }
     }
 
@@ -242,8 +241,8 @@ export const webSocketClient = {
     return instance?.isConnected() ?? false
   },
 
-  send(type: string, payload: unknown): void {
-    this.getInstance().send(type, payload)
+  send(message: ClientMessage): void {
+    this.getInstance().send(message)
   },
 
   subscribeToGame(gameId: string): void {
@@ -258,8 +257,8 @@ export const webSocketClient = {
     this.getInstance().joinGame(gameId)
   },
 
-  makeMove(moveType: string, data: unknown): void {
-    this.getInstance().makeMove(moveType, data)
+  makeMove(gameId: number, move: MoveCommand): void {
+    this.getInstance().makeMove(gameId, move)
   },
 
   setReady(gameId: string, isReady: boolean): void {

@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { DEFAULT_PLAYERS } from '@/constants/gameConstants'
 import { useGameState, useIsMyTurn } from '@/store/gameSelectors'
 import { 
   GameLifecycle, 
@@ -27,8 +28,8 @@ export function useGameLifecycle() {
 
   // Calculate derived values
   const currentPlayers = gameState?.players?.length || 0
-  const totalPlayers = gameState?.totalPlayers || 2
-  const readyCount = gameState?.playersReadyStatus?.filter((p: { isReady: boolean }) => p.isReady).length || 0
+  const totalPlayers = DEFAULT_PLAYERS
+  const readyCount = gameState?.players.filter((player) => player.isReady).length ?? 0
 
   // Get user-friendly status message
   const statusMessage = useMemo(() => {
@@ -61,7 +62,6 @@ export function useGameLifecycle() {
     
     // Turn state
     isMyTurn,
-    currentPlayer: gameState?.currentPlayer,
     
     // Winner info
     winner: gameState?.winnerId,

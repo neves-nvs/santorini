@@ -1,6 +1,6 @@
 import { memo, useEffect } from 'react'
 import { useGameState } from '@/store/gameSelectors'
-import { PLAYER_COLORS } from '@/constants/gameConstants'
+import { DEFAULT_PLAYERS, PLAYER_COLORS } from '@/constants/gameConstants'
 import type { PlayerView } from '@/types/game'
 
 interface PlayerListProps {
@@ -33,7 +33,7 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
   return (
     <div className={className} style={style}>
       <h3 style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)', margin: '0 0 0.5rem 0' }}>
-        Players ({players.length}/{gameState.totalPlayers || 2})
+        Players ({players.length}/{DEFAULT_PLAYERS})
       </h3>
 
       {Array.isArray(players) ? (
