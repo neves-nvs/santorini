@@ -123,75 +123,34 @@ export class GameRepositoryDb {
       // Check if game exists, create if not
       const existingGame = await trx.selectFrom("games").where("id", "=", game.id).selectAll().executeTakeFirst();
 
+      const columns = this.gameColumns(snapshot);
+
       if (existingGame) {
-        // Update existing game
         await trx
           .updateTable("games")
           .set({
-            game_status: snapshot.status,
-            game_phase: snapshot.phase,
-            current_player_id: snapshot.currentPlayerId,
-            turn_number: snapshot.turnNumber,
-            placing_turns_completed: snapshot.placingTurnsCompleted,
-            last_moved_worker_id: snapshot.lastMovedWorkerId,
-            last_moved_worker_x: snapshot.lastMovedWorkerPosition?.x || null,
-            last_moved_worker_y: snapshot.lastMovedWorkerPosition?.y || null,
-            winner_id: snapshot.winnerId,
-            win_reason: snapshot.winReason,
+            ...columns,
             ...(existingGame.started_at === null && snapshot.status !== "waiting" ? { started_at: now } : {}),
             ...(existingGame.finished_at === null && snapshot.status === "completed" ? { finished_at: now } : {}),
           })
           .where("id", "=", game.id)
           .execute();
-
-        // Update players - clear existing and re-insert
-        await trx.deleteFrom("players").where("game_id", "=", game.id).execute();
-        for (const player of snapshot.players) {
-          await trx
-            .insertInto("players")
-            .values({
-              game_id: game.id,
-              user_id: player.userId,
-              is_ready: player.isReady,
-            })
-            .execute();
-        }
       } else {
-        // Create new game
         await trx
           .insertInto("games")
           .values({
             id: snapshot.id,
             user_creator_id: snapshot.creatorId,
             player_count: snapshot.maxPlayers,
-            game_status: snapshot.status,
-            game_phase: snapshot.phase,
-            current_player_id: snapshot.currentPlayerId,
-            turn_number: snapshot.turnNumber,
-            placing_turns_completed: snapshot.placingTurnsCompleted,
-            last_moved_worker_id: snapshot.lastMovedWorkerId,
-            last_moved_worker_x: snapshot.lastMovedWorkerPosition?.x || null,
-            last_moved_worker_y: snapshot.lastMovedWorkerPosition?.y || null,
-            winner_id: snapshot.winnerId,
-            win_reason: snapshot.winReason,
+            ...columns,
             created_at: now,
             started_at: snapshot.status === "waiting" ? undefined : now,
             finished_at: snapshot.status === "completed" ? now : undefined,
           })
           .execute();
-
-        // Add players
-        for (const player of snapshot.players) {
-          await trx
-            .insertInto("players")
-            .values({
-              game_id: game.id,
-              user_id: player.userId,
-              is_ready: player.isReady,
-            })
-            .execute();
-        }
       }
+
+      await this.replacePlayers(trx, game.id, snapshot.players);
 
       // Update board state (pieces table)
       await this.saveBoardState(trx, game.id, snapshot.board);
@@ -243,6 +202,32 @@ export class GameRepositoryDb {
       .execute();
 
     return this.loadStored(gameRecords);
+  }
+
+  /** The columns of a game that both an insert and an update write. */
+  private gameColumns(snapshot: GameSnapshot) {
+    return {
+      game_status: snapshot.status,
+      game_phase: snapshot.phase,
+      current_player_id: snapshot.currentPlayerId,
+      turn_number: snapshot.turnNumber,
+      placing_turns_completed: snapshot.placingTurnsCompleted,
+      last_moved_worker_id: snapshot.lastMovedWorkerId,
+      last_moved_worker_x: snapshot.lastMovedWorkerPosition?.x ?? null,
+      last_moved_worker_y: snapshot.lastMovedWorkerPosition?.y ?? null,
+      winner_id: snapshot.winnerId,
+      win_reason: snapshot.winReason,
+    };
+  }
+
+  private async replacePlayers(trx: Transaction<Database>, gameId: number, players: GameSnapshot["players"]) {
+    await trx.deleteFrom("players").where("game_id", "=", gameId).execute();
+    for (const player of players) {
+      await trx
+        .insertInto("players")
+        .values({ game_id: gameId, user_id: player.userId, is_ready: player.isReady })
+        .execute();
+    }
   }
 
   private async loadStored(records: GameRecord[]): Promise<StoredGame[]> {
