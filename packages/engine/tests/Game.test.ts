@@ -1,7 +1,7 @@
-import { BuildMove, MoveWorkerMove, PlaceWorkerMove } from "@/game/domain/Move.ts";
+import { BuildMove, MoveWorkerMove, PlaceWorkerMove } from "../src/Move.ts";
 
-import { Game } from "@/game/domain/Game.ts";
-import { Player } from "@/game/domain/Player.ts";
+import { Game } from "../src/Game.ts";
+import { Player } from "../src/Player.ts";
 
 describe("Game Domain", () => {
   let game: Game;

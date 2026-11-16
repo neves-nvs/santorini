@@ -1,8 +1,7 @@
+import { Game, Player } from "@santorini/engine";
 import { Connection } from "@/game/infra/Connection.ts";
 import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
-import { Game } from "@/game/domain/Game.ts";
 import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
-import { Player } from "@/game/domain/Player.ts";
 import { ServerMessage } from "@santorini/shared";
 import { User } from "@/model.ts";
 

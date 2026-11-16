@@ -6,6 +6,7 @@ on:
       - packages/server/**
       - packages/client-react/**
       - packages/shared/**
+      - packages/engine/**
       - package.json
       - package-lock.json
       - .prettierrc
@@ -41,9 +42,9 @@ jobs:
         if: steps.changed.outputs.any == 'true'
         run: npm ci
 
-      - name: Build the shared package
+      - name: Build the shared and engine packages
         if: steps.changed.outputs.any == 'true'
-        run: npm run build:shared
+        run: npm run build:libraries
 
       - name: Check formatting
         if: steps.changed.outputs.any == 'true'

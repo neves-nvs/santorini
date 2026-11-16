@@ -1,7 +1,6 @@
-import { Game } from "@/game/domain/Game.ts";
+import { Game, Player } from "@santorini/engine";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { GameService } from "@/game/application/GameService.ts";
-import { Player } from "@/game/domain/Player.ts";
 
 function serviceFor(game: Game): GameService {
   const repository = { findById: async () => game } as unknown as GameRepositoryDb;

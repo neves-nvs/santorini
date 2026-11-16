@@ -5,9 +5,8 @@
  * Encapsulates board-level game logic and validation.
  */
 
-import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove, isBoardCoordinate } from "./Move.ts";
+import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove, Position, isBoardCoordinate } from "./Move.ts";
 import { PlayerId } from "./Player.ts";
-import type { Position } from "@santorini/shared";
 
 export interface WorkerRef {
   playerId: PlayerId;

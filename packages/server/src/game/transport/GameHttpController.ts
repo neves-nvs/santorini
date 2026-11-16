@@ -11,7 +11,7 @@ import { GameError, getHttpStatus, toWireError } from "@/errors/GameErrors.ts";
 import { NextFunction, Request, Response, Router } from "express";
 import { authenticate, getUser } from "@/auth/authController.ts";
 
-import { Game } from "@/game/domain/Game.ts";
+import { Game } from "@santorini/engine";
 import { GameService } from "@/game/application/GameService.ts";
 import { LobbyService } from "@/game/application/LobbyService.ts";
 import logger from "@/logger.ts";

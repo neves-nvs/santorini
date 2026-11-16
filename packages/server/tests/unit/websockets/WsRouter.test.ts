@@ -1,6 +1,7 @@
-import { GameNotFoundError, GameRuleError } from "@/errors/GameErrors.ts";
 import { Connection } from "@/game/infra/Connection.ts";
 import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
+import { GameNotFoundError } from "@/errors/GameErrors.ts";
+import { GameRuleError } from "@santorini/engine";
 import { GameService } from "@/game/application/GameService.ts";
 import { ServerMessage } from "@santorini/shared";
 import { WsRouter } from "@/websockets/WsRouter.ts";

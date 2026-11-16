@@ -5,7 +5,16 @@
  * Immutable value objects that encapsulate move data and validation.
  */
 
-import type { MoveCommand, Position } from "@santorini/shared";
+export interface Position {
+  x: number;
+  y: number;
+}
+
+/** What a client asks for. It is looser than a Move: `workerId` may be left out, and a build names no worker. */
+export type MoveInput =
+  | { type: "place_worker"; position: Position; workerId?: number }
+  | { type: "move_worker"; position: Position; fromPosition: Position; workerId?: number }
+  | { type: "build_block" | "build_dome"; position: Position; buildingLevel?: number };
 
 const BOARD_SIZE = 5;
 
@@ -78,7 +87,7 @@ export class BuildMove extends Move {
 
 // Factory function to create moves from raw data
 // playerId is provided separately (from authenticated user)
-export function createMove(playerId: number, moveData: MoveCommand): Move {
+export function createMove(playerId: number, moveData: MoveInput): Move {
   switch (moveData.type) {
     case "place_worker":
       return new PlaceWorkerMove(playerId, moveData.position, moveData.workerId ?? 0);

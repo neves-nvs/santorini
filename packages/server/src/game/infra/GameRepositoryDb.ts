@@ -1,9 +1,6 @@
-import { BoardCellSnapshot, BoardSnapshot } from "@/game/domain/Board.ts";
+import { BoardCellSnapshot, BoardSnapshot, Game, GamePhase, GameSnapshot, GameStatus, Player } from "@santorini/engine";
 import { Database, NewPiece, Piece } from "@/model.ts";
-import { Game, GameSnapshot } from "@/game/domain/Game.ts";
-import { GamePhase, GameStatus } from "@/game/domain/types.ts";
 import { Kysely, Transaction } from "kysely";
-import { Player } from "@/game/domain/Player.ts";
 import { db } from "@/database.ts";
 
 import logger from "@/logger.ts";

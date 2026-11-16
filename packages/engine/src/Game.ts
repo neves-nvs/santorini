@@ -4,8 +4,9 @@ import { DefaultTurnPolicy, TurnPolicy } from "./TurnPolicy.ts";
 import { GamePhase, GameStatus } from "./types.ts";
 import { Player, PlayerId } from "./Player.ts";
 
-import { GameEvent } from "./GameEvent.ts";
-import { GameRuleError } from "@/errors/GameErrors.ts";
+import { GameEvent, GameEventPayload, GameEventType } from "./GameEvent.ts";
+import { Clock, systemClock } from "./clock.ts";
+import { GameRuleError } from "./errors.ts";
 
 /**
  * Game Aggregate Root
@@ -30,18 +31,41 @@ export class Game {
     private _winReason: string | null = null,
     private _lastMovedWorkerId: number | null = null,
     private _lastMovedWorkerPosition: { x: number; y: number } | null = null,
-    private _createdAt: Date = new Date(),
-    private _startedAt: Date | null = null,
-    private _finishedAt: Date | null = null,
-    private _turnPolicy: TurnPolicy = new DefaultTurnPolicy(),
+    private _createdAt: Date,
+    private _startedAt: Date | null,
+    private _finishedAt: Date | null,
+    private _turnPolicy: TurnPolicy,
+    private readonly _clock: Clock,
   ) {}
 
   // Factory methods
-  static create(id: number, creatorId: number, maxPlayers: number): Game {
-    return new Game(id, creatorId, maxPlayers, "waiting", null, null, 0, 0, Board.createEmpty(), new Map(), 1);
+  static create(id: number, creatorId: number, maxPlayers: number, options: GameOptions = {}): Game {
+    const clock = options.clock ?? systemClock;
+    return new Game(
+      id,
+      creatorId,
+      maxPlayers,
+      "waiting",
+      null,
+      null,
+      0,
+      0,
+      Board.createEmpty(),
+      new Map(),
+      1,
+      null,
+      null,
+      null,
+      null,
+      clock(),
+      null,
+      null,
+      options.turnPolicy ?? new DefaultTurnPolicy(),
+      clock,
+    );
   }
 
-  static fromSnapshot(snapshot: GameSnapshot, turnPolicy?: TurnPolicy): Game {
+  static fromSnapshot(snapshot: GameSnapshot, options: GameOptions = {}): Game {
     const players = new Map();
     snapshot.players.forEach((p) => players.set(p.id, p));
 
@@ -64,7 +88,8 @@ export class Game {
       snapshot.createdAt,
       snapshot.startedAt,
       snapshot.finishedAt,
-      turnPolicy,
+      options.turnPolicy ?? new DefaultTurnPolicy(),
+      options.clock ?? systemClock,
     );
   }
 
@@ -73,6 +98,10 @@ export class Game {
    */
   setTurnPolicy(turnPolicy: TurnPolicy): void {
     this._turnPolicy = turnPolicy;
+  }
+
+  private event(type: GameEventType, payload: GameEventPayload): GameEvent {
+    return new GameEvent(type, payload, undefined, this._clock());
   }
 
   // Core game operations
@@ -94,16 +123,16 @@ export class Game {
       this._status = "completed";
       this._winnerId = playerId;
       this._winReason = "win_condition";
-      this._finishedAt = new Date();
+      this._finishedAt = this._clock();
       this._version++;
       this.assertInvariants();
-      events.push(new GameEvent("GameFinished", { winnerId: playerId, reason: "win_condition" }));
+      events.push(this.event("GameFinished", { winnerId: playerId, reason: "win_condition" }));
     } else {
       // Advance turn state
       this.advanceTurn(move, moveResult);
       this._version++;
       this.assertInvariants();
-      events.push(new GameEvent("MovePlayed", { playerId, move, turnNumber: this._turnNumber }));
+      events.push(this.event("MovePlayed", { playerId, move, turnNumber: this._turnNumber }));
     }
     return events;
   }
@@ -314,12 +343,12 @@ export class Game {
     this._status = "completed";
     this._winnerId = winnerId;
     this._winReason = "opponent_trapped";
-    this._finishedAt = new Date();
+    this._finishedAt = this._clock();
     this._version++;
     this.assertInvariants();
 
     return [
-      new GameEvent("GameFinished", {
+      this.event("GameFinished", {
         winnerId,
         reason: "opponent_trapped",
         trappedPlayerId: this._currentPlayerId,
@@ -337,7 +366,7 @@ export class Game {
     const events: GameEvent[] = [];
 
     if (this._players.size === this.maxPlayers) {
-      events.push(new GameEvent("GameReady", { gameId: this.id }));
+      events.push(this.event("GameReady", { gameId: this.id }));
     }
 
     return events;
@@ -372,7 +401,7 @@ export class Game {
     this._players.delete(playerToRemove.id);
     this._version++;
 
-    return [new GameEvent("PlayerLeft", { gameId: this.id, userId })];
+    return [this.event("PlayerLeft", { gameId: this.id, userId })];
   }
 
   /**
@@ -398,7 +427,7 @@ export class Game {
     this._version++;
 
     const events: GameEvent[] = [
-      new GameEvent("PlayerReadyChanged", {
+      this.event("PlayerReadyChanged", {
         gameId: this.id,
         playerId,
         ready,
@@ -453,11 +482,11 @@ export class Game {
     this._status = "in-progress";
     this._phase = "placing";
     this._currentPlayerId = Array.from(this._players.keys())[0];
-    this._startedAt = new Date();
+    this._startedAt = this._clock();
     this._version++;
 
     this.assertInvariants();
-    return [new GameEvent("GameStarted", { gameId: this.id, firstPlayerId: this._currentPlayerId })];
+    return [this.event("GameStarted", { gameId: this.id, firstPlayerId: this._currentPlayerId })];
   }
 
   // Private methods
@@ -556,6 +585,12 @@ export class Game {
       finishedAt: this._finishedAt,
     };
   }
+}
+
+export interface GameOptions {
+  turnPolicy?: TurnPolicy;
+  /** The time source for timestamps and events; tests and hosts that need deterministic time pass their own. */
+  clock?: Clock;
 }
 
 export interface GameSnapshot {

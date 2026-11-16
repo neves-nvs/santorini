@@ -81,8 +81,9 @@ export class GameEvent {
     public readonly type: GameEventType,
     public readonly payload: GameEventPayload,
     public readonly aggregateId?: number,
+    occurredAt: Date = new Date(),
   ) {
-    this.occurredAt = new Date();
+    this.occurredAt = occurredAt;
   }
 }
 

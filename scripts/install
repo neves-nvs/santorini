@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# scripts/install               npm ci at the repository root (one workspace install), then build packages/shared
+# scripts/install               npm ci at the repository root (one workspace install), then build packages/shared and packages/engine
 # scripts/install --if-needed   npm ci only when the installed dependencies do not match the package.json files and the
-#                               lockfile, and build packages/shared only when its dist is missing or older than its sources
+#                               lockfile, and build a library package only when its dist is missing or older than its sources
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 if ! command -v npm >/dev/null 2>&1; then
@@ -19,7 +19,7 @@ if [ "${1:-}" = "--if-needed" ]; then
   only_if_needed=true
 fi
 
-shared_is_built() {
+library_is_built() {
   [ -f dist/index.js ] && [ -z "$(find src package.json tsconfig.json -newer dist/index.js -print -quit)" ]
 }
 
@@ -29,8 +29,10 @@ if [ "$only_if_needed" = false ] || [ ! -d node_modules ] || ! npm ls --depth=0 
   npm ci
 fi
 
-cd "$root/packages/shared"
-if [ "$only_if_needed" = false ] || ! shared_is_built; then
-  echo "build: packages/shared"
-  npm run build
-fi
+for library in shared engine; do
+  cd "$root/packages/$library"
+  if [ "$only_if_needed" = false ] || ! library_is_built; then
+    echo "build: packages/$library"
+    npm run build
+  fi
+done

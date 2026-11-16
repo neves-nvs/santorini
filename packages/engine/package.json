@@ -1,0 +1,27 @@
+{
+  "name": "@santorini/engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The rules of Santorini: a pure game model with no dependencies, usable on a server or in a browser",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node ../../node_modules/typescript-native/bin/tsc",
+    "dev": "node ../../node_modules/typescript-native/bin/tsc --watch --preserveWatchOutput",
+    "typecheck": "node ../../node_modules/typescript-native/bin/tsc --noEmit && node ../../node_modules/typescript-native/bin/tsc --noEmit -p tests/tsconfig.json",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript-native": "npm:typescript@^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

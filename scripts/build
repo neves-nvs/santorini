@@ -7,7 +7,7 @@ if ! command -v npm >/dev/null 2>&1; then
 fi
 
 cd "$root"
-for package in shared server client-react; do
+for package in shared engine server client-react; do
   echo "build: packages/$package"
   npm run build -w "packages/$package"
 done

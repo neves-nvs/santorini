@@ -1,4 +1,4 @@
-import { Game } from "@/game/domain/Game.ts";
+import { Game } from "@santorini/engine";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
