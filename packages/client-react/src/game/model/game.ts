@@ -1,19 +1,8 @@
-// Re-export shared types
 export type {
-  Position,
-  WorkerRef,
-  CellView,
   BoardView,
-  PlayerStatus,
   PlayerView,
-  GameStatus,
-  GamePhase,
-  PlaceWorkerMove,
-  MoveWorkerMove,
-  BuildMove,
   Move,
-  GameView,
-  Viewer
+  GameView
 } from '@santorini/shared';
 
 import type {
@@ -36,16 +25,7 @@ export interface BuildPosition extends Position {
   serverMoveObject?: Move;
 }
 
-export type BlockType = 'BASE' | 'MID' | 'TOP' | 'DOME';
-export type PieceType = BlockType | 'WORKER';
-
-export interface GamePiece {
-  type: PieceType;
-  position: Position;
-  playerId?: string;
-}
-
-export interface PlayerReadyStatus {
+interface PlayerReadyStatus {
   userId: number;
   isReady: boolean;
 }
@@ -89,17 +69,4 @@ export interface AvailableMove {
   validPositions: (Position | BuildPosition)[];
   // For move_worker moves: the worker's current position (where they're moving FROM)
   fromPosition?: Position;
-}
-
-// WebSocket message wrapper
-export interface WebSocketMessage {
-  type: string;
-  payload: unknown;
-}
-
-export interface AvailablePlay {
-  type: string;
-  position?: Position;
-  from?: Position;
-  to?: Position;
 }

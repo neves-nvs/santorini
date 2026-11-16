@@ -52,19 +52,6 @@ export interface WebSocketTicketResponse {
   ticket: string;
 }
 
-/** `GET /token` */
-export interface TokenResponse {
-  token: string;
-}
-
-/** `GET /test-auth`: the stored user row, for tests. */
-export interface TestAuthResponse {
-  id: number;
-  username: string;
-  display_name: string;
-  created_at: string;
-}
-
 // ============================================================================
 // Users
 // ============================================================================

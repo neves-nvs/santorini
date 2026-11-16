@@ -29,7 +29,7 @@ interface PendingRequest {
   reject: (error: Error) => void
 }
 
-export type MessageHandler = (type: string, payload: unknown) => void
+type MessageHandler = (type: string, payload: unknown) => void
 
 export interface SocketEvents {
   onMessage: MessageHandler

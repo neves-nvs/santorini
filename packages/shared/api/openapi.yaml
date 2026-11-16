@@ -151,55 +151,6 @@ paths:
                   ticket: { type: string }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
-  /token:
-    get:
-      tags: [Session]
-      summary: A JWT to authenticate a WebSocket with a header
-      description: |
-        Returns a fresh 5 hour token. For clients that can set headers on the handshake (scripts, not browsers): send
-        it as `Authorization: Bearer <token>`.
-      responses:
-        "200":
-          description: The token
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [token]
-                properties:
-                  token: { type: string }
-        "400":
-          description: The token could not be signed
-          content:
-            text/plain:
-              schema: { type: string }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-  /test-auth:
-    get:
-      tags: [Session]
-      summary: Authentication check used by tests
-      description: Returns the stored user row. Not meant for clients.
-      responses:
-        "200":
-          description: The user
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [id, username, display_name, created_at]
-                properties:
-                  id: { type: integer }
-                  username: { type: string }
-                  display_name: { type: string }
-                  created_at: { type: string, format: date-time }
-        "400":
-          description: The user could not be read from the request
-          content:
-            text/plain:
-              schema: { type: string }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
   /auth/google:
     get:
       tags: [Session]

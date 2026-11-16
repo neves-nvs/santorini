@@ -115,18 +115,5 @@ describe('userApi', () => {
       )
       expect(result).toEqual(mockUser)
     })
-
-    it('should get users list', async () => {
-      const mockUsers = [aUser(1), aUser(2)]
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => mockUsers,
-      })
-
-      const result = await userApi.getUsers()
-
-      expect(result).toEqual(mockUsers)
-    })
   })
 })

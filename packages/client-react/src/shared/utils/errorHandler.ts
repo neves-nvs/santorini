@@ -5,17 +5,8 @@ export enum ErrorType {
   NETWORK = 'NETWORK',
   VALIDATION = 'VALIDATION', 
   AUTHENTICATION = 'AUTHENTICATION',
-  GAME_LOGIC = 'GAME_LOGIC',
   WEBSOCKET = 'WEBSOCKET',
   UNKNOWN = 'UNKNOWN'
-}
-
-export interface AppError {
-  type: ErrorType
-  message: string
-  code?: string | number
-  details?: unknown
-  timestamp: Date
 }
 
 export class GameError extends Error {

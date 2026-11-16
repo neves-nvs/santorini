@@ -4,9 +4,7 @@ import {
   LoginRequest,
   LogoutResponse,
   MessageResponse,
-  TestAuthResponse,
   TextResponse,
-  TokenResponse,
   ValidationErrorResponse,
   WebSocketTicketResponse,
 } from "@santorini/shared";
@@ -144,21 +142,6 @@ router.get("/auth/google/callback", passport.authenticate("google", { session: f
   res.redirect("http://localhost:5173");
 });
 
-// Endpoint to get JWT token for WebSocket authentication
-router.get<NoParams, TokenResponse | TextResponse>("/token", authenticate, async (req, res) => {
-  try {
-    const user = req.user as User;
-    const token = jwt.sign({ username: user.username }, config.jwtSecret, {
-      expiresIn: "5h",
-    });
-    res.status(200).json({ token });
-  } catch (e: unknown) {
-    const error = e as Error;
-    logger.error(error.message);
-    res.status(400).send(error.message);
-  }
-});
-
 // A one-time ticket for opening a WebSocket from a browser, which cannot set headers on the handshake
 router.post<NoParams, WebSocketTicketResponse>("/ws-ticket", authenticate, (req, res) => {
   res.status(200).json({ ticket: webSocketTickets.issue(getUser(req).username) });
@@ -169,23 +152,6 @@ router.get<NoParams, CurrentUserResponse | TextResponse>("/me", authenticate, as
   try {
     const user = req.user as User;
     res.status(200).json({ id: user.id, username: user.username });
-  } catch (e: unknown) {
-    const error = e as Error;
-    logger.error(error.message);
-    res.status(400).send(error.message);
-  }
-});
-
-// Test endpoint for authentication testing
-router.get<NoParams, TestAuthResponse | TextResponse>("/test-auth", authenticate, async (req, res) => {
-  try {
-    const user = req.user as User;
-    res.status(200).json({
-      id: user.id,
-      username: user.username,
-      display_name: user.display_name,
-      created_at: user.created_at.toISOString(),
-    });
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);

@@ -13,7 +13,7 @@ import { checkValidation } from "@/middlewares/middleware.ts";
 import { config } from "@/configs/config.ts";
 import logger from "@/logger.ts";
 
-export const router = Router();
+const router = Router();
 
 type NoParams = Record<string, string>;
 

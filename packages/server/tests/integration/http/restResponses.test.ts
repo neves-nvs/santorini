@@ -7,8 +7,6 @@ import {
   LogoutResponse,
   MessageResponse,
   PlayerView,
-  TestAuthResponse,
-  TokenResponse,
   UserView,
   ValidationErrorResponse,
   ValidationFieldError,
@@ -125,27 +123,6 @@ describe("REST responses carry the shape of the shared types", () => {
         keyof WebSocketTicketResponse,
         unknown
       >);
-    });
-
-    test("GET /token", async () => {
-      const { token } = await createTestUserWithLogin();
-
-      const response = await request(app).get("/token").set("Cookie", `token=${token}`).expect(200);
-
-      expect(response.body).toStrictEqual({ token: expect.any(String) } satisfies Record<keyof TokenResponse, unknown>);
-    });
-
-    test("GET /test-auth", async () => {
-      const { token } = await createTestUserWithLogin();
-
-      const response = await request(app).get("/test-auth").set("Cookie", `token=${token}`).expect(200);
-
-      expect(response.body).toStrictEqual({
-        id: expect.any(Number),
-        username: expect.any(String),
-        display_name: expect.any(String),
-        created_at: isoDate,
-      } satisfies Record<keyof TestAuthResponse, unknown>);
     });
   });
 
