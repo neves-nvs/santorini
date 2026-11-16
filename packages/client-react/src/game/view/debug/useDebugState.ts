@@ -1,25 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
+import { DEFAULT_DEBUG_STATE, type DebugState } from '@/game/model/debugState'
 import type { CameraType } from '@/game/view/components/GameBoard'
-
-export interface DebugState {
-  showAxis: boolean
-  showGrid: boolean
-  showWireframe: boolean
-  showStats: boolean
-  showBoundingBoxes: boolean
-  useSampleBoard: boolean
-  showPerformance: boolean
-}
-
-const DEFAULT_DEBUG_STATE: DebugState = {
-  showAxis: false,
-  showGrid: false,
-  showWireframe: false,
-  showStats: false,
-  showBoundingBoxes: false,
-  useSampleBoard: false,
-  showPerformance: false
-}
 
 /**
  * Hook to manage debug state and keyboard shortcuts
