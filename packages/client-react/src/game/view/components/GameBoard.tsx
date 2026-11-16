@@ -27,6 +27,7 @@ const ORTHO_POSITION: [number, number, number] = [10, 10, 10]
 const PERSP_POSITION: [number, number, number] = [6, 6, 6] // Closer for perspective
 const ORTHO_ZOOM = 1
 const PERSP_FOV = 50
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const BOARD_EXTENT = 3.5 // How much world space to fit (smaller = board fills more screen)
 
 // Resize handler - adjusts cameras to fit board in viewport
@@ -141,7 +142,7 @@ const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cam
             enablePan={false}
             enableZoom={true}
             enableRotate={true}
-            enableDamping={true}
+            enableDamping={!prefersReducedMotion()}
             target={[0, 0, 0]}
             maxPolarAngle={Math.PI / 2.2}
             minZoom={isOrtho ? 0.5 : undefined}
