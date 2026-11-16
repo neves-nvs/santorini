@@ -4,6 +4,7 @@
   "private": true,
   "description": "Types and constants shared by the Santorini server and client",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
