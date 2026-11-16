@@ -8,15 +8,15 @@ import {
   createGamePayloadSchema,
   gameIdSchema,
 } from "@santorini/shared";
-import { GameError, getHttpStatus, getUserMessage } from "../../errors/GameErrors.ts";
+import { GameError, getHttpStatus, getUserMessage } from "@/errors/GameErrors.ts";
 import { NextFunction, Request, Response, Router } from "express";
-import { authenticate, getUser } from "../../auth/authController.ts";
+import { authenticate, getUser } from "@/auth/authController.ts";
 
-import { Game } from "../domain/Game.ts";
-import { GameBroadcaster } from "../application/GameBroadcaster.ts";
-import { GameService } from "../application/GameService.ts";
-import { LobbyService } from "../application/LobbyService.ts";
-import logger from "../../logger.ts";
+import { Game } from "@/game/domain/Game.ts";
+import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
+import { GameService } from "@/game/application/GameService.ts";
+import { LobbyService } from "@/game/application/LobbyService.ts";
+import logger from "@/logger.ts";
 
 function parseGameId(raw: unknown): number {
   const parsed = gameIdSchema.safeParse(Number(raw));

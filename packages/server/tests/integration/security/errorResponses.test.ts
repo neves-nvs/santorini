@@ -1,7 +1,7 @@
-import { app } from "../../../src/app.ts";
-import { createTestUserWithLogin } from "../helper/helpers.ts";
-import errorHandler from "../../../src/middlewares/errorMiddleware.ts";
-import { getTestDb } from "../helper/testDb.ts";
+import { app } from "@/app.ts";
+import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
+import errorHandler from "@/middlewares/errorMiddleware.ts";
+import { getTestDb } from "@tests/integration/helper/testDb.ts";
 import request from "supertest";
 
 describe("Error Response Integration Tests", () => {

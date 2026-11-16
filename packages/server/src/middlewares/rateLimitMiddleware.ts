@@ -1,4 +1,4 @@
-import { config } from "../configs/config.ts";
+import { config } from "@/configs/config.ts";
 import { rateLimit } from "express-rate-limit";
 
 export const rateLimitMiddleware = rateLimit({

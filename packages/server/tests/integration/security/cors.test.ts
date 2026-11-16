@@ -1,5 +1,5 @@
-import { app } from "../../../src/app.ts";
-import { db } from "../../../src/database.ts";
+import { app } from "@/app.ts";
+import { db } from "@/database.ts";
 import request from "supertest";
 
 describe("CORS Integration Tests", () => {

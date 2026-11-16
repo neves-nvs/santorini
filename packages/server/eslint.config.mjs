@@ -31,4 +31,28 @@ export default [
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     },
   },
+  {
+    files: ["src/**/*.ts", "tests/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["..", "../**"],
+              message: "Import across folders through @/ (src) or @tests/ (tests); ./ stays for the same folder.",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.object.name='vi'][callee.property.name=/^(mock|doMock|importActual)$/] > Literal.arguments:first-child[value=/^\\.\\./], ImportExpression > Literal.source[value=/^\\.\\./], TSImportType Literal[value=/^\\.\\./]",
+          message: "Use the @/ alias instead of a ../ path.",
+        },
+      ],
+    },
+  },
 ];

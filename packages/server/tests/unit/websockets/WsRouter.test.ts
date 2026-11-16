@@ -1,9 +1,9 @@
-import { Connection } from "../../../src/game/infra/Connection.ts";
-import { ConnectionManager } from "../../../src/game/infra/ConnectionManager.ts";
-import { GameService } from "../../../src/game/application/GameService.ts";
-import { LobbyService } from "../../../src/game/application/LobbyService.ts";
+import { Connection } from "@/game/infra/Connection.ts";
+import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
+import { GameService } from "@/game/application/GameService.ts";
+import { LobbyService } from "@/game/application/LobbyService.ts";
 import { ServerMessage } from "@santorini/shared";
-import { WsRouter } from "../../../src/websockets/WsRouter.ts";
+import { WsRouter } from "@/websockets/WsRouter.ts";
 
 function setup() {
   const sent: ServerMessage[] = [];

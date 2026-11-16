@@ -3,10 +3,10 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 const { JsonWebTokenError, NotBeforeError, TokenExpiredError } = jwt;
 
-import { config } from "../configs/config.ts";
+import { config } from "@/configs/config.ts";
 import express from "express";
-import { findUserByUsername } from "../users/userRepository.ts";
-import logger from "../logger.ts";
+import { findUserByUsername } from "@/users/userRepository.ts";
+import logger from "@/logger.ts";
 import passport from "passport";
 
 function extractJwtFromCookies(req: express.Request): string | null {

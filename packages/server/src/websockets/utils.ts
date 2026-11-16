@@ -1,6 +1,6 @@
 import { CLIENT_MESSAGE_TYPES, WS_MESSAGE_TYPES } from "@santorini/shared";
-import { Connection } from "../game/infra/Connection.ts";
-import { sanitizeForLog } from "../logSanitizer.ts";
+import { Connection } from "@/game/infra/Connection.ts";
+import { sanitizeForLog } from "@/logSanitizer.ts";
 
 export function sendError(connection: Connection, message: string) {
   connection.send({ type: WS_MESSAGE_TYPES.ERROR, payload: message });

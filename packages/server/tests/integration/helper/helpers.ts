@@ -1,5 +1,5 @@
-import { NewGame } from "../../../src/model.ts";
-import { UserDTO } from "../../../src/users/userDTO.ts";
+import { NewGame } from "@/model.ts";
+import { UserDTO } from "@/users/userDTO.ts";
 import WebSocket from "ws";
 import { specApp as app } from "./specApp.ts";
 import { randomBytes } from "crypto";

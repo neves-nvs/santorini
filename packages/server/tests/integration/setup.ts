@@ -5,7 +5,7 @@ import { FileMigrationProvider, Migrator } from "kysely/migration";
 import { Kysely, PostgresDialect } from "kysely";
 
 import { ConnectionInfo } from "./globalSetup.ts";
-import { WebSocketConnection } from "../../src/websockets/WebSocketConnection.ts";
+import { WebSocketConnection } from "@/websockets/WebSocketConnection.ts";
 import { checkAgainstAsyncApi } from "./helper/asyncApiContract.ts";
 import { fileURLToPath } from "url";
 import { promises as fs } from "fs";

@@ -3,15 +3,15 @@ import { NextFunction, Request, Response, Router } from "express";
 import { body, param } from "express-validator";
 import { createUser, findAllUsers, findUserByUsername } from "./userRepository.ts";
 
-import { NewUser } from "../model.ts";
+import { NewUser } from "@/model.ts";
 import { StatusCodes } from "http-status-codes";
 import { UserDTO } from "./userDTO.ts";
-import { authRateLimitMiddleware } from "../middlewares/authRateLimitMiddleware.ts";
-import { authenticate } from "../auth/authController.ts";
+import { authRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
+import { authenticate } from "@/auth/authController.ts";
 import bcrypt from "bcryptjs";
-import { checkValidation } from "../middlewares/middleware.ts";
-import { config } from "../configs/config.ts";
-import logger from "../logger.ts";
+import { checkValidation } from "@/middlewares/middleware.ts";
+import { config } from "@/configs/config.ts";
+import logger from "@/logger.ts";
 
 export const router = Router();
 

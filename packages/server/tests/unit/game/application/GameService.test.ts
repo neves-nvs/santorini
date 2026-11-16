@@ -1,7 +1,7 @@
-import { Game } from "../../../../src/game/domain/Game.ts";
-import { GameRepositoryDb } from "../../../../src/game/infra/GameRepositoryDb.ts";
-import { GameService } from "../../../../src/game/application/GameService.ts";
-import { Player } from "../../../../src/game/domain/Player.ts";
+import { Game } from "@/game/domain/Game.ts";
+import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
+import { GameService } from "@/game/application/GameService.ts";
+import { Player } from "@/game/domain/Player.ts";
 
 function serviceFor(game: Game): GameService {
   const repository = { findById: async () => game } as unknown as GameRepositoryDb;

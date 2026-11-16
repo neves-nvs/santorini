@@ -1,7 +1,7 @@
 import { Connection } from "./Connection.ts";
 import { ServerMessage } from "@santorini/shared";
 
-import logger from "../../logger.ts";
+import logger from "@/logger.ts";
 
 /**
  * Connection Manager - Infrastructure Layer

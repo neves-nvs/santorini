@@ -1,4 +1,4 @@
-import { User } from "../model.ts";
+import { User } from "@/model.ts";
 import { UserView } from "@santorini/shared";
 
 export class UserDTO implements UserView {

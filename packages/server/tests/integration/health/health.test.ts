@@ -1,5 +1,5 @@
-import { specApp as app } from "../helper/specApp.ts";
-import { getTestDb } from "../helper/testDb.ts";
+import { specApp as app } from "@tests/integration/helper/specApp.ts";
+import { getTestDb } from "@tests/integration/helper/testDb.ts";
 import request from "supertest";
 
 describe("Health Integration Tests", () => {

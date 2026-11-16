@@ -1,5 +1,5 @@
-import { app } from "../../../src/app.ts";
-import { config } from "../../../src/configs/config.ts";
+import { app } from "@/app.ts";
+import { config } from "@/configs/config.ts";
 import request from "supertest";
 
 describe("Auth Rate Limit Integration Tests", () => {

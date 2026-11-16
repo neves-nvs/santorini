@@ -15,10 +15,10 @@ import {
   ValidationFieldError,
   WebSocketTicketResponse,
 } from "@santorini/shared";
-import { createTestGame, createTestUserWithLogin, generateTestUser } from "../helper/helpers.ts";
-import { specApp as app } from "../helper/specApp.ts";
-import { cleanupTestData } from "../helper/testDb.ts";
-import { db } from "../../../src/database.ts";
+import { createTestGame, createTestUserWithLogin, generateTestUser } from "@tests/integration/helper/helpers.ts";
+import { specApp as app } from "@tests/integration/helper/specApp.ts";
+import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
+import { db } from "@/database.ts";
 import request from "supertest";
 
 // Each expected body is checked twice: `satisfies` makes the compiler require exactly the keys of the shared

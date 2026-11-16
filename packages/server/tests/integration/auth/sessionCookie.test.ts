@@ -1,5 +1,5 @@
-import { app } from "../../../src/app.ts";
-import { generateTestUser } from "../helper/helpers.ts";
+import { app } from "@/app.ts";
+import { generateTestUser } from "@tests/integration/helper/helpers.ts";
 import request from "supertest";
 
 describe("Session Cookie Integration Tests", () => {

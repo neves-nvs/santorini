@@ -1,6 +1,6 @@
 import { mkdtempSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import { resolveJwtSecret } from "../../../src/configs/jwtSecret.ts";
+import { resolveJwtSecret } from "@/configs/jwtSecret.ts";
 import { tmpdir } from "os";
 
 describe("resolveJwtSecret", () => {

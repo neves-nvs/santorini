@@ -1,8 +1,8 @@
-import { NewUser, User } from "../../../src/model.ts";
-import { specApp as app } from "../helper/specApp.ts";
+import { NewUser, User } from "@/model.ts";
+import { specApp as app } from "@tests/integration/helper/specApp.ts";
 import bcrypt from "bcryptjs";
-import { config } from "../../../src/configs/config.ts";
-import { db } from "../../../src/database.ts";
+import { config } from "@/configs/config.ts";
+import { db } from "@/database.ts";
 import jwt from "jsonwebtoken";
 import request from "supertest";
 

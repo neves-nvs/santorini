@@ -1,13 +1,13 @@
-import { BoardCellSnapshot, BoardSnapshot } from "../domain/Board.ts";
-import { Database, NewPiece, Piece } from "../../model.ts";
-import { Game, GameSnapshot } from "../domain/Game.ts";
-import { GamePhase, GameStatus } from "../domain/types.ts";
+import { BoardCellSnapshot, BoardSnapshot } from "@/game/domain/Board.ts";
+import { Database, NewPiece, Piece } from "@/model.ts";
+import { Game, GameSnapshot } from "@/game/domain/Game.ts";
+import { GamePhase, GameStatus } from "@/game/domain/types.ts";
 import { Kysely, Transaction } from "kysely";
-import { Player } from "../domain/Player.ts";
-import { db } from "../../database.ts";
+import { Player } from "@/game/domain/Player.ts";
+import { db } from "@/database.ts";
 
-import logger from "../../logger.ts";
-import { sanitizeForLog } from "../../logSanitizer.ts";
+import logger from "@/logger.ts";
+import { sanitizeForLog } from "@/logSanitizer.ts";
 
 /**
  * Database adapter for Game aggregate

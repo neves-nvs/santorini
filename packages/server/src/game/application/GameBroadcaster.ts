@@ -1,9 +1,9 @@
-import { ConnectionManager } from "../infra/ConnectionManager.ts";
-import { Game } from "../domain/Game.ts";
-import { GameEvent } from "../domain/GameEvent.ts";
-import { GameViewBuilder } from "../domain/GameViewBuilder.ts";
+import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
+import { Game } from "@/game/domain/Game.ts";
+import { GameEvent } from "@/game/domain/GameEvent.ts";
+import { GameViewBuilder } from "@/game/domain/GameViewBuilder.ts";
 import { WS_MESSAGE_TYPES } from "@santorini/shared";
-import logger from "../../logger.ts";
+import logger from "@/logger.ts";
 
 /**
  * Application service responsible for broadcasting game updates to players

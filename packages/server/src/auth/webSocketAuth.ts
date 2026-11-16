@@ -1,11 +1,11 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
-import { AuthenticatedWebSocket } from "../websockets/authenticatedWebsocket.ts";
+import { AuthenticatedWebSocket } from "@/websockets/authenticatedWebsocket.ts";
 import { IncomingMessage } from "http";
 import { WebSocketServer } from "ws";
-import { config } from "../configs/config.ts";
-import { findUserByUsername } from "../users/userRepository.ts";
+import { config } from "@/configs/config.ts";
+import { findUserByUsername } from "@/users/userRepository.ts";
 import internal from "stream";
-import logger from "../logger.ts";
+import logger from "@/logger.ts";
 import { webSocketTickets } from "./webSocketTickets.ts";
 
 function requestScheme(request: IncomingMessage): string {

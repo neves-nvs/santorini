@@ -1,6 +1,6 @@
-import { specApp as app } from "../helper/specApp.ts";
-import { createTestUserWithLogin } from "../helper/helpers.ts";
-import { db } from "../../../src/database.ts";
+import { specApp as app } from "@tests/integration/helper/specApp.ts";
+import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
+import { db } from "@/database.ts";
 import request from "supertest";
 
 describe("Games HTTP error responses", () => {
