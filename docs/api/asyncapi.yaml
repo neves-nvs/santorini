@@ -7,8 +7,8 @@ info:
     `openapi.yaml`. The TypeScript types for these messages are in `@santorini/shared` (`packages/shared/src/websocket-types.ts`
     and `game-types.ts`).
 
-    Every message is JSON text shaped `{ "type": string, "payload": ... }`. A message that is not valid JSON, or whose
-    handler fails, is answered with an `error` message whose payload is a string.
+    Every message is JSON text shaped `{ "type": string, "payload": ... }`. A message that is not a JSON object, whose payload does not match its type (a `gameId`
+    that is not a positive whole number, a `maxPlayers` outside 2 to 4, a position off the board), or whose handler fails, is answered with an `error` message whose payload is a string.
     A message larger than 16 KiB closes the connection with close code 1009.
 
     **Joining and subscribing are separate.** `join_game` makes the user a player and replies `game_joined`.
@@ -177,7 +177,7 @@ components:
           payload:
             type: object
             properties:
-              maxPlayers: { type: integer, default: 2 }
+              maxPlayers: { type: integer, minimum: 2, maximum: 4, default: 2 }
     joinGame:
       name: join_game
       payload:

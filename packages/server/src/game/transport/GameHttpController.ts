@@ -5,16 +5,33 @@ import {
   GameSummary,
   JoinGameResponse,
   PlayerGameView,
+  createGamePayloadSchema,
+  gameIdSchema,
 } from "@santorini/shared";
+import { GameError, getHttpStatus, getUserMessage } from "../../errors/GameErrors.ts";
 import { NextFunction, Request, Response, Router } from "express";
 import { authenticate, getUser } from "../../auth/authController.ts";
-import { getHttpStatus, getUserMessage } from "../../errors/GameErrors.ts";
 
 import { Game } from "../domain/Game.ts";
 import { GameBroadcaster } from "../application/GameBroadcaster.ts";
 import { GameService } from "../application/GameService.ts";
 import { LobbyService } from "../application/LobbyService.ts";
 import logger from "../../logger.ts";
+
+function parseGameId(raw: unknown): number {
+  const parsed = gameIdSchema.safeParse(Number(raw));
+  if (!parsed.success) throw new GameError("Game ID must be a positive whole number");
+  return parsed.data;
+}
+
+function parseCreateGameBody(body: unknown) {
+  const parsed = createGamePayloadSchema.safeParse(body);
+  if (!parsed.success) {
+    const [issue] = parsed.error.issues;
+    throw new GameError(`${issue.path.join(".") || "body"}: ${issue.message}`);
+  }
+  return parsed.data;
+}
 
 function gameToDto(game: Game): GameSummary {
   return {
@@ -64,7 +81,7 @@ export function createGameRoutes(
 
   router.post<NoParams, CreateGameResponse, CreateGameRequest>("/", authenticate, async (req, res) => {
     const userId = getUser(req).id;
-    const { maxPlayers = 2 } = req.body;
+    const { maxPlayers } = parseCreateGameBody(req.body);
     const game = await lobbyService.createGame(userId, maxPlayers);
     await gameService.addPlayer(game.id, userId);
     res.json({ gameId: game.id });
@@ -72,14 +89,14 @@ export function createGameRoutes(
 
   router.get<GameParams, PlayerGameView>("/:gameId", authenticate, async (req, res) => {
     const userId = getUser(req).id;
-    const gameId = parseInt(String(req.params.gameId));
+    const gameId = parseGameId(req.params.gameId);
     const gameView = await gameService.getGameStateForPlayer(gameId, userId);
     res.json(gameView);
   });
 
   router.post<GameParams, JoinGameResponse>("/:gameId/join", authenticate, async (req, res) => {
     const userId = getUser(req).id;
-    const gameId = parseInt(String(req.params.gameId));
+    const gameId = parseGameId(req.params.gameId);
     const game = await lobbyService.joinGame(gameId, userId);
     await gameBroadcaster.broadcastGameUpdate(game, []);
     res.json({ success: true });

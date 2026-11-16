@@ -1,10 +1,11 @@
-import { ClientMessage, MoveCommand, WS_MESSAGE_TYPES } from "@santorini/shared";
+import { MoveCommand, ParsedClientMessage, WS_MESSAGE_TYPES, clientMessageSchema } from "@santorini/shared";
+import { describeInvalidMessage, sendError } from "./utils.ts";
 import { Connection } from "../game/infra/Connection.ts";
 import { ConnectionManager } from "../game/infra/ConnectionManager.ts";
 import { GameService } from "../game/application/GameService.ts";
 import { LobbyService } from "../game/application/LobbyService.ts";
 import logger from "../logger.ts";
-import { sendError } from "./utils.ts";
+import { sanitizeForLog } from "../logSanitizer.ts";
 
 /**
  * WebSocket message router.
@@ -23,21 +24,31 @@ export class WsRouter {
   async handleMessage(connection: Connection, raw: string): Promise<void> {
     const { user } = connection;
 
-    let message: ClientMessage;
+    let frame: unknown;
     try {
-      message = JSON.parse(raw) as ClientMessage;
+      frame = JSON.parse(raw);
     } catch {
       sendError(connection, "Invalid message format");
       return;
     }
+    if (typeof frame !== "object" || frame === null || Array.isArray(frame)) {
+      sendError(connection, "Invalid message format");
+      return;
+    }
 
-    const { type, payload } = message;
-    logger.info(`[WS] ${type} from ${user.username}`);
+    const type = (frame as { type?: unknown }).type;
+    logger.info(`[WS] ${sanitizeForLog(type)} from ${user.username}`);
+
+    const parsed = clientMessageSchema.safeParse(frame);
+    if (!parsed.success) {
+      sendError(connection, describeInvalidMessage(type, parsed.error));
+      return;
+    }
 
     try {
-      await this.route(connection, user.id, type, payload);
+      await this.route(connection, user.id, parsed.data);
     } catch (error) {
-      logger.error(`[WS] Error handling ${type}:`, error);
+      logger.error(`[WS] Error handling ${parsed.data.type}:`, error);
       sendError(connection, error instanceof Error ? error.message : "Request failed");
     }
   }
@@ -55,57 +66,38 @@ export class WsRouter {
     }
   }
 
-  private async route(
-    connection: Connection,
-    userId: number,
-    type: string,
-    payload: Record<string, unknown> | undefined,
-  ): Promise<void> {
-    const gameId: unknown = payload?.gameId;
-
-    switch (type) {
+  private async route(connection: Connection, userId: number, message: ParsedClientMessage): Promise<void> {
+    switch (message.type) {
       // Lobby
-      case WS_MESSAGE_TYPES.CREATE_GAME:
-        return this.createGame(connection, userId, payload?.maxPlayers as number | undefined);
+      case "create_game":
+        return this.createGame(connection, userId, message.payload.maxPlayers);
 
-      case WS_MESSAGE_TYPES.JOIN_GAME:
-        this.requireGameId(gameId);
-        return this.joinGame(connection, userId, gameId);
+      case "join_game":
+        return this.joinGame(connection, userId, message.payload.gameId);
 
-      case WS_MESSAGE_TYPES.LIST_GAMES:
+      case "list_games":
         return this.listGames(connection);
 
-      case WS_MESSAGE_TYPES.LEAVE_GAME:
-        this.requireGameId(gameId);
-        return this.leaveGame(connection, userId, gameId);
+      case "leave_game":
+        return this.leaveGame(connection, userId, message.payload.gameId);
 
       // Game
-      case WS_MESSAGE_TYPES.SUBSCRIBE_GAME:
-        this.requireGameId(gameId);
+      case "subscribe_game":
         if (this.connectionManager.gameOf(connection) !== undefined) {
           throw new Error("Already subscribed to a game; open a new connection for another game");
         }
-        this.connectionManager.addClient(gameId, userId, connection);
-        return this.getGameState(connection, userId, gameId);
+        this.connectionManager.addClient(message.payload.gameId, userId, connection);
+        return this.getGameState(connection, userId, message.payload.gameId);
 
-      case WS_MESSAGE_TYPES.SET_READY:
-        this.requireGameId(gameId);
-        return this.setReady(connection, userId, gameId, payload?.isReady as boolean);
+      case "set_ready":
+        return this.setReady(connection, userId, message.payload.gameId, message.payload.isReady);
 
-      case WS_MESSAGE_TYPES.MAKE_MOVE:
-        this.requireGameId(gameId);
-        return this.makeMove(connection, userId, gameId, payload?.move as MoveCommand);
-
-      default:
-        sendError(connection, `Unknown message type: ${type}`);
+      case "make_move":
+        return this.makeMove(connection, userId, message.payload.gameId, message.payload.move);
     }
   }
 
-  private requireGameId(gameId: unknown): asserts gameId is number {
-    if (!Number.isInteger(gameId) || (gameId as number) < 1) throw new Error("Game ID must be a positive whole number");
-  }
-
-  private async createGame(connection: Connection, userId: number, maxPlayers = 2): Promise<void> {
+  private async createGame(connection: Connection, userId: number, maxPlayers: number): Promise<void> {
     const game = await this.lobbyService.createGame(userId, maxPlayers);
     await this.gameService.addPlayer(game.id, userId);
 
