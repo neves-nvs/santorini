@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { performanceMonitor } from '@/shared/utils/performanceMonitor'
+import { performanceMonitor } from './performanceMonitor'
 
 interface PerformanceDashboardProps {
   visible: boolean

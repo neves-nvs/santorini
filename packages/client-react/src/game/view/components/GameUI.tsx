@@ -5,9 +5,9 @@ import GameBoard from './GameBoard'
 import GameStatusBar from './GameStatusBar'
 import GameLobby from './GameLobby'
 import GameNavigation from './GameNavigation'
-import DebugMenu from './DebugMenu'
-import { PerformanceDashboard } from '@/shared/ui/PerformanceDashboard'
-import { useDebugState } from '@/game/view/hooks/useDebugState'
+import DebugMenu from '@/game/view/debug/DebugMenu'
+import { PerformanceDashboard } from '@/game/view/debug/PerformanceDashboard'
+import { useDebugState } from '@/game/view/debug/useDebugState'
 
 const GameUI = memo(() => {
   const gameState = useGameState()

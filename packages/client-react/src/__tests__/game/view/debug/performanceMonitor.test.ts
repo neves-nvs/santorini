@@ -3,7 +3,7 @@ import {
   performanceMonitor,
   measureOperation,
   measureAsyncOperation,
-} from '@/shared/utils/performanceMonitor'
+} from '@/game/view/debug/performanceMonitor'
 
 describe('PerformanceMonitor', () => {
   beforeEach(() => {

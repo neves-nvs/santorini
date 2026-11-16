@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import DebugAxis from './DebugAxis'
+import DebugAxis from '@/game/view/debug/DebugAxis'
 import { BoardBase, Block, Worker, Cell, BoundingBox, MovePreview, BuildingPreview } from './GamePieces'
 import { BoardState, createEmptyBoard } from '@/game/model/board-types'
 import { gridToWorldCoords } from './world-coords'
@@ -10,7 +10,7 @@ import {
 } from '@/game/model/gameSelectors'
 import { useGameStore } from '@/game/model/gameStore'
 import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '@/game/model/gameConstants'
-import { useRenderTracker } from '@/shared/utils/performanceMonitor'
+import { useRenderTracker } from '@/game/view/debug/performanceMonitor'
 import type { AvailableMove, BuildPosition, Move } from '@/game/model/game'
 
 interface MoveSubmission {
