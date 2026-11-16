@@ -5,6 +5,7 @@ import { userApi } from '@/user/services/userApi'
 import { gameApi } from '@/game/services/gameApi'
 import { usePageTitle } from '@/shared/utils/usePageTitle'
 import type { GameSummary } from '@santorini/shared'
+import { logError } from '@/shared/utils/log'
 
 type GameTab = 'available' | 'my-games'
 
@@ -35,9 +36,8 @@ const LobbyPage = () => {
       ])
       setAvailableGames(available)
       setMyGames(mine)
-      console.log('Fetched', available.length, 'available games,', mine.length, 'my games')
     } catch (err) {
-      console.error('Failed to fetch games:', err)
+      logError('Failed to fetch games:', err)
       setError('Failed to fetch games. Please try again.')
     } finally {
       refreshInFlight.current = false
@@ -48,7 +48,6 @@ const LobbyPage = () => {
   const handleRefreshGames = useCallback(async () => {
     // Prevent multiple simultaneous requests
     if (refreshInFlight.current) {
-      console.log('Refresh already in progress, skipping...')
       return
     }
 
@@ -87,7 +86,7 @@ const LobbyPage = () => {
         navigate(`/game/${gameId}`)
       }
     } catch (err) {
-      console.error('Failed to create game:', err)
+      logError('Failed to create game:', err)
       setError('Failed to create game. Please try again.')
     } finally {
       setLoading(false)
@@ -107,7 +106,7 @@ const LobbyPage = () => {
       const gameId = game.id.toString()
       navigate(`/game/${gameId}`)
     } catch (err) {
-      console.error('Failed to join game:', err)
+      logError('Failed to join game:', err)
       setError('Failed to join game. Please try again.')
     } finally {
       setLoading(false)
@@ -119,7 +118,7 @@ const LobbyPage = () => {
       // Call server logout to clear cookies
       await userApi.logout()
     } catch (error) {
-      console.error('Logout API call failed:', error)
+      logError('Logout API call failed:', error)
       // Continue with client-side logout even if server call fails
     }
 

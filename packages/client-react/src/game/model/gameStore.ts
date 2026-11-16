@@ -18,7 +18,7 @@ export interface OptimizedBoardState {
 }
 
 // Worker position for efficient lookups
-export interface WorkerPosition {
+interface WorkerPosition {
   x: number
   y: number
   playerId: number
@@ -290,22 +290,3 @@ export const useGameStore = create<GameStore>()(
     }
   }))
 )
-
-// Optimized selectors for R3F components
-export const useBoardCell = (x: number, y: number) => 
-  useGameStore(state => state.boardState?.cells[x]?.[y] || null)
-
-export const useWorkerAt = (x: number, y: number) => 
-  useGameStore(state => state.workersByPosition.get(`${x},${y}`) || null)
-
-export const useCurrentPlayerMoves = () => 
-  useGameStore(state => state.currentPlayerMoves)
-
-export const useSelectedWorker = () => 
-  useGameStore(state => state.selectedWorker)
-
-export const useIsMyTurn = () => 
-  useGameStore(state => state.isMyTurn)
-
-export const useBoardLastUpdated = () => 
-  useGameStore(state => state.boardState?.lastUpdated || 0)

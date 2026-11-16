@@ -9,6 +9,7 @@ import LobbyPage from './pages/LobbyPage'
 import NotFoundPage from './shared/pages/NotFoundPage'
 import { ErrorBoundary } from './shared/ui/ErrorBoundary'
 import './App.css'
+import { logWarn } from '@/shared/utils/log'
 
 const GamePage = lazy(() => import('./game/view/pages/GamePage'))
 
@@ -55,7 +56,7 @@ const AppRoutes = () => {
       .then((authInfo) => {
         if (authInfo) setUser(authInfo)
       })
-      .catch((error) => console.log('Authentication check failed:', error))
+      .catch((error) => logWarn('Authentication check failed:', error))
       .finally(() => setIsInitialized(true))
   }, [setUser])
 

@@ -10,7 +10,6 @@ describe('PerformanceMonitor', () => {
     performanceMonitor.reset()
     performanceMonitor.setEnabled(true)
     vi.spyOn(console, 'warn').mockImplementation(() => {})
-    vi.spyOn(console, 'log').mockImplementation(() => {})
   })
 
   afterEach(() => {
@@ -36,9 +35,6 @@ describe('PerformanceMonitor', () => {
     })
 
     it('should log slow operations (>16ms)', () => {
-      performanceMonitor.startTiming('slow-operation')
-      
-      // Mock performance.now to simulate slow operation
       const originalNow = performance.now
       let callCount = 0
       vi.spyOn(performance, 'now').mockImplementation(() => {
@@ -46,31 +42,11 @@ describe('PerformanceMonitor', () => {
         return callCount === 1 ? 0 : 20 // 20ms duration
       })
 
+      performanceMonitor.startTiming('slow-operation')
       performanceMonitor.endTiming('slow-operation')
 
       expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Slow operation detected'),
-        undefined
-      )
-
-      performance.now = originalNow
-    })
-
-    it('should log medium operations (5-16ms)', () => {
-      performanceMonitor.startTiming('medium-operation')
-      
-      const originalNow = performance.now
-      let callCount = 0
-      vi.spyOn(performance, 'now').mockImplementation(() => {
-        callCount++
-        return callCount === 1 ? 0 : 10 // 10ms duration
-      })
-
-      performanceMonitor.endTiming('medium-operation')
-
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('took'),
-        undefined
+        expect.stringContaining('Slow operation detected')
       )
 
       performance.now = originalNow
@@ -78,8 +54,6 @@ describe('PerformanceMonitor', () => {
 
     it('should include metadata in timing', () => {
       const metadata = { component: 'Board3D', props: { size: 5 } }
-      performanceMonitor.startTiming('render', metadata)
-      
       const originalNow = performance.now
       let callCount = 0
       vi.spyOn(performance, 'now').mockImplementation(() => {
@@ -87,11 +61,12 @@ describe('PerformanceMonitor', () => {
         return callCount === 1 ? 0 : 20
       })
 
+      performanceMonitor.startTiming('render', metadata)
       performanceMonitor.endTiming('render')
 
       expect(console.warn).toHaveBeenCalledWith(
         expect.any(String),
-        metadata
+        JSON.stringify(metadata)
       )
 
       performance.now = originalNow
@@ -109,18 +84,12 @@ describe('PerformanceMonitor', () => {
     })
 
     it('should warn on excessive re-renders', () => {
-      // Render 15 times (should warn at 10 and 15)
       for (let i = 0; i < 15; i++) {
         performanceMonitor.trackRender('ExcessiveComponent')
       }
 
       expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('has rendered 10 times'),
-        undefined
-      )
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('has rendered 15 times'),
-        undefined
+        expect.stringContaining('has rendered 15 times')
       )
     })
 

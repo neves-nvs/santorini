@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useGameState, useGameId } from '@/game/model/gameSelectors'
-import { useAppStore } from '@/user/model/appStore'
 import { webSocketClient } from '@/game/services/WebSocketClient'
+import { logError } from '@/shared/utils/log'
 
 /**
  * Hook to manage player ready state
@@ -10,7 +10,6 @@ import { webSocketClient } from '@/game/services/WebSocketClient'
 export function useReadyState() {
   const gameState = useGameState()
   const gameId = useGameId()
-  const username = useAppStore((s) => s.username)
   
   const serverReady = gameState?.currentUserReady
   const [isReady, setIsReady] = useState(serverReady ?? false)
@@ -28,29 +27,20 @@ export function useReadyState() {
   const handleReadyToggle = useCallback(async () => {
     if (!gameId) return
 
-    console.log('Ready toggle clicked:', {
-      currentReadyState: isReady,
-      newReadyState: !isReady,
-      gameId: gameId,
-      username
-    })
-
     setIsSettingReady(true)
     const newReadyState = !isReady
 
     try {
-      console.log('Sending ready status via WebSocket:', newReadyState)
       webSocketClient.setReady(gameId, newReadyState)
 
       // Optimistically update local state
       setIsReady(newReadyState)
-      console.log('Local ready state updated to:', newReadyState)
     } catch (error) {
-      console.error('Failed to send ready status:', error)
+      logError('Failed to send ready status:', error)
     } finally {
       setIsSettingReady(false)
     }
-  }, [gameId, isReady, username])
+  }, [gameId, isReady])
 
   return {
     isReady,

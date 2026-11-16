@@ -1,6 +1,8 @@
 // Performance Monitoring Utilities
 // Helps track and optimize component re-renders and expensive operations
 
+import { logWarn } from '@/shared/utils/log'
+
 interface PerformanceMetric {
   name: string
   startTime: number
@@ -35,7 +37,7 @@ class PerformanceMonitor {
 
     const metric = this.metrics.get(name)
     if (!metric) {
-      console.warn(`Performance metric '${name}' was not started`)
+      logWarn(`Performance metric '${name}' was not started`)
       return null
     }
 
@@ -47,9 +49,9 @@ class PerformanceMonitor {
 
     // Log slow operations
     if (duration > 16) { // More than one frame at 60fps
-      console.warn(`Slow operation detected: ${name} took ${duration.toFixed(2)}ms`, metric.metadata)
-    } else if (duration > 5) {
-      console.log(`${name} took ${duration.toFixed(2)}ms`, metric.metadata)
+      const message = `Slow operation detected: ${name} took ${duration.toFixed(2)}ms`
+      if (metric.metadata === undefined) logWarn(message)
+      else logWarn(message, metric.metadata)
     }
 
     return duration
@@ -58,7 +60,7 @@ class PerformanceMonitor {
   /**
    * Track component render count
    */
-  trackRender(componentName: string, props?: unknown): void {
+  trackRender(componentName: string): void {
     if (!this.isEnabled) return
 
     const currentCount = this.renderCounts.get(componentName) || 0
@@ -67,7 +69,7 @@ class PerformanceMonitor {
 
     // Log excessive re-renders
     if (newCount > 10 && newCount % 5 === 0) {
-      console.warn(`Component '${componentName}' has rendered ${newCount} times`, props)
+      logWarn(`Component '${componentName}' has rendered ${newCount} times`)
     }
   }
 
@@ -103,28 +105,12 @@ if (typeof window !== 'undefined' && import.meta.env.DEV) {
 }
 
 // React hook for tracking component renders
-export function useRenderTracker(componentName: string, dependencies?: unknown[]) {
+export function useRenderTracker(componentName: string) {
   React.useEffect(() => {
     if (import.meta.env.DEV) {
-      performanceMonitor.trackRender(componentName, dependencies)
+      performanceMonitor.trackRender(componentName)
     }
   })
-}
-
-// Higher-order component for performance tracking
-export function withPerformanceTracking<P extends object>(
-  Component: React.ComponentType<P>,
-  componentName?: string
-) {
-  const name = componentName || Component.displayName || Component.name || 'Unknown'
-  
-  return function TrackedComponent(props: P) {
-    if (import.meta.env.DEV) {
-      performanceMonitor.trackRender(name, props)
-    }
-    
-    return React.createElement(Component, props)
-  }
 }
 
 // Utility for measuring expensive operations

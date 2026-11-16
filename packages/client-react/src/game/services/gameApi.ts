@@ -7,7 +7,7 @@ import type {
   WebSocketTicketResponse,
 } from '@santorini/shared'
 
-export class GameApi {
+class GameApi {
   // A one-time ticket for opening a WebSocket (browsers cannot set headers on the handshake)
   async createWebSocketTicket(): Promise<string> {
     const { ticket } = await request<WebSocketTicketResponse>('/ws-ticket', { method: 'POST' })

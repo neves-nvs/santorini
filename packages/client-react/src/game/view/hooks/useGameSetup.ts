@@ -15,6 +15,7 @@ import { useGameConnection } from './useGameConnection'
 import { useGameActions } from './useGameActions'
 import { useAppStore } from '@/user/model/appStore'
 import { useSetGameId, useSetGameState } from '@/game/model/gameSelectors'
+import { logError } from '@/shared/utils/log'
 
 interface GameSetupResult {
   isLoading: boolean
@@ -44,7 +45,6 @@ export function useGameSetup(gameId?: string): GameSetupResult {
     if (!gameId) return
 
     if (prevGameIdRef.current !== gameId) {
-      console.log('Game ID changed:', prevGameIdRef.current, '→', gameId)
       prevGameIdRef.current = gameId
 
       // Clear state for new game
@@ -72,7 +72,6 @@ export function useGameSetup(gameId?: string): GameSetupResult {
     if (!gameId || !isConnected || initializingRef.current) return
 
     initializingRef.current = true
-    console.log('Initializing game:', gameId)
 
     try {
       // 1. Fetch game state first to check if already in game
@@ -80,7 +79,6 @@ export function useGameSetup(gameId?: string): GameSetupResult {
 
       // 2. Join game via WebSocket (registers connection and adds player)
       // This auto-subscribes the WebSocket connection for broadcasts
-      console.log('Joining game via WebSocket...')
       joinGame(gameId)
 
       // 3. Subscribe to get initial state update
@@ -88,9 +86,8 @@ export function useGameSetup(gameId?: string): GameSetupResult {
 
       setIsLoading(false)
       setIsReady(true)
-      console.log('Game initialization complete')
     } catch (error) {
-      console.error('Game initialization failed:', error)
+      logError('Game initialization failed:', error)
       const errorMsg = error instanceof Error ? error.message : 'Failed to initialize game'
       setLocalError(errorMsg)
       setError(errorMsg)

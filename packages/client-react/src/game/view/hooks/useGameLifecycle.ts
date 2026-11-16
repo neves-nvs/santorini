@@ -78,21 +78,3 @@ export function useGameLifecycle() {
     rawGameState: gameState
   }
 }
-
-/**
- * Convenience hooks for specific lifecycle checks
- */
-export function useIsWaiting() {
-  const { gameInfo } = useGameLifecycle()
-  return gameInfo.isWaiting
-}
-
-export function useIsInProgress() {
-  const { gameInfo } = useGameLifecycle()
-  return gameInfo.isInProgress
-}
-
-export function useIsFinished() {
-  const { gameInfo } = useGameLifecycle()
-  return gameInfo.isFinished
-}

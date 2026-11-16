@@ -17,7 +17,7 @@ import { useGameStore } from '@/game/model/gameStore'
 import { useAppStore } from '@/user/model/appStore'
 import type { AvailableMove, GameState, GameStateUpdatePayload, PlayerGameView } from '@/game/model/game'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
-import { log, logError, logWarn } from '@/shared/utils/log'
+import { logError, logWarn } from '@/shared/utils/log'
 
 // Type guard for PlayerGameView (has isCurrentPlayer field)
 function isPlayerGameView(view: GameStateUpdatePayload['state']): view is PlayerGameView {
@@ -39,26 +39,14 @@ export function handleWebSocketMessage(type: string, payload: unknown): void {
       break
 
     case WS_MESSAGE_TYPES.PLAYER_JOINED:
-      log('Player joined:', payload)
-      // Full game_state_update follows - UI will update from that
-      break
-
     case WS_MESSAGE_TYPES.PLAYER_LEFT:
-      log('Player left:', payload)
-      // Full game_state_update follows - UI will update from that
-      break
-
     case WS_MESSAGE_TYPES.GAME_JOINED:
-      log('Game joined:', payload)
-      handleGameJoined(payload, store)
+      // The game_state_update that follows carries the state
       break
 
     case 'error':
       logError('Server error:', payload)
       break
-
-    default:
-      log('Unhandled message type:', type, payload)
   }
 }
 
@@ -88,7 +76,6 @@ function handleGameStateUpdate(
   })
 
   if (lastGameStateHash === stateHash) {
-    log('Skipping duplicate game state update')
     return
   }
   lastGameStateHash = stateHash
@@ -98,15 +85,11 @@ function handleGameStateUpdate(
   const isCurrentPlayer = isPlayer ? gameView.isCurrentPlayer : false
   const availableMoves = isPlayer ? gameView.availableMoves : undefined
 
-  log('Processing game state - phase:', gameView.phase, 'isCurrentPlayer:', isCurrentPlayer)
-
   // Compute currentUserReady from players array
   // Get the current user's ID from the app store (single source of truth)
   const currentUserId = useAppStore.getState().userId
   const currentUserPlayer = currentUserId ? gameView.players.find(p => p.userId === currentUserId) : undefined
   const currentUserReady = currentUserPlayer?.isReady ?? false
-
-  log('Current user ready status:', { currentUserId, currentUserReady, players: gameView.players })
 
   // Convert to GameState format
   const gameState: GameState = {
@@ -137,20 +120,6 @@ function handleGameStateUpdate(
     store.setCurrentPlayerMoves([])
     store.setMyTurn(false)
   }
-}
-
-/**
- * Handle game_joined messages
- * Sent when a player joins/reconnects to a game
- * Note: subscribe_game also sends game_state_update with the same data,
- * so we just log here. The game_state_update handler will process the state.
- */
-function handleGameJoined(
-  _payload: unknown,
-  _store: ReturnType<typeof useGameStore.getState>
-): void {
-  // game_state_update from subscribe_game will handle the actual state update
-  // This message just confirms we've joined the game
 }
 
 /**

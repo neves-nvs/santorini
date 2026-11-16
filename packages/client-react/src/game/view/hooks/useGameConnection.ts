@@ -33,7 +33,6 @@ export function useGameConnection() {
   // Connect WebSocket when authenticated
   useEffect(() => {
     if (username && !isConnected && !isConnecting && !connectionAttemptedRef.current) {
-      console.log('Initiating WebSocket connection for user:', username)
       connectionAttemptedRef.current = true
       webSocketClient.connect()
     }

@@ -45,7 +45,6 @@ const AuthPage = () => {
         navigate('/lobby')
       }
     } catch (err) {
-      console.error('Auth error:', err)
       setError(err instanceof Error ? err.message : 'Authentication failed')
     } finally {
       setLoading(false)

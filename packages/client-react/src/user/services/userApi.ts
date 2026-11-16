@@ -8,7 +8,7 @@ import type {
   UserView,
 } from '@santorini/shared'
 
-export class UserApi {
+class UserApi {
   async login(credentials: LoginRequest): Promise<TextResponse> {
     return request<TextResponse>('/session', {
       method: 'POST',
