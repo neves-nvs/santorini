@@ -14,7 +14,6 @@
 
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { gameApi } from './gameApi'
-import { handleWebSocketMessage, handleConnectionChange, resetMessageHandlerState } from '@/game/update/GameMessageHandler'
 import { RECONNECTION_DELAY } from '@/game/model/gameConstants'
 
 interface WebSocketMessage {
@@ -23,6 +22,12 @@ interface WebSocketMessage {
 }
 
 export type MessageHandler = (type: string, payload: unknown) => void
+
+export interface SocketEvents {
+  onMessage: MessageHandler
+  onConnectionChange: (connected: boolean) => void
+  onReset: () => void
+}
 
 function getWebSocketUrl(): string {
   const envUrl = import.meta.env.VITE_WS_URL
@@ -34,6 +39,9 @@ function getWebSocketUrl(): string {
   const path = envUrl || '/ws'
   return `${protocol}//${window.location.host}${path}`
 }
+
+// The update layer registers itself at startup (main.tsx), so services never import it.
+let events: SocketEvents = { onMessage: () => {}, onConnectionChange: () => {}, onReset: () => {} }
 
 class WebSocketClient {
   private socket: WebSocket | null = null
@@ -66,8 +74,8 @@ class WebSocketClient {
       this.socket = null
     }
 
-    handleConnectionChange(false)
-    resetMessageHandlerState()
+    events.onConnectionChange(false)
+    events.onReset()
   }
 
   /**
@@ -160,13 +168,13 @@ class WebSocketClient {
     this.socket.onopen = () => {
       console.log('WebSocket connected')
       this.reconnectAttempts = 0
-      handleConnectionChange(true)
+      events.onConnectionChange(true)
     }
 
     this.socket.onmessage = (event) => {
       try {
         const message: WebSocketMessage = JSON.parse(event.data)
-        handleWebSocketMessage(message.type, message.payload)
+        events.onMessage(message.type, message.payload)
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error)
       }
@@ -174,7 +182,7 @@ class WebSocketClient {
 
     this.socket.onclose = (event) => {
       console.log('WebSocket closed:', event.code, event.reason)
-      handleConnectionChange(false)
+      events.onConnectionChange(false)
       this.attemptReconnect()
     }
 
@@ -224,6 +232,10 @@ export const webSocketClient = {
       instance = new WebSocketClient()
     }
     return instance
+  },
+
+  setEvents(next: SocketEvents): void {
+    events = next
   },
 
   connect(): Promise<void> {
