@@ -1,11 +1,12 @@
-import { Connection, OutgoingMessage } from "../../../src/game/infra/Connection.ts";
+import { Connection } from "../../../src/game/infra/Connection.ts";
 import { ConnectionManager } from "../../../src/game/infra/ConnectionManager.ts";
 import { GameService } from "../../../src/game/application/GameService.ts";
 import { LobbyService } from "../../../src/game/application/LobbyService.ts";
+import { ServerMessage } from "@santorini/shared";
 import { WsRouter } from "../../../src/websockets/WsRouter.ts";
 
 function setup() {
-  const sent: OutgoingMessage[] = [];
+  const sent: ServerMessage[] = [];
   const connection: Connection = {
     user: { id: 1, username: "ana" } as Connection["user"],
     isOpen: true,
