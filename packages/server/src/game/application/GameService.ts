@@ -1,10 +1,11 @@
-import { Game, GameEvent, GameId, Player, PlayerId, UserId, asPlayerId, createMove } from "@santorini/engine";
+import { Game, GameEvent, GameId, Player, PlayerId, UserId, createMove } from "@santorini/engine";
 import { GameNotFoundError, PlayerAlreadyInGameError, PlayerNotInGameError } from "@/errors/GameErrors.ts";
 import type { GameView, MoveCommand } from "@santorini/shared";
 import { GameBroadcaster } from "./GameBroadcaster.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { GameViewBuilder } from "./GameViewBuilder.ts";
 import logger from "@/logger.ts";
+import { playerIdSchema } from "@/idSchemas.ts";
 
 /**
  * Application service for game operations
@@ -89,7 +90,7 @@ export class GameService {
 
     // Create player domain object
     // PlayerId is 1-indexed based on join order
-    const playerId = asPlayerId(game.players.size + 1);
+    const playerId = playerIdSchema.parse(game.players.size + 1);
     const seat = game.players.size;
     const player = new Player(playerId, userId, seat);
 

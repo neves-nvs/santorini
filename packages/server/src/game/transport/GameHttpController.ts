@@ -5,22 +5,22 @@ import {
   GameSummary,
   GameView,
   createGamePayloadSchema,
-  gameIdSchema,
 } from "@santorini/shared";
 import { GameError, getHttpStatus, toWireError } from "@/errors/GameErrors.ts";
-import { GameId, asGameId } from "@santorini/engine";
 import { NextFunction, Request, Response, Router } from "express";
 import { authenticate, getUser } from "@/auth/authController.ts";
 
+import { GameId } from "@santorini/engine";
 import { GameService } from "@/game/application/GameService.ts";
 import { LobbyService } from "@/game/application/LobbyService.ts";
 import { StoredGame } from "@/game/infra/GameRepositoryDb.ts";
+import { gameIdSchema } from "@/idSchemas.ts";
 import logger from "@/logger.ts";
 
 function parseGameId(raw: unknown): GameId {
   const parsed = gameIdSchema.safeParse(Number(raw));
   if (!parsed.success) throw new GameError("Game ID must be a positive whole number");
-  return asGameId(parsed.data);
+  return parsed.data;
 }
 
 function parseCreateGameBody(body: unknown) {

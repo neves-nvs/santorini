@@ -106,7 +106,7 @@ router.post<NoParams, TextResponse | ErrorResponse, LoginRequest>(
       });
 
       res.cookie("token", token, sessionCookieOptions(req));
-      res.status(200).send("OK");
+      res.status(StatusCodes.OK).send("OK");
     } catch (err) {
       logger.error("An error occurred during authentication", err);
       sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
@@ -117,19 +117,19 @@ router.post<NoParams, TextResponse | ErrorResponse, LoginRequest>(
 // Logout endpoint to clear the authentication cookie
 router.post<NoParams, LogoutResponse>("/logout", (req, res) => {
   res.clearCookie("token", sessionCookieOptions(req));
-  res.status(200).json({ message: "Logged out successfully" });
+  res.status(StatusCodes.OK).json({ message: "Logged out successfully" });
 });
 
 // A one-time ticket for opening a WebSocket from a browser, which cannot set headers on the handshake
 router.post<NoParams, WebSocketTicketResponse>("/ws-ticket", authenticate, (req, res) => {
-  res.status(200).json({ ticket: webSocketTickets.issue(getUser(req).username) });
+  res.status(StatusCodes.OK).json({ ticket: webSocketTickets.issue(getUser(req).username) });
 });
 
 // Endpoint to check authentication status and get user info
 router.get<NoParams, CurrentUserResponse | ErrorResponse>("/me", authenticate, async (req, res) => {
   try {
     const user = req.user as User;
-    res.status(200).json({ id: user.id, username: user.username });
+    res.status(StatusCodes.OK).json({ id: user.id, username: user.username });
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);

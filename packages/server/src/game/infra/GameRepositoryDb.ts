@@ -8,12 +8,12 @@ import {
   GameStatus,
   Player,
   UserId,
-  asPlayerId,
 } from "@santorini/engine";
 import { Database, Game as GameRecord, NewPiece, Piece } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
 import { db } from "@/database.ts";
 import logger from "@/logger.ts";
+import { playerIdSchema } from "@/idSchemas.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 
 /** What the server records about a game that the rules do not need: when it was created, started and finished. */
@@ -81,7 +81,7 @@ export class GameRepositoryDb {
           : null,
       players: playerRecords.map((p, index) => {
         const player = new Player(
-          asPlayerId(index + 1), // Player ID within game (1-indexed)
+          playerIdSchema.parse(index + 1), // Player ID within game (1-indexed)
           p.user_id,
           index, // Seat (0-indexed)
         );
@@ -310,7 +310,7 @@ export class GameRepositoryDb {
       }
 
       if (type === "worker") {
-        const playerId = asPlayerId(parseInt(owner));
+        const playerId = playerIdSchema.parse(Number(owner));
         const workerId = piece_id;
 
         // Place worker on the board

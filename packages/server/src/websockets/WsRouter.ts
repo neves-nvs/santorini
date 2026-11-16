@@ -1,5 +1,5 @@
 import { GameError, PlayerAlreadyInGameError, isRefusal, toWireError } from "@/errors/GameErrors.ts";
-import { GameId, UserId, asGameId } from "@santorini/engine";
+import { GameId, UserId } from "@santorini/engine";
 import {
   MoveCommand,
   ParsedClientMessage,
@@ -11,6 +11,7 @@ import { describeInvalidMessage, replyError } from "./utils.ts";
 import { Connection } from "@/game/infra/Connection.ts";
 import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
 import { GameService } from "@/game/application/GameService.ts";
+import { gameIdSchema } from "@/idSchemas.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 
@@ -82,7 +83,7 @@ export class WsRouter {
   }
 
   private async route(connection: Connection, userId: UserId, message: ParsedClientMessage): Promise<CommandResult> {
-    const gameId = asGameId(message.payload.gameId);
+    const gameId = gameIdSchema.parse(message.payload.gameId);
 
     switch (message.type) {
       case "join_game":
