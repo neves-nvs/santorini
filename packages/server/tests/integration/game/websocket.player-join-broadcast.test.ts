@@ -63,10 +63,10 @@ function waitForMessage<K extends ServerMessageType>(
   });
 }
 
-async function subscribe(ws: WebSocket, gameId: number): Promise<void> {
+async function subscribe(ws: WebSocket, gameId: number) {
   const subscribed = waitForMessage(ws, "game_state_update");
   ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
-  await subscribed;
+  return (await subscribed).payload.state;
 }
 
 describe("Player Join Broadcast Integration Test", () => {
@@ -109,7 +109,7 @@ describe("Player Join Broadcast Integration Test", () => {
     if (!player1) throw new Error("Player 1 not initialized");
 
     // Player 1 joins via WebSocket (idempotent - already in game from creation)
-    const joinPromise1 = waitForMessage(player1.ws, "game_joined");
+    const joinPromise1 = waitForMessage(player1.ws, "ok");
     player1.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     await joinPromise1;
     await subscribe(player1.ws, gameId);
@@ -122,7 +122,7 @@ describe("Player Join Broadcast Integration Test", () => {
     const ws2 = await createPlayerConnection(token2);
     player2 = { user: user2, token: token2, ws: ws2 };
 
-    const joinPromise2 = waitForMessage(player2.ws, "game_joined");
+    const joinPromise2 = waitForMessage(player2.ws, "ok");
     player2.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     await joinPromise2;
 
@@ -138,14 +138,14 @@ describe("Player Join Broadcast Integration Test", () => {
     if (!player1) throw new Error("Player 1 not initialized");
 
     // Player 1 joins via WebSocket
-    const joinPromise1 = waitForMessage(player1.ws, "game_joined");
+    const joinPromise1 = waitForMessage(player1.ws, "ok");
     player1.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
-    const joinResponse1 = await joinPromise1;
-    await subscribe(player1.ws, gameId);
+    await joinPromise1;
+    const initialState = await subscribe(player1.ws, gameId);
 
     // Verify Player 1 sees only themselves initially
-    expect(joinResponse1.payload.gameState.players).toHaveLength(1);
-    expect(joinResponse1.payload.gameState.players[0].userId).toBe(player1.user.id);
+    expect(initialState.players).toHaveLength(1);
+    expect(initialState.players[0].userId).toBe(player1.user.id);
 
     // Set up listener for game_state_update with 2 players
     const ws1 = player1.ws;
@@ -175,14 +175,13 @@ describe("Player Join Broadcast Integration Test", () => {
     const ws2 = await createPlayerConnection(token2);
     player2 = { user: user2, token: token2, ws: ws2 };
 
-    const joinPromise2 = waitForMessage(player2.ws, "game_joined");
+    const joinPromise2 = waitForMessage(player2.ws, "ok");
     player2.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     await joinPromise2;
 
     // Player 1 should receive game_state_update with both players
     const stateUpdate = await stateUpdatePromise;
     expect(stateUpdate.type).toBe("game_state_update");
-    if (!("state" in stateUpdate.payload)) throw new Error("Expected a game state in the update");
     const { players } = stateUpdate.payload.state;
     expect(players).toHaveLength(2);
 
@@ -195,7 +194,7 @@ describe("Player Join Broadcast Integration Test", () => {
     if (!player1) throw new Error("Player 1 not initialized");
 
     // Player 1 joins
-    const joinPromise1 = waitForMessage(player1.ws, "game_joined");
+    const joinPromise1 = waitForMessage(player1.ws, "ok");
     player1.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     await joinPromise1;
 
@@ -204,13 +203,14 @@ describe("Player Join Broadcast Integration Test", () => {
     const ws2 = await createPlayerConnection(token2);
     player2 = { user: user2, token: token2, ws: ws2 };
 
-    const joinPromise2 = waitForMessage(player2.ws, "game_joined");
+    const joinPromise2 = waitForMessage(player2.ws, "ok");
     player2.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
-    const joinResponse2 = await joinPromise2;
+    await joinPromise2;
+    const state = await subscribe(player2.ws, gameId);
 
-    // Player 2 should see both players in their join response
-    expect(joinResponse2.payload.gameState.players).toHaveLength(2);
-    const playerIds = joinResponse2.payload.gameState.players.map((p) => p.userId);
+    // Player 2 should see both players once subscribed
+    expect(state.players).toHaveLength(2);
+    const playerIds = state.players.map((p) => p.userId);
     expect(playerIds).toContain(player1.user.id);
     expect(playerIds).toContain(user2.id);
   });
@@ -219,18 +219,19 @@ describe("Player Join Broadcast Integration Test", () => {
     if (!player1) throw new Error("Player 1 not initialized");
 
     // Player 1 joins first time
-    const joinPromise1 = waitForMessage(player1.ws, "game_joined");
+    const joinPromise1 = waitForMessage(player1.ws, "ok");
     player1.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     const response1 = await joinPromise1;
-    expect(response1.type).toBe("game_joined");
+    expect(response1.type).toBe("ok");
 
     // Player 1 joins again (should not error)
-    const joinPromise2 = waitForMessage(player1.ws, "game_joined");
+    const joinPromise2 = waitForMessage(player1.ws, "ok");
     player1.ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
     const response2 = await joinPromise2;
-    expect(response2.type).toBe("game_joined");
+    expect(response2.type).toBe("ok");
 
     // Should still see only 1 player
-    expect(response2.payload.gameState.players).toHaveLength(1);
+    const state = await subscribe(player1.ws, gameId);
+    expect(state.players).toHaveLength(1);
   });
 });

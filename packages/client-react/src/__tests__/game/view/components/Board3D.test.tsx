@@ -7,7 +7,7 @@ import { webSocketClient } from '@/game/services/WebSocketClient'
 import type { BoardCell } from '@/game/model/gameStore'
 import type { AvailableMove, GameState } from '@/game/model/game'
 
-vi.mock('@/game/services/WebSocketClient', () => ({ webSocketClient: { send: vi.fn() } }))
+vi.mock('@/game/services/WebSocketClient', () => ({ webSocketClient: { request: vi.fn() } }))
 
 type Renderer = Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>
 type SceneNode = Renderer['scene']
@@ -40,8 +40,8 @@ const seed = ({
     gameState: { currentPlayerId: ME } as GameState,
   })
 
-const render = (onCellClick?: (x: number, y: number) => void) =>
-  ReactThreeTestRenderer.create(<Board3D debugState={DEBUG_OFF} onCellClick={onCellClick} />)
+const render = (onCellClick?: (x: number, y: number) => void, onMoveError?: (message: string) => void) =>
+  ReactThreeTestRenderer.create(<Board3D debugState={DEBUG_OFF} onCellClick={onCellClick} onMoveError={onMoveError} />)
 
 const isAt = (node: SceneNode, x: number, z: number) => {
   const [worldX, worldZ] = gridToWorldCoords(x, z)
@@ -58,7 +58,7 @@ const previewAt = (r: Renderer, x: number, z: number) => previews(r).find((n) =>
 const isBuildingPreview = (preview: SceneNode) => preview.findAll((n) => Boolean(n.props.geometry)).length > 0
 
 const click = async (r: Renderer, node: SceneNode) => r.fireEvent(node, 'click')
-const sent = () => vi.mocked(webSocketClient.send)
+const sent = () => vi.mocked(webSocketClient.request)
 
 const place = (...positions: Array<[number, number]>): AvailableMove => ({
   type: 'place_worker',
@@ -87,7 +87,8 @@ const withWorkers = (...workers: Array<{ x: number; y: number; playerId: number;
 
 beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {})
-  sent().mockClear()
+  sent().mockReset()
+  sent().mockResolvedValue({})
   seed({})
 })
 
@@ -173,6 +174,18 @@ describe('placing workers', () => {
 
     expect(sent()).not.toHaveBeenCalled()
     expect(onCellClick).toHaveBeenCalledWith(4, 4)
+  })
+
+  it('reports the server\'s answer when the move is refused', async () => {
+    sent().mockRejectedValue(new Error('Not your turn'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    seed({ moves: [place([0, 0])] })
+    const onMoveError = vi.fn()
+    const renderer = await render(undefined, onMoveError)
+
+    await click(renderer, cellAt(renderer, 0, 0))
+
+    await vi.waitFor(() => expect(onMoveError).toHaveBeenCalledWith('Not your turn'))
   })
 
   it('sends nothing without a game id', async () => {

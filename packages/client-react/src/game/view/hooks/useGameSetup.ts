@@ -78,13 +78,12 @@ export function useGameSetup(gameId?: string): GameSetupResult {
       // 1. Fetch game state first to check if already in game
       await fetchGameState(gameId)
 
-      // 2. Join game via WebSocket (registers connection and adds player)
-      // This auto-subscribes the WebSocket connection for broadcasts
+      // 2. Take a seat. A full or started game fails here, before anything is subscribed.
       console.log('Joining game via WebSocket...')
-      joinGame(gameId)
+      await joinGame(gameId)
 
-      // 3. Subscribe to get initial state update
-      subscribeToGame(gameId)
+      // 3. Subscribe to get the state and every update after it
+      await subscribeToGame(gameId)
 
       setIsLoading(false)
       setIsReady(true)

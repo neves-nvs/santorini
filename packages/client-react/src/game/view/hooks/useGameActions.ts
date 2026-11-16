@@ -12,7 +12,6 @@
 import { useCallback, useRef } from 'react'
 import { gameApi } from '@/game/services/gameApi'
 import { webSocketClient } from '@/game/services/WebSocketClient'
-import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { useSetGameState } from '@/game/model/gameSelectors'
 
 export function useGameActions() {
@@ -26,29 +25,39 @@ export function useGameActions() {
    * Join a game via WebSocket
    * This registers the player in the game and auto-subscribes the WebSocket connection
    */
-  const joinGame = useCallback((gameId: string): void => {
+  const joinGame = useCallback(async (gameId: string): Promise<void> => {
     if (joinedGamesRef.current.has(gameId)) {
       console.log('Already joined game:', gameId)
       return
     }
 
     console.log('Joining game via WebSocket:', gameId)
-    webSocketClient.joinGame(gameId)
     joinedGamesRef.current.add(gameId)
+    try {
+      await webSocketClient.joinGame(gameId)
+    } catch (error) {
+      joinedGamesRef.current.delete(gameId)
+      throw error
+    }
   }, [])
 
   /**
    * Subscribe to game updates via WebSocket
    */
-  const subscribeToGame = useCallback((gameId: string): void => {
+  const subscribeToGame = useCallback(async (gameId: string): Promise<void> => {
     if (subscribedGamesRef.current.has(gameId)) {
       console.log('Already subscribed to game:', gameId)
       return
     }
 
     console.log('Subscribing to game:', gameId)
-    webSocketClient.subscribeToGame(gameId)
     subscribedGamesRef.current.add(gameId)
+    try {
+      await webSocketClient.subscribeToGame(gameId)
+    } catch (error) {
+      subscribedGamesRef.current.delete(gameId)
+      throw error
+    }
   }, [])
 
   /**
@@ -80,12 +89,9 @@ export function useGameActions() {
   /**
    * Set player ready status
    */
-  const setReady = useCallback((gameId: string, isReady: boolean): void => {
+  const setReady = useCallback(async (gameId: string, isReady: boolean): Promise<void> => {
     console.log(`Setting ready status for game ${gameId}: ${isReady}`)
-    webSocketClient.send(WS_MESSAGE_TYPES.SET_READY, {
-      gameId: parseInt(gameId),
-      isReady
-    })
+    await webSocketClient.setReady(gameId, isReady)
   }, [])
 
   /**

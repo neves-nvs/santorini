@@ -1,15 +1,24 @@
-import { MoveCommand, ParsedClientMessage, WS_MESSAGE_TYPES, clientMessageSchema } from "@santorini/shared";
-import { describeInvalidMessage, sendError } from "./utils.ts";
+import { GameError, GameRuleError, PlayerAlreadyInGameError, toWireError } from "@/errors/GameErrors.ts";
+import {
+  MoveCommand,
+  ParsedClientMessage,
+  WS_MESSAGE_TYPES,
+  clientMessageSchema,
+  requestIdSchema,
+} from "@santorini/shared";
+import { describeInvalidMessage, replyError } from "./utils.ts";
 import { Connection } from "@/game/infra/Connection.ts";
 import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
 import { GameService } from "@/game/application/GameService.ts";
-import { LobbyService } from "@/game/application/LobbyService.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 
+type CommandResult = { gameId: number } | Record<string, never>;
+
 /**
  * WebSocket message router.
- * Routes incoming messages to appropriate handlers and manages connection lifecycle.
+ * Routes incoming commands to the services, answers each with exactly one `ok` or `error` carrying the request id,
+ * and manages the connection lifecycle.
  *
  * Equivalent to HTTP router + controller combined, since WebSocket
  * doesn't have a framework-provided routing layer.
@@ -17,7 +26,6 @@ import { sanitizeForLog } from "@/logSanitizer.ts";
 export class WsRouter {
   constructor(
     private gameService: GameService,
-    private lobbyService: LobbyService,
     private connectionManager: ConnectionManager,
   ) {}
 
@@ -28,28 +36,34 @@ export class WsRouter {
     try {
       frame = JSON.parse(raw);
     } catch {
-      sendError(connection, "Invalid message format");
+      replyError(connection, undefined, { code: "invalid_message", message: "Invalid message format" });
       return;
     }
     if (typeof frame !== "object" || frame === null || Array.isArray(frame)) {
-      sendError(connection, "Invalid message format");
+      replyError(connection, undefined, { code: "invalid_message", message: "Invalid message format" });
       return;
     }
 
-    const type = (frame as { type?: unknown }).type;
+    const { type, id: rawId } = frame as { type?: unknown; id?: unknown };
+    const id = requestIdSchema.safeParse(rawId).data;
     logger.info(`[WS] ${sanitizeForLog(type)} from ${user.username}`);
 
     const parsed = clientMessageSchema.safeParse(frame);
     if (!parsed.success) {
-      sendError(connection, describeInvalidMessage(type, parsed.error));
+      replyError(connection, id, describeInvalidMessage(type, parsed.error));
       return;
     }
 
     try {
-      await this.route(connection, user.id, parsed.data);
+      const result = await this.route(connection, user.id, parsed.data);
+      connection.send({ type: WS_MESSAGE_TYPES.OK, id, payload: result });
     } catch (error) {
-      logger.error(`[WS] Error handling ${parsed.data.type}:`, error);
-      sendError(connection, error instanceof Error ? error.message : "Request failed");
+      if (error instanceof GameError) {
+        logger.info(`[WS] ${parsed.data.type} refused: ${error.message}`);
+      } else {
+        logger.error(`[WS] Error handling ${parsed.data.type}:`, error);
+      }
+      replyError(connection, id, toWireError(error));
     }
   }
 
@@ -66,52 +80,38 @@ export class WsRouter {
     }
   }
 
-  private async route(connection: Connection, userId: number, message: ParsedClientMessage): Promise<void> {
+  private async route(connection: Connection, userId: number, message: ParsedClientMessage): Promise<CommandResult> {
+    const { gameId } = message.payload;
+
     switch (message.type) {
-      // Lobby
-      case "create_game":
-        return this.createGame(connection, userId, message.payload.maxPlayers);
-
       case "join_game":
-        return this.joinGame(connection, userId, message.payload.gameId);
-
-      case "list_games":
-        return this.listGames(connection);
+        await this.joinGame(userId, gameId);
+        return { gameId };
 
       case "leave_game":
-        return this.leaveGame(connection, userId, message.payload.gameId);
+        await this.leaveGame(userId, gameId);
+        return { gameId };
 
-      // Game
       case "subscribe_game":
         if (this.connectionManager.gameOf(connection) !== undefined) {
-          throw new Error("Already subscribed to a game; open a new connection for another game");
+          throw new GameRuleError("Already subscribed to a game; open a new connection for another game");
         }
-        this.connectionManager.addClient(message.payload.gameId, userId, connection);
-        return this.getGameState(connection, userId, message.payload.gameId);
+        this.connectionManager.addClient(gameId, userId, connection);
+        await this.sendGameState(connection, userId, gameId);
+        return { gameId };
 
       case "set_ready":
-        return this.setReady(connection, userId, message.payload.gameId, message.payload.isReady);
+        await this.setReady(userId, gameId, message.payload.isReady);
+        return {};
 
       case "make_move":
-        return this.makeMove(connection, userId, message.payload.gameId, message.payload.move);
+        await this.makeMove(userId, gameId, message.payload.move);
+        return {};
     }
   }
 
-  private async createGame(connection: Connection, userId: number, maxPlayers: number): Promise<void> {
-    const game = await this.lobbyService.createGame(userId, maxPlayers);
-    await this.gameService.addPlayer(game.id, userId);
-
-    const gameView = await this.gameService.getGameStateForPlayer(game.id, userId);
-    connection.send({ type: WS_MESSAGE_TYPES.GAME_CREATED, payload: { gameId: game.id, gameState: gameView } });
-
-    logger.info(`Game ${game.id} created by user ${userId}`);
-  }
-
-  private async joinGame(connection: Connection, userId: number, gameId: number): Promise<void> {
+  private async joinGame(userId: number, gameId: number): Promise<void> {
     const { game, isNewPlayer } = await this.addPlayerIfNew(gameId, userId);
-
-    const gameView = await this.gameService.getGameStateForPlayer(gameId, userId);
-    connection.send({ type: WS_MESSAGE_TYPES.GAME_JOINED, payload: { gameId, gameState: gameView } });
 
     if (isNewPlayer) {
       await this.broadcastPlayerJoined(game, userId);
@@ -120,23 +120,8 @@ export class WsRouter {
     logger.info(`User ${userId} ${isNewPlayer ? "joined" : "reconnected to"} game ${gameId}`);
   }
 
-  private async listGames(connection: Connection): Promise<void> {
-    const games = await this.lobbyService.findAvailableGames();
-
-    const gamesList = games.map((g) => ({
-      id: g.id,
-      status: g.status,
-      playerCount: g.players.size,
-      maxPlayers: g.maxPlayers,
-      createdAt: g.createdAt.toISOString(),
-    }));
-
-    connection.send({ type: WS_MESSAGE_TYPES.GAMES_LIST, payload: { games: gamesList } });
-  }
-
-  private async leaveGame(connection: Connection, userId: number, gameId: number): Promise<void> {
+  private async leaveGame(userId: number, gameId: number): Promise<void> {
     const { game } = await this.gameService.removePlayer(gameId, userId);
-    connection.send({ type: WS_MESSAGE_TYPES.GAME_LEFT, payload: { gameId } });
 
     this.connectionManager.broadcastToGame(gameId, {
       type: WS_MESSAGE_TYPES.PLAYER_LEFT,
@@ -163,7 +148,7 @@ export class WsRouter {
     }
   }
 
-  private async getGameState(connection: Connection, userId: number, gameId: number): Promise<void> {
+  private async sendGameState(connection: Connection, userId: number, gameId: number): Promise<void> {
     const [gameView, game] = await Promise.all([
       this.gameService.getGameStateForPlayer(gameId, userId),
       this.gameService.getGame(gameId),
@@ -179,32 +164,14 @@ export class WsRouter {
     });
   }
 
-  private async setReady(connection: Connection, userId: number, gameId: number, ready: boolean): Promise<void> {
-    const { game } = await this.gameService.setPlayerReady(gameId, userId, ready);
-
-    connection.send({
-      type: WS_MESSAGE_TYPES.READY_STATUS_UPDATE,
-      payload: {
-        ready,
-        allReady: game.areAllPlayersReady(),
-        gameStarted: game.status === "in-progress",
-      },
-    });
+  private async setReady(userId: number, gameId: number, ready: boolean): Promise<void> {
+    await this.gameService.setPlayerReady(gameId, userId, ready);
 
     logger.info(`Ready status: user ${userId} in game ${gameId} = ${ready}`);
   }
 
-  private async makeMove(connection: Connection, userId: number, gameId: number, move: MoveCommand): Promise<void> {
-    const result = await this.gameService.applyMove(gameId, userId, move);
-
-    connection.send({
-      type: WS_MESSAGE_TYPES.GAME_STATE_UPDATE,
-      payload: {
-        gameId,
-        version: result.game.version,
-        state: result.view,
-      },
-    });
+  private async makeMove(userId: number, gameId: number, move: MoveCommand): Promise<void> {
+    await this.gameService.applyMove(gameId, userId, move);
 
     logger.info(`Move processed for user ${userId} in game ${gameId}`);
   }
@@ -214,7 +181,7 @@ export class WsRouter {
       const result = await this.gameService.addPlayer(gameId, userId);
       return { game: result.game, isNewPlayer: true };
     } catch (error: unknown) {
-      if (error instanceof Error && error.message.includes("already in game")) {
+      if (error instanceof PlayerAlreadyInGameError) {
         const game = await this.gameService.getGame(gameId);
         if (!game) throw error;
         return { game, isNewPlayer: false };

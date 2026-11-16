@@ -387,34 +387,6 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/GameError" }
         "500": { $ref: "#/components/responses/GameServerError" }
-  /games/{gameId}/join:
-    post:
-      tags: [Games]
-      summary: Take a seat in a game
-      description: |
-        The same job as the `join_game` WebSocket message. Other subscribers receive a game update.
-      parameters:
-        - $ref: "#/components/parameters/GameId"
-      responses:
-        "200":
-          description: Joined
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [success]
-                properties:
-                  success: { type: boolean }
-        "400": { $ref: "#/components/responses/GameError" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
-        "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/GameError" }
-        "409":
-          description: The game is full, already started, or the user is already in it
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/GameErrorResponse" }
-        "500": { $ref: "#/components/responses/GameServerError" }
 components:
   securitySchemes:
     sessionCookie:
@@ -458,7 +430,7 @@ components:
           schema: { $ref: "#/components/schemas/GameErrorResponse" }
     GameServerError:
       description: |
-        An unexpected failure. `error` holds the message of the failure, which can name an internal detail.
+        An unexpected failure: `error.code` is `internal` and the message is fixed. The details stay in the server log.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/GameErrorResponse" }
@@ -469,10 +441,30 @@ components:
       properties:
         message: { type: string }
     GameErrorResponse:
+      description: The same `{ code, message }` as the payload of a WebSocket `error`.
       type: object
       required: [error]
       properties:
-        error: { type: string, examples: [Game not found] }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - invalid_message
+                - invalid_payload
+                - unknown_type
+                - game_not_found
+                - game_full
+                - already_in_game
+                - not_in_game
+                - invalid_game_state
+                - not_your_turn
+                - illegal_move
+                - internal
+              examples: [game_not_found]
+            message: { type: string, examples: [Game not found] }
     ValidationErrorResponse:
       type: object
       required: [errors]

@@ -17,8 +17,7 @@ vi.mock('@/game/services/WebSocketClient', () => ({
     joinGame: vi.fn(),
     subscribeToGame: vi.fn(),
     unsubscribeFromGame: vi.fn(),
-    send: vi.fn(),
-    makeMove: vi.fn(),
+    request: vi.fn(),
     setReady: vi.fn(),
   },
 }))
@@ -29,6 +28,7 @@ describe('useGameSetup', () => {
   beforeEach(() => {
     connection.isConnected = true
     vi.clearAllMocks()
+    vi.spyOn(console, 'error').mockImplementation(() => {})
   })
 
   it('joins and subscribes once the socket is connected', async () => {
@@ -51,5 +51,15 @@ describe('useGameSetup', () => {
 
     await waitFor(() => expect(webSocketClient.subscribeToGame).toHaveBeenCalledTimes(2))
     expect(webSocketClient.joinGame).toHaveBeenCalledTimes(2)
+  })
+
+  it('shows why the game could not be joined and does not subscribe', async () => {
+    vi.mocked(webSocketClient.joinGame).mockRejectedValueOnce(new Error('Game is full'))
+
+    const { result } = renderHook(() => useGameSetup('5'))
+
+    await waitFor(() => expect(result.current.error).toBe('Game is full'))
+    expect(result.current.isReady).toBe(false)
+    expect(webSocketClient.subscribeToGame).not.toHaveBeenCalled()
   })
 })

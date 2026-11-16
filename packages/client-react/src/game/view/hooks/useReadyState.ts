@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useGameState, useGameId } from '@/game/model/gameSelectors'
 import { useAppStore } from '@/user/model/appStore'
+import { useToast } from '@/shared/ui/useToast'
 import { webSocketClient } from '@/game/services/WebSocketClient'
 
 /**
@@ -11,6 +12,7 @@ export function useReadyState() {
   const gameState = useGameState()
   const gameId = useGameId()
   const username = useAppStore((s) => s.username)
+  const { showToast } = useToast()
   
   const serverReady = gameState?.currentUserReady
   const [isReady, setIsReady] = useState(serverReady ?? false)
@@ -38,19 +40,19 @@ export function useReadyState() {
     setIsSettingReady(true)
     const newReadyState = !isReady
 
+    // Optimistically update local state, and roll back when the server refuses
+    setIsReady(newReadyState)
     try {
       console.log('Sending ready status via WebSocket:', newReadyState)
-      webSocketClient.setReady(gameId, newReadyState)
-
-      // Optimistically update local state
-      setIsReady(newReadyState)
-      console.log('Local ready state updated to:', newReadyState)
+      await webSocketClient.setReady(gameId, newReadyState)
     } catch (error) {
       console.error('Failed to send ready status:', error)
+      setIsReady(!newReadyState)
+      showToast(error instanceof Error ? error.message : 'Could not change your ready status', 'error')
     } finally {
       setIsSettingReady(false)
     }
-  }, [gameId, isReady, username])
+  }, [gameId, isReady, username, showToast])
 
   return {
     isReady,

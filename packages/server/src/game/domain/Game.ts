@@ -5,6 +5,7 @@ import { GamePhase, GameStatus } from "./types.ts";
 import { Player, PlayerId } from "./Player.ts";
 
 import { GameEvent } from "./GameEvent.ts";
+import { GameRuleError } from "@/errors/GameErrors.ts";
 
 /**
  * Game Aggregate Root
@@ -85,7 +86,7 @@ export class Game {
 
     // Check if move was successful
     if (!moveResult.success) {
-      throw new Error(moveResult.error || "Move failed");
+      throw new GameRuleError(moveResult.error || "Move failed", "illegal_move");
     }
 
     // Update game state based on move result
@@ -329,7 +330,7 @@ export class Game {
   // Game lifecycle
   addPlayer(player: Player): GameEvent[] {
     if (this._players.size >= this.maxPlayers) {
-      throw new Error("Game is full");
+      throw new GameRuleError("Game is full", "game_full");
     }
 
     this._players.set(player.id, player);
@@ -348,7 +349,7 @@ export class Game {
    */
   removePlayer(userId: number): GameEvent[] {
     if (this._status !== "waiting") {
-      throw new Error("Cannot remove player - game is not waiting");
+      throw new GameRuleError("Cannot remove player - game is not waiting");
     }
 
     // Find player by userId
@@ -361,11 +362,11 @@ export class Game {
     }
 
     if (!playerToRemove) {
-      throw new Error("Player not found in game");
+      throw new GameRuleError("Player not found in game", "not_in_game");
     }
 
     if (playerToRemove.isReady) {
-      throw new Error("Cannot remove player who has already confirmed ready");
+      throw new GameRuleError("Cannot remove player who has already confirmed ready");
     }
 
     this._players.delete(playerToRemove.id);
@@ -385,12 +386,12 @@ export class Game {
    */
   setPlayerReady(playerId: PlayerId, ready: boolean): GameEvent[] {
     if (this._status !== "waiting") {
-      throw new Error("Cannot change ready status - game is not waiting");
+      throw new GameRuleError("Cannot change ready status - game is not waiting");
     }
 
     const player = this._players.get(playerId);
     if (!player) {
-      throw new Error("Player not found in game");
+      throw new GameRuleError("Player not found in game", "not_in_game");
     }
 
     player.setReady(ready);
@@ -440,13 +441,13 @@ export class Game {
 
   startGame(): GameEvent[] {
     if (this._status !== "waiting") {
-      throw new Error("Game cannot be started");
+      throw new GameRuleError("Game cannot be started");
     }
     if (this._players.size !== this.maxPlayers) {
-      throw new Error(`Cannot start: need ${this.maxPlayers} players, have ${this._players.size}`);
+      throw new GameRuleError(`Cannot start: need ${this.maxPlayers} players, have ${this._players.size}`);
     }
     if (!this.areAllPlayersReady()) {
-      throw new Error("Cannot start: not all players are ready");
+      throw new GameRuleError("Cannot start: not all players are ready");
     }
 
     this._status = "in-progress";
@@ -503,15 +504,15 @@ export class Game {
 
   private validateMove(playerId: PlayerId, move: Move): void {
     if (this._status !== "in-progress") {
-      throw new Error("Game is not in progress");
+      throw new GameRuleError("Game is not in progress");
     }
 
     if (this._currentPlayerId !== playerId) {
-      throw new Error("Not your turn");
+      throw new GameRuleError("Not your turn", "not_your_turn");
     }
 
     if (!move) {
-      throw new Error("Move is required");
+      throw new GameRuleError("Move is required");
     }
 
     // Additional move validation would go here

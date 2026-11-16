@@ -31,14 +31,33 @@ export const createGamePayloadSchema = z
 
 const gameRefSchema = z.object({ gameId: gameIdSchema })
 
+export const requestIdSchema = z.string().min(1).max(64)
+
+export const ERROR_CODES = [
+  'invalid_message',
+  'invalid_payload',
+  'unknown_type',
+  'game_not_found',
+  'game_full',
+  'already_in_game',
+  'not_in_game',
+  'invalid_game_state',
+  'not_your_turn',
+  'illegal_move',
+  'internal',
+] as const
+
+export type ErrorCode = (typeof ERROR_CODES)[number]
+
+const command = <Type extends string, Payload extends z.ZodType>(type: Type, payload: Payload) =>
+  z.object({ type: z.literal(type), id: requestIdSchema.optional(), payload })
+
 export const clientMessageSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('create_game'), payload: createGamePayloadSchema }),
-  z.object({ type: z.literal('join_game'), payload: gameRefSchema }),
-  z.object({ type: z.literal('list_games'), payload: z.unknown() }),
-  z.object({ type: z.literal('leave_game'), payload: gameRefSchema }),
-  z.object({ type: z.literal('subscribe_game'), payload: gameRefSchema }),
-  z.object({ type: z.literal('set_ready'), payload: gameRefSchema.extend({ isReady: z.boolean() }) }),
-  z.object({ type: z.literal('make_move'), payload: gameRefSchema.extend({ move: moveCommandSchema }) }),
+  command('join_game', gameRefSchema),
+  command('leave_game', gameRefSchema),
+  command('subscribe_game', gameRefSchema),
+  command('set_ready', gameRefSchema.extend({ isReady: z.boolean() })),
+  command('make_move', gameRefSchema.extend({ move: moveCommandSchema })),
 ])
 
 export const CLIENT_MESSAGE_TYPES: readonly string[] = clientMessageSchema.options.map((option) => option.shape.type.value)

@@ -3,17 +3,15 @@ import {
   CreateGameResponse,
   GameErrorResponse,
   GameSummary,
-  JoinGameResponse,
   PlayerGameView,
   createGamePayloadSchema,
   gameIdSchema,
 } from "@santorini/shared";
-import { GameError, getHttpStatus, getUserMessage } from "@/errors/GameErrors.ts";
+import { GameError, getHttpStatus, toWireError } from "@/errors/GameErrors.ts";
 import { NextFunction, Request, Response, Router } from "express";
 import { authenticate, getUser } from "@/auth/authController.ts";
 
 import { Game } from "@/game/domain/Game.ts";
-import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
 import { GameService } from "@/game/application/GameService.ts";
 import { LobbyService } from "@/game/application/LobbyService.ts";
 import logger from "@/logger.ts";
@@ -57,11 +55,7 @@ function gameToDto(game: Game): GameSummary {
   };
 }
 
-export function createGameRoutes(
-  gameService: GameService,
-  lobbyService: LobbyService,
-  gameBroadcaster: GameBroadcaster,
-): Router {
+export function createGameRoutes(gameService: GameService, lobbyService: LobbyService): Router {
   const router = Router();
 
   type NoParams = Record<string, string>;
@@ -94,17 +88,9 @@ export function createGameRoutes(
     res.json(gameView);
   });
 
-  router.post<GameParams, JoinGameResponse>("/:gameId/join", authenticate, async (req, res) => {
-    const userId = getUser(req).id;
-    const gameId = parseGameId(req.params.gameId);
-    const game = await lobbyService.joinGame(gameId, userId);
-    await gameBroadcaster.broadcastGameUpdate(game, []);
-    res.json({ success: true });
-  });
-
   router.use((error: unknown, req: Request, res: Response<GameErrorResponse>, _next: NextFunction) => {
     logger.error("Games route failed", { method: req.method, route: req.route?.path, error });
-    res.status(getHttpStatus(error)).json({ error: getUserMessage(error) });
+    res.status(getHttpStatus(error)).json({ error: toWireError(error) });
   });
 
   return router;

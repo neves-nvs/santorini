@@ -3,6 +3,7 @@ import DebugAxis from '@/game/view/debug/DebugAxis'
 import { BoardBase, Block, Worker, Cell, BoundingBox, MovePreview, BuildingPreview } from './GamePieces'
 import { BoardState, createEmptyBoard } from '@/game/model/board-types'
 import { gridToWorldCoords } from './world-coords'
+import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { webSocketClient } from '@/game/services/WebSocketClient'
 import {
   useSelectedWorker,
@@ -37,6 +38,8 @@ interface DebugState {
 interface Board3DProps {
   debugState?: DebugState
   onCellClick?: (x: number, y: number) => void
+  // The board is drawn inside the canvas, where React context is not available, so the caller shows the error
+  onMoveError?: (message: string) => void
 }
 
 /**
@@ -45,7 +48,8 @@ interface Board3DProps {
  */
 const Board3D: React.FC<Board3DProps> = React.memo(({
   debugState,
-  onCellClick
+  onCellClick,
+  onMoveError
 }) => {
 
   // Subscribe to optimized board state from store (already parsed)
@@ -209,20 +213,16 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
         console.log('Using server move object:', validMove.selectedPosition.serverMoveObject)
       }
 
-      try {
-        console.log('Submitting move:', moveData)
-        webSocketClient.send('make_move', moveData)
-        console.log('Move submitted successfully')
-
-        // For move_worker, keep selection - building phase needs the same worker
-        // For place_worker and build moves, clear selection (turn segment complete)
-        if (validMove.type !== 'move_worker') {
-          setSelectedWorker(null)
-        }
-
-        console.log('Move submitted - waiting for server response to update game state')
-      } catch (error) {
+      console.log('Submitting move:', moveData)
+      webSocketClient.request(WS_MESSAGE_TYPES.MAKE_MOVE, moveData).catch((error: unknown) => {
         console.error('Failed to submit move:', error)
+        onMoveError?.(error instanceof Error ? error.message : 'The move was not accepted')
+      })
+
+      // For move_worker, keep selection - building phase needs the same worker
+      // For place_worker and build moves, clear selection (turn segment complete)
+      if (validMove.type !== 'move_worker') {
+        setSelectedWorker(null)
       }
     } else {
       console.log('Invalid move at position:', { gridX, gridZ })

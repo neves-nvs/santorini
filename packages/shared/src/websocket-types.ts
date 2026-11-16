@@ -1,15 +1,12 @@
 /**
- * Shared WebSocket Message Types
- * 
- * This file defines all WebSocket message types used between frontend and backend
- * to ensure type safety and prevent message type mismatches.
+ * WebSocket messages between the client and the server.
+ *
+ * A client sends a command, `{ type, id?, payload }`. The server answers it with exactly one `ok` or `error`
+ * that carries the same `id`. Everything else the server sends is an event about a game (no `id`).
  */
 
-import type { GameStateUpdatePayload, GameStatus, MoveCommand, PlayerGameView } from './game-types.ts';
-
-// ============================================================================
-// Message Type Constants (eliminates magic strings)
-// ============================================================================
+import type { GameStateUpdatePayload, MoveCommand } from './game-types.ts';
+import type { ErrorCode } from './protocol.ts';
 
 export const WS_MESSAGE_TYPES = {
   // Client -> Server
@@ -17,117 +14,54 @@ export const WS_MESSAGE_TYPES = {
   JOIN_GAME: 'join_game',
   MAKE_MOVE: 'make_move',
   SET_READY: 'set_ready',
-  CREATE_GAME: 'create_game',
-  LIST_GAMES: 'list_games',
   LEAVE_GAME: 'leave_game',
 
   // Server -> Client
+  OK: 'ok',
+  ERROR: 'error',
   GAME_STATE_UPDATE: 'game_state_update',
-  READY_STATUS_UPDATE: 'ready_status_update',
   PLAYER_JOINED: 'player_joined',
-  PLAYER_LEFT: 'player_left',
-  GAME_CREATED: 'game_created',
-  GAME_JOINED: 'game_joined',
-  GAMES_LIST: 'games_list',
-  GAME_LEFT: 'game_left',
-  ERROR: 'error'
+  PLAYER_LEFT: 'player_left'
 } as const;
 
-export type WSMessageType = typeof WS_MESSAGE_TYPES[keyof typeof WS_MESSAGE_TYPES];
-
 // ============================================================================
-// Client -> Server Messages
+// Client -> Server
 // ============================================================================
 
-export interface CreateGameMessage {
-  type: typeof WS_MESSAGE_TYPES.CREATE_GAME;
-  payload?: {
-    maxPlayers?: number;
-  };
+interface Command<Type extends string, Payload> {
+  type: Type;
+  id?: string;
+  payload: Payload;
 }
 
-export interface JoinGameMessage {
-  type: typeof WS_MESSAGE_TYPES.JOIN_GAME;
-  payload: {
-    gameId: number;
-  };
-}
-
-export interface ListGamesMessage {
-  type: typeof WS_MESSAGE_TYPES.LIST_GAMES;
-  payload?: Record<string, never>;
-}
-
-export interface LeaveGameMessage {
-  type: typeof WS_MESSAGE_TYPES.LEAVE_GAME;
-  payload: {
-    gameId: number;
-  };
-}
-
-export interface SubscribeGameMessage {
-  type: typeof WS_MESSAGE_TYPES.SUBSCRIBE_GAME;
-  payload: {
-    gameId: number;
-  };
-}
-
-export interface SetReadyMessage {
-  type: typeof WS_MESSAGE_TYPES.SET_READY;
-  payload: {
-    gameId: number;
-    isReady: boolean;
-  };
-}
-
-export interface MakeMoveMessage {
-  type: typeof WS_MESSAGE_TYPES.MAKE_MOVE;
-  payload: {
-    gameId: number;
-    move: MoveCommand;
-  };
-}
+export type ClientMessage =
+  | Command<typeof WS_MESSAGE_TYPES.JOIN_GAME, { gameId: number }>
+  | Command<typeof WS_MESSAGE_TYPES.LEAVE_GAME, { gameId: number }>
+  | Command<typeof WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: number }>
+  | Command<typeof WS_MESSAGE_TYPES.SET_READY, { gameId: number; isReady: boolean }>
+  | Command<typeof WS_MESSAGE_TYPES.MAKE_MOVE, { gameId: number; move: MoveCommand }>;
 
 // ============================================================================
-// Server -> Client Messages
+// Server -> Client
 // ============================================================================
 
-export interface GameCreatedMessage {
-  type: typeof WS_MESSAGE_TYPES.GAME_CREATED;
-  payload: {
-    gameId: number;
-    gameState: PlayerGameView;
-  };
+export interface WireError {
+  code: ErrorCode;
+  message: string;
+  details?: { issues: { path: string[]; message: string }[] };
 }
 
-export interface GameJoinedMessage {
-  type: typeof WS_MESSAGE_TYPES.GAME_JOINED;
-  payload: {
-    gameId: number;
-    gameState: PlayerGameView;
-  };
+/** The result of a command. Every command answers with the `gameId` it acted on, except `set_ready` and `make_move`. */
+export interface OkMessage {
+  type: typeof WS_MESSAGE_TYPES.OK;
+  id?: string;
+  payload: { gameId: number } | Record<string, never>;
 }
 
-export interface GameSummaryView {
-  id: number;
-  status: GameStatus;
-  playerCount: number;
-  maxPlayers: number;
-  createdAt: string;
-}
-
-export interface GamesListMessage {
-  type: typeof WS_MESSAGE_TYPES.GAMES_LIST;
-  payload: {
-    games: GameSummaryView[];
-  };
-}
-
-export interface GameLeftMessage {
-  type: typeof WS_MESSAGE_TYPES.GAME_LEFT;
-  payload: {
-    gameId: number;
-  };
+export interface ErrorMessage {
+  type: typeof WS_MESSAGE_TYPES.ERROR;
+  id?: string;
+  payload: WireError;
 }
 
 export interface PlayerPresencePayload {
@@ -153,45 +87,12 @@ export interface GameStateUpdateMessage {
   payload: GameStateUpdatePayload;
 }
 
-export interface ReadyStatusUpdateMessage {
-  type: typeof WS_MESSAGE_TYPES.READY_STATUS_UPDATE;
-  payload: {
-    ready: boolean;
-    allReady: boolean;
-    gameStarted: boolean;
-  };
-}
-
-export interface ErrorMessage {
-  type: typeof WS_MESSAGE_TYPES.ERROR;
-  payload: string;
-}
-
-// ============================================================================
-// Union Types for Type Safety
-// ============================================================================
-
-export type ClientMessage =
-  | CreateGameMessage
-  | JoinGameMessage
-  | ListGamesMessage
-  | LeaveGameMessage
-  | SubscribeGameMessage
-  | SetReadyMessage
-  | MakeMoveMessage;
-
 export type ServerMessage =
-  | GameCreatedMessage
-  | GameJoinedMessage
-  | GamesListMessage
-  | GameLeftMessage
+  | OkMessage
+  | ErrorMessage
   | PlayerJoinedMessage
   | PlayerLeftMessage
-  | GameStateUpdateMessage
-  | ReadyStatusUpdateMessage
-  | ErrorMessage;
-
-export type WebSocketMessage = ClientMessage | ServerMessage;
+  | GameStateUpdateMessage;
 
 export type ServerMessageType = ServerMessage['type'];
 
