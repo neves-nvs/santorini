@@ -15,8 +15,7 @@ function setup() {
   };
   const gameService = {
     addPlayer: vi.fn(async () => ({ game: { id: 7, players: new Map(), maxPlayers: 2 } })),
-    getGameStateForPlayer: vi.fn(async () => ({})),
-    getGame: vi.fn(async () => ({ version: 1 })),
+    getGameView: vi.fn(async () => ({})),
     setPlayerReady: vi.fn(),
     applyMove: vi.fn(),
   };

@@ -40,6 +40,9 @@ export interface GameTable {
   turn_number: number;
   placing_turns_completed: number;
 
+  // Grows with every change to the game, so a client can tell which of two states is newer
+  version: ColumnType<number, number | undefined, number>;
+
   // Worker tracking for building restrictions
   last_moved_worker_id: number | null;
   last_moved_worker_x: number | null;

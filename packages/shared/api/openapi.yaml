@@ -373,7 +373,7 @@ paths:
     get:
       tags: [Games]
       summary: A game as the logged-in user sees it
-      description: Includes `availableMoves` only when it is the user's turn.
+      description: The same view as the payload of a WebSocket `game_state`. `viewer.availableMoves` has moves only when it is the user's turn.
       parameters:
         - $ref: "#/components/parameters/GameId"
       responses:
@@ -381,7 +381,7 @@ paths:
           description: The game view
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/PlayerGameView" }
+              schema: { $ref: "#/components/schemas/GameView" }
         "400": { $ref: "#/components/responses/GameError" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -550,13 +550,16 @@ components:
             type: { enum: [build_block, build_dome] }
             workerId: { type: integer }
             position: { $ref: "#/components/schemas/Position" }
-    PlayerGameView:
+    GameView:
+      description: |
+        A game as one user sees it. `currentPlayerId` and `winnerPlayerId` are per-game player ids, not user ids.
       type: object
-      required: [gameId, status, phase, currentPlayerId, turnNumber, version, board, players, isCurrentPlayer]
+      required: [gameId, status, phase, maxPlayers, currentPlayerId, turnNumber, version, board, players, winnerPlayerId, winReason, viewer]
       properties:
         gameId: { type: integer }
         status: { $ref: "#/components/schemas/GameStatus" }
         phase: { $ref: "#/components/schemas/GamePhase" }
+        maxPlayers: { type: integer }
         currentPlayerId: { type: [integer, "null"] }
         turnNumber: { type: integer }
         version:
@@ -588,10 +591,23 @@ components:
         players:
           type: array
           items: { $ref: "#/components/schemas/PlayerView" }
-        availableMoves:
-          type: array
-          description: Only present when it is this user's turn
-          items: { $ref: "#/components/schemas/Move" }
-        winnerId: { type: integer }
-        winReason: { type: string }
-        isCurrentPlayer: { type: boolean }
+        winnerPlayerId: { type: [integer, "null"] }
+        winReason: { type: [string, "null"] }
+        viewer: { $ref: "#/components/schemas/Viewer" }
+    Viewer:
+      description: Who is looking. A player gets the moves they can play now; a watcher, or someone whose seat was freed, gets none.
+      oneOf:
+        - type: object
+          required: [role, playerId, isCurrentPlayer, availableMoves]
+          properties:
+            role: { const: player }
+            playerId: { type: integer }
+            isCurrentPlayer: { type: boolean }
+            availableMoves:
+              type: array
+              description: Empty unless it is this player's turn
+              items: { $ref: "#/components/schemas/Move" }
+        - type: object
+          required: [role]
+          properties:
+            role: { const: spectator }

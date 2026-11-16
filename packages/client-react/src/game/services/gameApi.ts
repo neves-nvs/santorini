@@ -3,7 +3,7 @@ import type {
   CreateGameRequest,
   CreateGameResponse,
   GameSummary,
-  PlayerGameView,
+  GameView,
   WebSocketTicketResponse,
 } from '@santorini/shared'
 
@@ -30,8 +30,8 @@ export class GameApi {
     })
   }
 
-  async getGame(gameId: string): Promise<PlayerGameView> {
-    return request<PlayerGameView>(`/games/${gameId}`)
+  async getGame(gameId: string): Promise<GameView> {
+    return request<GameView>(`/games/${gameId}`)
   }
 }
 

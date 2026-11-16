@@ -26,9 +26,15 @@ async function connect(token: string): Promise<Connection> {
   return { ws, messages, send: (type, gameId) => ws.send(JSON.stringify({ type, payload: { gameId } })) };
 }
 
-async function waitFor<K extends ServerMessageType>(connection: Connection, type: K): Promise<ServerMessageOf<K>> {
+async function waitFor<K extends ServerMessageType>(
+  connection: Connection,
+  type: K,
+  matches: (message: ServerMessageOf<K>) => boolean = () => true,
+): Promise<ServerMessageOf<K>> {
   for (let attempt = 0; attempt < 100; attempt++) {
-    const message = connection.messages.find((m): m is ServerMessageOf<K> => m.type === type);
+    const message = connection.messages.find(
+      (m): m is ServerMessageOf<K> => m.type === type && matches(m as ServerMessageOf<K>),
+    );
     if (message) return message;
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
@@ -68,15 +74,56 @@ describe("Join and Subscribe Integration Tests", () => {
 
     ownerConnection.send(WS_MESSAGE_TYPES.JOIN_GAME, gameId);
     ownerConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, gameId);
-    await waitFor(ownerConnection, WS_MESSAGE_TYPES.GAME_STATE_UPDATE);
+    await waitFor(ownerConnection, WS_MESSAGE_TYPES.GAME_STATE);
     guestConnection.send(WS_MESSAGE_TYPES.JOIN_GAME, gameId);
     await waitFor(guestConnection, WS_MESSAGE_TYPES.OK);
 
-    ownerConnection.send(WS_MESSAGE_TYPES.LEAVE_GAME, gameId);
-    await waitFor(ownerConnection, WS_MESSAGE_TYPES.PLAYER_LEFT);
+    ownerConnection.ws.send(JSON.stringify({ type: WS_MESSAGE_TYPES.LEAVE_GAME, id: "left", payload: { gameId } }));
+    await waitFor(ownerConnection, WS_MESSAGE_TYPES.OK, (m) => m.id === "left");
     await settle();
 
     expect(guestConnection.messages.map((m) => m.type)).toEqual([WS_MESSAGE_TYPES.OK]);
+  });
+
+  test("everyone subscribed sees the new player list when someone leaves, and the one who left stops following", async () => {
+    const [owner, guest] = await Promise.all([helpers.createTestUserWithLogin(), helpers.createTestUserWithLogin()]);
+    const gameId = await helpers.createTestGame(owner.token);
+    const ownerConnection = await connectUser(owner.token);
+    const guestConnection = await connectUser(guest.token);
+    guestConnection.send(WS_MESSAGE_TYPES.JOIN_GAME, gameId);
+    guestConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, gameId);
+    await waitFor(guestConnection, WS_MESSAGE_TYPES.GAME_STATE, (m) => m.payload.players.length === 2);
+    ownerConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, gameId);
+    await waitFor(ownerConnection, WS_MESSAGE_TYPES.GAME_STATE);
+    const seenByOwner = ownerConnection.messages.length;
+
+    guestConnection.ws.send(JSON.stringify({ type: WS_MESSAGE_TYPES.LEAVE_GAME, id: "left", payload: { gameId } }));
+    await waitFor(guestConnection, WS_MESSAGE_TYPES.OK, (m) => m.id === "left");
+    const update = await waitFor(ownerConnection, WS_MESSAGE_TYPES.GAME_STATE, (m) => m.payload.players.length === 1);
+    await settle();
+
+    expect(update.payload.players.map((p) => p.userId)).not.toContain(guest.user.id);
+    expect(ownerConnection.messages.length).toBeGreaterThan(seenByOwner);
+  });
+
+  test("a socket that left a game gets nothing more about it", async () => {
+    const [owner, guest] = await Promise.all([helpers.createTestUserWithLogin(), helpers.createTestUserWithLogin()]);
+    const gameId = await helpers.createTestGame(owner.token);
+    const guestConnection = await connectUser(guest.token);
+    guestConnection.send(WS_MESSAGE_TYPES.JOIN_GAME, gameId);
+    guestConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, gameId);
+    await waitFor(guestConnection, WS_MESSAGE_TYPES.GAME_STATE, (m) => m.payload.players.length === 2);
+    guestConnection.ws.send(JSON.stringify({ type: WS_MESSAGE_TYPES.LEAVE_GAME, id: "left", payload: { gameId } }));
+    await waitFor(guestConnection, WS_MESSAGE_TYPES.OK, (m) => m.id === "left");
+    const received = guestConnection.messages.length;
+
+    const other = await helpers.createTestUserWithLogin();
+    const otherConnection = await connectUser(other.token);
+    otherConnection.send(WS_MESSAGE_TYPES.JOIN_GAME, gameId);
+    await waitFor(otherConnection, WS_MESSAGE_TYPES.OK);
+    await settle();
+
+    expect(guestConnection.messages).toHaveLength(received);
   });
 
   test("a player who is not in the game can subscribe and watch it", async () => {
@@ -90,12 +137,13 @@ describe("Join and Subscribe Integration Tests", () => {
     const guestConnection = await connectUser(guest.token);
 
     watcherConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, gameId);
-    await waitFor(watcherConnection, WS_MESSAGE_TYPES.GAME_STATE_UPDATE);
+    await waitFor(watcherConnection, WS_MESSAGE_TYPES.GAME_STATE);
 
     guestConnection.send(WS_MESSAGE_TYPES.JOIN_GAME, gameId);
-    const joined = await waitFor(watcherConnection, WS_MESSAGE_TYPES.PLAYER_JOINED);
+    const update = await waitFor(watcherConnection, WS_MESSAGE_TYPES.GAME_STATE, (m) => m.payload.players.length === 2);
 
-    expect(joined.payload.gameId).toBe(gameId);
+    expect(update.payload.gameId).toBe(gameId);
+    expect(update.payload.viewer).toEqual({ role: "spectator" });
   });
 
   test("a socket follows one game at a time", async () => {
@@ -109,7 +157,7 @@ describe("Join and Subscribe Integration Tests", () => {
     const watcherConnection = await connectUser(watcher.token);
 
     watcherConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, firstGameId);
-    await waitFor(watcherConnection, WS_MESSAGE_TYPES.GAME_STATE_UPDATE);
+    await waitFor(watcherConnection, WS_MESSAGE_TYPES.GAME_STATE);
     watcherConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, secondGameId);
     const error = await waitFor(watcherConnection, WS_MESSAGE_TYPES.ERROR);
 
@@ -145,5 +193,31 @@ describe("Join and Subscribe Integration Tests", () => {
       { type: WS_MESSAGE_TYPES.OK, id: "a1", payload: { gameId } },
       { type: WS_MESSAGE_TYPES.ERROR, id: "a2", payload: { code: "game_not_found", message: "Game not found" } },
     ]);
+  });
+
+  test("the version of a game grows with every change, across requests", async () => {
+    const [owner, guest] = await Promise.all([helpers.createTestUserWithLogin(), helpers.createTestUserWithLogin()]);
+    const gameId = await helpers.createTestGame(owner.token);
+    const ownerConnection = await connectUser(owner.token);
+    const guestConnection = await connectUser(guest.token);
+    ownerConnection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, gameId);
+    await waitFor(ownerConnection, WS_MESSAGE_TYPES.GAME_STATE);
+
+    guestConnection.send(WS_MESSAGE_TYPES.JOIN_GAME, gameId);
+    await waitFor(ownerConnection, WS_MESSAGE_TYPES.GAME_STATE, (m) => m.payload.players.length === 2);
+    for (const connection of [ownerConnection, guestConnection]) {
+      connection.ws.send(
+        JSON.stringify({ type: WS_MESSAGE_TYPES.SET_READY, id: "ready", payload: { gameId, isReady: true } }),
+      );
+      await waitFor(connection, WS_MESSAGE_TYPES.OK, (m) => m.id === "ready");
+    }
+    await waitFor(ownerConnection, WS_MESSAGE_TYPES.GAME_STATE, (m) => m.payload.status === "in-progress");
+
+    const versions = ownerConnection.messages.flatMap((m) =>
+      m.type === WS_MESSAGE_TYPES.GAME_STATE ? [m.payload.version] : [],
+    );
+    expect(versions.length).toBeGreaterThanOrEqual(4);
+    expect(versions).toEqual([...versions].sort((a, b) => a - b));
+    expect(new Set(versions).size).toBe(versions.length);
   });
 });

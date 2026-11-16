@@ -110,50 +110,27 @@ export type MoveCommand = PlaceWorkerCommand | MoveWorkerCommand | BuildCommand;
 // ============================================================================
 
 /**
- * Game state view for a specific player
- * Includes available moves if it's the player's turn
+ * Who is looking. A player gets the moves they can play now; someone watching, or whose seat was freed, gets none.
  */
-export interface PlayerGameView {
+export type Viewer =
+  | { role: 'player'; playerId: number; isCurrentPlayer: boolean; availableMoves: Move[] }
+  | { role: 'spectator' };
+
+/**
+ * A game as one user sees it. The server sends it as the payload of every `game_state` and as the body of
+ * `GET /games/:gameId`. `currentPlayerId` and `winnerPlayerId` are per-game player ids, not user ids.
+ */
+export interface GameView {
   gameId: number;
   status: GameStatus;
   phase: GamePhase;
+  maxPlayers: number;
   currentPlayerId: number | null;
   turnNumber: number;
   version: number;
   board: BoardView;
   players: PlayerView[];
-  availableMoves?: Move[];
-  winnerId?: number;
-  winReason?: string;
-  isCurrentPlayer: boolean;
-}
-
-/**
- * Game state view for spectators
- * No available moves included
- */
-export interface SpectatorGameView {
-  gameId: number;
-  status: GameStatus;
-  phase: GamePhase;
-  currentPlayerId: number | null;
-  turnNumber: number;
-  version: number;
-  board: BoardView;
-  players: PlayerView[];
-  winnerId?: number | null;
-  winReason?: string | null;
-}
-
-// ============================================================================
-// WebSocket Payload Types
-// ============================================================================
-
-/**
- * Payload structure for game_state_update messages
- */
-export interface GameStateUpdatePayload {
-  gameId: number;
-  version: number;
-  state: PlayerGameView | SpectatorGameView;
+  winnerPlayerId: number | null;
+  winReason: string | null;
+  viewer: Viewer;
 }

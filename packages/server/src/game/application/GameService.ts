@@ -1,9 +1,9 @@
 import { Game, GameEvent, Player, createMove } from "@santorini/engine";
 import { GameNotFoundError, PlayerAlreadyInGameError, PlayerNotInGameError } from "@/errors/GameErrors.ts";
-import { GameViewBuilder, PlayerGameView } from "./GameViewBuilder.ts";
+import type { GameView, MoveCommand } from "@santorini/shared";
 import { GameBroadcaster } from "./GameBroadcaster.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
-import type { MoveCommand } from "@santorini/shared";
+import { GameViewBuilder } from "./GameViewBuilder.ts";
 import logger from "@/logger.ts";
 
 /**
@@ -56,8 +56,7 @@ export class GameService {
     // Persist updated game state
     await this.gameRepository.save(game);
 
-    // Broadcast the update to all players
-    await this.gameBroadcaster.broadcastGameUpdate(game, events);
+    this.gameBroadcaster.broadcastGameUpdate(game);
 
     logger.info(`Move processed successfully for game ${gameId}, generated ${events.length} events`);
     return { game, events };
@@ -99,6 +98,7 @@ export class GameService {
 
     // Persist updated game state
     await this.gameRepository.save(game);
+    this.gameBroadcaster.broadcastGameUpdate(game);
 
     logger.info(`Player ${userId} added to game ${gameId}`);
     return { game, events };
@@ -119,6 +119,7 @@ export class GameService {
     const events = game.removePlayer(userId);
 
     await this.gameRepository.save(game);
+    this.gameBroadcaster.broadcastGameUpdate(game);
 
     logger.info(`Player ${userId} removed from game ${gameId}`);
     return { game, events };
@@ -144,27 +145,21 @@ export class GameService {
     const events = game.setPlayerReady(playerId, ready);
     await this.gameRepository.save(game);
 
-    await this.gameBroadcaster.broadcastGameUpdate(game, events);
+    this.gameBroadcaster.broadcastGameUpdate(game);
 
     return { game, events };
   }
 
   /**
-   * Get game state for a specific player
+   * The game as this user sees it
    */
-  async getGameStateForPlayer(gameId: number, userId: number): Promise<PlayerGameView> {
+  async getGameView(gameId: number, userId: number): Promise<GameView> {
     const game = await this.gameRepository.findById(gameId);
     if (!game) {
       throw new GameNotFoundError(gameId);
     }
 
-    // Find player ID for this user
-    const playerId = this.findPlayerIdByUserId(game, userId);
-
-    // Generate available moves if it's the player's turn
-    const availableMoves = playerId && game.currentPlayerId === playerId ? game.getAvailableMoves() : undefined;
-
-    return this.gameViewBuilder.buildForPlayer(game, userId, availableMoves);
+    return this.gameViewBuilder.buildFor(game, userId);
   }
 
   /**

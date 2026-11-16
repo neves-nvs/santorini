@@ -3,9 +3,9 @@ import {
   CurrentUserResponse,
   GameErrorResponse,
   GameSummary,
+  GameView,
   LogoutResponse,
   MessageResponse,
-  PlayerGameView,
   PlayerView,
   TestAuthResponse,
   TokenResponse,
@@ -73,8 +73,11 @@ const waitingGameView = {
   version: expect.any(Number),
   board: { cells: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => emptyCell)) },
   players: [playerView],
-  isCurrentPlayer: false,
-} satisfies Omit<Record<keyof PlayerGameView, unknown>, "availableMoves" | "winnerId" | "winReason">;
+  maxPlayers: 2,
+  winnerPlayerId: null,
+  winReason: null,
+  viewer: { role: "player", playerId: expect.any(Number), isCurrentPlayer: false, availableMoves: [] },
+} satisfies Record<keyof GameView, unknown>;
 
 describe("REST responses carry the shape of the shared types", () => {
   afterEach(cleanupTestData);
@@ -189,7 +192,7 @@ describe("REST responses carry the shape of the shared types", () => {
       expect(mine.body).toStrictEqual([gameSummary]);
     });
 
-    test("GET /games/:gameId returns the PlayerGameView", async () => {
+    test("GET /games/:gameId returns the GameView", async () => {
       const { token } = await createTestUserWithLogin();
       const gameId = await createTestGame(token);
 

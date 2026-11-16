@@ -102,11 +102,11 @@ describe('WebSocketClient requests', () => {
   it('hands an event, and an error nobody asked for, to the update layer', async () => {
     const socket = await connected()
 
-    socket.receive({ type: 'game_state_update', payload: { gameId: 7 } })
+    socket.receive({ type: 'game_state', payload: { gameId: 7 } })
     socket.receive({ type: 'error', payload: { code: 'invalid_message', message: 'Invalid message format' } })
 
     expect(events.onMessage).toHaveBeenCalledTimes(2)
-    expect(events.onMessage).toHaveBeenCalledWith('game_state_update', { gameId: 7 })
+    expect(events.onMessage).toHaveBeenCalledWith('game_state', { gameId: 7 })
   })
 
   it('rejects the requests still waiting when the socket closes', async () => {

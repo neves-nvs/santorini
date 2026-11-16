@@ -1,39 +1,77 @@
 import { Game, Player } from "@santorini/engine";
+import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
+import { GameNotFoundError } from "@/errors/GameErrors.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { GameService } from "@/game/application/GameService.ts";
+import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
 
-function serviceFor(game: Game): GameService {
-  const repository = { findById: async () => game } as unknown as GameRepositoryDb;
-  return new GameService(repository);
+function setup(game: Game | null) {
+  const repository = { findById: async () => game, save: vi.fn() } as unknown as GameRepositoryDb;
+  const broadcaster = { broadcastGameUpdate: vi.fn() };
+  const service = new GameService(repository, new GameViewBuilder(), broadcaster as unknown as GameBroadcaster);
+  return { service, broadcaster, repository };
 }
 
-describe("GameService.getGameStateForPlayer available moves", () => {
-  let game: Game;
+function gameWith(players: number): Game {
+  const game = Game.create(1, 100, 2);
+  for (let seat = 0; seat < players; seat++) {
+    game.addPlayer(new Player(seat + 1, 100 + seat, seat));
+  }
+  return game;
+}
 
-  beforeEach(() => {
-    game = Game.create(1, 100, 2);
-    game.addPlayer(new Player(1, 100, 0));
-    game.addPlayer(new Player(2, 101, 1));
+describe("GameService.getGameView", () => {
+  it("is the game as the user sees it", async () => {
+    const game = gameWith(2);
     for (const [playerId] of game.players) {
       game.setPlayerReady(playerId, true);
     }
+    const { service } = setup(game);
+
+    expect((await service.getGameView(1, 100)).viewer).toMatchObject({ role: "player", isCurrentPlayer: true });
+    expect((await service.getGameView(1, 999)).viewer).toEqual({ role: "spectator" });
   });
 
-  it("includes the available moves for the player whose turn it is", async () => {
-    const view = await serviceFor(game).getGameStateForPlayer(1, 100);
+  it("refuses a game that does not exist", async () => {
+    const { service } = setup(null);
 
-    expect(view.availableMoves?.length).toBeGreaterThan(0);
+    await expect(service.getGameView(5, 100)).rejects.toBeInstanceOf(GameNotFoundError);
+  });
+});
+
+describe("GameService publishes every change to the game", () => {
+  it("after a player joins", async () => {
+    const game = gameWith(1);
+    const { service, broadcaster } = setup(game);
+
+    await service.addPlayer(1, 200);
+
+    expect(broadcaster.broadcastGameUpdate).toHaveBeenCalledExactlyOnceWith(game);
   });
 
-  it("leaves them out for a player whose turn it is not", async () => {
-    const view = await serviceFor(game).getGameStateForPlayer(1, 101);
+  it("after a player leaves", async () => {
+    const game = gameWith(2);
+    const { service, broadcaster } = setup(game);
 
-    expect(view.availableMoves).toBeUndefined();
+    await service.removePlayer(1, 101);
+
+    expect(broadcaster.broadcastGameUpdate).toHaveBeenCalledExactlyOnceWith(game);
   });
 
-  it("leaves them out for a user who is not in the game", async () => {
-    const view = await serviceFor(game).getGameStateForPlayer(1, 999);
+  it("after a player changes their ready status", async () => {
+    const game = gameWith(2);
+    const { service, broadcaster } = setup(game);
 
-    expect(view.availableMoves).toBeUndefined();
+    await service.setPlayerReady(1, 100, true);
+
+    expect(broadcaster.broadcastGameUpdate).toHaveBeenCalledExactlyOnceWith(game);
+  });
+
+  it("not after a join that is refused", async () => {
+    const { service, broadcaster } = setup(gameWith(2));
+
+    await expect(service.addPlayer(1, 200)).rejects.toThrow();
+
+    expect(broadcaster.broadcastGameUpdate).not.toHaveBeenCalled();
   });
 });

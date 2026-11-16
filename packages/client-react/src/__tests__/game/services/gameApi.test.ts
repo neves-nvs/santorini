@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gameApi } from '@/game/services/gameApi'
-import type { CreateGameResponse, GameSummary, PlayerGameView, WebSocketTicketResponse } from '@santorini/shared'
+import type { CreateGameResponse, GameSummary, GameView, WebSocketTicketResponse } from '@santorini/shared'
 
 const aGame = (id: number, status: GameSummary['status']): GameSummary => ({
   id,
@@ -74,16 +74,19 @@ describe('gameApi', () => {
     })
 
     it('should get game state', async () => {
-      const mockGameState: PlayerGameView = {
+      const mockGameState: GameView = {
         gameId: 1,
         status: 'in-progress',
         phase: 'moving',
+        maxPlayers: 2,
         currentPlayerId: 1,
         turnNumber: 3,
         version: 7,
         board: { cells: [] },
         players: [],
-        isCurrentPlayer: true,
+        winnerPlayerId: null,
+        winReason: null,
+        viewer: { role: 'player', playerId: 1, isCurrentPlayer: true, availableMoves: [] },
       }
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,

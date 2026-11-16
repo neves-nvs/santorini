@@ -334,6 +334,7 @@ export class Game {
     }
 
     this._players.set(player.id, player);
+    this._version++;
     const events: GameEvent[] = [];
 
     if (this._players.size === this.maxPlayers) {
