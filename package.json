@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build:shared": "npm run build -w @santorini/shared"
+    "build:shared": "npm run build -w @santorini/shared",
+    "build:libraries": "npm run build -w @santorini/shared -w @santorini/engine"
   }
 }

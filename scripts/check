@@ -2,7 +2,7 @@
 set -uo pipefail
 
 # Runs the checks CI runs, quietly: one line per step, and the tail of the output only for a step that fails.
-#   scripts/check [shared|server|client|all]    (default: all)
+#   scripts/check [shared|engine|server|client|all]    (default: all)
 # The server integration tests need Docker and are skipped, with a note, when it is not running.
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -31,6 +31,11 @@ check_shared() {
   step "shared types" shared npm run typecheck
 }
 
+check_engine() {
+  step "engine types" engine npm run typecheck
+  step "engine unit tests" engine npm test
+}
+
 check_server() {
   step "server eslint" server npx eslint src tests
   step "server prettier" server npx prettier --check 'src/**/*.ts' 'tests/**/*.ts'
@@ -51,15 +56,17 @@ check_client() {
 
 case "${1:-all}" in
   shared) check_shared ;;
+  engine) check_engine ;;
   server) check_server ;;
   client) check_client ;;
   all)
     check_shared
+    check_engine
     check_server
     check_client
     ;;
   *)
-    echo "Usage: scripts/check [shared|server|client|all]" >&2
+    echo "Usage: scripts/check [shared|engine|server|client|all]" >&2
     exit 2
     ;;
 esac

@@ -1,4 +1,5 @@
 import type { ErrorCode, WireError } from "@santorini/shared";
+import { GameRuleError } from "@santorini/engine";
 
 export class GameError extends Error {
   public readonly httpStatus: number = 400;
@@ -69,15 +70,9 @@ export class PlayerNotInGameError extends GameError {
   }
 }
 
-/** A rule of the game says no. The message is meant for the player. */
-export class GameRuleError extends GameError {
-  public readonly httpStatus: number;
-
-  constructor(message: string, code: ErrorCode = "invalid_game_state") {
-    super(message, message, code);
-    this.httpStatus = code === "not_in_game" || code === "not_your_turn" ? 403 : 409;
-    this.name = "GameRuleError";
-  }
+/** A failure the player caused or can fix, as opposed to a bug or an outage. */
+export function isRefusal(error: unknown): boolean {
+  return error instanceof GameError || error instanceof GameRuleError;
 }
 
 /**
@@ -88,6 +83,10 @@ export function toWireError(error: unknown): WireError {
   if (error instanceof GameError) {
     return { code: error.code, message: error.userMessage };
   }
+  if (error instanceof GameRuleError) {
+    const code: ErrorCode = error.code;
+    return { code, message: error.message };
+  }
   return { code: "internal", message: "Something went wrong" };
 }
 
@@ -97,6 +96,9 @@ export function toWireError(error: unknown): WireError {
 export function getHttpStatus(error: unknown): number {
   if (error instanceof GameError) {
     return error.httpStatus;
+  }
+  if (error instanceof GameRuleError) {
+    return error.code === "not_in_game" || error.code === "not_your_turn" ? 403 : 409;
   }
   return 500;
 }

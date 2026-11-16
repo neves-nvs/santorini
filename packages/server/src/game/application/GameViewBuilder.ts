@@ -1,4 +1,14 @@
 import {
+  Board,
+  BuildMove,
+  Game,
+  Move,
+  MoveWorkerMove,
+  PlaceWorkerMove,
+  Player,
+  VisibilityPolicy,
+} from "@santorini/engine";
+import {
   BoardView,
   CellView,
   GamePhase,
@@ -8,11 +18,6 @@ import {
   Move as SharedMove,
   SpectatorGameView,
 } from "@santorini/shared";
-import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "./Move.ts";
-import { Board } from "./Board.ts";
-import { Game } from "./Game.ts";
-import { Player } from "./Player.ts";
-import { VisibilityPolicy } from "./VisibilityPolicy.ts";
 
 // Re-export for backwards compatibility
 export type { BoardView, CellView, PlayerGameView, PlayerView, SpectatorGameView };

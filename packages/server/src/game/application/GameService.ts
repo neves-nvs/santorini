@@ -1,13 +1,9 @@
+import { Game, GameEvent, Player, createMove } from "@santorini/engine";
 import { GameNotFoundError, PlayerAlreadyInGameError, PlayerNotInGameError } from "@/errors/GameErrors.ts";
-import { GameViewBuilder, PlayerGameView } from "@/game/domain/GameViewBuilder.ts";
-
-import { Game } from "@/game/domain/Game.ts";
+import { GameViewBuilder, PlayerGameView } from "./GameViewBuilder.ts";
 import { GameBroadcaster } from "./GameBroadcaster.ts";
-import { GameEvent } from "@/game/domain/GameEvent.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import type { MoveCommand } from "@santorini/shared";
-import { Player } from "@/game/domain/Player.ts";
-import { createMove } from "@/game/domain/Move.ts";
 import logger from "@/logger.ts";
 
 /**

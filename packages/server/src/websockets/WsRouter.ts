@@ -1,4 +1,4 @@
-import { GameError, GameRuleError, PlayerAlreadyInGameError, toWireError } from "@/errors/GameErrors.ts";
+import { GameError, PlayerAlreadyInGameError, isRefusal, toWireError } from "@/errors/GameErrors.ts";
 import {
   MoveCommand,
   ParsedClientMessage,
@@ -58,8 +58,8 @@ export class WsRouter {
       const result = await this.route(connection, user.id, parsed.data);
       connection.send({ type: WS_MESSAGE_TYPES.OK, id, payload: result });
     } catch (error) {
-      if (error instanceof GameError) {
-        logger.info(`[WS] ${parsed.data.type} refused: ${error.message}`);
+      if (isRefusal(error)) {
+        logger.info(`[WS] ${parsed.data.type} refused: ${(error as Error).message}`);
       } else {
         logger.error(`[WS] Error handling ${parsed.data.type}:`, error);
       }
@@ -94,7 +94,11 @@ export class WsRouter {
 
       case "subscribe_game":
         if (this.connectionManager.gameOf(connection) !== undefined) {
-          throw new GameRuleError("Already subscribed to a game; open a new connection for another game");
+          throw new GameError(
+            "Already subscribed to a game; open a new connection for another game",
+            undefined,
+            "invalid_game_state",
+          );
         }
         this.connectionManager.addClient(gameId, userId, connection);
         await this.sendGameState(connection, userId, gameId);

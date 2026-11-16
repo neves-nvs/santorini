@@ -5,7 +5,7 @@ import { GamePhase, GameStatus } from "./types.ts";
 import { Player, PlayerId } from "./Player.ts";
 
 import { GameEvent } from "./GameEvent.ts";
-import { GameRuleError } from "@/errors/GameErrors.ts";
+import { GameRuleError } from "./errors.ts";
 
 /**
  * Game Aggregate Root
@@ -30,18 +30,32 @@ export class Game {
     private _winReason: string | null = null,
     private _lastMovedWorkerId: number | null = null,
     private _lastMovedWorkerPosition: { x: number; y: number } | null = null,
-    private _createdAt: Date = new Date(),
-    private _startedAt: Date | null = null,
-    private _finishedAt: Date | null = null,
-    private _turnPolicy: TurnPolicy = new DefaultTurnPolicy(),
+    private _turnPolicy: TurnPolicy,
   ) {}
 
   // Factory methods
-  static create(id: number, creatorId: number, maxPlayers: number): Game {
-    return new Game(id, creatorId, maxPlayers, "waiting", null, null, 0, 0, Board.createEmpty(), new Map(), 1);
+  static create(id: number, creatorId: number, maxPlayers: number, options: GameOptions = {}): Game {
+    return new Game(
+      id,
+      creatorId,
+      maxPlayers,
+      "waiting",
+      null,
+      null,
+      0,
+      0,
+      Board.createEmpty(),
+      new Map(),
+      1,
+      null,
+      null,
+      null,
+      null,
+      options.turnPolicy ?? new DefaultTurnPolicy(),
+    );
   }
 
-  static fromSnapshot(snapshot: GameSnapshot, turnPolicy?: TurnPolicy): Game {
+  static fromSnapshot(snapshot: GameSnapshot, options: GameOptions = {}): Game {
     const players = new Map();
     snapshot.players.forEach((p) => players.set(p.id, p));
 
@@ -61,10 +75,7 @@ export class Game {
       snapshot.winReason,
       snapshot.lastMovedWorkerId,
       snapshot.lastMovedWorkerPosition,
-      snapshot.createdAt,
-      snapshot.startedAt,
-      snapshot.finishedAt,
-      turnPolicy,
+      options.turnPolicy ?? new DefaultTurnPolicy(),
     );
   }
 
@@ -94,7 +105,6 @@ export class Game {
       this._status = "completed";
       this._winnerId = playerId;
       this._winReason = "win_condition";
-      this._finishedAt = new Date();
       this._version++;
       this.assertInvariants();
       events.push(new GameEvent("GameFinished", { winnerId: playerId, reason: "win_condition" }));
@@ -276,15 +286,6 @@ export class Game {
   get lastMovedWorkerPosition(): { x: number; y: number } | null {
     return this._lastMovedWorkerPosition;
   }
-  get createdAt(): Date {
-    return this._createdAt;
-  }
-  get startedAt(): Date | null {
-    return this._startedAt;
-  }
-  get finishedAt(): Date | null {
-    return this._finishedAt;
-  }
 
   /**
    * Check if the current player is trapped (has no valid moves).
@@ -314,7 +315,6 @@ export class Game {
     this._status = "completed";
     this._winnerId = winnerId;
     this._winReason = "opponent_trapped";
-    this._finishedAt = new Date();
     this._version++;
     this.assertInvariants();
 
@@ -453,7 +453,6 @@ export class Game {
     this._status = "in-progress";
     this._phase = "placing";
     this._currentPlayerId = Array.from(this._players.keys())[0];
-    this._startedAt = new Date();
     this._version++;
 
     this.assertInvariants();
@@ -478,16 +477,10 @@ export class Game {
       if (!this._phase) {
         throw new Error("Invariant violated: in-progress game has no phase");
       }
-      if (!this._startedAt) {
-        throw new Error("Invariant violated: in-progress game has no startedAt");
-      }
     }
 
     // Invariant: completed requires winnerId or abort reason
     if (this._status === "completed") {
-      if (!this._finishedAt) {
-        throw new Error("Invariant violated: completed game has no finishedAt");
-      }
       // winnerId can be null for aborted games, but winReason should indicate why
     }
 
@@ -551,11 +544,12 @@ export class Game {
       winReason: this._winReason,
       lastMovedWorkerId: this._lastMovedWorkerId,
       lastMovedWorkerPosition: this._lastMovedWorkerPosition,
-      createdAt: this._createdAt,
-      startedAt: this._startedAt,
-      finishedAt: this._finishedAt,
     };
   }
+}
+
+export interface GameOptions {
+  turnPolicy?: TurnPolicy;
 }
 
 export interface GameSnapshot {
@@ -574,7 +568,4 @@ export interface GameSnapshot {
   winReason: string | null;
   lastMovedWorkerId: number | null;
   lastMovedWorkerPosition: { x: number; y: number } | null;
-  createdAt: Date;
-  startedAt: Date | null;
-  finishedAt: Date | null;
 }

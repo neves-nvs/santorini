@@ -1,13 +1,21 @@
-import { BoardCellSnapshot, BoardSnapshot } from "@/game/domain/Board.ts";
-import { Database, NewPiece, Piece } from "@/model.ts";
-import { Game, GameSnapshot } from "@/game/domain/Game.ts";
-import { GamePhase, GameStatus } from "@/game/domain/types.ts";
+import { BoardCellSnapshot, BoardSnapshot, Game, GamePhase, GameSnapshot, GameStatus, Player } from "@santorini/engine";
+import { Database, Game as GameRecord, NewPiece, Piece } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
-import { Player } from "@/game/domain/Player.ts";
 import { db } from "@/database.ts";
-
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
+
+/** What the server records about a game that the rules do not need: when it was created, started and finished. */
+export interface GameMetadata {
+  createdAt: Date;
+  startedAt: Date | null;
+  finishedAt: Date | null;
+}
+
+export interface StoredGame {
+  game: Game;
+  metadata: GameMetadata;
+}
 
 /**
  * Database adapter for Game aggregate
@@ -55,9 +63,6 @@ export class GameRepositoryDb {
       version: 1, // Default version since not in database
       winnerId: gameRecord.winner_id,
       winReason: gameRecord.win_reason,
-      createdAt: gameRecord.created_at ? new Date(gameRecord.created_at) : new Date(),
-      startedAt: gameRecord.started_at ? new Date(gameRecord.started_at) : null,
-      finishedAt: gameRecord.finished_at ? new Date(gameRecord.finished_at) : null,
       lastMovedWorkerId: gameRecord.last_moved_worker_id,
       lastMovedWorkerPosition:
         gameRecord.last_moved_worker_x !== null && gameRecord.last_moved_worker_y !== null
@@ -112,6 +117,7 @@ export class GameRepositoryDb {
     logger.debug(`Saving game ${game.id} to database`);
 
     const snapshot = game.toSnapshot();
+    const now = new Date().toISOString();
 
     await this.database.transaction().execute(async (trx) => {
       // Check if game exists, create if not
@@ -132,8 +138,8 @@ export class GameRepositoryDb {
             last_moved_worker_y: snapshot.lastMovedWorkerPosition?.y || null,
             winner_id: snapshot.winnerId,
             win_reason: snapshot.winReason,
-            started_at: snapshot.startedAt ? snapshot.startedAt.toISOString() : null,
-            finished_at: snapshot.finishedAt ? snapshot.finishedAt.toISOString() : null,
+            ...(existingGame.started_at === null && snapshot.status !== "waiting" ? { started_at: now } : {}),
+            ...(existingGame.finished_at === null && snapshot.status === "completed" ? { finished_at: now } : {}),
           })
           .where("id", "=", game.id)
           .execute();
@@ -168,9 +174,9 @@ export class GameRepositoryDb {
             last_moved_worker_y: snapshot.lastMovedWorkerPosition?.y || null,
             winner_id: snapshot.winnerId,
             win_reason: snapshot.winReason,
-            created_at: snapshot.createdAt.toISOString(),
-            started_at: snapshot.startedAt ? snapshot.startedAt.toISOString() : undefined,
-            finished_at: snapshot.finishedAt ? snapshot.finishedAt.toISOString() : undefined,
+            created_at: now,
+            started_at: snapshot.status === "waiting" ? undefined : now,
+            finished_at: snapshot.status === "completed" ? now : undefined,
           })
           .execute();
 
@@ -197,7 +203,7 @@ export class GameRepositoryDb {
   /**
    * Find games by status
    */
-  async findByStatus(status: GameStatus): Promise<Game[]> {
+  async findByStatus(status: GameStatus): Promise<StoredGame[]> {
     const gameRecords = await this.database
       .selectFrom("games")
       .where("game_status", "=", status)
@@ -205,32 +211,16 @@ export class GameRepositoryDb {
       .orderBy("id", "desc")
       .execute();
 
-    const games: Game[] = [];
-    for (const record of gameRecords) {
-      const game = await this.findById(record.id);
-      if (game) {
-        games.push(game);
-      }
-    }
-
-    return games;
+    return this.loadStored(gameRecords);
   }
 
   /**
    * Find all games
    */
-  async findAll(): Promise<Game[]> {
+  async findAll(): Promise<StoredGame[]> {
     const gameRecords = await this.database.selectFrom("games").selectAll().orderBy("id", "desc").execute();
 
-    const games: Game[] = [];
-    for (const record of gameRecords) {
-      const game = await this.findById(record.id);
-      if (game) {
-        games.push(game);
-      }
-    }
-
-    return games;
+    return this.loadStored(gameRecords);
   }
 
   /**
@@ -243,7 +233,7 @@ export class GameRepositoryDb {
   /**
    * Find games where a user is a player (any status)
    */
-  async findByPlayer(userId: number): Promise<Game[]> {
+  async findByPlayer(userId: number): Promise<StoredGame[]> {
     const gameRecords = await this.database
       .selectFrom("games")
       .innerJoin("players", "games.id", "players.game_id")
@@ -252,15 +242,25 @@ export class GameRepositoryDb {
       .orderBy("games.id", "desc")
       .execute();
 
-    const games: Game[] = [];
-    for (const record of gameRecords) {
+    return this.loadStored(gameRecords);
+  }
+
+  private async loadStored(records: GameRecord[]): Promise<StoredGame[]> {
+    const stored: StoredGame[] = [];
+    for (const record of records) {
       const game = await this.findById(record.id);
       if (game) {
-        games.push(game);
+        stored.push({
+          game,
+          metadata: {
+            createdAt: new Date(record.created_at),
+            startedAt: record.started_at ? new Date(record.started_at) : null,
+            finishedAt: record.finished_at ? new Date(record.finished_at) : null,
+          },
+        });
       }
     }
-
-    return games;
+    return stored;
   }
 
   /**

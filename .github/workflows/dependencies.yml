@@ -8,6 +8,7 @@ on:
       - packages/server/**
       - packages/client-react/**
       - packages/shared/**
+      - packages/engine/**
       - package.json
       - package-lock.json
       - .github/workflows/dependencies.yml
@@ -16,6 +17,7 @@ on:
       - packages/server/**
       - packages/client-react/**
       - packages/shared/**
+      - packages/engine/**
       - package.json
       - package-lock.json
       - .github/workflows/dependencies.yml
@@ -48,8 +50,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build the shared package
-        run: npm run build:shared
+      - name: Build the shared and engine packages
+        run: npm run build:libraries
 
       - name: Check for unused and unlisted dependencies
         run: npm run knip

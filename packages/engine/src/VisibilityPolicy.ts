@@ -13,9 +13,6 @@ export interface FilteredGameState {
   players: Player[];
   winnerId: number | null;
   winReason: string | null;
-  createdAt: Date;
-  startedAt: Date | null;
-  finishedAt: Date | null;
 }
 
 /**
@@ -72,9 +69,6 @@ export class VisibilityPolicy {
       players: Array.from(game.players.values()),
       winnerId: game.winnerId,
       winReason: game.winReason,
-      createdAt: game.createdAt,
-      startedAt: game.startedAt,
-      finishedAt: game.finishedAt,
     };
   }
 }

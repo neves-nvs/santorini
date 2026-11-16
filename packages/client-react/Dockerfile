@@ -8,6 +8,7 @@ FROM node:${NODE_VERSION}-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
+COPY packages/engine/package.json packages/engine/
 COPY packages/server/package.json packages/server/
 COPY packages/client-react/package.json packages/client-react/
 RUN --mount=type=cache,target=/root/.npm npm ci -w packages/shared -w packages/client-react
