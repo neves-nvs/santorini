@@ -1,4 +1,4 @@
-import { NewUser, User } from "@/model.ts";
+import { NewUser } from "@/model.ts";
 import { specApp as app } from "@tests/integration/helper/specApp.ts";
 import bcrypt from "bcryptjs";
 import { config } from "@/configs/config.ts";
@@ -115,27 +115,9 @@ describe("Auth Controller Integration Tests", () => {
     });
   });
 
-  describe("GET /test-auth", () => {
-    test("200 OK with valid token authentication", async () => {
-      const validToken = jwt.sign({ username: userData.username }, config.jwtSecret, { expiresIn: "5h" });
-
-      const response = await request(app).get("/test-auth").set("Cookie", `token=${validToken}`).expect(200);
-
-      expect(response.text).toBeDefined();
-      expect(response.body).toHaveProperty("username", userData.username);
-
-      const user = response.body as User;
-      expect(typeof user.id).toBe("number");
-      expect(typeof user.username).toBe("string");
-      expect(typeof user.display_name).toBe("string");
-      expect(user.created_at instanceof Date || typeof user.created_at === "string").toBe(true);
-      if (typeof user.created_at === "string") {
-        expect(new Date(user.created_at).toString()).not.toBe("Invalid Date");
-      }
-    });
-
+  describe("GET /me authentication", () => {
     test("401 Unauthorized if token is missing", async () => {
-      const response = await request(app).get("/test-auth").expect(401);
+      const response = await request(app).get("/me").expect(401);
 
       expect(response.body).toHaveProperty("message", "Unauthorized");
     });
@@ -143,7 +125,7 @@ describe("Auth Controller Integration Tests", () => {
     test("403 Forbidden if token is invalid", async () => {
       const invalidToken = jwt.sign({ username: userData.username }, "wrong");
 
-      const response = await request(app).get("/test-auth").set("Cookie", `token=${invalidToken}`).expect(403);
+      const response = await request(app).get("/me").set("Cookie", `token=${invalidToken}`).expect(403);
 
       expect(response.body).toHaveProperty("message", "Forbidden");
     });
@@ -151,7 +133,7 @@ describe("Auth Controller Integration Tests", () => {
     test("403 Forbidden for malformed token", async () => {
       const malformedToken = "malformed.token.here";
 
-      const response = await request(app).get("/test-auth").set("Cookie", `token=${malformedToken}`).expect(403);
+      const response = await request(app).get("/me").set("Cookie", `token=${malformedToken}`).expect(403);
 
       expect(response.body).toHaveProperty("message", "Forbidden");
     });

@@ -20,9 +20,3 @@ export const configs = {
 
 export type PieceType = 'base' | 'mid' | 'top' | 'dome' | 'builder' | 'board'
 
-export interface PieceConfig {
-  file: string
-  y_offset: number
-  x_rotation: number
-  scale: number
-}

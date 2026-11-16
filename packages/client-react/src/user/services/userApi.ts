@@ -45,10 +45,6 @@ export class UserApi {
       body: JSON.stringify(userData),
     })
   }
-
-  async getUsers(): Promise<UserView[]> {
-    return request<UserView[]>('/users')
-  }
 }
 
 export const userApi = new UserApi()

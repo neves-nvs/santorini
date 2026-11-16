@@ -7,8 +7,6 @@ import {
   LogoutResponse,
   MessageResponse,
   PlayerView,
-  TestAuthResponse,
-  TokenResponse,
   UserView,
   ValidationErrorResponse,
   ValidationFieldError,
@@ -126,39 +124,13 @@ describe("REST responses carry the shape of the shared types", () => {
         unknown
       >);
     });
-
-    test("GET /token", async () => {
-      const { token } = await createTestUserWithLogin();
-
-      const response = await request(app).get("/token").set("Cookie", `token=${token}`).expect(200);
-
-      expect(response.body).toStrictEqual({ token: expect.any(String) } satisfies Record<keyof TokenResponse, unknown>);
-    });
-
-    test("GET /test-auth", async () => {
-      const { token } = await createTestUserWithLogin();
-
-      const response = await request(app).get("/test-auth").set("Cookie", `token=${token}`).expect(200);
-
-      expect(response.body).toStrictEqual({
-        id: expect.any(Number),
-        username: expect.any(String),
-        display_name: expect.any(String),
-        created_at: isoDate,
-      } satisfies Record<keyof TestAuthResponse, unknown>);
-    });
   });
 
   describe("users", () => {
-    test("POST /users, GET /users and GET /users/:username return a UserView", async () => {
+    test("POST /users and GET /users/:username return a UserView", async () => {
       const { user } = await generateTestUser();
-      const { token } = await createTestUserWithLogin();
 
       expect(user).toStrictEqual(userView);
-
-      const list = await request(app).get("/users").set("Cookie", `token=${token}`).expect(200);
-      expect(list.body).toHaveLength(2);
-      for (const entry of list.body) expect(entry).toStrictEqual(userView);
 
       const single = await request(app).get(`/users/${user.username}`).expect(200);
       expect(single.body).toStrictEqual(userView);

@@ -18,7 +18,7 @@ export interface OptimizedBoardState {
 }
 
 // Worker position for efficient lookups
-export interface WorkerPosition {
+interface WorkerPosition {
   x: number
   y: number
   playerId: number

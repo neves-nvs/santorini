@@ -10,16 +10,16 @@
  */
 
 // Main game lifecycle states (determines overall UI structure)
-export type GameLifecycleState = 'WAITING' | 'IN_PROGRESS' | 'FINISHED'
+type GameLifecycleState = 'WAITING' | 'IN_PROGRESS' | 'FINISHED'
 
 // Sub-states for WAITING phase
-export type WaitingSubState = 'JOINING' | 'READY_CHECK'
+type WaitingSubState = 'JOINING' | 'READY_CHECK'
 
 // Sub-states for IN_PROGRESS phase  
-export type GameplaySubState = 'PLACING' | 'MOVING' | 'BUILDING'
+type GameplaySubState = 'PLACING' | 'MOVING' | 'BUILDING'
 
 // Sub-states for FINISHED phase
-export type FinishedSubState = 'VICTORY' | 'ABORTED'
+type FinishedSubState = 'VICTORY' | 'ABORTED'
 
 // Combined game state
 export interface GameLifecycle {

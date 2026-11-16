@@ -34,7 +34,7 @@ export async function createTestUserWithLogin() {
   return { user: user, token: token };
 }
 
-export function generateTestNewGameData(): NewGame {
+function generateTestNewGameData(): NewGame {
   const newGameData = {
     player_count: 2,
   } as NewGame;
