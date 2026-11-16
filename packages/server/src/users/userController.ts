@@ -90,7 +90,7 @@ router.get<{ username: string }, UserView | ErrorResponse>(
       const username = String(req.params.username);
       const user = await findUserByUsername(username);
       if (user === null || user === undefined) {
-        return sendError(res, 404, "user_not_found", "User not found");
+        return sendError(res, StatusCodes.NOT_FOUND, "user_not_found", "User not found");
       }
       const userDTO = new UserDTO(user);
       res.json(userDTO);

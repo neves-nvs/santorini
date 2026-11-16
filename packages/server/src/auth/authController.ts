@@ -40,7 +40,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   passport.authenticate("jwt", { session: false }, async (err: Error, user: unknown, info: VerifyErrors) => {
     if (info && info.message === "No auth token") {
       logger.debug("No auth token");
-      return sendError(res, 401, "unauthorized", "Unauthorized");
+      return sendError(res, StatusCodes.UNAUTHORIZED, "unauthorized", "Unauthorized");
     } else if (info) {
       // Reduce spam for common token expiration errors
       if (info.name === "TokenExpiredError") {
@@ -48,20 +48,20 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
       } else {
         logger.error("Forbidden", info);
       }
-      return sendError(res, 403, "forbidden", "Forbidden");
+      return sendError(res, StatusCodes.FORBIDDEN, "forbidden", "Forbidden");
     } else if (err) {
       logger.error("Unauthorized", err);
-      return sendError(res, 401, "unauthorized", "Unauthorized");
+      return sendError(res, StatusCodes.UNAUTHORIZED, "unauthorized", "Unauthorized");
     } else if (!user) {
       logger.debug("No user found");
-      return sendError(res, 401, "unauthorized", "Unauthorized");
+      return sendError(res, StatusCodes.UNAUTHORIZED, "unauthorized", "Unauthorized");
     }
 
     try {
       const validUser = await findUserByUsername((user as JwtPayload).username);
       logger.debug("Checked if user exists", { user: validUser });
       if (!validUser) {
-        return sendError(res, 403, "forbidden", "User not found or inactive");
+        return sendError(res, StatusCodes.FORBIDDEN, "forbidden", "User not found or inactive");
       }
 
       req.user = validUser;
@@ -69,7 +69,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
       next();
     } catch (e: unknown) {
       logger.error("Failed to look up the authenticated user", e);
-      return sendError(res, 500, "internal", "Internal server error");
+      return sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
     }
   })(req, res, next);
 };
@@ -98,7 +98,7 @@ router.post<NoParams, TextResponse | ErrorResponse, LoginRequest>(
 
       if (!config.jwtSecret) {
         logger.error("JWT secret not set");
-        return sendError(res, 500, "internal", "Internal server error");
+        return sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
       }
 
       const token = jwt.sign({ username: user.username }, config.jwtSecret, {
@@ -109,7 +109,7 @@ router.post<NoParams, TextResponse | ErrorResponse, LoginRequest>(
       res.status(200).send("OK");
     } catch (err) {
       logger.error("An error occurred during authentication", err);
-      sendError(res, 500, "internal", "Internal server error");
+      sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
     }
   },
 );
@@ -133,7 +133,7 @@ router.get<NoParams, CurrentUserResponse | ErrorResponse>("/me", authenticate, a
   } catch (e: unknown) {
     const error = e as Error;
     logger.error(error.message);
-    sendError(res, 500, "internal", "Internal server error");
+    sendError(res, StatusCodes.INTERNAL_SERVER_ERROR, "internal", "Internal server error");
   }
 });
 

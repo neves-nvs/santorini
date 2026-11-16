@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { param, validationResult } from "express-validator";
 
+import { StatusCodes } from "http-status-codes";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 import { sendError } from "@/errors/httpError.ts";
@@ -19,7 +20,13 @@ export const checkValidation = (req: Request, res: Response, next: NextFunction)
   }));
   if (!errors.isEmpty()) {
     const issues = errors.array().map(({ path, msg }) => ({ path: path ? [path] : [], message: String(msg) }));
-    return sendError(res, 400, "validation_failed", issues.map((issue) => issue.message).join(", "), { issues });
+    return sendError(
+      res,
+      StatusCodes.BAD_REQUEST,
+      "validation_failed",
+      issues.map((issue) => issue.message).join(", "),
+      { issues },
+    );
   }
   next();
 };
