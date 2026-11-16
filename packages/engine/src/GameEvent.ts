@@ -75,16 +75,11 @@ export type GameEventPayload =
   | GameReadyPayload;
 
 export class GameEvent {
-  public readonly occurredAt: Date;
-
   constructor(
     public readonly type: GameEventType,
     public readonly payload: GameEventPayload,
     public readonly aggregateId?: number,
-    occurredAt: Date = new Date(),
-  ) {
-    this.occurredAt = occurredAt;
-  }
+  ) {}
 }
 
 // Specific event classes for type safety

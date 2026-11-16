@@ -5,9 +5,9 @@
   "description": "The rules of Santorini: a pure game model with no dependencies, usable on a server or in a browser",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
     }
   },
   "files": [

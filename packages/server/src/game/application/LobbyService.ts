@@ -1,5 +1,5 @@
-import { Game } from "@santorini/engine";
-import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
+import { GameRepositoryDb, StoredGame } from "@/game/infra/GameRepositoryDb.ts";
+import { Game } from "@santorini/engine/Game";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 
@@ -26,7 +26,7 @@ export class LobbyService {
   /**
    * Find available games to join
    */
-  async findAvailableGames(): Promise<Game[]> {
+  async findAvailableGames(): Promise<StoredGame[]> {
     logger.info("Finding available games");
 
     const games = await this.gameRepository.findByStatus("waiting");
@@ -38,7 +38,7 @@ export class LobbyService {
   /**
    * Get all games (for admin/debugging)
    */
-  async getAllGames(): Promise<Game[]> {
+  async getAllGames(): Promise<StoredGame[]> {
     logger.info("Getting all games");
     return this.gameRepository.findAll();
   }
@@ -46,7 +46,7 @@ export class LobbyService {
   /**
    * Find games where the user is a player (any status - waiting, in_progress, finished)
    */
-  async findMyGames(userId: number): Promise<Game[]> {
+  async findMyGames(userId: number): Promise<StoredGame[]> {
     logger.info(`Finding games for user ${userId}`);
 
     const games = await this.gameRepository.findByPlayer(userId);

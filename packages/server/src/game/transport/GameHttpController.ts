@@ -11,9 +11,9 @@ import { GameError, getHttpStatus, toWireError } from "@/errors/GameErrors.ts";
 import { NextFunction, Request, Response, Router } from "express";
 import { authenticate, getUser } from "@/auth/authController.ts";
 
-import { Game } from "@santorini/engine";
 import { GameService } from "@/game/application/GameService.ts";
 import { LobbyService } from "@/game/application/LobbyService.ts";
+import { StoredGame } from "@/game/infra/GameRepositoryDb.ts";
 import logger from "@/logger.ts";
 
 function parseGameId(raw: unknown): number {
@@ -31,7 +31,7 @@ function parseCreateGameBody(body: unknown) {
   return parsed.data;
 }
 
-function gameToDto(game: Game): GameSummary {
+function gameToDto({ game, metadata }: StoredGame): GameSummary {
   return {
     id: game.id,
     creatorId: game.creatorId,
@@ -49,9 +49,9 @@ function gameToDto(game: Game): GameSummary {
       status: p.status,
       isReady: p.isReady,
     })),
-    createdAt: game.createdAt.toISOString(),
-    startedAt: game.startedAt?.toISOString() ?? null,
-    finishedAt: game.finishedAt?.toISOString() ?? null,
+    createdAt: metadata.createdAt.toISOString(),
+    startedAt: metadata.startedAt?.toISOString() ?? null,
+    finishedAt: metadata.finishedAt?.toISOString() ?? null,
   };
 }
 

@@ -1,14 +1,4 @@
 import {
-  Board,
-  BuildMove,
-  Game,
-  Move,
-  MoveWorkerMove,
-  PlaceWorkerMove,
-  Player,
-  VisibilityPolicy,
-} from "@santorini/engine";
-import {
   BoardView,
   CellView,
   GamePhase,
@@ -18,6 +8,11 @@ import {
   Move as SharedMove,
   SpectatorGameView,
 } from "@santorini/shared";
+import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "@santorini/engine/Move";
+import { Board } from "@santorini/engine/Board";
+import { Game } from "@santorini/engine/Game";
+import { Player } from "@santorini/engine/Player";
+import { VisibilityPolicy } from "@santorini/engine/VisibilityPolicy";
 
 // Re-export for backwards compatibility
 export type { BoardView, CellView, PlayerGameView, PlayerView, SpectatorGameView };

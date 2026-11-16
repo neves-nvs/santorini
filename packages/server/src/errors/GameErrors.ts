@@ -1,5 +1,5 @@
 import type { ErrorCode, WireError } from "@santorini/shared";
-import { GameRuleError } from "@santorini/engine";
+import { GameRuleError } from "@santorini/engine/errors";
 
 export class GameError extends Error {
   public readonly httpStatus: number = 400;
