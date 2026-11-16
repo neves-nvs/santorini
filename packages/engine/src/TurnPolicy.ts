@@ -5,34 +5,6 @@ import { MoveResult } from "./Board.ts";
 import { PlayerId } from "./Player.ts";
 
 /**
- * Turn Policy Interface
- *
- * Defines how turns advance in the game.
- * Can be swapped for different game variants or god powers that affect turn order.
- */
-export interface TurnPolicy {
-  /**
-   * Advance the turn state after a successful move
-   */
-  advanceTurn(game: Game, move: Move, moveResult: MoveResult): TurnAdvancement;
-
-  /**
-   * Get the next player in turn order
-   */
-  getNextPlayer(game: Game, currentPlayerId: PlayerId): PlayerId;
-
-  /**
-   * Determine the next phase after a move
-   */
-  getNextPhase(game: Game, move: Move, moveResult: MoveResult): GamePhase;
-
-  /**
-   * Check if the placing phase is complete
-   */
-  isPlacingPhaseComplete(game: Game): boolean;
-}
-
-/**
  * Result of turn advancement
  */
 export interface TurnAdvancement {
@@ -51,7 +23,7 @@ export interface TurnAdvancement {
  * - Placing phase: players alternate placing workers
  * - Moving/Building phases: players alternate full turns (move + build)
  */
-export class DefaultTurnPolicy implements TurnPolicy {
+export class DefaultTurnPolicy {
   advanceTurn(game: Game, _move: Move, moveResult: MoveResult): TurnAdvancement {
     const currentPhase = game.phase!;
 

@@ -24,10 +24,6 @@ export const RECONNECTION_DELAY = 1000
 // Colors
 export const PLAYER_COLORS = ['#FF4444', '#4444FF', '#44FF44', '#FFFF44'] // Red, Blue, Green, Yellow
 
-// API Configuration
-export const DEFAULT_SERVER_URL = 'http://localhost:3000'
-export const DEFAULT_WS_URL = 'ws://localhost:3000'
-
 // UI Constants
 export const GRID_LINE_COLOR = '#666666'
 export const HIGHLIGHT_COLOR = '#FFD700'

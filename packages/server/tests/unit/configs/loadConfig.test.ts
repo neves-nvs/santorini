@@ -23,7 +23,6 @@ describe("loadConfig", () => {
       registrationEnabled: true,
       authRateLimit: 20,
       rateLimit: 300,
-      google: { clientId: undefined, clientSecret: undefined },
       db: { host: "localhost", port: 5432, user: "postgres", database: "postgres", password: undefined },
       logging: { level: "http", httpFormat: "dev", force: false },
     });

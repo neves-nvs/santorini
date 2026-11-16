@@ -120,28 +120,6 @@ router.post<NoParams, LogoutResponse>("/logout", (req, res) => {
   res.status(200).json({ message: "Logged out successfully" });
 });
 
-router.get(
-  "/auth/google",
-  passport.authenticate("google", {
-    session: false,
-    scope: ["profile", "email"],
-  }),
-);
-
-router.get("/auth/google/callback", passport.authenticate("google", { session: false }), (req, res) => {
-  const user = req.user as User;
-
-  if (!config.jwtSecret) {
-    logger.error("JWT secret not set");
-    return res.status(500).send("JWT secret not set");
-  }
-
-  const token = jwt.sign({ sub: user.id }, config.jwtSecret, { expiresIn: "5h" });
-
-  res.cookie("token", token, sessionCookieOptions(req));
-  res.redirect("http://localhost:5173");
-});
-
 // A one-time ticket for opening a WebSocket from a browser, which cannot set headers on the handshake
 router.post<NoParams, WebSocketTicketResponse>("/ws-ticket", authenticate, (req, res) => {
   res.status(200).json({ ticket: webSocketTickets.issue(getUser(req).username) });

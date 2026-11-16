@@ -8,7 +8,6 @@ export interface Config {
   registrationEnabled: boolean;
   authRateLimit: number;
   rateLimit: number;
-  google: { clientId: string | undefined; clientSecret: string | undefined };
   db: { host: string; port: number; user: string; database: string; password: string | undefined };
   logging: { level: string; httpFormat: string; force: boolean };
 }
@@ -87,7 +86,6 @@ export function loadConfig(rawEnv: NodeJS.ProcessEnv, devSecretFile: string): Co
     registrationEnabled: env.REGISTRATION_ENABLED !== "false",
     authRateLimit: wholeNumber("AUTH_RATE_LIMIT", DEFAULT_AUTH_RATE_LIMIT),
     rateLimit: wholeNumber("RATE_LIMIT", DEFAULT_RATE_LIMIT),
-    google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
     db: {
       host: env.DB_HOST ?? DEFAULT_DB_HOST,
       port: wholeNumber("DB_PORT", DEFAULT_DB_PORT, MAX_PORT),

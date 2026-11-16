@@ -7,6 +7,8 @@ import { usePageTitle } from '@/shared/utils/usePageTitle'
 import type { GameSummary } from '@santorini/shared'
 import './LobbyPage.css'
 
+const GAMES_REFRESH_INTERVAL_MS = 30_000
+
 type GameTab = 'available' | 'my-games'
 
 type ActionTone = 'join' | 'open' | 'resume'
@@ -114,10 +116,9 @@ const LobbyPage = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the state is set after the request resolves, not synchronously
     fetchGames()
 
-    // Set up periodic refresh every 30 seconds (reasonable interval)
     const interval = setInterval(() => {
       handleRefreshGames()
-    }, 30000)
+    }, GAMES_REFRESH_INTERVAL_MS)
 
     return () => clearInterval(interval)
   }, [username, fetchGames, handleRefreshGames])

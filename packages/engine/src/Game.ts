@@ -1,6 +1,6 @@
 import { Board, BoardSnapshot, MoveResult } from "./Board.ts";
 import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "./Move.ts";
-import { DefaultTurnPolicy, TurnPolicy } from "./TurnPolicy.ts";
+import { DefaultTurnPolicy } from "./TurnPolicy.ts";
 import { GamePhase, GameStatus } from "./types.ts";
 import { Player, PlayerId } from "./Player.ts";
 
@@ -30,11 +30,12 @@ export class Game {
     private _winReason: string | null = null,
     private _lastMovedWorkerId: number | null = null,
     private _lastMovedWorkerPosition: { x: number; y: number } | null = null,
-    private _turnPolicy: TurnPolicy,
   ) {}
 
+  private readonly _turnPolicy = new DefaultTurnPolicy();
+
   // Factory methods
-  static create(id: number, creatorId: number, maxPlayers: number, options: GameOptions = {}): Game {
+  static create(id: number, creatorId: number, maxPlayers: number): Game {
     return new Game(
       id,
       creatorId,
@@ -51,11 +52,10 @@ export class Game {
       null,
       null,
       null,
-      options.turnPolicy ?? new DefaultTurnPolicy(),
     );
   }
 
-  static fromSnapshot(snapshot: GameSnapshot, options: GameOptions = {}): Game {
+  static fromSnapshot(snapshot: GameSnapshot): Game {
     const players = new Map();
     snapshot.players.forEach((p) => players.set(p.id, p));
 
@@ -75,15 +75,7 @@ export class Game {
       snapshot.winReason,
       snapshot.lastMovedWorkerId,
       snapshot.lastMovedWorkerPosition,
-      options.turnPolicy ?? new DefaultTurnPolicy(),
     );
-  }
-
-  /**
-   * Set a custom turn policy (useful for god powers that affect turn order)
-   */
-  setTurnPolicy(turnPolicy: TurnPolicy): void {
-    this._turnPolicy = turnPolicy;
   }
 
   // Core game operations
@@ -547,10 +539,6 @@ export class Game {
       lastMovedWorkerPosition: this._lastMovedWorkerPosition,
     };
   }
-}
-
-export interface GameOptions {
-  turnPolicy?: TurnPolicy;
 }
 
 export interface GameSnapshot {
