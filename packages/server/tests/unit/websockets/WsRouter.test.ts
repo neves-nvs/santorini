@@ -1,7 +1,7 @@
+import { GameRuleError, asGameId } from "@santorini/engine";
 import { Connection } from "@/game/infra/Connection.ts";
 import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
 import { GameNotFoundError } from "@/errors/GameErrors.ts";
-import { GameRuleError } from "@santorini/engine";
 import { GameService } from "@/game/application/GameService.ts";
 import { ServerMessage } from "@santorini/shared";
 import { WsRouter } from "@/websockets/WsRouter.ts";
@@ -156,7 +156,7 @@ describe("WsRouter replies", () => {
 
   test("a game error becomes its code and the message meant for the player", async () => {
     const { sent, handle, gameService } = setup();
-    gameService.setPlayerReady.mockRejectedValue(new GameNotFoundError(99));
+    gameService.setPlayerReady.mockRejectedValue(new GameNotFoundError(asGameId(99)));
 
     await handle({ type: "set_ready", id: "e1", payload: { gameId: 99, isReady: true } });
 

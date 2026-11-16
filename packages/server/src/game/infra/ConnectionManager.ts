@@ -1,3 +1,4 @@
+import { GameId, UserId } from "@santorini/engine";
 import { Connection } from "./Connection.ts";
 
 import logger from "@/logger.ts";
@@ -9,8 +10,8 @@ import logger from "@/logger.ts";
  */
 
 interface ConnectionContext {
-  userId: number;
-  gameId: number;
+  userId: UserId;
+  gameId: GameId;
 }
 
 export class ConnectionManager {
@@ -26,7 +27,7 @@ export class ConnectionManager {
   /**
    * Create a new game connection pool
    */
-  addGameConnection(gameId: number): void {
+  addGameConnection(gameId: GameId): void {
     logger.info(`Creating new game connection for game ${gameId}`);
     this.gameConnections.set(gameId, new Set());
   }
@@ -34,7 +35,7 @@ export class ConnectionManager {
   /**
    * Check if a player is connected to a game session
    */
-  isPlayerInGameSession(gameId: number, userId: number): boolean {
+  isPlayerInGameSession(gameId: GameId, userId: UserId): boolean {
     const gameUsers = this.userGameConnections.get(gameId);
     return gameUsers ? gameUsers.has(userId) : false;
   }
@@ -49,7 +50,7 @@ export class ConnectionManager {
   /**
    * Add a client connection to a game
    */
-  addClient(gameId: number, userId: number, connection: Connection): void {
+  addClient(gameId: GameId, userId: UserId, connection: Connection): void {
     let gameConnection = this.gameConnections.get(gameId);
 
     if (!gameConnection) {
@@ -86,7 +87,7 @@ export class ConnectionManager {
   /**
    * Remove a client from a specific game
    */
-  removeClient(gameId: number, userId: number, connection: Connection): void {
+  removeClient(gameId: GameId, userId: UserId, connection: Connection): void {
     logger.info(`Removing client ${userId} from game ${gameId}`);
 
     // Remove from connections map
@@ -117,7 +118,7 @@ export class ConnectionManager {
    * Remove a single connection (on disconnect).
    * Returns info about games where user lost their last connection.
    */
-  removeConnection(connection: Connection): { gameId: number; userId: number; wasLastConnection: boolean }[] {
+  removeConnection(connection: Connection): { gameId: GameId; userId: UserId; wasLastConnection: boolean }[] {
     const context = this.connections.get(connection);
     if (!context) {
       return [];
@@ -157,7 +158,7 @@ export class ConnectionManager {
   /**
    * The open sockets subscribed to a game, with the user behind each
    */
-  subscribers(gameId: number): { connection: Connection; userId: number }[] {
+  subscribers(gameId: GameId): { connection: Connection; userId: UserId }[] {
     return [...(this.gameConnections.get(gameId) ?? [])].flatMap((connection) => {
       const context = this.connections.get(connection);
       return context && connection.isOpen ? [{ connection, userId: context.userId }] : [];
@@ -167,7 +168,7 @@ export class ConnectionManager {
   /**
    * Get the number of connected players in a game
    */
-  getConnectedPlayersCount(gameId: number): number {
+  getConnectedPlayersCount(gameId: GameId): number {
     const gameConnection = this.gameConnections.get(gameId);
     return gameConnection ? gameConnection.size : 0;
   }

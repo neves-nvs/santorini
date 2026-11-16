@@ -6,6 +6,7 @@ import {
   MoveWorkerMove,
   PlaceWorkerMove,
   Player,
+  UserId,
   VisibilityPolicy,
 } from "@santorini/engine";
 import {
@@ -62,7 +63,7 @@ export class GameViewBuilder {
   /**
    * The game as this user sees it: a player gets the moves they can play now, anyone else watches
    */
-  buildFor(game: Game, userId: number): GameView {
+  buildFor(game: Game, userId: UserId): GameView {
     const state = this.visibilityPolicy.filterGameState(game, userId);
 
     const player = state.players.find((p) => p.userId === userId);

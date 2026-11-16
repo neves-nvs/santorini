@@ -1,3 +1,4 @@
+import { PlayerId } from "./types.ts";
 /**
  * Move Value Objects
  *
@@ -33,7 +34,7 @@ export type MoveType = "place_worker" | "move_worker" | "build_block" | "build_d
 export abstract class Move {
   constructor(
     public readonly type: MoveType,
-    public readonly playerId: number,
+    public readonly playerId: PlayerId,
     public readonly position: Position,
   ) {}
 
@@ -42,7 +43,7 @@ export abstract class Move {
 
 export class PlaceWorkerMove extends Move {
   constructor(
-    playerId: number,
+    playerId: PlayerId,
     position: Position,
     public readonly workerId: number,
   ) {
@@ -56,7 +57,7 @@ export class PlaceWorkerMove extends Move {
 
 export class MoveWorkerMove extends Move {
   constructor(
-    playerId: number,
+    playerId: PlayerId,
     position: Position,
     public readonly workerId: number,
     public readonly fromPosition: Position,
@@ -71,7 +72,7 @@ export class MoveWorkerMove extends Move {
 
 export class BuildMove extends Move {
   constructor(
-    playerId: number,
+    playerId: PlayerId,
     position: Position,
     public readonly buildingType: "block" | "dome",
     public readonly workerId: number = 0,
@@ -86,7 +87,7 @@ export class BuildMove extends Move {
 
 // Factory function to create moves from raw data
 // playerId is provided separately (from authenticated user)
-export function createMove(playerId: number, moveData: MoveInput): Move {
+export function createMove(playerId: PlayerId, moveData: MoveInput): Move {
   switch (moveData.type) {
     case "place_worker":
       return new PlaceWorkerMove(playerId, moveData.position, moveData.workerId ?? 0);

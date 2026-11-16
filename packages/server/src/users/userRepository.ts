@@ -1,6 +1,7 @@
 import { Database, NewUser, User, UserUpdate } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
 
+import { UserId } from "@santorini/engine";
 import { db } from "@/database.ts";
 
 export async function findUser(criteria: Partial<User>): Promise<User | undefined> {
@@ -32,7 +33,7 @@ export async function createUser(user: NewUser): Promise<User> {
   return await db.insertInto("users").values(user).returningAll().executeTakeFirstOrThrow();
 }
 
-export async function updateUser(id: number, user: UserUpdate): Promise<User | undefined> {
+export async function updateUser(id: UserId, user: UserUpdate): Promise<User | undefined> {
   return await db.updateTable("users").set(user).where("id", "=", id).returningAll().executeTakeFirst();
 }
 
@@ -40,6 +41,6 @@ export async function updateUserByUsername(username: string, user: UserUpdate): 
   return await db.updateTable("users").set(user).where("username", "=", username).returningAll().executeTakeFirst();
 }
 
-export async function deleteUser(id: number): Promise<void> {
+export async function deleteUser(id: UserId): Promise<void> {
   await db.deleteFrom("users").where("id", "=", id).execute();
 }

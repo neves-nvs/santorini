@@ -1,4 +1,4 @@
-import { Game, GameEvent, Player, createMove } from "@santorini/engine";
+import { Game, GameEvent, GameId, Player, PlayerId, UserId, asPlayerId, createMove } from "@santorini/engine";
 import { GameNotFoundError, PlayerAlreadyInGameError, PlayerNotInGameError } from "@/errors/GameErrors.ts";
 import type { GameView, MoveCommand } from "@santorini/shared";
 import { GameBroadcaster } from "./GameBroadcaster.ts";
@@ -21,8 +21,8 @@ export class GameService {
    * Apply a move to a game
    */
   async applyMove(
-    gameId: number,
-    userId: number,
+    gameId: GameId,
+    userId: UserId,
     moveCommand: MoveCommand,
   ): Promise<{ game: Game; events: GameEvent[] }> {
     logger.info(`Processing move for game ${gameId}, user ${userId}:`, moveCommand);
@@ -65,14 +65,14 @@ export class GameService {
   /**
    * Get a game by ID
    */
-  async getGame(gameId: number): Promise<Game | null> {
+  async getGame(gameId: GameId): Promise<Game | null> {
     return this.gameRepository.findById(gameId);
   }
 
   /**
    * Add a player to a game
    */
-  async addPlayer(gameId: number, userId: number): Promise<{ game: Game; events: GameEvent[] }> {
+  async addPlayer(gameId: GameId, userId: UserId): Promise<{ game: Game; events: GameEvent[] }> {
     logger.info(`Adding player ${userId} to game ${gameId}`);
 
     const game = await this.gameRepository.findById(gameId);
@@ -89,7 +89,7 @@ export class GameService {
 
     // Create player domain object
     // PlayerId is 1-indexed based on join order
-    const playerId = game.players.size + 1;
+    const playerId = asPlayerId(game.players.size + 1);
     const seat = game.players.size;
     const player = new Player(playerId, userId, seat);
 
@@ -108,7 +108,7 @@ export class GameService {
    * Remove a player from a game.
    * Only allowed if game is in 'waiting' status and player hasn't readied.
    */
-  async removePlayer(gameId: number, userId: number): Promise<{ game: Game; events: GameEvent[] }> {
+  async removePlayer(gameId: GameId, userId: UserId): Promise<{ game: Game; events: GameEvent[] }> {
     logger.info(`Removing player ${userId} from game ${gameId}`);
 
     const game = await this.gameRepository.findById(gameId);
@@ -129,7 +129,7 @@ export class GameService {
    * Set player ready status.
    * Domain auto-starts game when all players are ready.
    */
-  async setPlayerReady(gameId: number, userId: number, ready: boolean): Promise<{ game: Game; events: GameEvent[] }> {
+  async setPlayerReady(gameId: GameId, userId: UserId, ready: boolean): Promise<{ game: Game; events: GameEvent[] }> {
     logger.info(`Setting player ${userId} ready status to ${ready} for game ${gameId}`);
 
     const game = await this.gameRepository.findById(gameId);
@@ -153,7 +153,7 @@ export class GameService {
   /**
    * The game as this user sees it
    */
-  async getGameView(gameId: number, userId: number): Promise<GameView> {
+  async getGameView(gameId: GameId, userId: UserId): Promise<GameView> {
     const game = await this.gameRepository.findById(gameId);
     if (!game) {
       throw new GameNotFoundError(gameId);
@@ -165,7 +165,7 @@ export class GameService {
   /**
    * Helper to find player ID by user ID
    */
-  private findPlayerIdByUserId(game: Game, userId: number): number | null {
+  private findPlayerIdByUserId(game: Game, userId: UserId): PlayerId | null {
     for (const [playerId, player] of game.players) {
       if (player.userId === userId) {
         return playerId;

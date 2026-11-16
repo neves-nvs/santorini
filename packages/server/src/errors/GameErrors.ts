@@ -1,5 +1,5 @@
 import type { ErrorCode, WireError } from "@santorini/shared";
-import { GameRuleError } from "@santorini/engine";
+import { GameId, GameRuleError, PlayerId, UserId } from "@santorini/engine";
 
 export class GameError extends Error {
   public readonly httpStatus: number = 400;
@@ -17,7 +17,7 @@ export class GameError extends Error {
 export class GameNotFoundError extends GameError {
   public readonly httpStatus = 404;
 
-  constructor(gameId: number) {
+  constructor(gameId: GameId) {
     super(`Game with ID ${gameId} not found`, "Game not found", "game_not_found");
   }
 }
@@ -25,7 +25,7 @@ export class GameNotFoundError extends GameError {
 export class GameFullError extends GameError {
   public readonly httpStatus = 409;
 
-  constructor(gameId: number, currentPlayers: number, maxPlayers: number) {
+  constructor(gameId: GameId, currentPlayers: number, maxPlayers: number) {
     super(`Game ${gameId} is full (${currentPlayers}/${maxPlayers})`, "Game is full", "game_full");
   }
 }
@@ -33,7 +33,7 @@ export class GameFullError extends GameError {
 export class PlayerAlreadyInGameError extends GameError {
   public readonly httpStatus = 409;
 
-  constructor(gameId: number, userId: number) {
+  constructor(gameId: GameId, userId: UserId) {
     super(`Player ${userId} is already in game ${gameId}`, "Already in game", "already_in_game");
   }
 }
@@ -41,7 +41,7 @@ export class PlayerAlreadyInGameError extends GameError {
 export class InvalidGameStateError extends GameError {
   public readonly httpStatus = 409;
 
-  constructor(gameId: number, currentState: string, expectedState: string) {
+  constructor(gameId: GameId, currentState: string, expectedState: string) {
     super(
       `Game ${gameId} is in state '${currentState}', expected '${expectedState}'`,
       "Invalid game state",
@@ -53,7 +53,7 @@ export class InvalidGameStateError extends GameError {
 export class NotPlayerTurnError extends GameError {
   public readonly httpStatus = 403;
 
-  constructor(gameId: number, userId: number, currentPlayerId: number) {
+  constructor(gameId: GameId, userId: UserId, currentPlayerId: PlayerId) {
     super(
       `It's not player ${userId}'s turn in game ${gameId} (current: ${currentPlayerId})`,
       "Not your turn",
@@ -65,7 +65,7 @@ export class NotPlayerTurnError extends GameError {
 export class PlayerNotInGameError extends GameError {
   public readonly httpStatus = 403;
 
-  constructor(gameId: number, userId: number) {
+  constructor(gameId: GameId, userId: UserId) {
     super(`Player ${userId} is not in game ${gameId}`, "Player not in game", "not_in_game");
   }
 }

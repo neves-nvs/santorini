@@ -1,12 +1,11 @@
+import { PlayerId, UserId } from "./types.ts";
+
 /**
  * Player Domain Entity
  *
  * Represents a player within a game context.
  * Links to the User entity but contains game-specific state.
  */
-
-export type PlayerId = number;
-export type UserId = number;
 
 export type PlayerStatus = "active" | "disconnected" | "blocked" | "eliminated";
 

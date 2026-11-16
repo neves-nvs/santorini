@@ -1,4 +1,5 @@
 import { GameError, PlayerAlreadyInGameError, isRefusal, toWireError } from "@/errors/GameErrors.ts";
+import { GameId, UserId, asGameId } from "@santorini/engine";
 import {
   MoveCommand,
   ParsedClientMessage,
@@ -13,7 +14,7 @@ import { GameService } from "@/game/application/GameService.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 
-type CommandResult = { gameId: number } | Record<string, never>;
+type CommandResult = { gameId: GameId } | Record<string, never>;
 
 /**
  * WebSocket message router.
@@ -80,8 +81,8 @@ export class WsRouter {
     }
   }
 
-  private async route(connection: Connection, userId: number, message: ParsedClientMessage): Promise<CommandResult> {
-    const { gameId } = message.payload;
+  private async route(connection: Connection, userId: UserId, message: ParsedClientMessage): Promise<CommandResult> {
+    const gameId = asGameId(message.payload.gameId);
 
     switch (message.type) {
       case "join_game":
@@ -114,7 +115,7 @@ export class WsRouter {
     }
   }
 
-  private async joinGame(userId: number, gameId: number): Promise<void> {
+  private async joinGame(userId: UserId, gameId: GameId): Promise<void> {
     try {
       await this.gameService.addPlayer(gameId, userId);
       logger.info(`User ${userId} joined game ${gameId}`);
@@ -124,7 +125,7 @@ export class WsRouter {
     }
   }
 
-  private async leaveGame(connection: Connection, userId: number, gameId: number): Promise<void> {
+  private async leaveGame(connection: Connection, userId: UserId, gameId: GameId): Promise<void> {
     await this.gameService.removePlayer(gameId, userId);
     if (this.connectionManager.gameOf(connection) === gameId) {
       this.connectionManager.removeClient(gameId, userId, connection);
@@ -133,7 +134,7 @@ export class WsRouter {
     logger.info(`User ${userId} left game ${gameId}`);
   }
 
-  private async handlePlayerDisconnect(gameId: number, userId: number): Promise<void> {
+  private async handlePlayerDisconnect(gameId: GameId, userId: UserId): Promise<void> {
     logger.info(`User ${userId} lost last connection to game ${gameId}`);
 
     try {
@@ -144,19 +145,19 @@ export class WsRouter {
     }
   }
 
-  private async sendGameView(connection: Connection, userId: number, gameId: number): Promise<void> {
+  private async sendGameView(connection: Connection, userId: UserId, gameId: GameId): Promise<void> {
     const view = await this.gameService.getGameView(gameId, userId);
 
     connection.send({ type: WS_MESSAGE_TYPES.GAME_STATE, payload: view });
   }
 
-  private async setReady(userId: number, gameId: number, ready: boolean): Promise<void> {
+  private async setReady(userId: UserId, gameId: GameId, ready: boolean): Promise<void> {
     await this.gameService.setPlayerReady(gameId, userId, ready);
 
     logger.info(`Ready status: user ${userId} in game ${gameId} = ${ready}`);
   }
 
-  private async makeMove(userId: number, gameId: number, move: MoveCommand): Promise<void> {
+  private async makeMove(userId: UserId, gameId: GameId, move: MoveCommand): Promise<void> {
     await this.gameService.applyMove(gameId, userId, move);
 
     logger.info(`Move processed for user ${userId} in game ${gameId}`);

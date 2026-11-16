@@ -1,4 +1,15 @@
-import { BoardCellSnapshot, BoardSnapshot, Game, GamePhase, GameSnapshot, GameStatus, Player } from "@santorini/engine";
+import {
+  BoardCellSnapshot,
+  BoardSnapshot,
+  Game,
+  GameId,
+  GamePhase,
+  GameSnapshot,
+  GameStatus,
+  Player,
+  UserId,
+  asPlayerId,
+} from "@santorini/engine";
 import { Database, Game as GameRecord, NewPiece, Piece } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
 import { db } from "@/database.ts";
@@ -27,7 +38,7 @@ export class GameRepositoryDb {
   /**
    * Find game by ID and convert to domain aggregate
    */
-  async findById(gameId: number): Promise<Game | null> {
+  async findById(gameId: GameId): Promise<Game | null> {
     logger.debug(`Loading game ${gameId} from database`);
 
     // Load game record
@@ -70,7 +81,7 @@ export class GameRepositoryDb {
           : null,
       players: playerRecords.map((p, index) => {
         const player = new Player(
-          index + 1, // Player ID within game (1-indexed)
+          asPlayerId(index + 1), // Player ID within game (1-indexed)
           p.user_id,
           index, // Seat (0-indexed)
         );
@@ -87,7 +98,7 @@ export class GameRepositoryDb {
   /**
    * Create a new game with database-generated ID
    */
-  async createNew(creatorId: number, maxPlayers: number): Promise<Game> {
+  async createNew(creatorId: UserId, maxPlayers: number): Promise<Game> {
     logger.debug(`Creating new game for user ${sanitizeForLog(creatorId)}, max players: ${sanitizeForLog(maxPlayers)}`);
 
     const gameRecord = await this.database
@@ -185,14 +196,14 @@ export class GameRepositoryDb {
   /**
    * Delete a game
    */
-  async delete(gameId: number): Promise<void> {
+  async delete(gameId: GameId): Promise<void> {
     await this.database.deleteFrom("games").where("id", "=", gameId).execute();
   }
 
   /**
    * Find games where a user is a player (any status)
    */
-  async findByPlayer(userId: number): Promise<StoredGame[]> {
+  async findByPlayer(userId: UserId): Promise<StoredGame[]> {
     const gameRecords = await this.database
       .selectFrom("games")
       .innerJoin("players", "games.id", "players.game_id")
@@ -221,7 +232,7 @@ export class GameRepositoryDb {
     };
   }
 
-  private async replacePlayers(trx: Transaction<Database>, gameId: number, players: GameSnapshot["players"]) {
+  private async replacePlayers(trx: Transaction<Database>, gameId: GameId, players: GameSnapshot["players"]) {
     await trx.deleteFrom("players").where("game_id", "=", gameId).execute();
     for (const player of players) {
       await trx
@@ -252,7 +263,7 @@ export class GameRepositoryDb {
   /**
    * Find player user IDs by game ID
    */
-  async findPlayersByGameId(gameId: number): Promise<number[]> {
+  async findPlayersByGameId(gameId: GameId): Promise<number[]> {
     logger.debug(`Loading players for game ${gameId}`);
 
     const players = await this.database
@@ -267,7 +278,7 @@ export class GameRepositoryDb {
   /**
    * Get pieces by game ID (used by BoardService for legacy rule compatibility)
    */
-  async getPiecesByGame(gameId: number): Promise<Piece[]> {
+  async getPiecesByGame(gameId: GameId): Promise<Piece[]> {
     logger.debug(`Loading pieces for game ${gameId}`);
 
     return this.database.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
@@ -299,7 +310,7 @@ export class GameRepositoryDb {
       }
 
       if (type === "worker") {
-        const playerId = parseInt(owner);
+        const playerId = asPlayerId(parseInt(owner));
         const workerId = piece_id;
 
         // Place worker on the board
@@ -324,7 +335,7 @@ export class GameRepositoryDb {
    */
   private async saveBoardState(
     trx: Transaction<Database>,
-    gameId: number,
+    gameId: GameId,
     boardSnapshot: BoardSnapshot,
   ): Promise<void> {
     logger.debug(`Saving board state for game ${gameId}`);

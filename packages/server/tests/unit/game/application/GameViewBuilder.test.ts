@@ -1,15 +1,15 @@
-import { Game, Player } from "@santorini/engine";
+import { Game, Player, asGameId, asPlayerId, asUserId } from "@santorini/engine";
 import { GameView } from "@santorini/shared";
 import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
 
-const CURRENT_USER = 100;
-const WAITING_USER = 101;
-const OUTSIDER = 999;
+const CURRENT_USER = asUserId(100);
+const WAITING_USER = asUserId(101);
+const OUTSIDER = asUserId(999);
 
 function startedGame(): Game {
-  const game = Game.create(1, CURRENT_USER, 2);
-  game.addPlayer(new Player(1, CURRENT_USER, 0));
-  game.addPlayer(new Player(2, WAITING_USER, 1));
+  const game = Game.create(asGameId(1), CURRENT_USER, 2);
+  game.addPlayer(new Player(asPlayerId(1), CURRENT_USER, 0));
+  game.addPlayer(new Player(asPlayerId(2), WAITING_USER, 1));
   for (const [playerId] of game.players) {
     game.setPlayerReady(playerId, true);
   }

@@ -6,7 +6,7 @@
  */
 
 import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove, Position, isBoardCoordinate } from "./Move.ts";
-import { PlayerId } from "./Player.ts";
+import { PlayerId } from "./types.ts";
 
 export interface WorkerRef {
   playerId: PlayerId;
