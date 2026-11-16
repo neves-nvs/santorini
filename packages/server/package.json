@@ -16,7 +16,7 @@
     "test:coverage:open": "../../scripts/test-coverage server",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "typecheck": "tsc",
+    "typecheck": "node ../../node_modules/typescript-native/bin/tsc",
     "knip": "knip --dependencies"
   },
   "keywords": [],
@@ -71,6 +71,7 @@
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
+    "typescript-native": "npm:typescript@^7.0.2",
     "vitest": "^5.1.0",
     "yaml": "^2.9.1"
   },

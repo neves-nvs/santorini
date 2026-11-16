@@ -17,13 +17,13 @@
     "api"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch --preserveWatchOutput",
-    "typecheck": "tsc --noEmit",
+    "build": "node ../../node_modules/typescript-native/bin/tsc",
+    "dev": "node ../../node_modules/typescript-native/bin/tsc --watch --preserveWatchOutput",
+    "typecheck": "node ../../node_modules/typescript-native/bin/tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "typescript-native": "npm:typescript@^7.0.2"
   },
   "dependencies": {
     "zod": "^4.6.7"
