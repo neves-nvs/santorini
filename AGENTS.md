@@ -57,6 +57,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 ## Releases
 
 - Versions are semver starting at `0.`: while the major is 0, any minor bump may break things. Move to `1.0.0` when the first stable deploy is running.
+- release-please is paused: the `push` trigger in `.github/workflows/release-please.yml` is commented out (a manual run is still possible), so no release pull request is opened and nothing creates tags until it is uncommented. What follows is how it works when it is on.
 - The git tag is the only version source, and release-please creates it. It keeps one release pull request open with the next version and the `CHANGELOG.md` entry, built from the `feat:` and `fix:` commit prefixes (a breaking change bumps the minor while the major is 0). The owner merges that pull request to release. Never tag by hand. Tags `v*` cannot be moved or deleted (repository ruleset `release tags`).
 - The workflow needs the secret `RELEASE_PLEASE_TOKEN`, a fine-grained personal access token limited to this repository with Contents and Pull requests read and write.
 - CI pushes both images to `ghcr.io/neves-nvs/santorini-server` and `santorini-client`: every push to `main` that changes an image input gets the commit SHA as its tag, and a `v*.*.*` tag also gets the version without the `v` (for example `0.1.0`). There is no `latest`: deploys pin a version or a SHA.

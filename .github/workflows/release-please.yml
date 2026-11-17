@@ -1,9 +1,12 @@
 name: Release Please
 
 on:
-  push:
-    branches:
-      - main
+  # Paused: no release pull request is opened until the push trigger is back. Only a manual run is left, so the file
+  # stays valid and the action stays in actions.lock.
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
 
 permissions:
   contents: read
