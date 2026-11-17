@@ -1,18 +1,11 @@
-import {
-  ConcurrentUpdateError,
-  GameNotFoundError,
-  PlayerAlreadyInGameError,
-  PlayerNotInGameError,
-} from "@/errors/GameErrors.ts";
 import { Game, GameEvent, GameId, Player, PlayerId, UserId, createMove } from "@santorini/engine";
+import { GameNotFoundError, PlayerAlreadyInGameError, PlayerNotInGameError } from "@/errors/GameErrors.ts";
 import type { GameView, MoveCommand } from "@santorini/shared";
 import { GameBroadcaster } from "./GameBroadcaster.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { GameViewBuilder } from "./GameViewBuilder.ts";
 import logger from "@/logger.ts";
 import { playerIdSchema } from "@/idSchemas.ts";
-
-const MAX_UPDATE_ATTEMPTS = 5;
 
 /**
  * Application service for game operations
@@ -25,36 +18,18 @@ export class GameService {
     private gameBroadcaster: GameBroadcaster = new GameBroadcaster(),
   ) {}
 
-  /**
-   * Load a game, change it and save it. When another command saved the game in between, the command runs again
-   * against the new state, so it is checked against what the game is now and not against what it was.
-   */
+  /** Runs a command on one game while holding its lock, then tells everyone who watches the game. */
   private async update(
     gameId: GameId,
     change: (game: Game) => GameEvent[],
   ): Promise<{ game: Game; events: GameEvent[] }> {
-    for (let attempt = 1; ; attempt++) {
-      const game = await this.gameRepository.findById(gameId);
-      if (!game) {
-        throw new GameNotFoundError(gameId);
-      }
-
-      const loadedVersion = game.version;
-      const events = change(game);
-
-      try {
-        await this.gameRepository.save(game, loadedVersion);
-      } catch (error) {
-        if (error instanceof ConcurrentUpdateError && attempt < MAX_UPDATE_ATTEMPTS) {
-          logger.debug(`Game ${gameId} changed while a command ran, trying again (attempt ${attempt})`);
-          continue;
-        }
-        throw error;
-      }
-
-      this.gameBroadcaster.broadcastGameUpdate(game);
-      return { game, events };
+    const result = await this.gameRepository.update(gameId, change);
+    if (!result) {
+      throw new GameNotFoundError(gameId);
     }
+
+    this.gameBroadcaster.broadcastGameUpdate(result.game);
+    return result;
   }
 
   /**

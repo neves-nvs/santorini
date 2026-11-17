@@ -71,14 +71,6 @@ export class PlayerNotInGameError extends GameError {
   }
 }
 
-export class ConcurrentUpdateError extends GameError {
-  public readonly httpStatus = StatusCodes.CONFLICT;
-
-  constructor(gameId: GameId) {
-    super(`Game ${gameId} was changed by another command`, "The game changed, try again", "invalid_game_state");
-  }
-}
-
 /** A failure the player caused or can fix, as opposed to a bug or an outage. */
 export function isRefusal(error: unknown): boolean {
   return error instanceof GameError || error instanceof GameRuleError;

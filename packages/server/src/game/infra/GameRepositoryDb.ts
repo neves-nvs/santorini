@@ -2,6 +2,7 @@ import {
   BoardCellSnapshot,
   BoardSnapshot,
   Game,
+  GameEvent,
   GameId,
   GamePhase,
   GameSnapshot,
@@ -11,7 +12,6 @@ import {
 } from "@santorini/engine";
 import { Database, Game as GameRecord, NewPiece, Piece } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
-import { ConcurrentUpdateError } from "@/errors/GameErrors.ts";
 import { db } from "@/database.ts";
 import logger from "@/logger.ts";
 import { playerIdSchema } from "@/idSchemas.ts";
@@ -39,18 +39,18 @@ export class GameRepositoryDb {
   /**
    * Find game by ID and convert to domain aggregate
    */
-  async findById(gameId: GameId): Promise<Game | null> {
+  async findById(gameId: GameId, database: Kysely<Database> = this.database): Promise<Game | null> {
     logger.debug(`Loading game ${gameId} from database`);
 
     // Load game record
-    const gameRecord = await this.database.selectFrom("games").where("id", "=", gameId).selectAll().executeTakeFirst();
+    const gameRecord = await database.selectFrom("games").where("id", "=", gameId).selectAll().executeTakeFirst();
 
     if (!gameRecord) {
       return null;
     }
 
     // Load players
-    const playerRecords = await this.database
+    const playerRecords = await database
       .selectFrom("players")
       .innerJoin("users", "players.user_id", "users.id")
       .where("players.game_id", "=", gameId)
@@ -59,7 +59,7 @@ export class GameRepositoryDb {
       .execute();
 
     // Load board state (pieces)
-    const pieceRecords = await this.database.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
+    const pieceRecords = await database.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
 
     // Convert to domain snapshot
     // Player IDs and seats are derived from stable array order
@@ -123,58 +123,74 @@ export class GameRepositoryDb {
   }
 
   /**
-   * Save game aggregate to database
-   * With `expectedVersion`, an existing game is only written when it still has that version, so a command that
-   * worked from a stale copy fails with ConcurrentUpdateError instead of overwriting the newer state.
+   * Load a game, change it and save it in one transaction that holds the lock of the game's row, so commands on
+   * one game run one at a time and each one sees what the previous one saved. When `change` throws, nothing is
+   * saved. Answers null when there is no such game.
    */
-  async save(game: Game, expectedVersion?: number): Promise<void> {
+  async update(
+    gameId: GameId,
+    change: (game: Game) => GameEvent[],
+  ): Promise<{ game: Game; events: GameEvent[] } | null> {
+    return this.database.transaction().execute(async (trx) => {
+      const locked = await trx.selectFrom("games").where("id", "=", gameId).select("id").forUpdate().executeTakeFirst();
+      const game = locked ? await this.findById(gameId, trx) : null;
+      if (!game) {
+        return null;
+      }
+
+      const events = change(game);
+      await this.write(trx, game);
+      return { game, events };
+    });
+  }
+
+  /**
+   * Save game aggregate to database
+   */
+  async save(game: Game): Promise<void> {
+    await this.database.transaction().execute((trx) => this.write(trx, game));
+  }
+
+  private async write(trx: Transaction<Database>, game: Game): Promise<void> {
     logger.debug(`Saving game ${game.id} to database`);
 
     const snapshot = game.toSnapshot();
     const now = new Date().toISOString();
 
-    await this.database.transaction().execute(async (trx) => {
-      // Check if game exists, create if not
-      const existingGame = await trx.selectFrom("games").where("id", "=", game.id).selectAll().executeTakeFirst();
+    // Check if game exists, create if not
+    const existingGame = await trx.selectFrom("games").where("id", "=", game.id).selectAll().executeTakeFirst();
 
-      const columns = this.gameColumns(snapshot);
+    const columns = this.gameColumns(snapshot);
 
-      if (existingGame) {
-        let update = trx
-          .updateTable("games")
-          .set({
-            ...columns,
-            ...(existingGame.started_at === null && snapshot.status !== "waiting" ? { started_at: now } : {}),
-            ...(existingGame.finished_at === null && snapshot.status === "completed" ? { finished_at: now } : {}),
-          })
-          .where("id", "=", game.id);
-        if (expectedVersion !== undefined) {
-          update = update.where("version", "=", expectedVersion);
-        }
-        const { numUpdatedRows } = await update.executeTakeFirstOrThrow();
-        if (numUpdatedRows === 0n) {
-          throw new ConcurrentUpdateError(game.id);
-        }
-      } else {
-        await trx
-          .insertInto("games")
-          .values({
-            id: snapshot.id,
-            user_creator_id: snapshot.creatorId,
-            player_count: snapshot.maxPlayers,
-            ...columns,
-            created_at: now,
-            started_at: snapshot.status === "waiting" ? undefined : now,
-            finished_at: snapshot.status === "completed" ? now : undefined,
-          })
-          .execute();
-      }
+    if (existingGame) {
+      await trx
+        .updateTable("games")
+        .set({
+          ...columns,
+          ...(existingGame.started_at === null && snapshot.status !== "waiting" ? { started_at: now } : {}),
+          ...(existingGame.finished_at === null && snapshot.status === "completed" ? { finished_at: now } : {}),
+        })
+        .where("id", "=", game.id)
+        .execute();
+    } else {
+      await trx
+        .insertInto("games")
+        .values({
+          id: snapshot.id,
+          user_creator_id: snapshot.creatorId,
+          player_count: snapshot.maxPlayers,
+          ...columns,
+          created_at: now,
+          started_at: snapshot.status === "waiting" ? undefined : now,
+          finished_at: snapshot.status === "completed" ? now : undefined,
+        })
+        .execute();
+    }
 
-      await this.replacePlayers(trx, game.id, snapshot.players);
+    await this.replacePlayers(trx, game.id, snapshot.players);
 
-      // Update board state (pieces table)
-      await this.saveBoardState(trx, game.id, snapshot.board);
-    });
+    // Update board state (pieces table)
+    await this.saveBoardState(trx, game.id, snapshot.board);
 
     logger.debug(`Game ${game.id} saved successfully`);
   }

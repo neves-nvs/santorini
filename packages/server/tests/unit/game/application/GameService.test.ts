@@ -1,4 +1,4 @@
-import { Game, Player, asGameId, asPlayerId, asUserId } from "@santorini/engine";
+import { Game, GameEvent, Player, asGameId, asPlayerId, asUserId } from "@santorini/engine";
 import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
 import { GameNotFoundError } from "@/errors/GameErrors.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
@@ -6,7 +6,11 @@ import { GameService } from "@/game/application/GameService.ts";
 import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
 
 function setup(game: Game | null) {
-  const repository = { findById: async () => game, save: vi.fn() } as unknown as GameRepositoryDb;
+  const repository = {
+    findById: async () => game,
+    update: async (_gameId: unknown, change: (game: Game) => GameEvent[]) =>
+      game ? { game, events: change(game) } : null,
+  } as unknown as GameRepositoryDb;
   const broadcaster = { broadcastGameUpdate: vi.fn() };
   const service = new GameService(repository, new GameViewBuilder(), broadcaster as unknown as GameBroadcaster);
   return { service, broadcaster, repository };
