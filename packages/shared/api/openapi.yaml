@@ -162,7 +162,12 @@ paths:
               type: object
               required: [username, password]
               properties:
-                username: { type: string, minLength: 1 }
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 32
+                  pattern: "^[A-Za-z0-9_-]+$"
+                  description: Trimmed and stored in lowercase, so `Alice` and `alice` are the same account.
                 password: { type: string, minLength: 8 }
       responses:
         "201":

@@ -17,8 +17,13 @@ describe("Commands that reach a game at the same time", () => {
     await db.destroy();
   });
 
+  // One after the other: the player with the lowest user id is the first one, so the order of the ids matters.
   async function newUsers(count: number) {
-    return Promise.all(Array.from({ length: count }, async () => (await generateTestUser()).user));
+    const users = [];
+    for (let created = 0; created < count; created++) {
+      users.push((await generateTestUser()).user);
+    }
+    return users;
   }
 
   test("players who join together all end up in the game", async () => {

@@ -12,7 +12,7 @@ async function expectNoAxeViolations(page: Page) {
 async function registerUser(page: Page) {
   await page.goto('/auth')
   await page.getByRole('button', { name: /need an account\? register/i }).click()
-  await page.getByLabel('Username').fill(`a11y-${randomUUID()}`)
+  await page.getByLabel('Username').fill(`a11y-${randomUUID().slice(0, 8)}`)
   await page.getByLabel('Password').fill('e2e-password')
   await page.getByRole('button', { name: 'Register', exact: true }).click()
   await page.waitForURL('/lobby')

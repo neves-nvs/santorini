@@ -31,6 +31,13 @@ describe("Auth Controller Integration Tests", () => {
   });
 
   describe("POST /session", () => {
+    test("200 OK when the username is typed in another case or with spaces around it", async () => {
+      await request(app)
+        .post("/session")
+        .send({ username: `  ${userData.username.toUpperCase()} `, password: password })
+        .expect(200);
+    });
+
     test("200 OK and set a cookie for valid credentials", async () => {
       const response = await request(app)
         .post("/session")
