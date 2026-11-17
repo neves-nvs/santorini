@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { USERNAME_RULE, createUserRequestSchema } from '@santorini/shared'
+import { USERNAME_RULE, createUserRequestSchema, loginRequestSchema } from '@santorini/shared'
 import { userApi } from '@/user/services/userApi'
 import { useAppStore } from '@/user/model/appStore'
 import { usePageTitle } from '@/shared/utils/usePageTitle'
@@ -24,12 +24,13 @@ const AuthPage = () => {
     e.preventDefault()
     setError('')
 
-    if (!isLogin) {
-      const checked = createUserRequestSchema.safeParse({ username: usernameInput, password })
-      if (!checked.success) {
-        setError(checked.error.issues.map((issue) => issue.message).join(', '))
-        return
-      }
+    const checked = (isLogin ? loginRequestSchema : createUserRequestSchema).safeParse({
+      username: usernameInput,
+      password,
+    })
+    if (!checked.success) {
+      setError(checked.error.issues.map((issue) => issue.message).join(', '))
+      return
     }
 
     setLoading(true)

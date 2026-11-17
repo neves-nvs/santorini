@@ -15,13 +15,10 @@ export const usernameSchema = z
   .toLowerCase()
   .regex(USERNAME_PATTERN, USERNAME_RULE)
 
-/** Signing in only normalises the name: an account made before the rule existed can still sign in. */
-const existingUsernameSchema = z.string(required('Username')).trim().toLowerCase().min(1, 'Username is required')
-
-export const usernameParamsSchema = z.object({ username: existingUsernameSchema })
+export const usernameParamsSchema = z.object({ username: usernameSchema })
 
 export const loginRequestSchema = z.object({
-  username: existingUsernameSchema,
+  username: usernameSchema,
   password: z.string(required('Password')).min(1, 'Password is required'),
 })
 

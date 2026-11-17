@@ -86,7 +86,7 @@ test.describe('Auth page', () => {
 
   test('announces a failed login and ties it to the fields', async ({ page }) => {
     await page.goto('/auth')
-    await page.getByLabel('Username').fill(`nobody-${randomUUID()}`)
+    await page.getByLabel('Username').fill(`nobody-${randomUUID().slice(0, 8)}`)
     await page.getByLabel('Password').fill('wrong-password')
     await page.getByRole('button', { name: 'Login', exact: true }).click()
 

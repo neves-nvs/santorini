@@ -76,10 +76,20 @@ describe('AuthPage', () => {
     await waitFor(() => expect(userApi.createUser).toHaveBeenCalledTimes(1))
   })
 
-  it('lets an existing account sign in with any name, the server decides', async () => {
+  it('does not send a login with a name that breaks the rule', async () => {
     renderPage()
 
-    fill('Old Name With Spaces', 'whatever')
+    fill('Name With Spaces', 'whatever')
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(USERNAME_RULE)
+    expect(userApi.login).not.toHaveBeenCalled()
+  })
+
+  it('signs in a valid name, whatever its case', async () => {
+    renderPage()
+
+    fill(' Casey ', 'whatever')
     fireEvent.click(screen.getByRole('button', { name: 'Login' }))
 
     await waitFor(() => expect(userApi.login).toHaveBeenCalledTimes(1))
