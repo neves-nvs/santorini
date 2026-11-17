@@ -1,22 +1,21 @@
 import {
   CreateGameRequest,
   CreateGameResponse,
-  GameErrorResponse,
   GameSummary,
   GameView,
   createGamePayloadSchema,
-  gameIdSchema,
 } from "@santorini/shared";
-import { GameError, getHttpStatus, toWireError } from "@/errors/GameErrors.ts";
-import { NextFunction, Request, Response, Router } from "express";
 import { authenticate, getUser } from "@/auth/authController.ts";
 
+import { GameError } from "@/errors/GameErrors.ts";
+import { GameId } from "@santorini/engine";
 import { GameService } from "@/game/application/GameService.ts";
 import { LobbyService } from "@/game/application/LobbyService.ts";
+import { Router } from "express";
 import { StoredGame } from "@/game/infra/GameRepositoryDb.ts";
-import logger from "@/logger.ts";
+import { gameIdSchema } from "@/idSchemas.ts";
 
-function parseGameId(raw: unknown): number {
+function parseGameId(raw: unknown): GameId {
   const parsed = gameIdSchema.safeParse(Number(raw));
   if (!parsed.success) throw new GameError("Game ID must be a positive whole number");
   return parsed.data;
@@ -86,11 +85,6 @@ export function createGameRoutes(gameService: GameService, lobbyService: LobbySe
     const gameId = parseGameId(req.params.gameId);
     const gameView = await gameService.getGameView(gameId, userId);
     res.json(gameView);
-  });
-
-  router.use((error: unknown, req: Request, res: Response<GameErrorResponse>, _next: NextFunction) => {
-    logger.error("Games route failed", { method: req.method, route: req.route?.path, error });
-    res.status(getHttpStatus(error)).json({ error: toWireError(error) });
   });
 
   return router;

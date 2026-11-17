@@ -1,4 +1,4 @@
-import { Game, Player } from "@santorini/engine";
+import { Game, Player, asGameId, asPlayerId, asUserId } from "@santorini/engine";
 import { Connection } from "@/game/infra/Connection.ts";
 import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
 import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
@@ -26,9 +26,9 @@ function viewerSentTo(connection: RecordingConnection) {
 }
 
 function startedGame(): Game {
-  const game = Game.create(1, 100, 2);
-  game.addPlayer(new Player(1, 100, 0));
-  game.addPlayer(new Player(2, 101, 1));
+  const game = Game.create(asGameId(1), asUserId(100), 2);
+  game.addPlayer(new Player(asPlayerId(1), asUserId(100), 0));
+  game.addPlayer(new Player(asPlayerId(2), asUserId(101), 1));
   for (const [playerId] of game.players) {
     game.setPlayerReady(playerId, true);
   }
@@ -41,8 +41,8 @@ describe("GameBroadcaster", () => {
     const connectionManager = new ConnectionManager();
     const currentPlayer = new RecordingConnection(100);
     const waitingPlayer = new RecordingConnection(101);
-    connectionManager.addClient(game.id, 100, currentPlayer);
-    connectionManager.addClient(game.id, 101, waitingPlayer);
+    connectionManager.addClient(game.id, asUserId(100), currentPlayer);
+    connectionManager.addClient(game.id, asUserId(101), waitingPlayer);
 
     new GameBroadcaster(undefined, connectionManager).broadcastGameUpdate(game);
 
@@ -60,7 +60,7 @@ describe("GameBroadcaster", () => {
     const game = startedGame();
     const connectionManager = new ConnectionManager();
     const spectator = new RecordingConnection(999);
-    connectionManager.addClient(game.id, 999, spectator);
+    connectionManager.addClient(game.id, asUserId(999), spectator);
 
     new GameBroadcaster(undefined, connectionManager).broadcastGameUpdate(game);
 
@@ -73,8 +73,8 @@ describe("GameBroadcaster", () => {
     const elsewhere = new RecordingConnection(100);
     const closed = new RecordingConnection(101);
     closed.isOpen = false;
-    connectionManager.addClient(2, 100, elsewhere);
-    connectionManager.addClient(game.id, 101, closed);
+    connectionManager.addClient(asGameId(2), asUserId(100), elsewhere);
+    connectionManager.addClient(game.id, asUserId(101), closed);
 
     new GameBroadcaster(undefined, connectionManager).broadcastGameUpdate(game);
 
@@ -87,8 +87,8 @@ describe("GameBroadcaster", () => {
     const connectionManager = new ConnectionManager();
     const first = new RecordingConnection(100);
     const second = new RecordingConnection(100);
-    connectionManager.addClient(game.id, 100, first);
-    connectionManager.addClient(game.id, 100, second);
+    connectionManager.addClient(game.id, asUserId(100), first);
+    connectionManager.addClient(game.id, asUserId(100), second);
 
     new GameBroadcaster(undefined, connectionManager).broadcastGameUpdate(game);
 

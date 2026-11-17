@@ -226,6 +226,7 @@ error             { message: string }
   - `npm run test` - All tests
   - `npm run test:unit` - Unit tests only
   - `npm run test:integration` - Integration tests (requires Docker)
+  - `npm run test:concurrency` - Simultaneous requests against a real database, to catch races (requires Docker; not part of `scripts/check`)
 
 ### Frontend
 - **Unit Tests**: Utility functions, state management

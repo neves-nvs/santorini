@@ -1,13 +1,13 @@
 import { CookieOptions, NextFunction, Request, Response, Router } from "express";
 import {
   CurrentUserResponse,
+  ErrorResponse,
   LoginRequest,
   LogoutResponse,
-  MessageResponse,
   TextResponse,
-  ValidationErrorResponse,
   WebSocketTicketResponse,
 } from "@santorini/shared";
+import { ForbiddenError, UnauthorizedError } from "@/errors/HttpErrors.ts";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import { User } from "@/model.ts";
@@ -40,7 +40,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   passport.authenticate("jwt", { session: false }, async (err: Error, user: unknown, info: VerifyErrors) => {
     if (info && info.message === "No auth token") {
       logger.debug("No auth token");
-      return res.status(401).json({ message: "Unauthorized" });
+      return next(new UnauthorizedError());
     } else if (info) {
       // Reduce spam for common token expiration errors
       if (info.name === "TokenExpiredError") {
@@ -48,28 +48,27 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
       } else {
         logger.error("Forbidden", info);
       }
-      return res.status(403).json({ message: "Forbidden" });
+      return next(new ForbiddenError());
     } else if (err) {
       logger.error("Unauthorized", err);
-      return res.status(401).json({ message: "Unauthorized" });
+      return next(new UnauthorizedError());
     } else if (!user) {
       logger.debug("No user found");
-      return res.status(401).json({ message: "Unauthorized" });
+      return next(new UnauthorizedError());
     }
 
     try {
       const validUser = await findUserByUsername((user as JwtPayload).username);
       logger.debug("Checked if user exists", { user: validUser });
       if (!validUser) {
-        return res.status(403).json({ message: "User not found or inactive" });
+        return next(new ForbiddenError("User not found or inactive"));
       }
 
       req.user = validUser;
 
       next();
     } catch (e: unknown) {
-      logger.error("Failed to look up the authenticated user", e);
-      return res.status(500).json({ message: "Internal server error" });
+      next(e);
     }
   })(req, res, next);
 };
@@ -78,7 +77,7 @@ const router = Router();
 
 type NoParams = Record<string, string>;
 
-router.post<NoParams, TextResponse | MessageResponse | ValidationErrorResponse, LoginRequest>(
+router.post<NoParams, TextResponse | ErrorResponse, LoginRequest>(
   "/session",
   loginRateLimitMiddleware,
   body("username").isString().notEmpty().withMessage("Username is required"),
@@ -87,54 +86,42 @@ router.post<NoParams, TextResponse | MessageResponse | ValidationErrorResponse, 
   async (req: Request, res: Response) => {
     const { username, password } = req.body;
 
-    try {
-      const user = await findUserByUsername(username);
-      const passwordHash = user?.password_hash;
-      const passwordMatches = await bcrypt.compare(password, passwordHash ?? UNUSED_PASSWORD_HASH);
-      if (!user || !passwordHash || !passwordMatches) {
-        logger.warn("Login rejected", { reason: user ? "invalid password" : "unknown user" });
-        return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid username or password" });
-      }
-
-      if (!config.jwtSecret) {
-        logger.error("JWT secret not set");
-        return res.status(500).send("JWT secret not set");
-      }
-
-      const token = jwt.sign({ username: user.username }, config.jwtSecret, {
-        expiresIn: "5h",
-      });
-
-      res.cookie("token", token, sessionCookieOptions(req));
-      res.status(200).send("OK");
-    } catch (err) {
-      logger.error("An error occurred during authentication", err);
-      res.status(500).send("Internal server error");
+    const user = await findUserByUsername(username);
+    const passwordHash = user?.password_hash;
+    const passwordMatches = await bcrypt.compare(password, passwordHash ?? UNUSED_PASSWORD_HASH);
+    if (!user || !passwordHash || !passwordMatches) {
+      logger.warn("Login rejected", { reason: user ? "invalid password" : "unknown user" });
+      throw new UnauthorizedError("Invalid username or password");
     }
+
+    if (!config.jwtSecret) {
+      throw new Error("JWT secret not set");
+    }
+
+    const token = jwt.sign({ username: user.username }, config.jwtSecret, {
+      expiresIn: "5h",
+    });
+
+    res.cookie("token", token, sessionCookieOptions(req));
+    res.status(StatusCodes.OK).send("OK");
   },
 );
 
 // Logout endpoint to clear the authentication cookie
 router.post<NoParams, LogoutResponse>("/logout", (req, res) => {
   res.clearCookie("token", sessionCookieOptions(req));
-  res.status(200).json({ message: "Logged out successfully" });
+  res.status(StatusCodes.OK).json({ message: "Logged out successfully" });
 });
 
 // A one-time ticket for opening a WebSocket from a browser, which cannot set headers on the handshake
 router.post<NoParams, WebSocketTicketResponse>("/ws-ticket", authenticate, (req, res) => {
-  res.status(200).json({ ticket: webSocketTickets.issue(getUser(req).username) });
+  res.status(StatusCodes.OK).json({ ticket: webSocketTickets.issue(getUser(req).username) });
 });
 
 // Endpoint to check authentication status and get user info
-router.get<NoParams, CurrentUserResponse | TextResponse>("/me", authenticate, async (req, res) => {
-  try {
-    const user = req.user as User;
-    res.status(200).json({ id: user.id, username: user.username });
-  } catch (e: unknown) {
-    const error = e as Error;
-    logger.error(error.message);
-    res.status(400).send(error.message);
-  }
+router.get<NoParams, CurrentUserResponse | ErrorResponse>("/me", authenticate, (req, res) => {
+  const user = getUser(req);
+  res.status(StatusCodes.OK).json({ id: user.id, username: user.username });
 });
 
 export default router;

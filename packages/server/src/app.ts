@@ -1,5 +1,6 @@
 import "./auth/passport.ts";
 import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./middlewares/morganMiddleware.ts";
+import { StatusCodes } from "http-status-codes";
 import authController from "./auth/authController.ts";
 import { config } from "./configs/config.ts";
 import cookieParser from "cookie-parser";
@@ -19,7 +20,7 @@ const CORS_CONFIG = {
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-  optionsSuccessStatus: 200,
+  optionsSuccessStatus: StatusCodes.OK,
 };
 
 const app = express();
@@ -30,15 +31,15 @@ app.set("trust proxy", config.trustProxy);
 app.use(helmet({ strictTransportSecurity: false }));
 
 app.get("/healthz", (_req, res) => {
-  res.sendStatus(200);
+  res.sendStatus(StatusCodes.OK);
 });
 
 app.get("/readyz", async (_req, res) => {
   try {
     await sql`select 1`.execute(db);
-    res.sendStatus(200);
+    res.sendStatus(StatusCodes.OK);
   } catch {
-    res.sendStatus(503);
+    res.sendStatus(StatusCodes.SERVICE_UNAVAILABLE);
   }
 });
 

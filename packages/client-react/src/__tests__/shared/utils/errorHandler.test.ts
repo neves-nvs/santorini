@@ -77,7 +77,7 @@ describe('ErrorHandler.createError', () => {
 describe('ErrorHandler.handleHttpError', () => {
   it('should handle 401 authentication error', async () => {
     const response = new Response(
-      JSON.stringify({ message: 'Unauthorized' }),
+      JSON.stringify({ error: { code: 'unauthorized', message: 'Unauthorized' } }),
       {
         status: 401,
         headers: { 'content-type': 'application/json' },
@@ -93,7 +93,7 @@ describe('ErrorHandler.handleHttpError', () => {
 
   it('should handle 403 authentication error', async () => {
     const response = new Response(
-      JSON.stringify({ error: 'Forbidden' }),
+      JSON.stringify({ error: { code: 'forbidden', message: 'Forbidden' } }),
       {
         status: 403,
         headers: { 'content-type': 'application/json' },
@@ -123,7 +123,7 @@ describe('ErrorHandler.handleHttpError', () => {
 
   it('should handle 400 validation error', async () => {
     const response = new Response(
-      JSON.stringify({ message: 'Invalid move' }),
+      JSON.stringify({ error: { code: 'validation_failed', message: 'Invalid move' } }),
       {
         status: 400,
         headers: { 'content-type': 'application/json' },
@@ -139,10 +139,16 @@ describe('ErrorHandler.handleHttpError', () => {
   it('should show the messages of a validation failure from the server', async () => {
     const response = new Response(
       JSON.stringify({
-        errors: [
-          { type: 'field', msg: 'Username is required', path: 'username' },
-          { type: 'field', msg: 'Password must be at least 8 characters', path: 'password' },
-        ],
+        error: {
+          code: 'validation_failed',
+          message: 'Username is required, Password must be at least 8 characters',
+          details: {
+            issues: [
+              { path: ['username'], message: 'Username is required' },
+              { path: ['password'], message: 'Password must be at least 8 characters' },
+            ],
+          },
+        },
       }),
       {
         status: 400,
@@ -158,7 +164,7 @@ describe('ErrorHandler.handleHttpError', () => {
 
   it('should handle 422 validation error', async () => {
     const response = new Response(
-      JSON.stringify({ message: 'Unprocessable entity' }),
+      JSON.stringify({ error: { code: 'validation_failed', message: 'Unprocessable entity' } }),
       {
         status: 422,
         headers: { 'content-type': 'application/json' },
@@ -172,7 +178,7 @@ describe('ErrorHandler.handleHttpError', () => {
 
   it('should handle 500 server error', async () => {
     const response = new Response(
-      JSON.stringify({ message: 'Internal server error' }),
+      JSON.stringify({ error: { code: 'internal', message: 'Internal server error' } }),
       {
         status: 500,
         headers: { 'content-type': 'application/json' },

@@ -1,8 +1,9 @@
 import { User } from "@/model.ts";
+import { UserId } from "@santorini/engine";
 import { UserView } from "@santorini/shared";
 
 export class UserDTO implements UserView {
-  id: number;
+  id: UserId;
   username: string;
   displayName: string;
   createdAt: string;

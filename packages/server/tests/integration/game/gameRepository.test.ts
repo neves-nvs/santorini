@@ -1,4 +1,4 @@
-import { Game, Player } from "@santorini/engine";
+import { Game, Player, asPlayerId } from "@santorini/engine";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 import { db } from "@/database.ts";
@@ -18,11 +18,11 @@ describe("Saving and loading a game", () => {
     const creator = (await generateTestUser()).user;
     const guest = (await generateTestUser()).user;
     const game = await repository.createNew(creator.id, 2);
-    game.addPlayer(new Player(1, creator.id, 0));
-    game.addPlayer(new Player(2, guest.id, 1));
+    game.addPlayer(new Player(asPlayerId(1), creator.id, 0));
+    game.addPlayer(new Player(asPlayerId(2), guest.id, 1));
     await repository.save(game);
-    game.setPlayerReady(1, true);
-    game.setPlayerReady(2, true);
+    game.setPlayerReady(asPlayerId(1), true);
+    game.setPlayerReady(asPlayerId(2), true);
     await repository.save(game);
     return game;
   }
@@ -62,8 +62,8 @@ describe("Saving and loading a game", () => {
     const created = await repository.createNew(creator.id, 3);
     await db.deleteFrom("games").where("id", "=", created.id).execute();
     const game = Game.fromSnapshot({ ...Game.create(created.id, creator.id, 3).toSnapshot(), turnNumber: 4 });
-    game.addPlayer(new Player(1, creator.id, 0));
-    game.addPlayer(new Player(2, guest.id, 1));
+    game.addPlayer(new Player(asPlayerId(1), creator.id, 0));
+    game.addPlayer(new Player(asPlayerId(2), guest.id, 1));
 
     await repository.save(game);
 

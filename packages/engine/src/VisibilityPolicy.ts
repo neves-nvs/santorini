@@ -1,17 +1,18 @@
+import { GameId, PlayerId } from "./types.ts";
 import { Board } from "./Board.ts";
 import { Game } from "./Game.ts";
 import { Player } from "./Player.ts";
 
 export interface FilteredGameState {
-  id: number;
+  id: GameId;
   status: string;
   phase: string | null;
-  currentPlayerId: number | null;
+  currentPlayerId: PlayerId | null;
   turnNumber: number;
   version: number;
   board: Board;
   players: Player[];
-  winnerId: number | null;
+  winnerId: PlayerId | null;
   winReason: string | null;
 }
 

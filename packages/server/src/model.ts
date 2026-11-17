@@ -1,4 +1,5 @@
 import { ColumnType, Generated, Insertable, Selectable, Updateable } from "kysely";
+import { GameId, PlayerId, UserId } from "@santorini/engine";
 
 export interface Database {
   users: UserTable;
@@ -8,11 +9,9 @@ export interface Database {
 }
 
 export interface UserTable {
-  id: Generated<number>;
+  id: Generated<UserId>;
   username: string;
   display_name: string;
-  // google auth
-  google_id: string | null;
   // password auth
   password_hash: string | null;
   password_salt: string | null;
@@ -28,15 +27,15 @@ export type GameStatus = "waiting" | "in-progress" | "completed";
 export type GamePhase = "placing" | "moving" | "building";
 
 export interface GameTable {
-  id: Generated<number>;
-  user_creator_id: number;
+  id: Generated<GameId>;
+  user_creator_id: UserId;
 
   // Game capacity (max players allowed)
   player_count: number;
 
   game_status: GameStatus;
   game_phase: GamePhase | null;
-  current_player_id: number | null;
+  current_player_id: PlayerId | null;
   turn_number: number;
   placing_turns_completed: number;
 
@@ -48,7 +47,7 @@ export interface GameTable {
   last_moved_worker_x: number | null;
   last_moved_worker_y: number | null;
 
-  winner_id: number | null;
+  winner_id: PlayerId | null;
   win_reason: string | null;
 
   created_at: ColumnType<Date, string, never>;
@@ -62,8 +61,8 @@ export type NewGame = Insertable<GameTable>;
 export type Game = Selectable<GameTable>;
 
 export interface PlayerTable {
-  game_id: number;
-  user_id: number;
+  game_id: GameId;
+  user_id: UserId;
   is_ready: boolean;
 }
 
@@ -74,7 +73,7 @@ export type Player = Selectable<PlayerTable>;
 export interface PieceTable {
   // TODO make primary key (game_id, piece_id)
   id: Generated<number>;
-  game_id: number;
+  game_id: GameId;
   piece_id: number;
   x: number;
   y: number;

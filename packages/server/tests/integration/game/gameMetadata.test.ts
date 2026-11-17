@@ -1,4 +1,4 @@
-import { Game, Player } from "@santorini/engine";
+import { Game, Player, asPlayerId } from "@santorini/engine";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 import { db } from "@/database.ts";
@@ -18,8 +18,8 @@ describe("When the server records a game was created, started and finished", () 
     const creator = (await generateTestUser()).user;
     const guest = (await generateTestUser()).user;
     const game = await repository.createNew(creator.id, 2);
-    game.addPlayer(new Player(1, creator.id, 0));
-    game.addPlayer(new Player(2, guest.id, 1));
+    game.addPlayer(new Player(asPlayerId(1), creator.id, 0));
+    game.addPlayer(new Player(asPlayerId(2), guest.id, 1));
     await repository.save(game);
     return game;
   }
@@ -36,8 +36,8 @@ describe("When the server records a game was created, started and finished", () 
 
   test("saving a game that just started records when, and later saves leave it alone", async () => {
     const game = await waitingGame();
-    game.setPlayerReady(1, true);
-    game.setPlayerReady(2, true);
+    game.setPlayerReady(asPlayerId(1), true);
+    game.setPlayerReady(asPlayerId(2), true);
     await repository.save(game);
 
     const [started] = await repository.findByStatus("in-progress");
@@ -52,15 +52,15 @@ describe("When the server records a game was created, started and finished", () 
 
   test("saving a game that just finished records when, and keeps when it started", async () => {
     const game = await waitingGame();
-    game.setPlayerReady(1, true);
-    game.setPlayerReady(2, true);
+    game.setPlayerReady(asPlayerId(1), true);
+    game.setPlayerReady(asPlayerId(2), true);
     await repository.save(game);
     const [started] = await repository.findByStatus("in-progress");
 
     const finished = Game.fromSnapshot({
       ...game.toSnapshot(),
       status: "completed",
-      winnerId: 1,
+      winnerId: asPlayerId(1),
       winReason: "win_condition",
     });
     await repository.save(finished);

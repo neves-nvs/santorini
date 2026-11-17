@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { param, validationResult } from "express-validator";
 
+import { ValidationFailedError } from "@/errors/HttpErrors.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 
@@ -10,16 +11,16 @@ export function deprecate(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-export const checkValidation = (req: Request, res: Response, next: NextFunction) => {
+export const checkValidation = (req: Request, _res: Response, next: NextFunction) => {
   // The submitted value is left out: it can be a password, and the log redaction cannot see it under this key.
   const errors = validationResult(req).formatWith((error) => ({
-    type: error.type,
     msg: error.msg,
-    path: error.type === "field" ? error.path : undefined,
-    location: error.type === "field" ? error.location : undefined,
+    path: error.type === "field" ? error.path : "",
   }));
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    throw new ValidationFailedError(
+      errors.array().map(({ path, msg }) => ({ path: path ? [path] : [], message: String(msg) })),
+    );
   }
   next();
 };

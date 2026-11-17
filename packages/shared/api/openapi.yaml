@@ -11,10 +11,10 @@ info:
     The request and response bodies are the types in `packages/shared/src/rest-types.ts`; the schema names below are
     the type names.
 
-    Errors do not have one shape yet: validation failures use `ValidationErrorResponse`, the games routes use
-    `{ "error": string }` (`GameErrorResponse`), and the rest use `{ "message": string }` (`MessageResponse`) or a
-    bare text. Outside the games routes a 5xx carries a generic message. The games routes put the message of an
-    unexpected error in `error`, so it can name an internal detail.
+    Every error has one shape, `{ "error": { "code", "message", "details"? } }` (`ErrorResponse`), the same as the
+    payload of a WebSocket `error`. `code` is stable and meant for programs. `details.issues` lists the fields of a
+    failed validation. A 5xx always carries the code `internal` and a fixed message, so it never names an internal
+    detail; the details stay in the server log.
 servers:
   - url: http://localhost:3000
     description: Server run directly
@@ -89,14 +89,14 @@ paths:
           description: Invalid username or password
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/MessageResponse" }
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
           description: The JWT secret is not set, or the lookup failed
           content:
-            text/plain:
-              schema: { type: string }
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /logout:
     post:
       tags: [Session]
@@ -124,13 +124,9 @@ paths:
                 properties:
                   id: { type: integer }
                   username: { type: string }
-        "400":
-          description: The user could not be read from the request
-          content:
-            text/plain:
-              schema: { type: string }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/GameServerError" }
   /ws-ticket:
     post:
       tags: [Session]
@@ -180,25 +176,24 @@ paths:
           description: Registration is disabled
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/MessageResponse" }
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "409":
           description: The username is taken
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/MessageResponse" }
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "429":
           $ref: "#/components/responses/TooManyRequests"
         "500":
           description: The database did not answer, or the insert failed
           content:
-            text/plain:
-              schema: { type: string }
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /users/{username}:
     get:
       tags: [Users]
       summary: Look a user up by name
-      description: Needs no login.
-      security: []
+      description: Needs a login, so a name cannot be probed anonymously.
       parameters:
         - name: username
           in: path
@@ -212,21 +207,18 @@ paths:
               schema: { $ref: "#/components/schemas/UserView" }
         "400":
           $ref: "#/components/responses/ValidationFailed"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "404":
           description: No such user
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/MessageResponse" }
-        "409":
-          description: The database did not answer (the status is odd, but it is what the route sends)
-          content:
-            text/plain:
-              schema: { type: string }
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
         "500":
           description: The lookup failed
           content:
-            text/plain:
-              schema: { type: string }
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
   /games:
     get:
       tags: [Games]
@@ -320,43 +312,43 @@ components:
       description: No token
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/MessageResponse" }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     Forbidden:
       description: The token is invalid or expired, or its user no longer exists
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/MessageResponse" }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     TooManyRequests:
       description: |
         Over the limit. The global limit is 300 requests a minute per client. Failed logins (per client and
         username) and registrations (per client) are also limited to 20 each per 15 minutes (`AUTH_RATE_LIMIT`).
       content:
-        text/plain:
-          schema: { type: string }
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     ValidationFailed:
       description: The body failed validation. The submitted values are not echoed.
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/ValidationErrorResponse" }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     GameError:
       description: A game rule or lookup failed, or the game id or `maxPlayers` is not valid
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/GameErrorResponse" }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
     GameServerError:
       description: |
         An unexpected failure: `error.code` is `internal` and the message is fixed. The details stay in the server log.
       content:
         application/json:
-          schema: { $ref: "#/components/schemas/GameErrorResponse" }
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
   schemas:
     MessageResponse:
       type: object
       required: [message]
       properties:
         message: { type: string }
-    GameErrorResponse:
-      description: The same `{ code, message }` as the payload of a WebSocket `error`.
+    ErrorResponse:
+      description: The same `{ code, message, details? }` as the payload of a WebSocket `error`.
       type: object
       required: [error]
       properties:
@@ -377,23 +369,27 @@ components:
                 - invalid_game_state
                 - not_your_turn
                 - illegal_move
+                - validation_failed
+                - unauthorized
+                - forbidden
+                - user_exists
+                - user_not_found
+                - rate_limited
                 - internal
               examples: [game_not_found]
             message: { type: string, examples: [Game not found] }
-    ValidationErrorResponse:
-      type: object
-      required: [errors]
-      properties:
-        errors:
-          type: array
-          items:
-            type: object
-            required: [type, msg]
-            properties:
-              type: { type: string, examples: [field] }
-              msg: { type: string, examples: [Username is required] }
-              path: { type: string, examples: [username] }
-              location: { type: string, examples: [body] }
+            details:
+              type: object
+              required: [issues]
+              properties:
+                issues:
+                  type: array
+                  items:
+                    type: object
+                    required: [path, message]
+                    properties:
+                      path: { type: array, items: { type: string }, examples: [[username]] }
+                      message: { type: string, examples: [Username is required] }
     UserView:
       type: object
       required: [id, username, displayName, createdAt]

@@ -21,7 +21,6 @@ export const moveCommandSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.enum(['build_block', 'build_dome']),
     position: positionSchema,
-    buildingLevel: z.number().int().optional(),
   }),
 ])
 
@@ -44,6 +43,12 @@ export const ERROR_CODES = [
   'invalid_game_state',
   'not_your_turn',
   'illegal_move',
+  'validation_failed',
+  'unauthorized',
+  'forbidden',
+  'user_exists',
+  'user_not_found',
+  'rate_limited',
   'internal',
 ] as const
 

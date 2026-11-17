@@ -1,3 +1,4 @@
+import { GameId, UserId } from "@santorini/engine";
 import { GameRepositoryDb, StoredGame } from "@/game/infra/GameRepositoryDb.ts";
 import { Game } from "@santorini/engine";
 import logger from "@/logger.ts";
@@ -13,7 +14,7 @@ export class LobbyService {
   /**
    * Create a new game
    */
-  async createGame(creatorId: number, maxPlayers: number = 2): Promise<Game> {
+  async createGame(creatorId: UserId, maxPlayers: number = 2): Promise<Game> {
     logger.info(`Creating new game for user ${sanitizeForLog(creatorId)}, max players: ${sanitizeForLog(maxPlayers)}`);
 
     // Let the repository generate the ID and create the game
@@ -46,7 +47,7 @@ export class LobbyService {
   /**
    * Find games where the user is a player (any status - waiting, in_progress, finished)
    */
-  async findMyGames(userId: number): Promise<StoredGame[]> {
+  async findMyGames(userId: UserId): Promise<StoredGame[]> {
     logger.info(`Finding games for user ${userId}`);
 
     const games = await this.gameRepository.findByPlayer(userId);
@@ -58,7 +59,7 @@ export class LobbyService {
   /**
    * Find a specific game by ID
    */
-  async findGame(gameId: number): Promise<Game | null> {
+  async findGame(gameId: GameId): Promise<Game | null> {
     logger.info(`Finding game ${gameId}`);
     return this.gameRepository.findById(gameId);
   }
@@ -66,7 +67,7 @@ export class LobbyService {
   /**
    * Delete a game (admin operation)
    */
-  async deleteGame(gameId: number): Promise<void> {
+  async deleteGame(gameId: GameId): Promise<void> {
     logger.info(`Deleting game ${gameId}`);
     await this.gameRepository.delete(gameId);
   }

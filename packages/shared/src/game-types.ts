@@ -100,7 +100,6 @@ export interface MoveWorkerCommand {
 export interface BuildCommand {
   type: 'build_block' | 'build_dome';
   position: Position;
-  buildingLevel?: number;
 }
 
 export type MoveCommand = PlaceWorkerCommand | MoveWorkerCommand | BuildCommand;

@@ -1,5 +1,5 @@
 import { GameNotFoundError, getHttpStatus, isRefusal, toWireError } from "@/errors/GameErrors.ts";
-import { GameRuleError } from "@santorini/engine";
+import { GameRuleError, asGameId } from "@santorini/engine";
 
 describe("errors from the game rules", () => {
   it("tell the player what the rule said and keep its code", () => {
@@ -17,7 +17,7 @@ describe("errors from the game rules", () => {
 
   it("count as refusals, like the server's own errors, and a bug does not", () => {
     expect(isRefusal(new GameRuleError("Game is full", "game_full"))).toBe(true);
-    expect(isRefusal(new GameNotFoundError(1))).toBe(true);
+    expect(isRefusal(new GameNotFoundError(asGameId(1)))).toBe(true);
     expect(isRefusal(new Error("boom"))).toBe(false);
   });
 

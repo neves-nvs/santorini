@@ -1,3 +1,4 @@
+import { StatusCodes, getReasonPhrase } from "http-status-codes";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { AuthenticatedWebSocket } from "@/websockets/authenticatedWebsocket.ts";
 import { IncomingMessage } from "http";
@@ -7,6 +8,11 @@ import { findUserByUsername } from "@/users/userRepository.ts";
 import internal from "stream";
 import logger from "@/logger.ts";
 import { webSocketTickets } from "./webSocketTickets.ts";
+
+function rejectUpgrade(socket: internal.Duplex, status: StatusCodes) {
+  socket.write(`HTTP/1.1 ${status} ${getReasonPhrase(status)}\r\n\r\n`);
+  socket.destroy();
+}
 
 function requestScheme(request: IncomingMessage): string {
   const forwarded = request.headers["x-forwarded-proto"];
@@ -56,8 +62,7 @@ export async function webSocketAuthUpgrade(
 
   if (!isAllowedOrigin(request)) {
     logger.warn(`WebSocket upgrade rejected for origin ${request.headers.origin}`);
-    socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
-    socket.destroy();
+    rejectUpgrade(socket, StatusCodes.FORBIDDEN);
     return;
   }
 
@@ -65,16 +70,14 @@ export async function webSocketAuthUpgrade(
     const username = usernameFromBearerToken(request) ?? usernameFromTicket(request);
     if (!username) {
       logger.error("No Bearer token or valid ticket on the WebSocket upgrade");
-      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-      socket.destroy();
+      rejectUpgrade(socket, StatusCodes.UNAUTHORIZED);
       return;
     }
 
     const user = await findUserByUsername(username);
     if (!user) {
       logger.error("User not found");
-      socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-      socket.destroy();
+      rejectUpgrade(socket, StatusCodes.UNAUTHORIZED);
       return;
     }
 
@@ -88,7 +91,6 @@ export async function webSocketAuthUpgrade(
     });
   } catch (err) {
     logger.error("Invalid WebSocket token", err);
-    socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
-    socket.destroy();
+    rejectUpgrade(socket, StatusCodes.UNAUTHORIZED);
   }
 }

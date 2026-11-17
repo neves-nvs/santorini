@@ -19,7 +19,6 @@ import type {
 // ============================================================================
 
 export interface BuildPosition extends Position {
-  buildingLevel?: number;
   buildingType?: string;
   moveType?: 'build_block' | 'build_dome';
   serverMoveObject?: Move;

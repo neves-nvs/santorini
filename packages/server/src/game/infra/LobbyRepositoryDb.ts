@@ -1,6 +1,7 @@
 import { Database, Game, GameStatus } from "@/model.ts";
 
 import { Kysely } from "kysely";
+import { UserId } from "@santorini/engine";
 import { db } from "@/database.ts";
 import logger from "@/logger.ts";
 
@@ -64,7 +65,7 @@ export class LobbyRepositoryDb {
   /**
    * Find games created by a specific user
    */
-  async findGamesByCreator(creatorId: number): Promise<Game[]> {
+  async findGamesByCreator(creatorId: UserId): Promise<Game[]> {
     logger.debug(`Loading games created by user ${creatorId}`);
 
     return this.database
@@ -78,7 +79,7 @@ export class LobbyRepositoryDb {
   /**
    * Find games where a user is a player
    */
-  async findGamesByPlayer(userId: number): Promise<Game[]> {
+  async findGamesByPlayer(userId: UserId): Promise<Game[]> {
     logger.debug(`Loading games for player ${userId}`);
 
     return this.database

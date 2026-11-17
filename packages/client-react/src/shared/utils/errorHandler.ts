@@ -58,10 +58,7 @@ export const ERROR_MESSAGES = {
 
 // Error handling utilities
 interface HttpErrorBody {
-  message?: string
-  // The games routes send { code, message }; older routes a plain string
-  error?: string | { code: string; message: string }
-  errors?: { msg: string }[]
+  error?: { code: string; message: string; details?: unknown }
 }
 
 export class ErrorHandler {
@@ -93,8 +90,7 @@ export class ErrorHandler {
       if (contentType?.includes('application/json')) {
         const body: HttpErrorBody = await response.json()
         errorDetails = body
-        const errorField = typeof body.error === 'object' ? body.error.message : body.error
-        errorMessage = body.message || errorField || body.errors?.map((e) => e.msg).join(', ') || errorMessage
+        errorMessage = body.error?.message || errorMessage
       } else {
         errorMessage = await response.text() || errorMessage
       }

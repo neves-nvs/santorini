@@ -16,6 +16,7 @@
     "test:coverage:open": "../../scripts/test-coverage server",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
+    "test:concurrency": "vitest run --config vitest.concurrency.config.mts",
     "typecheck": "node ../../node_modules/typescript-native/bin/tsc",
     "knip": "knip --dependencies"
   },
@@ -43,7 +44,8 @@
     "passport-jwt": "^4.0.1",
     "pg": "^8.23.1",
     "winston": "^3.13.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

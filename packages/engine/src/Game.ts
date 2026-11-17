@@ -1,8 +1,8 @@
 import { Board, BoardSnapshot, MoveResult } from "./Board.ts";
 import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "./Move.ts";
 import { DefaultTurnPolicy } from "./TurnPolicy.ts";
-import { GamePhase, GameStatus } from "./types.ts";
-import { Player, PlayerId } from "./Player.ts";
+import { GameId, GamePhase, GameStatus, PlayerId, UserId } from "./types.ts";
+import { Player } from "./Player.ts";
 
 import { GameEvent } from "./GameEvent.ts";
 import { GameRuleError } from "./errors.ts";
@@ -15,8 +15,8 @@ import { GameRuleError } from "./errors.ts";
  */
 export class Game {
   private constructor(
-    public readonly id: number,
-    public readonly creatorId: number,
+    public readonly id: GameId,
+    public readonly creatorId: UserId,
     public readonly maxPlayers: number,
     private _status: GameStatus,
     private _phase: GamePhase | null,
@@ -35,7 +35,7 @@ export class Game {
   private readonly _turnPolicy = new DefaultTurnPolicy();
 
   // Factory methods
-  static create(id: number, creatorId: number, maxPlayers: number): Game {
+  static create(id: GameId, creatorId: UserId, maxPlayers: number): Game {
     return new Game(
       id,
       creatorId,
@@ -340,7 +340,7 @@ export class Game {
    * Remove a player from the game.
    * Only allowed if game is in 'waiting' status and player hasn't readied.
    */
-  removePlayer(userId: number): GameEvent[] {
+  removePlayer(userId: UserId): GameEvent[] {
     if (this._status !== "waiting") {
       throw new GameRuleError("Cannot remove player - game is not waiting");
     }
@@ -425,7 +425,7 @@ export class Game {
   /**
    * Get ready status for all players
    */
-  getReadyStatuses(): Array<{ playerId: number; ready: boolean }> {
+  getReadyStatuses(): Array<{ playerId: PlayerId; ready: boolean }> {
     return Array.from(this._players.values()).map((p) => ({
       playerId: p.id,
       ready: p.isReady,
@@ -542,8 +542,8 @@ export class Game {
 }
 
 export interface GameSnapshot {
-  id: number;
-  creatorId: number;
+  id: GameId;
+  creatorId: UserId;
   maxPlayers: number;
   status: GameStatus;
   phase: GamePhase | null;

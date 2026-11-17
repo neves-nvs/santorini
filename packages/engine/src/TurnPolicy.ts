@@ -1,8 +1,7 @@
 import { Game } from "./Game.ts";
-import { GamePhase } from "./types.ts";
+import { GamePhase, PlayerId } from "./types.ts";
 import { Move } from "./Move.ts";
 import { MoveResult } from "./Board.ts";
-import { PlayerId } from "./Player.ts";
 
 /**
  * Result of turn advancement

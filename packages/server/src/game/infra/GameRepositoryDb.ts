@@ -1,8 +1,20 @@
-import { BoardCellSnapshot, BoardSnapshot, Game, GamePhase, GameSnapshot, GameStatus, Player } from "@santorini/engine";
+import {
+  BoardCellSnapshot,
+  BoardSnapshot,
+  Game,
+  GameId,
+  GamePhase,
+  GameSnapshot,
+  GameStatus,
+  Player,
+  UserId,
+} from "@santorini/engine";
 import { Database, Game as GameRecord, NewPiece, Piece } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
+import { ConcurrentUpdateError } from "@/errors/GameErrors.ts";
 import { db } from "@/database.ts";
 import logger from "@/logger.ts";
+import { playerIdSchema } from "@/idSchemas.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 
 /** What the server records about a game that the rules do not need: when it was created, started and finished. */
@@ -27,7 +39,7 @@ export class GameRepositoryDb {
   /**
    * Find game by ID and convert to domain aggregate
    */
-  async findById(gameId: number): Promise<Game | null> {
+  async findById(gameId: GameId): Promise<Game | null> {
     logger.debug(`Loading game ${gameId} from database`);
 
     // Load game record
@@ -70,7 +82,7 @@ export class GameRepositoryDb {
           : null,
       players: playerRecords.map((p, index) => {
         const player = new Player(
-          index + 1, // Player ID within game (1-indexed)
+          playerIdSchema.parse(index + 1), // Player ID within game (1-indexed)
           p.user_id,
           index, // Seat (0-indexed)
         );
@@ -87,7 +99,7 @@ export class GameRepositoryDb {
   /**
    * Create a new game with database-generated ID
    */
-  async createNew(creatorId: number, maxPlayers: number): Promise<Game> {
+  async createNew(creatorId: UserId, maxPlayers: number): Promise<Game> {
     logger.debug(`Creating new game for user ${sanitizeForLog(creatorId)}, max players: ${sanitizeForLog(maxPlayers)}`);
 
     const gameRecord = await this.database
@@ -112,8 +124,10 @@ export class GameRepositoryDb {
 
   /**
    * Save game aggregate to database
+   * With `expectedVersion`, an existing game is only written when it still has that version, so a command that
+   * worked from a stale copy fails with ConcurrentUpdateError instead of overwriting the newer state.
    */
-  async save(game: Game): Promise<void> {
+  async save(game: Game, expectedVersion?: number): Promise<void> {
     logger.debug(`Saving game ${game.id} to database`);
 
     const snapshot = game.toSnapshot();
@@ -126,15 +140,21 @@ export class GameRepositoryDb {
       const columns = this.gameColumns(snapshot);
 
       if (existingGame) {
-        await trx
+        let update = trx
           .updateTable("games")
           .set({
             ...columns,
             ...(existingGame.started_at === null && snapshot.status !== "waiting" ? { started_at: now } : {}),
             ...(existingGame.finished_at === null && snapshot.status === "completed" ? { finished_at: now } : {}),
           })
-          .where("id", "=", game.id)
-          .execute();
+          .where("id", "=", game.id);
+        if (expectedVersion !== undefined) {
+          update = update.where("version", "=", expectedVersion);
+        }
+        const { numUpdatedRows } = await update.executeTakeFirstOrThrow();
+        if (numUpdatedRows === 0n) {
+          throw new ConcurrentUpdateError(game.id);
+        }
       } else {
         await trx
           .insertInto("games")
@@ -185,14 +205,14 @@ export class GameRepositoryDb {
   /**
    * Delete a game
    */
-  async delete(gameId: number): Promise<void> {
+  async delete(gameId: GameId): Promise<void> {
     await this.database.deleteFrom("games").where("id", "=", gameId).execute();
   }
 
   /**
    * Find games where a user is a player (any status)
    */
-  async findByPlayer(userId: number): Promise<StoredGame[]> {
+  async findByPlayer(userId: UserId): Promise<StoredGame[]> {
     const gameRecords = await this.database
       .selectFrom("games")
       .innerJoin("players", "games.id", "players.game_id")
@@ -221,7 +241,7 @@ export class GameRepositoryDb {
     };
   }
 
-  private async replacePlayers(trx: Transaction<Database>, gameId: number, players: GameSnapshot["players"]) {
+  private async replacePlayers(trx: Transaction<Database>, gameId: GameId, players: GameSnapshot["players"]) {
     await trx.deleteFrom("players").where("game_id", "=", gameId).execute();
     for (const player of players) {
       await trx
@@ -252,7 +272,7 @@ export class GameRepositoryDb {
   /**
    * Find player user IDs by game ID
    */
-  async findPlayersByGameId(gameId: number): Promise<number[]> {
+  async findPlayersByGameId(gameId: GameId): Promise<number[]> {
     logger.debug(`Loading players for game ${gameId}`);
 
     const players = await this.database
@@ -267,7 +287,7 @@ export class GameRepositoryDb {
   /**
    * Get pieces by game ID (used by BoardService for legacy rule compatibility)
    */
-  async getPiecesByGame(gameId: number): Promise<Piece[]> {
+  async getPiecesByGame(gameId: GameId): Promise<Piece[]> {
     logger.debug(`Loading pieces for game ${gameId}`);
 
     return this.database.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
@@ -299,7 +319,7 @@ export class GameRepositoryDb {
       }
 
       if (type === "worker") {
-        const playerId = parseInt(owner);
+        const playerId = playerIdSchema.parse(Number(owner));
         const workerId = piece_id;
 
         // Place worker on the board
@@ -324,7 +344,7 @@ export class GameRepositoryDb {
    */
   private async saveBoardState(
     trx: Transaction<Database>,
-    gameId: number,
+    gameId: GameId,
     boardSnapshot: BoardSnapshot,
   ): Promise<void> {
     logger.debug(`Saving board state for game ${gameId}`);

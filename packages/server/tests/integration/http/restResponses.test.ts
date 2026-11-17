@@ -1,15 +1,12 @@
 import {
   CreateGameResponse,
   CurrentUserResponse,
-  GameErrorResponse,
+  ErrorResponse,
   GameSummary,
   GameView,
   LogoutResponse,
-  MessageResponse,
   PlayerView,
   UserView,
-  ValidationErrorResponse,
-  ValidationFieldError,
   WebSocketTicketResponse,
 } from "@santorini/shared";
 import { createTestGame, createTestUserWithLogin, generateTestUser } from "@tests/integration/helper/helpers.ts";
@@ -52,13 +49,6 @@ const gameSummary = {
   startedAt: null,
   finishedAt: null,
 } satisfies Record<keyof GameSummary, unknown>;
-
-const fieldError = {
-  type: "field",
-  msg: expect.any(String),
-  path: "password",
-  location: "body",
-} satisfies Record<keyof ValidationFieldError, unknown>;
 
 const emptyCell = { height: 0, hasDome: false, worker: null };
 
@@ -128,11 +118,11 @@ describe("REST responses carry the shape of the shared types", () => {
 
   describe("users", () => {
     test("POST /users and GET /users/:username return a UserView", async () => {
-      const { user } = await generateTestUser();
+      const { user, token } = await createTestUserWithLogin();
 
       expect(user).toStrictEqual(userView);
 
-      const single = await request(app).get(`/users/${user.username}`).expect(200);
+      const single = await request(app).get(`/users/${user.username}`).set("Cookie", `token=${token}`).expect(200);
       expect(single.body).toStrictEqual(userView);
     });
   });
@@ -175,31 +165,34 @@ describe("REST responses carry the shape of the shared types", () => {
   });
 
   describe("errors", () => {
-    test("a failed validation is a ValidationErrorResponse", async () => {
+    test("a failed validation is an ErrorResponse with the issues", async () => {
       const response = await request(app).post("/session").send({ username: "someone" }).expect(400);
 
-      expect(response.body).toStrictEqual({ errors: expect.any(Array) } satisfies Record<
-        keyof ValidationErrorResponse,
-        unknown
-      >);
-      expect(response.body.errors.length).toBeGreaterThan(0);
-      for (const error of response.body.errors) expect(error).toStrictEqual(fieldError);
+      expect(response.body).toStrictEqual({
+        error: { code: "validation_failed", message: expect.any(String), details: { issues: expect.any(Array) } },
+      } satisfies ErrorResponse);
+      expect(response.body.error.details.issues.length).toBeGreaterThan(0);
+      for (const issue of response.body.error.details.issues) {
+        expect(issue).toStrictEqual({ path: ["password"], message: expect.any(String) });
+      }
     });
 
-    test("a missing session is a MessageResponse", async () => {
+    test("a missing session is an ErrorResponse", async () => {
       const response = await request(app).get("/me").expect(401);
 
-      expect(response.body).toStrictEqual({ message: "Unauthorized" } satisfies MessageResponse);
+      expect(response.body).toStrictEqual({
+        error: { code: "unauthorized", message: "Unauthorized" },
+      } satisfies ErrorResponse);
     });
 
-    test("an unknown game is a GameErrorResponse", async () => {
+    test("an unknown game is an ErrorResponse", async () => {
       const { token } = await createTestUserWithLogin();
 
       const response = await request(app).get("/games/999999").set("Cookie", `token=${token}`).expect(404);
 
       expect(response.body).toStrictEqual({
         error: { code: "game_not_found", message: "Game not found" },
-      } satisfies GameErrorResponse);
+      } satisfies ErrorResponse);
     });
   });
 });
