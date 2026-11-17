@@ -29,8 +29,14 @@ export async function findUserByUsername(
   return await trx.selectFrom("users").where("username", "=", username).selectAll().executeTakeFirst();
 }
 
-export async function createUser(user: NewUser): Promise<User> {
-  return await db.insertInto("users").values(user).returningAll().executeTakeFirstOrThrow();
+/** Inserts the user, or answers undefined when the username is taken: one statement, so two requests cannot both win. */
+export async function createUser(user: NewUser): Promise<User | undefined> {
+  return await db
+    .insertInto("users")
+    .values(user)
+    .onConflict((conflict) => conflict.column("username").doNothing())
+    .returningAll()
+    .executeTakeFirst();
 }
 
 export async function updateUser(id: UserId, user: UserUpdate): Promise<User | undefined> {

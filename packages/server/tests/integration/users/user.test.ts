@@ -1,5 +1,6 @@
 import { specApp as app } from "@tests/integration/helper/specApp.ts";
 import { config } from "@/configs/config.ts";
+import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
 import { db } from "@/database.ts";
 import { findUserByUsername } from "@/users/userRepository.ts";
 import request from "supertest";
@@ -86,10 +87,20 @@ describe("Users API Integration Tests", () => {
   });
 
   describe("GET /users/:username", () => {
-    test("201 Created and returns user data for valid username", async () => {
+    test("401 Unauthorized without a login", async () => {
       await request(app).post("/users").send(userData).expect(201);
 
-      const getResponse = await request(app).get(`/users/${userData.username}`).expect(200);
+      await request(app).get(`/users/${userData.username}`).expect(401);
+    });
+
+    test("200 and returns user data for a valid username", async () => {
+      const { token } = await createTestUserWithLogin();
+      await request(app).post("/users").send(userData).expect(201);
+
+      const getResponse = await request(app)
+        .get(`/users/${userData.username}`)
+        .set("Cookie", `token=${token}`)
+        .expect(200);
 
       expect(getResponse.body).toHaveProperty("username", userData.username);
       expect(getResponse.body.username).toBe(userData.username);
@@ -97,7 +108,9 @@ describe("Users API Integration Tests", () => {
     });
 
     test("404 Not Found if user does not exist", async () => {
-      const getResponse = await request(app).get(`/users/999`).expect(404);
+      const { token } = await createTestUserWithLogin();
+
+      const getResponse = await request(app).get(`/users/999`).set("Cookie", `token=${token}`).expect(404);
 
       expect(getResponse.body.error.message).toBe("User not found");
     });

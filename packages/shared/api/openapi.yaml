@@ -193,8 +193,7 @@ paths:
     get:
       tags: [Users]
       summary: Look a user up by name
-      description: Needs no login.
-      security: []
+      description: Needs a login, so a name cannot be probed anonymously.
       parameters:
         - name: username
           in: path
@@ -208,6 +207,8 @@ paths:
               schema: { $ref: "#/components/schemas/UserView" }
         "400":
           $ref: "#/components/responses/ValidationFailed"
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "404":
           description: No such user
           content:

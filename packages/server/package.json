@@ -16,6 +16,7 @@
     "test:coverage:open": "../../scripts/test-coverage server",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
+    "test:concurrency": "vitest run --config vitest.concurrency.config.mts",
     "typecheck": "node ../../node_modules/typescript-native/bin/tsc",
     "knip": "knip --dependencies"
   },

@@ -7,6 +7,7 @@ import { createUser, findUserByUsername } from "./userRepository.ts";
 import { NewUser } from "@/model.ts";
 import { StatusCodes } from "http-status-codes";
 import { UserDTO } from "./userDTO.ts";
+import { authenticate } from "@/auth/authController.ts";
 import bcrypt from "bcryptjs";
 import { checkValidation } from "@/middlewares/middleware.ts";
 import { config } from "@/configs/config.ts";
@@ -39,10 +40,6 @@ router.post<NoParams, UserView | ErrorResponse, CreateUserRequest>(
   async (req, res) => {
     const { username, password } = req.body;
 
-    if (await findUserByUsername(username)) {
-      throw new UserExistsError();
-    }
-
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
 
@@ -55,6 +52,9 @@ router.post<NoParams, UserView | ErrorResponse, CreateUserRequest>(
     } as NewUser;
 
     const createdUser = await createUser(newUser);
+    if (!createdUser) {
+      throw new UserExistsError();
+    }
 
     res.status(StatusCodes.CREATED).json(new UserDTO(createdUser));
   },
@@ -62,6 +62,7 @@ router.post<NoParams, UserView | ErrorResponse, CreateUserRequest>(
 
 router.get<{ username: string }, UserView | ErrorResponse>(
   "/:username",
+  authenticate,
   param("username").isString().notEmpty().withMessage("Username is required"),
   checkValidation,
   async (req, res) => {

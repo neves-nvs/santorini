@@ -11,6 +11,7 @@ import {
 } from "@santorini/engine";
 import { Database, Game as GameRecord, NewPiece, Piece } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
+import { ConcurrentUpdateError } from "@/errors/GameErrors.ts";
 import { db } from "@/database.ts";
 import logger from "@/logger.ts";
 import { playerIdSchema } from "@/idSchemas.ts";
@@ -123,8 +124,10 @@ export class GameRepositoryDb {
 
   /**
    * Save game aggregate to database
+   * With `expectedVersion`, an existing game is only written when it still has that version, so a command that
+   * worked from a stale copy fails with ConcurrentUpdateError instead of overwriting the newer state.
    */
-  async save(game: Game): Promise<void> {
+  async save(game: Game, expectedVersion?: number): Promise<void> {
     logger.debug(`Saving game ${game.id} to database`);
 
     const snapshot = game.toSnapshot();
@@ -137,15 +140,21 @@ export class GameRepositoryDb {
       const columns = this.gameColumns(snapshot);
 
       if (existingGame) {
-        await trx
+        let update = trx
           .updateTable("games")
           .set({
             ...columns,
             ...(existingGame.started_at === null && snapshot.status !== "waiting" ? { started_at: now } : {}),
             ...(existingGame.finished_at === null && snapshot.status === "completed" ? { finished_at: now } : {}),
           })
-          .where("id", "=", game.id)
-          .execute();
+          .where("id", "=", game.id);
+        if (expectedVersion !== undefined) {
+          update = update.where("version", "=", expectedVersion);
+        }
+        const { numUpdatedRows } = await update.executeTakeFirstOrThrow();
+        if (numUpdatedRows === 0n) {
+          throw new ConcurrentUpdateError(game.id);
+        }
       } else {
         await trx
           .insertInto("games")
