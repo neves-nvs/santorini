@@ -9,6 +9,8 @@ export default defineConfig({
     environment: "node",
     reporters: ["tree"],
     silent: "passed-only",
+    // Many password hashes at once on a busy machine can pass the default of five seconds
+    testTimeout: 30_000,
     env: { JWT_SECRET: "integration-test-secret" },
     include: ["tests/concurrency/**/*.test.ts"],
     globalSetup: ["tests/integration/globalSetup.ts"],

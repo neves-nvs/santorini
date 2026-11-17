@@ -63,6 +63,8 @@ export type Game = Selectable<GameTable>;
 export interface PlayerTable {
   game_id: GameId;
   user_id: UserId;
+  /** Where the player sits, from 0 in the order of joining; the player id inside the game is the seat plus one. */
+  seat: number;
   is_ready: boolean;
 }
 

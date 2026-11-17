@@ -17,14 +17,35 @@ describe("Commands that reach a game at the same time", () => {
     await db.destroy();
   });
 
-  // One after the other: the player with the lowest user id is the first one, so the order of the ids matters.
   async function newUsers(count: number) {
-    const users = [];
-    for (let created = 0; created < count; created++) {
-      users.push((await generateTestUser()).user);
-    }
-    return users;
+    return Promise.all(Array.from({ length: count }, async () => (await generateTestUser()).user));
   }
+
+  test("a command waits while another command holds the lock of the game", async () => {
+    const [creator] = await newUsers(1);
+    const game = await repository.createNew(creator.id, 2);
+
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let lockTaken!: () => void;
+    const locked = new Promise<void>((resolve) => (lockTaken = resolve));
+    const holder = db.transaction().execute(async (trx) => {
+      await trx.selectFrom("games").where("id", "=", game.id).select("id").forUpdate().execute();
+      lockTaken();
+      await released;
+    });
+    await locked;
+
+    let finished = false;
+    const waiting = repository.update(game.id, () => []).then(() => (finished = true));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(finished).toBe(false);
+
+    release();
+    await holder;
+    await waiting;
+    expect(finished).toBe(true);
+  });
 
   test("players who join together all end up in the game", async () => {
     const [creator, ...guests] = await newUsers(4);

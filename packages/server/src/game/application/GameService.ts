@@ -89,13 +89,14 @@ export class GameService {
         }
       }
 
-      // Create player domain object
-      // PlayerId is 1-indexed based on join order
-      const playerId = playerIdSchema.parse(game.players.size + 1);
-      const seat = game.players.size;
+      // The lowest free seat, so a player who left makes room for the next one. The player id is the seat plus one.
+      const takenSeats = new Set([...game.players.values()].map((player) => player.seat));
+      let seat = 0;
+      while (takenSeats.has(seat)) {
+        seat++;
+      }
 
-      // Add player to game
-      return game.addPlayer(new Player(playerId, userId, seat));
+      return game.addPlayer(new Player(playerIdSchema.parse(seat + 1), userId, seat));
     });
 
     logger.info(`Player ${userId} added to game ${gameId}`);

@@ -54,8 +54,8 @@ export class GameRepositoryDb {
       .selectFrom("players")
       .innerJoin("users", "players.user_id", "users.id")
       .where("players.game_id", "=", gameId)
-      .select(["players.user_id", "players.is_ready", "users.username"])
-      .orderBy("players.user_id", "asc") // Stable ordering by user_id
+      .select(["players.user_id", "players.seat", "players.is_ready", "users.username"])
+      .orderBy("players.seat", "asc")
       .execute();
 
     // Load board state (pieces)
@@ -80,12 +80,8 @@ export class GameRepositoryDb {
         gameRecord.last_moved_worker_x !== null && gameRecord.last_moved_worker_y !== null
           ? { x: gameRecord.last_moved_worker_x, y: gameRecord.last_moved_worker_y }
           : null,
-      players: playerRecords.map((p, index) => {
-        const player = new Player(
-          playerIdSchema.parse(index + 1), // Player ID within game (1-indexed)
-          p.user_id,
-          index, // Seat (0-indexed)
-        );
+      players: playerRecords.map((p) => {
+        const player = new Player(playerIdSchema.parse(p.seat + 1), p.user_id, p.seat);
         player.setReady(p.is_ready);
         return player;
       }),
@@ -262,7 +258,7 @@ export class GameRepositoryDb {
     for (const player of players) {
       await trx
         .insertInto("players")
-        .values({ game_id: gameId, user_id: player.userId, is_ready: player.isReady })
+        .values({ game_id: gameId, user_id: player.userId, seat: player.seat, is_ready: player.isReady })
         .execute();
     }
   }
