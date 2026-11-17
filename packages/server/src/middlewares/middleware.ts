@@ -1,9 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { param, validationResult } from "express-validator";
-
 import { ValidationFailedError } from "@/errors/HttpErrors.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
+import { z } from "zod";
 
 export function deprecate(req: Request, res: Response, next: NextFunction) {
   res.setHeader("Warning", '299 - "Deprecated API"');
@@ -11,24 +10,19 @@ export function deprecate(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-export const checkValidation = (req: Request, _res: Response, next: NextFunction) => {
-  // The submitted value is left out: it can be a password, and the log redaction cannot see it under this key.
-  const errors = validationResult(req).formatWith((error) => ({
-    msg: error.msg,
-    path: error.type === "field" ? error.path : "",
-  }));
-  if (!errors.isEmpty()) {
+/** The parsed value, or a ValidationFailedError that lists what is wrong. The submitted values are not echoed. */
+export function parseRequest<Schema extends z.ZodType>(schema: Schema, value: unknown): z.output<Schema> {
+  const parsed = schema.safeParse(value);
+  if (!parsed.success) {
     throw new ValidationFailedError(
-      errors.array().map(({ path, msg }) => ({ path: path ? [path] : [], message: String(msg) })),
+      parsed.error.issues.map((issue) => ({ path: issue.path.map(String), message: issue.message })),
     );
   }
+  return parsed.data;
+}
+
+/** Replaces the body with its parsed form, so a handler reads a body that is typed and already normalised. */
+export const validateBody = (schema: z.ZodType) => (req: Request, _res: Response, next: NextFunction) => {
+  req.body = parseRequest(schema, req.body);
   next();
-};
-
-export const validateUUIDParam = (paramName: string) => {
-  return param(paramName).isUUID().withMessage(`${paramName} must be a valid UUID`);
-};
-
-export const validateIntParam = (paramName: string) => {
-  return param(paramName).isInt({ min: 1 }).withMessage(`${paramName} must be a valid positive integer`);
 };

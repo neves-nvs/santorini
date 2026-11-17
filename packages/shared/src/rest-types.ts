@@ -22,11 +22,6 @@ export type TextResponse = string;
 // Session
 // ============================================================================
 
-export interface LoginRequest {
-  username: string;
-  password: string;
-}
-
 export type LogoutResponse = MessageResponse;
 
 /** `GET /me` */
@@ -43,11 +38,6 @@ export interface WebSocketTicketResponse {
 // ============================================================================
 // Users
 // ============================================================================
-
-export interface CreateUserRequest {
-  username: string;
-  password: string;
-}
 
 export interface UserView {
   id: number;
