@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { USERNAME_RULE, createUserRequestSchema } from '@santorini/shared'
 import { userApi } from '@/user/services/userApi'
 import { useAppStore } from '@/user/model/appStore'
 import { usePageTitle } from '@/shared/utils/usePageTitle'
@@ -16,12 +17,22 @@ const AuthPage = () => {
   const usernameId = useId()
   const passwordId = useId()
   const errorId = useId()
+  const usernameHintId = useId()
   const setUser = useAppStore((s) => s.setUser)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError('')
+
+    if (!isLogin) {
+      const checked = createUserRequestSchema.safeParse({ username: usernameInput, password })
+      if (!checked.success) {
+        setError(checked.error.issues.map((issue) => issue.message).join(', '))
+        return
+      }
+    }
+
+    setLoading(true)
 
     try {
       if (isLogin) {
@@ -75,12 +86,17 @@ const AuthPage = () => {
               type="text"
               autoComplete="username"
               aria-invalid={error ? true : undefined}
-              aria-describedby={error ? errorId : undefined}
+              aria-describedby={[isLogin ? undefined : usernameHintId, error ? errorId : undefined].filter(Boolean).join(' ') || undefined}
               value={usernameInput}
               onChange={(e) => setUsernameInput(e.target.value)}
               required
               disabled={loading}
             />
+            {!isLogin && (
+              <p id={usernameHintId} className="auth-hint">
+                {USERNAME_RULE}
+              </p>
+            )}
           </div>
 
           <div className="auth-field auth-field--last">

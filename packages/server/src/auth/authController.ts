@@ -6,20 +6,20 @@ import {
   LogoutResponse,
   TextResponse,
   WebSocketTicketResponse,
+  loginRequestSchema,
 } from "@santorini/shared";
 import { ForbiddenError, UnauthorizedError } from "@/errors/HttpErrors.ts";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
 import { User } from "@/model.ts";
 import bcrypt from "bcryptjs";
-import { body } from "express-validator";
-import { checkValidation } from "@/middlewares/middleware.ts";
 import { config } from "@/configs/config.ts";
 import { findUserByUsername } from "@/users/userRepository.ts";
 import logger from "@/logger.ts";
 import { loginRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
 import passport from "passport";
 import { randomBytes } from "crypto";
+import { validateBody } from "@/middlewares/middleware.ts";
 import { webSocketTickets } from "./webSocketTickets.ts";
 
 // Compared against when there is no hash to check, so an unknown user takes as long as a wrong password.
@@ -80,16 +80,7 @@ type NoParams = Record<string, string>;
 router.post<NoParams, TextResponse | ErrorResponse, LoginRequest>(
   "/session",
   loginRateLimitMiddleware,
-  body("username")
-    .isString()
-    .withMessage("Username is required")
-    .bail()
-    .trim()
-    .toLowerCase()
-    .notEmpty()
-    .withMessage("Username is required"),
-  body("password").isString().notEmpty().withMessage("Password is required"),
-  checkValidation,
+  validateBody(loginRequestSchema),
   async (req: Request, res: Response) => {
     const { username, password } = req.body;
 

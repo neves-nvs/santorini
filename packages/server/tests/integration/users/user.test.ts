@@ -1,4 +1,4 @@
-import { USERNAME_RULE } from "@/users/usernameRules.ts";
+import { USERNAME_RULE } from "@santorini/shared";
 import { specApp as app } from "@tests/integration/helper/specApp.ts";
 import { config } from "@/configs/config.ts";
 import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
