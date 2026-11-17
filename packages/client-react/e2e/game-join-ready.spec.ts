@@ -3,7 +3,7 @@ import { test, expect, Page } from '@playwright/test'
 
 // Registers a new user through the UI; the client then logs in and opens the lobby
 async function registerUser(page: Page, role: string): Promise<void> {
-  const username = `${role}-${randomUUID()}`
+  const username = `${role}-${randomUUID().slice(0, 8)}`
   await page.goto('/auth')
   await page.getByRole('button', { name: /need an account\? register/i }).click()
   await page.locator('input[type="text"]').fill(username)

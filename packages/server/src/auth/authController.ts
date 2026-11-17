@@ -80,7 +80,14 @@ type NoParams = Record<string, string>;
 router.post<NoParams, TextResponse | ErrorResponse, LoginRequest>(
   "/session",
   loginRateLimitMiddleware,
-  body("username").isString().notEmpty().withMessage("Username is required"),
+  body("username")
+    .isString()
+    .withMessage("Username is required")
+    .bail()
+    .trim()
+    .toLowerCase()
+    .notEmpty()
+    .withMessage("Username is required"),
   body("password").isString().notEmpty().withMessage("Password is required"),
   checkValidation,
   async (req: Request, res: Response) => {

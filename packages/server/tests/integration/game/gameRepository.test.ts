@@ -1,4 +1,4 @@
-import { Game, Player, asPlayerId } from "@santorini/engine";
+import { Game, Player, asGameId, asPlayerId } from "@santorini/engine";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 import { db } from "@/database.ts";
@@ -44,6 +44,36 @@ describe("Saving and loading a game", () => {
       lastMovedWorkerId: 5,
       lastMovedWorkerPosition: { x: 0, y: 0 },
     });
+  });
+
+  test("update saves what the change did and answers the events", async () => {
+    const creator = (await generateTestUser()).user;
+    const game = await repository.createNew(creator.id, 2);
+
+    const result = await repository.update(game.id, (loaded) =>
+      loaded.addPlayer(new Player(asPlayerId(1), creator.id, 0)),
+    );
+
+    expect(result?.events).toEqual([]);
+    expect((await repository.findById(game.id))?.players.size).toBe(1);
+  });
+
+  test("update saves nothing when the change throws", async () => {
+    const creator = (await generateTestUser()).user;
+    const game = await repository.createNew(creator.id, 2);
+
+    await expect(
+      repository.update(game.id, (loaded) => {
+        loaded.addPlayer(new Player(asPlayerId(1), creator.id, 0));
+        throw new Error("refused");
+      }),
+    ).rejects.toThrow("refused");
+
+    expect((await repository.findById(game.id))?.players.size).toBe(0);
+  });
+
+  test("update answers null for a game that does not exist", async () => {
+    expect(await repository.update(asGameId(999999), () => [])).toBeNull();
   });
 
   test("keeps who is ready after a second save replaces the players", async () => {

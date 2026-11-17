@@ -1,5 +1,3 @@
-import { Player, asPlayerId } from "@santorini/engine";
-import { ConcurrentUpdateError } from "@/errors/GameErrors.ts";
 import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { GameService } from "@/game/application/GameService.ts";
@@ -23,20 +21,30 @@ describe("Commands that reach a game at the same time", () => {
     return Promise.all(Array.from({ length: count }, async () => (await generateTestUser()).user));
   }
 
-  test("a save from a stale copy of the game is refused", async () => {
-    const [creator, guest] = await newUsers(2);
-    const created = await repository.createNew(creator.id, 2);
-    await repository.save(created);
+  test("a command waits while another command holds the lock of the game", async () => {
+    const [creator] = await newUsers(1);
+    const game = await repository.createNew(creator.id, 2);
 
-    const first = await repository.findById(created.id);
-    const second = await repository.findById(created.id);
-    first!.addPlayer(new Player(asPlayerId(1), creator.id, 0));
-    second!.addPlayer(new Player(asPlayerId(1), guest.id, 0));
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let lockTaken!: () => void;
+    const locked = new Promise<void>((resolve) => (lockTaken = resolve));
+    const holder = db.transaction().execute(async (trx) => {
+      await trx.selectFrom("games").where("id", "=", game.id).select("id").forUpdate().execute();
+      lockTaken();
+      await released;
+    });
+    await locked;
 
-    await repository.save(first!, created.version);
+    let finished = false;
+    const waiting = repository.update(game.id, () => []).then(() => (finished = true));
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(finished).toBe(false);
 
-    await expect(repository.save(second!, created.version)).rejects.toBeInstanceOf(ConcurrentUpdateError);
-    expect((await repository.findById(created.id))!.players.get(asPlayerId(1))?.userId).toBe(creator.id);
+    release();
+    await holder;
+    await waiting;
+    expect(finished).toBe(true);
   });
 
   test("players who join together all end up in the game", async () => {

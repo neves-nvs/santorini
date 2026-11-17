@@ -1,6 +1,7 @@
 import { CreateUserRequest, ErrorResponse, UserView } from "@santorini/shared";
 import { ForbiddenError, UserExistsError, UserNotFoundError } from "@/errors/HttpErrors.ts";
 import { NextFunction, Request, Response, Router } from "express";
+import { USERNAME_PATTERN, USERNAME_RULE } from "./usernameRules.ts";
 import { body, param } from "express-validator";
 import { createUser, findUserByUsername } from "./userRepository.ts";
 
@@ -30,7 +31,17 @@ router.post<NoParams, UserView | ErrorResponse, CreateUserRequest>(
   "/",
   registrationRateLimitMiddleware,
   requireRegistrationEnabled,
-  body("username").isString().notEmpty().withMessage("Username is required"),
+  body("username")
+    .isString()
+    .withMessage("Username is required")
+    .bail()
+    .trim()
+    .toLowerCase()
+    .notEmpty()
+    .withMessage("Username is required")
+    .bail()
+    .matches(USERNAME_PATTERN)
+    .withMessage(USERNAME_RULE),
   body("password")
     .isString()
     .withMessage("Password is required")
@@ -63,7 +74,14 @@ router.post<NoParams, UserView | ErrorResponse, CreateUserRequest>(
 router.get<{ username: string }, UserView | ErrorResponse>(
   "/:username",
   authenticate,
-  param("username").isString().notEmpty().withMessage("Username is required"),
+  param("username")
+    .isString()
+    .withMessage("Username is required")
+    .bail()
+    .trim()
+    .toLowerCase()
+    .notEmpty()
+    .withMessage("Username is required"),
   checkValidation,
   async (req, res) => {
     const user = await findUserByUsername(String(req.params.username));

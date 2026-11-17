@@ -18,7 +18,7 @@ export const loginRateLimitMiddleware = rateLimit({
   ...limits,
   skipSuccessfulRequests: true,
   keyGenerator: (req) =>
-    `${ipKeyGenerator(req.ip ?? "")}:${String(req.body?.username).slice(0, MAX_KEYED_USERNAME_LENGTH)}`,
+    `${ipKeyGenerator(req.ip ?? "")}:${String(req.body?.username).trim().toLowerCase().slice(0, MAX_KEYED_USERNAME_LENGTH)}`,
 });
 
 export const registrationRateLimitMiddleware = rateLimit(limits);

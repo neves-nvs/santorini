@@ -1,3 +1,4 @@
+import { USERNAME_RULE } from "@/users/usernameRules.ts";
 import { specApp as app } from "@tests/integration/helper/specApp.ts";
 import { config } from "@/configs/config.ts";
 import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
@@ -30,6 +31,36 @@ describe("Users API Integration Tests", () => {
       const dbUser = await findUserByUsername(userData.username);
       expect(dbUser).not.toBeNull();
       expect(dbUser?.username).toBe(userData.username);
+    });
+
+    test("stores the username trimmed and in lowercase, and the same name in another case is taken", async () => {
+      const response = await request(app)
+        .post("/users")
+        .send({ username: "  JohnDoe ", password: "password" })
+        .expect(201);
+
+      expect(response.body.username).toBe("johndoe");
+      await request(app).post("/users").send({ username: "JOHNDOE", password: "password" }).expect(409);
+    });
+
+    test.each(["john doe", "ab", "john.doe", "x".repeat(33), "jöhn"])(
+      "400 Bad Request for the username %j",
+      async (username) => {
+        const response = await request(app).post("/users").send({ username, password: "password" }).expect(400);
+
+        expect(response.body.error.details.issues).toEqual(
+          expect.arrayContaining([expect.objectContaining({ path: ["username"], message: USERNAME_RULE })]),
+        );
+      },
+    );
+
+    test("the database refuses a username that breaks the format", async () => {
+      await expect(
+        db
+          .insertInto("users")
+          .values({ username: "Bad Name", display_name: "x", created_at: new Date().toISOString() })
+          .execute(),
+      ).rejects.toThrow(/users_username_format/);
     });
 
     test("409 Conflict when user already exists", async () => {

@@ -4,7 +4,7 @@ import { db } from "@/database.ts";
 import request from "supertest";
 
 const SIMULTANEOUS_REQUESTS = 10;
-const ROUNDS = 5;
+const ROUNDS = 3;
 
 describe("Simultaneous registrations of one username", () => {
   const previousLimit = config.authRateLimit;

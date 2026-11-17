@@ -26,6 +26,16 @@ describe("Auth Rate Limit Integration Tests", () => {
     await login("somebody-else", "wrong-password").expect(401);
   });
 
+  test("the same name in another case counts against the same limit", async () => {
+    config.authRateLimit = 3;
+
+    for (const username of ["Casey", "casey", " CASEY "]) {
+      await login(username, "wrong-password").expect(401);
+    }
+
+    await login("cAsEy", "wrong-password").expect(429);
+  });
+
   test("registrations have a limit of their own", async () => {
     config.authRateLimit = 2;
     const attempt = () => request(app).post("/users").set("X-Forwarded-For", "203.0.113.50").send({});
