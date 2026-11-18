@@ -76,7 +76,6 @@ export function createGameRoutes(gameService: GameService, lobbyService: LobbySe
     const userId = getUser(req).id;
     const { maxPlayers } = parseCreateGameBody(req.body);
     const game = await lobbyService.createGame(userId, maxPlayers);
-    await gameService.addPlayer(game.id, userId);
     res.json({ gameId: game.id });
   });
 
