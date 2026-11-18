@@ -1,7 +1,7 @@
 import { MAX_PASSWORD_BYTES, createUserRequestSchema, loginRequestSchema } from "@santorini/shared";
 
-const composed = "café-secret-1";
-const decomposed = "café-secret-1";
+const composed = "caf\u00E9-secret-1";
+const decomposed = "cafe\u0301-secret-1";
 
 function register(username: string, password = "long-enough-password") {
   return createUserRequestSchema.safeParse({ username, password });
@@ -12,7 +12,7 @@ describe("The username in a request", () => {
     expect(register("  JohnDoe ").data?.username).toBe("johndoe");
   });
 
-  test.each(["Kevin", "İstanbul", "player１２", "ca​sey", "casey\u{1F600}", "john doe", "ab"])(
+  test.each(["\u212Aevin", "\u0130stanbul", "player\uFF11\uFF12", "ca\u200Bsey", "casey\u{1F600}", "john doe", "ab"])(
     "%j is refused, also when lowercasing would turn it into plain letters",
     (username) => {
       expect(register(username).success).toBe(false);
@@ -43,7 +43,7 @@ describe("The password in a request", () => {
   });
 
   test("counts the bytes of the normalised text", () => {
-    // "ﬃ" is one character that normalises to "ffi", three bytes
-    expect(register("casey", "ﬃ".repeat(MAX_PASSWORD_BYTES / 3 + 1)).success).toBe(false);
+    // "U+FB03" is one character that normalises to "ffi", three bytes
+    expect(register("casey", "\uFB03".repeat(MAX_PASSWORD_BYTES / 3 + 1)).success).toBe(false);
   });
 });
