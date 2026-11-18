@@ -63,6 +63,19 @@ describe("Users API Integration Tests", () => {
       ).rejects.toThrow(/users_username_format/);
     });
 
+    test("400 Bad Request for a password that bcrypt would cut short", async () => {
+      const response = await request(app)
+        .post("/users")
+        .send({ username: "longpass", password: "a".repeat(73) })
+        .expect(400);
+
+      expect(response.body.error.details.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: ["password"], message: "Password must be at most 72 bytes" }),
+        ]),
+      );
+    });
+
     test("409 Conflict when user already exists", async () => {
       await request(app).post("/users").send(userData).expect(201);
 

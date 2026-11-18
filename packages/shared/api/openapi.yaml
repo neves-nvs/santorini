@@ -72,7 +72,10 @@ paths:
               required: [username, password]
               properties:
                 username: { type: string, minLength: 1 }
-                password: { type: string, minLength: 1 }
+                password:
+                  type: string
+                  minLength: 1
+                  description: Normalised with Unicode NFKC before it is checked, as when it was registered.
       responses:
         "200":
           description: Logged in
@@ -168,7 +171,12 @@ paths:
                   maxLength: 32
                   pattern: "^[A-Za-z0-9_-]+$"
                   description: Trimmed and stored in lowercase, so `Alice` and `alice` are the same account.
-                password: { type: string, minLength: 8 }
+                password:
+                  type: string
+                  minLength: 8
+                  description: |
+                    Normalised with Unicode NFKC before it is hashed, so the same text typed with composed or
+                    decomposed accents is one password. At most 72 bytes in UTF-8, which is all that bcrypt reads.
       responses:
         "201":
           description: The new user

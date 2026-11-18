@@ -31,6 +31,12 @@ describe("Auth Controller Integration Tests", () => {
   });
 
   describe("POST /session", () => {
+    test("200 OK when the password is typed with decomposed accents but was registered with composed ones", async () => {
+      await request(app).post("/users").send({ username: "accents", password: "caf\u00E9-secret-1" }).expect(201);
+
+      await request(app).post("/session").send({ username: "accents", password: "cafe\u0301-secret-1" }).expect(200);
+    });
+
     test("200 OK when the username is typed in another case or with spaces around it", async () => {
       await request(app)
         .post("/session")

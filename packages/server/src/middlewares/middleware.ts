@@ -11,8 +11,8 @@ export function deprecate(req: Request, res: Response, next: NextFunction) {
 }
 
 /** The parsed value, or a ValidationFailedError that lists what is wrong. The submitted values are not echoed. */
-export function parseRequest<Schema extends z.ZodType>(schema: Schema, value: unknown): z.output<Schema> {
-  const parsed = schema.safeParse(value);
+export function parseRequest<Schema extends z.core.$ZodType>(schema: Schema, value: unknown): z.output<Schema> {
+  const parsed = z.safeParse(schema, value);
   if (!parsed.success) {
     throw new ValidationFailedError(
       parsed.error.issues.map((issue) => ({ path: issue.path.map(String), message: issue.message })),
@@ -22,7 +22,7 @@ export function parseRequest<Schema extends z.ZodType>(schema: Schema, value: un
 }
 
 /** Replaces the body with its parsed form, so a handler reads a body that is typed and already normalised. */
-export const validateBody = (schema: z.ZodType) => (req: Request, _res: Response, next: NextFunction) => {
+export const validateBody = (schema: z.core.$ZodType) => (req: Request, _res: Response, next: NextFunction) => {
   req.body = parseRequest(schema, req.body);
   next();
 };
