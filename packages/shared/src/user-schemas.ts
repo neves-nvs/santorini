@@ -1,4 +1,4 @@
-import * as z from 'zod/mini'
+import { z } from 'zod'
 
 export const MIN_PASSWORD_LENGTH = 8
 
@@ -22,27 +22,23 @@ const utf8Bytes = (text: string) => {
 }
 
 /** A username is stored trimmed and in lowercase, so `Alice` and `alice` are the same account. */
-export const usernameSchema = z
-  .string(required('Username'))
-  .check(z.trim(), z.regex(USERNAME_PATTERN, USERNAME_RULE), z.toLowerCase())
+export const usernameSchema = z.string(required('Username')).trim().regex(USERNAME_PATTERN, USERNAME_RULE).toLowerCase()
 
 export const usernameParamsSchema = z.object({ username: usernameSchema })
 
 /** The same password can be typed with composed or decomposed accents, so it is normalised before it is hashed. */
 export const loginRequestSchema = z.object({
   username: usernameSchema,
-  password: z.string(required('Password')).check(z.normalize('NFKC'), z.minLength(1, 'Password is required')),
+  password: z.string(required('Password')).normalize('NFKC').min(1, 'Password is required'),
 })
 
 export const createUserRequestSchema = z.object({
   username: usernameSchema,
   password: z
     .string(required('Password'))
-    .check(
-      z.normalize('NFKC'),
-      z.minLength(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters`),
-      z.refine((password) => utf8Bytes(password) <= MAX_PASSWORD_BYTES, `Password must be at most ${MAX_PASSWORD_BYTES} bytes`),
-    ),
+    .normalize('NFKC')
+    .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters`)
+    .refine((password) => utf8Bytes(password) <= MAX_PASSWORD_BYTES, `Password must be at most ${MAX_PASSWORD_BYTES} bytes`),
 })
 
 export type LoginRequest = z.input<typeof loginRequestSchema>
