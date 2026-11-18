@@ -1,4 +1,4 @@
-import { Database, Game, GameStatus } from "@/model.ts";
+import { Database, GameRow, GameStatus } from "@/model.ts";
 
 import { Kysely } from "kysely";
 import { UserId } from "@santorini/engine";
@@ -15,7 +15,7 @@ export class LobbyRepositoryDb {
   /**
    * Find all games with basic information
    */
-  async findAllGames(): Promise<Game[]> {
+  async findAllGames(): Promise<GameRow[]> {
     logger.debug("Loading all games from database");
 
     return this.database.selectFrom("games").selectAll().orderBy("id", "desc").execute();
@@ -24,7 +24,7 @@ export class LobbyRepositoryDb {
   /**
    * Find games by status
    */
-  async findGamesByStatus(status: string): Promise<Game[]> {
+  async findGamesByStatus(status: string): Promise<GameRow[]> {
     logger.debug(`Loading games with status: ${status}`);
 
     return this.database
@@ -38,7 +38,7 @@ export class LobbyRepositoryDb {
   /**
    * Find games that are waiting for players
    */
-  async findAvailableGames(): Promise<Game[]> {
+  async findAvailableGames(): Promise<GameRow[]> {
     logger.debug("Loading available games");
 
     return this.database
@@ -65,7 +65,7 @@ export class LobbyRepositoryDb {
   /**
    * Find games created by a specific user
    */
-  async findGamesByCreator(creatorId: UserId): Promise<Game[]> {
+  async findGamesByCreator(creatorId: UserId): Promise<GameRow[]> {
     logger.debug(`Loading games created by user ${creatorId}`);
 
     return this.database
@@ -79,7 +79,7 @@ export class LobbyRepositoryDb {
   /**
    * Find games where a user is a player
    */
-  async findGamesByPlayer(userId: UserId): Promise<Game[]> {
+  async findGamesByPlayer(userId: UserId): Promise<GameRow[]> {
     logger.debug(`Loading games for player ${userId}`);
 
     return this.database

@@ -21,7 +21,7 @@ export interface UserTable {
 
 export type UserUpdate = Updateable<UserTable>;
 export type NewUser = Insertable<UserTable>;
-export type User = Selectable<UserTable>;
+export type UserRow = Selectable<UserTable>;
 
 export type GameStatus = "waiting" | "in-progress" | "completed";
 export type GamePhase = "placing" | "moving" | "building";
@@ -58,7 +58,7 @@ export interface GameTable {
 
 export type GameUpdate = Updateable<GameTable>;
 export type NewGame = Insertable<GameTable>;
-export type Game = Selectable<GameTable>;
+export type GameRow = Selectable<GameTable>;
 
 export interface PlayerTable {
   game_id: GameId;
@@ -70,7 +70,7 @@ export interface PlayerTable {
 
 export type PlayerUpdate = Updateable<PlayerTable>;
 export type NewPlayer = Insertable<PlayerTable>;
-export type Player = Selectable<PlayerTable>;
+export type PlayerRow = Selectable<PlayerTable>;
 
 export interface PieceTable {
   // TODO make primary key (game_id, piece_id)
@@ -86,4 +86,4 @@ export interface PieceTable {
 
 export type PieceUpdate = Updateable<PieceTable>;
 export type NewPiece = Insertable<PieceTable>;
-export type Piece = Selectable<PieceTable>;
+export type PieceRow = Selectable<PieceTable>;

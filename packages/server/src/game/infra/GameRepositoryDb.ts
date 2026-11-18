@@ -10,7 +10,7 @@ import {
   Player,
   UserId,
 } from "@santorini/engine";
-import { Database, Game as GameRecord, NewPiece, Piece, Player as PlayerRecord } from "@/model.ts";
+import { Database, GameRow, NewPiece, PieceRow, PlayerRow } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
 import { db } from "@/database.ts";
 import logger from "@/logger.ts";
@@ -28,8 +28,6 @@ export interface StoredGame {
   game: Game;
   metadata: GameMetadata;
 }
-
-type PlayerRow = Pick<PlayerRecord, "game_id" | "user_id" | "seat" | "is_ready">;
 
 function groupByGame<Row extends { game_id: GameId }>(rows: Row[]): Map<GameId, Row[]> {
   const groups = new Map<GameId, Row[]>();
@@ -75,12 +73,12 @@ export class GameRepositoryDb {
       .execute();
   }
 
-  private async loadPieces(database: Kysely<Database>, gameIds: GameId[]): Promise<Piece[]> {
+  private async loadPieces(database: Kysely<Database>, gameIds: GameId[]): Promise<PieceRow[]> {
     return database.selectFrom("pieces").where("game_id", "in", gameIds).selectAll().execute();
   }
 
   /** Restores the aggregate from the rows of one game. */
-  private buildGame(gameRecord: GameRecord, playerRecords: PlayerRow[], pieceRecords: Piece[]): Game {
+  private buildGame(gameRecord: GameRow, playerRecords: PlayerRow[], pieceRecords: PieceRow[]): Game {
     const snapshot: GameSnapshot = {
       id: gameRecord.id,
       creatorId: gameRecord.user_creator_id,
@@ -294,7 +292,7 @@ export class GameRepositoryDb {
   }
 
   /** Builds the games of a list from one query for their players and one for their pieces. */
-  private async loadStored(records: GameRecord[]): Promise<StoredGame[]> {
+  private async loadStored(records: GameRow[]): Promise<StoredGame[]> {
     if (records.length === 0) {
       return [];
     }
@@ -331,7 +329,7 @@ export class GameRepositoryDb {
   /**
    * Get pieces by game ID (used by BoardService for legacy rule compatibility)
    */
-  async getPiecesByGame(gameId: GameId): Promise<Piece[]> {
+  async getPiecesByGame(gameId: GameId): Promise<PieceRow[]> {
     logger.debug(`Loading pieces for game ${gameId}`);
 
     return this.database.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
@@ -340,7 +338,7 @@ export class GameRepositoryDb {
   /**
    * Convert pieces records to board snapshot
    */
-  private convertPiecesToBoardSnapshot(pieces: Piece[]): BoardSnapshot {
+  private convertPiecesToBoardSnapshot(pieces: PieceRow[]): BoardSnapshot {
     logger.debug(`Converting ${pieces.length} pieces to board snapshot`);
 
     // Create empty 5x5 board

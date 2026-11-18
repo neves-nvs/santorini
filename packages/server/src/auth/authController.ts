@@ -11,7 +11,7 @@ import {
 import { ForbiddenError, UnauthorizedError } from "@/errors/HttpErrors.ts";
 import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { StatusCodes } from "http-status-codes";
-import { User } from "@/model.ts";
+import { UserRow } from "@/model.ts";
 import bcrypt from "bcryptjs";
 import { config } from "@/configs/config.ts";
 import { findUserByUsername } from "@/users/userRepository.ts";
@@ -32,8 +32,8 @@ function sessionCookieOptions(req: Request): CookieOptions {
 /**
  * Get authenticated user from request. Only call after authenticate middleware.
  */
-export function getUser(req: Request): User {
-  return req.user as User;
+export function getUser(req: Request): UserRow {
+  return req.user as UserRow;
 }
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {

@@ -1,5 +1,5 @@
-import { User } from "@/model.ts";
 import { UserId } from "@santorini/engine";
+import { UserRow } from "@/model.ts";
 import { UserView } from "@santorini/shared";
 
 export class UserDTO implements UserView {
@@ -8,7 +8,7 @@ export class UserDTO implements UserView {
   displayName: string;
   createdAt: string;
 
-  constructor(user: User) {
+  constructor(user: UserRow) {
     this.id = user.id;
     this.username = user.username;
     this.displayName = user.username || user.display_name || "";
