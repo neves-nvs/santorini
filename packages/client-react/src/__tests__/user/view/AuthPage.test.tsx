@@ -66,6 +66,17 @@ describe('AuthPage', () => {
     expect(userApi.createUser).not.toHaveBeenCalled()
   })
 
+  it('does not send a password that is longer than bcrypt reads', async () => {
+    renderPage()
+    switchToRegister()
+
+    fill('casey', 'a'.repeat(73))
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Password must be at most 72 bytes')
+    expect(userApi.createUser).not.toHaveBeenCalled()
+  })
+
   it('registers a valid name, whatever its case', async () => {
     renderPage()
     switchToRegister()
