@@ -1,9 +1,9 @@
-import { Database, GameRow, GameStatus } from "@/model.ts";
-
-import { Kysely } from "kysely";
 import { UserId } from "@santorini/engine";
+import { Kysely } from "kysely";
+
 import { db } from "@/database.ts";
 import logger from "@/logger.ts";
+import { Database, GameRow, GameStatus } from "@/model.ts";
 
 /**
  * Database adapter for lobby operations

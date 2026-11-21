@@ -1,8 +1,9 @@
-import { Game, Player, asGameId, asPlayerId } from "@santorini/engine";
-import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
-import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
+import { asGameId, asPlayerId, Game, Player } from "@santorini/engine";
+
 import { db } from "@/database.ts";
+import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { generateTestUser } from "@tests/integration/helper/helpers.ts";
+import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 
 describe("Saving and loading a game", () => {
   const repository = new GameRepositoryDb();

@@ -1,9 +1,10 @@
-import { ErrorResponse, WireError } from "@santorini/shared";
-import { GameError, getHttpStatus, toWireError } from "@/errors/GameErrors.ts";
-import { NextFunction, Request, Response } from "express";
 import { GameRuleError } from "@santorini/engine";
-import { HttpError } from "@/errors/HttpErrors.ts";
+import { ErrorResponse, WireError } from "@santorini/shared";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
+
+import { GameError, getHttpStatus, toWireError } from "@/errors/GameErrors.ts";
+import { HttpError } from "@/errors/HttpErrors.ts";
 import logger from "@/logger.ts";
 
 interface ParserError extends Error {

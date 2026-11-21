@@ -15,8 +15,8 @@ import {
   GamePhase,
   GameStatus,
   GameView,
-  PlayerView,
   Move as SharedMove,
+  PlayerView,
   Viewer,
 } from "@santorini/shared";
 

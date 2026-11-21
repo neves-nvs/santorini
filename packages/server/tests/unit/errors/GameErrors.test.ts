@@ -1,5 +1,6 @@
+import { asGameId, GameRuleError } from "@santorini/engine";
+
 import { GameNotFoundError, getHttpStatus, isRefusal, toWireError } from "@/errors/GameErrors.ts";
-import { GameRuleError, asGameId } from "@santorini/engine";
 
 describe("errors from the game rules", () => {
   it("tell the player what the rule said and keep its code", () => {

@@ -10,12 +10,13 @@ import {
   Player,
   UserId,
 } from "@santorini/engine";
-import { Database, GameRow, NewPiece, PieceRow, PlayerRow } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
+
 import { db } from "@/database.ts";
-import logger from "@/logger.ts";
 import { playerIdSchema } from "@/idSchemas.ts";
+import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
+import { Database, GameRow, NewPiece, PieceRow, PlayerRow } from "@/model.ts";
 
 /** What the server records about a game that the rules do not need: when it was created, started and finished. */
 export interface GameMetadata {

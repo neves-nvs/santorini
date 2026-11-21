@@ -1,8 +1,10 @@
-import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
 import { Game } from "@santorini/engine";
-import { GameViewBuilder } from "./GameViewBuilder.ts";
 import { WS_MESSAGE_TYPES } from "@santorini/shared";
+
+import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
 import logger from "@/logger.ts";
+
+import { GameViewBuilder } from "./GameViewBuilder.ts";
 
 /**
  * Application service that publishes a game to the sockets subscribed to it.

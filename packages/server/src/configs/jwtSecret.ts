@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync } from "fs";
 import { randomBytes } from "crypto";
+import { readFileSync, writeFileSync } from "fs";
 
 export function resolveJwtSecret(options: {
   configuredSecret: string | undefined;

@@ -9,11 +9,12 @@ import {
   UserView,
   WebSocketTicketResponse,
 } from "@santorini/shared";
+import request from "supertest";
+
+import { db } from "@/database.ts";
 import { createTestGame, createTestUserWithLogin, generateTestUser } from "@tests/integration/helper/helpers.ts";
 import { specApp as app } from "@tests/integration/helper/specApp.ts";
 import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
-import { db } from "@/database.ts";
-import request from "supertest";
 
 // Each expected body is checked twice: `satisfies` makes the compiler require exactly the keys of the shared
 // type, and toStrictEqual makes the real response carry exactly those keys with values of those kinds.

@@ -1,6 +1,7 @@
-import { Options, ipKeyGenerator, rateLimit } from "express-rate-limit";
-import { RateLimitedError } from "@/errors/HttpErrors.ts";
+import { ipKeyGenerator, Options, rateLimit } from "express-rate-limit";
+
 import { config } from "@/configs/config.ts";
+import { RateLimitedError } from "@/errors/HttpErrors.ts";
 
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_KEYED_USERNAME_LENGTH = 64;

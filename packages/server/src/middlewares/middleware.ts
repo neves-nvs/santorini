@@ -1,8 +1,9 @@
 import { NextFunction, Request, Response } from "express";
+import { z } from "zod";
+
 import { ValidationFailedError } from "@/errors/HttpErrors.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
-import { z } from "zod";
 
 export function deprecate(req: Request, res: Response, next: NextFunction) {
   res.setHeader("Warning", '299 - "Deprecated API"');

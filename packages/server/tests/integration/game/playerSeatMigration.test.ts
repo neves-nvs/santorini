@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as migration from "@/migrations/1795046400000_add_player_seat.ts";
-import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { Kysely } from "kysely";
-import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
+
 import { db } from "@/database.ts";
+import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
+import * as migration from "@/migrations/1795046400000_add_player_seat.ts";
 import { generateTestUser } from "@tests/integration/helper/helpers.ts";
+import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 
 describe("The migration that stores the seat of a player", () => {
   afterEach(cleanupTestData);

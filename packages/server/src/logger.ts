@@ -1,6 +1,7 @@
-import { createLogger, format, transports } from "winston";
-import { config } from "./configs/config.ts";
 import fastRedact from "fast-redact";
+import { createLogger, format, transports } from "winston";
+
+import { config } from "./configs/config.ts";
 
 const { combine, timestamp, colorize, printf } = format;
 

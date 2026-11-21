@@ -1,6 +1,7 @@
+import request from "supertest";
+
 import { specApp as app } from "@tests/integration/helper/specApp.ts";
 import { getTestDb } from "@tests/integration/helper/testDb.ts";
-import request from "supertest";
 
 describe("Health Integration Tests", () => {
   test("/healthz is 200 OK without a session", async () => {

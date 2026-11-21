@@ -25,7 +25,7 @@ Santorini Online is a web version of the board game. `packages/server` is the Ex
 
 ## Style
 
-- TypeScript with Prettier and ESLint. The `sort-imports` rule is on: imports with several members first, then single-member imports, each group sorted case-sensitively by first member.
+- TypeScript with Prettier and ESLint. In the server, `simple-import-sort` orders the imports (`npx eslint --fix` applies it): packages first, then the `@/` and `@tests/` aliases, then `./` paths, with a blank line between the groups. Prettier does not reorder imports. The client has no import ordering rule.
 - Server imports: `./` within a folder, `@/` (the `src` folder) or `@tests/` (the `tests` folder) across folders, all ending in `.ts`. No `../`: ESLint enforces it. `tsdown` builds `dist` (one `.js` file per source file, aliases resolved); `tsc` only type-checks.
 - Client imports: `./` within a folder, `@/` (the `src` folder) across folders, `@santorini/shared` for the shared package. No `../`, and no `process.env` (use `import.meta.env`). Layers import downwards only: `shared` imports no domain, `user` imports `shared` only, `game` imports `shared` and `user/model`, and inside a domain `model` imports no other layer, `update` imports `model`, `services` import `model`, `view` imports all of them. The shell may import anything. ESLint enforces all of it.
 - `camelCase` for functions, `PascalCase` for components and classes, `SCREAMING_SNAKE_CASE` for constants.

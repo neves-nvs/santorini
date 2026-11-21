@@ -1,12 +1,14 @@
-import { StatusCodes, getReasonPhrase } from "http-status-codes";
-import jwt, { JwtPayload } from "jsonwebtoken";
-import { AuthenticatedWebSocket } from "@/websockets/authenticatedWebsocket.ts";
 import { IncomingMessage } from "http";
-import { WebSocketServer } from "ws";
-import { config } from "@/configs/config.ts";
-import { findUserByUsername } from "@/users/userRepository.ts";
+import { getReasonPhrase, StatusCodes } from "http-status-codes";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import internal from "stream";
+import { WebSocketServer } from "ws";
+
+import { config } from "@/configs/config.ts";
 import logger from "@/logger.ts";
+import { findUserByUsername } from "@/users/userRepository.ts";
+import { AuthenticatedWebSocket } from "@/websockets/authenticatedWebsocket.ts";
+
 import { webSocketTickets } from "./webSocketTickets.ts";
 
 function rejectUpgrade(socket: internal.Duplex, status: StatusCodes) {

@@ -1,10 +1,10 @@
+import { db } from "@/database.ts";
 import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
-import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { GameService } from "@/game/application/GameService.ts";
 import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
-import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
-import { db } from "@/database.ts";
+import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { generateTestUser } from "@tests/integration/helper/helpers.ts";
+import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 
 describe("Commands that reach a game at the same time", () => {
   const repository = new GameRepositoryDb();

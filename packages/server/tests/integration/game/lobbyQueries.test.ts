@@ -1,9 +1,10 @@
-import { Player, asPlayerId } from "@santorini/engine";
-import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
-import { LobbyService } from "@/game/application/LobbyService.ts";
-import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
+import { asPlayerId, Player } from "@santorini/engine";
+
 import { db } from "@/database.ts";
+import { LobbyService } from "@/game/application/LobbyService.ts";
+import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { generateTestUser } from "@tests/integration/helper/helpers.ts";
+import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 
 describe("Listing and creating games", () => {
   const repository = new GameRepositoryDb();

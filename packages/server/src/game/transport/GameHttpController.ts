@@ -1,17 +1,17 @@
+import { GameId } from "@santorini/engine";
 import {
+  createGamePayloadSchema,
   CreateGameRequest,
   CreateGameResponse,
   GameSummary,
   GameView,
-  createGamePayloadSchema,
 } from "@santorini/shared";
-import { authenticate, getUser } from "@/auth/authController.ts";
+import { Router } from "express";
 
+import { authenticate, getUser } from "@/auth/authController.ts";
 import { GameError } from "@/errors/GameErrors.ts";
-import { GameId } from "@santorini/engine";
 import { GameService } from "@/game/application/GameService.ts";
 import { LobbyService } from "@/game/application/LobbyService.ts";
-import { Router } from "express";
 import { StoredGame } from "@/game/infra/GameRepositoryDb.ts";
 import { gameIdSchema } from "@/idSchemas.ts";
 

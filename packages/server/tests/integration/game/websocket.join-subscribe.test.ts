@@ -1,10 +1,11 @@
-import * as helpers from "@tests/integration/helper/helpers.ts";
 import { ServerMessage, ServerMessageOf, ServerMessageType, WS_MESSAGE_TYPES } from "@santorini/shared";
-import { server, wss } from "@/main.ts";
 import WebSocket from "ws";
-import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
+
 import { config } from "@/configs/config.ts";
 import { db } from "@/database.ts";
+import { server, wss } from "@/main.ts";
+import * as helpers from "@tests/integration/helper/helpers.ts";
+import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 
 interface Connection {
   ws: WebSocket;

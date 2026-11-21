@@ -1,8 +1,9 @@
 import { Kysely, PostgresDialect } from "kysely";
 import { Pool, PoolConfig } from "pg";
-import { Database } from "./model.ts";
+
 import { config } from "./configs/config.ts";
 import logger from "./logger.ts";
+import { Database } from "./model.ts";
 
 const { database, host, user, password, port } = config.db;
 

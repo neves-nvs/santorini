@@ -1,22 +1,23 @@
 import {
   CreateUserRequest,
-  ErrorResponse,
-  UserView,
   createUserRequestSchema,
+  ErrorResponse,
   usernameParamsSchema,
+  UserView,
 } from "@santorini/shared";
-import { ForbiddenError, UserExistsError, UserNotFoundError } from "@/errors/HttpErrors.ts";
-import { NextFunction, Request, Response, Router } from "express";
-import { createUser, findUserByUsername } from "./userRepository.ts";
-import { parseRequest, validateBody } from "@/middlewares/middleware.ts";
-
-import { NewUser } from "@/model.ts";
-import { StatusCodes } from "http-status-codes";
-import { UserDTO } from "./userDTO.ts";
-import { authenticate } from "@/auth/authController.ts";
 import bcrypt from "bcryptjs";
+import { NextFunction, Request, Response, Router } from "express";
+import { StatusCodes } from "http-status-codes";
+
+import { authenticate } from "@/auth/authController.ts";
 import { config } from "@/configs/config.ts";
+import { ForbiddenError, UserExistsError, UserNotFoundError } from "@/errors/HttpErrors.ts";
 import { registrationRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
+import { parseRequest, validateBody } from "@/middlewares/middleware.ts";
+import { NewUser } from "@/model.ts";
+
+import { UserDTO } from "./userDTO.ts";
+import { createUser, findUserByUsername } from "./userRepository.ts";
 
 const router = Router();
 

@@ -1,8 +1,8 @@
-import { Database, NewUser, UserRow, UserUpdate } from "@/model.ts";
+import { UserId } from "@santorini/engine";
 import { Kysely, Transaction } from "kysely";
 
-import { UserId } from "@santorini/engine";
 import { db } from "@/database.ts";
+import { Database, NewUser, UserRow, UserUpdate } from "@/model.ts";
 
 export async function findUser(criteria: Partial<UserRow>): Promise<UserRow | undefined> {
   let query = db.selectFrom("users");

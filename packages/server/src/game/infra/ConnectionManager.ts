@@ -1,7 +1,8 @@
 import { GameId, UserId } from "@santorini/engine";
-import { Connection } from "./Connection.ts";
 
 import logger from "@/logger.ts";
+
+import { Connection } from "./Connection.ts";
 
 /**
  * Connection Manager - Infrastructure Layer

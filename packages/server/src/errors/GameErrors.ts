@@ -1,5 +1,5 @@
-import type { ErrorCode, WireError } from "@santorini/shared";
 import { GameId, GameRuleError, PlayerId, UserId } from "@santorini/engine";
+import type { ErrorCode, WireError } from "@santorini/shared";
 import { StatusCodes } from "http-status-codes";
 
 export class GameError extends Error {

@@ -1,7 +1,8 @@
+import request from "supertest";
+
 import { app } from "@/app.ts";
 import { config } from "@/configs/config.ts";
 import { generateTestUser } from "@tests/integration/helper/helpers.ts";
-import request from "supertest";
 
 describe("Auth Rate Limit Integration Tests", () => {
   const login = (username: string, password: string) => request(app).post("/session").send({ username, password });

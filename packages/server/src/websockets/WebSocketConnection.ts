@@ -1,7 +1,8 @@
-import { Connection } from "@/game/infra/Connection.ts";
 import { ServerMessage } from "@santorini/shared";
-import { UserRow } from "@/model.ts";
 import WebSocket from "ws";
+
+import { Connection } from "@/game/infra/Connection.ts";
+import { UserRow } from "@/model.ts";
 
 export class WebSocketConnection implements Connection {
   constructor(

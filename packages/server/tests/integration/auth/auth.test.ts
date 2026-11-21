@@ -1,10 +1,11 @@
-import { NewUser } from "@/model.ts";
-import { specApp as app } from "@tests/integration/helper/specApp.ts";
 import bcrypt from "bcryptjs";
-import { config } from "@/configs/config.ts";
-import { db } from "@/database.ts";
 import jwt from "jsonwebtoken";
 import request from "supertest";
+
+import { config } from "@/configs/config.ts";
+import { db } from "@/database.ts";
+import { NewUser } from "@/model.ts";
+import { specApp as app } from "@tests/integration/helper/specApp.ts";
 
 // Removed server import - not needed for HTTP tests using supertest
 

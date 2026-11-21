@@ -1,6 +1,7 @@
+import request from "supertest";
+
 import { app } from "@/app.ts";
 import { db } from "@/database.ts";
-import request from "supertest";
 
 describe("Security Headers Integration Tests", () => {
   afterAll(async () => {

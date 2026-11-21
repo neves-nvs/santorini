@@ -1,13 +1,14 @@
-import { ExtractJwt, Strategy as JwtStrategy, VerifiedCallback } from "passport-jwt";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import { ExtractJwt, Strategy as JwtStrategy, VerifiedCallback } from "passport-jwt";
 
 const { JsonWebTokenError, NotBeforeError, TokenExpiredError } = jwt;
 
-import { config } from "@/configs/config.ts";
 import express from "express";
-import { findUserByUsername } from "@/users/userRepository.ts";
-import logger from "@/logger.ts";
 import passport from "passport";
+
+import { config } from "@/configs/config.ts";
+import logger from "@/logger.ts";
+import { findUserByUsername } from "@/users/userRepository.ts";
 
 function extractJwtFromCookies(req: express.Request): string | null {
   return req.cookies.token;

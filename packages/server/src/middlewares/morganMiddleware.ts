@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import logger, { toRedactedJson } from "@/logger.ts";
+import morgan from "morgan";
 
 import { config } from "@/configs/config.ts";
-import morgan from "morgan";
+import logger, { toRedactedJson } from "@/logger.ts";
 
 if (process.env.HTTP_LOG_FORMAT) {
   logger.info(`HTTP log format set to ${config.logging.httpFormat}`);
