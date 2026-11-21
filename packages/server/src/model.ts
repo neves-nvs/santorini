@@ -6,6 +6,8 @@ export interface Database {
   games: GameTable;
   players: PlayerTable;
   pieces: PieceTable;
+  lobbies: LobbyTable;
+  lobby_players: LobbyPlayerTable;
 }
 
 // Users
@@ -96,3 +98,23 @@ export interface PieceTable {
 export type PieceUpdate = Updateable<PieceTable>;
 export type NewPiece = Insertable<PieceTable>;
 export type PieceRow = Selectable<PieceTable>;
+
+// Lobbies
+
+export interface LobbyTable {
+  id: Generated<number>;
+  user_creator_id: UserId;
+  max_players: number;
+  created_at: ColumnType<Date, string | undefined, never>;
+}
+
+export interface LobbyPlayerTable {
+  lobby_id: number;
+  user_id: UserId;
+  /** The position of the player in the lobby, from 0 in the order of joining. */
+  seat: number;
+  is_ready: boolean;
+}
+
+export type LobbyRow = Selectable<LobbyTable>;
+export type LobbyPlayerRow = Selectable<LobbyPlayerTable>;

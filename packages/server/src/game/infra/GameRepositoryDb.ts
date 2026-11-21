@@ -5,6 +5,7 @@ import {
   GameEvent,
   GameId,
   GamePhase,
+  GameSetup,
   GameSnapshot,
   GameStatus,
   Player,
@@ -125,6 +126,14 @@ export class GameRepositoryDb {
       await this.write(trx, game);
       return game;
     });
+  }
+
+  /** Creates a game that is already in progress, inside the transaction of whoever starts it. */
+  async createStarted(trx: Transaction<Database>, setup: GameSetup): Promise<Game> {
+    const { id } = await this.insertGame(trx, setup.creatorId, setup.players.length);
+    const game = Game.start(id, setup);
+    await this.write(trx, game);
+    return game;
   }
 
   private async insertGame(database: Kysely<Database>, creatorId: UserId, maxPlayers: number): Promise<Game> {
