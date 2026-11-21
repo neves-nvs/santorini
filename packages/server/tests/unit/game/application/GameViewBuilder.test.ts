@@ -17,13 +17,12 @@ function startedGame(): Game {
   return game;
 }
 
-function finishedGame(overrides: { winnerId?: number | null; winReason?: string | null } = {}): Game {
-  const snapshot = startedGame().toSnapshot();
+function finishedGame(): Game {
   return Game.fromSnapshot({
-    ...snapshot,
+    ...startedGame().toSnapshot(),
     status: "completed",
-    winnerId: overrides.winnerId === undefined ? asPlayerId(2) : (overrides.winnerId as never),
-    winReason: overrides.winReason === undefined ? "win_condition" : overrides.winReason,
+    winnerId: asPlayerId(2),
+    winReason: "win_condition",
   });
 }
 
@@ -112,14 +111,6 @@ describe("GameViewBuilder game lifecycle", () => {
       winnerPlayerId: 2,
       winReason: "win_condition",
     });
-  });
-
-  it("refuses to show a finished game that has no winner", () => {
-    expect(() => builder.buildFor(finishedGame({ winnerId: null }), CURRENT_USER)).toThrow(/no winner/);
-  });
-
-  it("refuses to show a finished game with an unknown win reason", () => {
-    expect(() => builder.buildFor(finishedGame({ winReason: "teleport" }), CURRENT_USER)).toThrow(/win reason/);
   });
 });
 

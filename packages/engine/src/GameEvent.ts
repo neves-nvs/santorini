@@ -1,4 +1,4 @@
-import { GameId, PlayerId, UserId } from "./types.ts";
+import { GameId, PlayerId, UserId, WinReason } from "./types.ts";
 import { Move } from "./Move.ts";
 
 /**
@@ -27,7 +27,7 @@ export interface GameStartedPayload {
 export interface GameFinishedPayload {
   gameId?: GameId;
   winnerId: PlayerId;
-  reason: string;
+  reason: WinReason;
   trappedPlayerId?: PlayerId | null;
 }
 

@@ -9,16 +9,7 @@ import {
   UserId,
   VisibilityPolicy,
 } from "@santorini/engine";
-import {
-  BoardView,
-  CellView,
-  GameView,
-  Move as SharedMove,
-  PlayerView,
-  Viewer,
-  WIN_REASONS,
-  WinReason,
-} from "@santorini/shared";
+import { BoardView, CellView, GameView, Move as SharedMove, PlayerView, Viewer } from "@santorini/shared";
 
 /**
  * Convert domain Move to shared Move format
@@ -51,10 +42,6 @@ export function toSharedMove(move: Move): SharedMove {
     workerId: 0,
     position: move.position,
   };
-}
-
-function isWinReason(reason: string | null): reason is WinReason {
-  return WIN_REASONS.some((known) => known === reason);
 }
 
 /**
@@ -114,19 +101,16 @@ export class GameViewBuilder {
           winReason: null,
         };
       case "completed": {
-        if (game.winnerId === null) {
-          throw new Error(`Game ${game.id} is completed with no winner`);
-        }
-        if (!isWinReason(game.winReason)) {
-          throw new Error(`Game ${game.id} is completed with an unknown win reason: ${game.winReason}`);
+        if (game.outcome === null) {
+          throw new Error(`Game ${game.id} is completed without an outcome`);
         }
         return {
           ...common,
           status: "completed",
           phase: null,
           currentPlayerId: null,
-          winnerPlayerId: game.winnerId,
-          winReason: game.winReason,
+          winnerPlayerId: game.outcome.winnerId,
+          winReason: game.outcome.reason,
         };
       }
     }

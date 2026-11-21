@@ -1,7 +1,7 @@
 import { Board, BoardSnapshot, MoveResult } from "./Board.ts";
 import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "./Move.ts";
 import { DefaultTurnPolicy } from "./TurnPolicy.ts";
-import { GameId, GamePhase, GameStatus, PlayerId, UserId } from "./types.ts";
+import { GameId, GameOutcome, GamePhase, GameStatus, PlayerId, UserId, isWinReason } from "./types.ts";
 import { Player } from "./Player.ts";
 
 import { GameEvent } from "./GameEvent.ts";
@@ -26,8 +26,7 @@ export class Game {
     private _board: Board,
     private _players: Map<PlayerId, Player>,
     private _version: number,
-    private _winnerId: PlayerId | null = null,
-    private _winReason: string | null = null,
+    private _outcome: GameOutcome | null = null,
     private _lastMovedWorkerId: number | null = null,
     private _lastMovedWorkerPosition: { x: number; y: number } | null = null,
   ) {}
@@ -51,7 +50,6 @@ export class Game {
       null,
       null,
       null,
-      null,
     );
   }
 
@@ -71,8 +69,7 @@ export class Game {
       Board.fromSnapshot(snapshot.board),
       players,
       snapshot.version,
-      snapshot.winnerId,
-      snapshot.winReason,
+      outcomeOf(snapshot),
       snapshot.lastMovedWorkerId,
       snapshot.lastMovedWorkerPosition,
     );
@@ -95,8 +92,7 @@ export class Game {
     // Update game state based on move result
     if (moveResult.isWin) {
       this._status = "completed";
-      this._winnerId = playerId;
-      this._winReason = "win_condition";
+      this._outcome = { winnerId: playerId, reason: "win_condition" };
       this._version++;
       this.assertInvariants();
       events.push(new GameEvent("GameFinished", { winnerId: playerId, reason: "win_condition" }));
@@ -266,11 +262,8 @@ export class Game {
   get players(): ReadonlyMap<PlayerId, Player> {
     return this._players;
   }
-  get winnerId(): PlayerId | null {
-    return this._winnerId;
-  }
-  get winReason(): string | null {
-    return this._winReason;
+  get outcome(): GameOutcome | null {
+    return this._outcome;
   }
   get lastMovedWorkerId(): number | null {
     return this._lastMovedWorkerId;
@@ -305,8 +298,7 @@ export class Game {
     const winnerId = playerIds.find((id) => id !== this._currentPlayerId)!;
 
     this._status = "completed";
-    this._winnerId = winnerId;
-    this._winReason = "opponent_trapped";
+    this._outcome = { winnerId, reason: "opponent_trapped" };
     this._version++;
     this.assertInvariants();
 
@@ -472,11 +464,6 @@ export class Game {
       }
     }
 
-    // Invariant: completed requires winnerId or abort reason
-    if (this._status === "completed") {
-      // winnerId can be null for aborted games, but winReason should indicate why
-    }
-
     // Invariant: waiting cannot have currentPlayer or phase
     if (this._status === "waiting") {
       if (this._currentPlayerId !== null) {
@@ -533,12 +520,28 @@ export class Game {
       board: this._board.toSnapshot(),
       players: Array.from(this._players.values()),
       version: this._version,
-      winnerId: this._winnerId,
-      winReason: this._winReason,
+      winnerId: this._outcome?.winnerId ?? null,
+      winReason: this._outcome?.reason ?? null,
       lastMovedWorkerId: this._lastMovedWorkerId,
       lastMovedWorkerPosition: this._lastMovedWorkerPosition,
     };
   }
+}
+
+function outcomeOf(snapshot: GameSnapshot): GameOutcome | null {
+  if (snapshot.status !== "completed") {
+    if (snapshot.winnerId !== null || snapshot.winReason !== null) {
+      throw new Error(`Invalid snapshot: game ${snapshot.id} has a winner but is not completed`);
+    }
+    return null;
+  }
+  if (snapshot.winnerId === null) {
+    throw new Error(`Invalid snapshot: completed game ${snapshot.id} has no winner`);
+  }
+  if (!isWinReason(snapshot.winReason)) {
+    throw new Error(`Invalid snapshot: completed game ${snapshot.id} has an unknown win reason: ${snapshot.winReason}`);
+  }
+  return { winnerId: snapshot.winnerId, reason: snapshot.winReason };
 }
 
 export interface GameSnapshot {

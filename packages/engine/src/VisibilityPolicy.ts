@@ -1,4 +1,4 @@
-import { GameId, PlayerId } from "./types.ts";
+import { GameId, GameOutcome, PlayerId } from "./types.ts";
 import { Board } from "./Board.ts";
 import { Game } from "./Game.ts";
 import { Player } from "./Player.ts";
@@ -12,8 +12,7 @@ export interface FilteredGameState {
   version: number;
   board: Board;
   players: Player[];
-  winnerId: PlayerId | null;
-  winReason: string | null;
+  outcome: GameOutcome | null;
 }
 
 /**
@@ -68,8 +67,7 @@ export class VisibilityPolicy {
       version: game.version,
       board: game.board,
       players: Array.from(game.players.values()),
-      winnerId: game.winnerId,
-      winReason: game.winReason,
+      outcome: game.outcome,
     };
   }
 }

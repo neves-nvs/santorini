@@ -19,3 +19,14 @@ export type PlayerId = Brand<number, "PlayerId">;
 export const asGameId = (value: number): GameId => value as GameId;
 export const asUserId = (value: number): UserId => value as UserId;
 export const asPlayerId = (value: number): PlayerId => value as PlayerId;
+
+export const WIN_REASONS = ["win_condition", "opponent_trapped"] as const;
+export type WinReason = (typeof WIN_REASONS)[number];
+
+/** How a finished game ended: the winner and the reason always come together. */
+export interface GameOutcome {
+  readonly winnerId: PlayerId;
+  readonly reason: WinReason;
+}
+
+export const isWinReason = (value: string | null): value is WinReason => WIN_REASONS.some((reason) => reason === value);

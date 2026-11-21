@@ -206,6 +206,49 @@ describe("Game Domain", () => {
     });
   });
 
+  describe("Outcome of a stored game", () => {
+    function startedSnapshot() {
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+      startGameWithReadyPlayers(game);
+      return game.toSnapshot();
+    }
+
+    it("has no outcome while the game is on", () => {
+      expect(game.outcome).toBeNull();
+    });
+
+    it("restores the winner and the reason of a completed game together", () => {
+      const restored = Game.fromSnapshot({
+        ...startedSnapshot(),
+        status: "completed",
+        winnerId: asPlayerId(2),
+        winReason: "opponent_trapped",
+      });
+
+      expect(restored.outcome).toEqual({ winnerId: 2, reason: "opponent_trapped" });
+      expect(restored.toSnapshot()).toMatchObject({ winnerId: 2, winReason: "opponent_trapped" });
+    });
+
+    it("refuses a completed game with no winner", () => {
+      const snapshot = { ...startedSnapshot(), status: "completed" as const, winnerId: null, winReason: "win_condition" };
+
+      expect(() => Game.fromSnapshot(snapshot)).toThrow(/completed game 1 has no winner/);
+    });
+
+    it("refuses a completed game with a reason the rules do not know", () => {
+      const snapshot = { ...startedSnapshot(), status: "completed" as const, winnerId: asPlayerId(1), winReason: "teleport" };
+
+      expect(() => Game.fromSnapshot(snapshot)).toThrow(/unknown win reason/);
+    });
+
+    it("refuses a winner on a game that is not completed", () => {
+      const snapshot = { ...startedSnapshot(), winnerId: asPlayerId(1), winReason: "win_condition" };
+
+      expect(() => Game.fromSnapshot(snapshot)).toThrow(/not completed/);
+    });
+  });
+
   describe("Phase Transitions", () => {
     beforeEach(() => {
       game.addPlayer(player1);
@@ -393,8 +436,7 @@ describe("Game Domain", () => {
       const events = testGame.applyMove(asPlayerId(1), winMove);
 
       expect(testGame.status).toBe("completed");
-      expect(testGame.winnerId).toBe(1);
-      expect(testGame.winReason).toBe("win_condition");
+      expect(testGame.outcome).toEqual({ winnerId: 1, reason: "win_condition" });
       expect(events.some((e) => e.type === "GameFinished")).toBe(true);
     });
   });
@@ -470,8 +512,7 @@ describe("Game Domain", () => {
       const events = testGame.checkAndHandleNoMoves();
 
       expect(testGame.status).toBe("completed");
-      expect(testGame.winnerId).toBe(2); // Player 2 wins
-      expect(testGame.winReason).toBe("opponent_trapped");
+      expect(testGame.outcome).toEqual({ winnerId: 2, reason: "opponent_trapped" });
       expect(events.some((e) => e.type === "GameFinished")).toBe(true);
     });
   });
