@@ -1,5 +1,4 @@
 // @vitest-environment node
-/* eslint-disable no-restricted-syntax -- the build reads NODE_ENV, and Vitest sets it to "test" */
 import { build } from 'vite'
 import { beforeAll, describe, expect, it } from 'vitest'
 import type { Rollup } from 'vite'
