@@ -6,7 +6,7 @@ import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 import { generateTestUser } from "@tests/integration/helper/helpers.ts";
 import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 
-describe("Seats and player ids follow the order in which players joined", () => {
+describe("A seat is the position of a player in the order of joining", () => {
   const repository = new GameRepositoryDb();
   const broadcaster = { broadcastGameUpdate: vi.fn() } as unknown as GameBroadcaster;
   const service = new GameService(repository, new GameViewBuilder(), broadcaster);
@@ -23,9 +23,9 @@ describe("Seats and player ids follow the order in which players joined", () => 
     return users.sort((a, b) => a.id - b.id);
   }
 
-  async function seatsOf(gameId: Parameters<GameRepositoryDb["findById"]>[0]) {
+  async function usersBySeat(gameId: Parameters<GameRepositoryDb["findById"]>[0]) {
     const game = await repository.findById(gameId);
-    return [...game!.players.values()].map((player) => ({ userId: player.userId, id: player.id, seat: player.seat }));
+    return game!.players.map((player) => player.userId);
   }
 
   test("the player who joined first is the first seat, also when another user has a lower id", async () => {
@@ -35,10 +35,7 @@ describe("Seats and player ids follow the order in which players joined", () => 
     await service.addPlayer(game.id, higherId.id);
     await service.addPlayer(game.id, lowerId.id);
 
-    expect(await seatsOf(game.id)).toEqual([
-      { userId: higherId.id, id: 1, seat: 0 },
-      { userId: lowerId.id, id: 2, seat: 1 },
-    ]);
+    expect(await usersBySeat(game.id)).toEqual([higherId.id, lowerId.id]);
   });
 
   test("the player who joined first moves first", async () => {
@@ -51,7 +48,7 @@ describe("Seats and player ids follow the order in which players joined", () => 
     await service.setPlayerReady(game.id, lowerId.id, true);
 
     const started = await repository.findById(game.id);
-    expect(started!.players.get(started!.currentPlayerId!)?.userId).toBe(higherId.id);
+    expect(started!.players[started!.currentSeat!].userId).toBe(higherId.id);
     await expect(
       service.applyMove(game.id, higherId.id, { type: "place_worker", position: { x: 0, y: 0 }, workerId: 1 }),
     ).resolves.toBeDefined();
@@ -64,12 +61,10 @@ describe("Seats and player ids follow the order in which players joined", () => 
 
     const { game: answered } = await service.addPlayer(game.id, lowerId.id);
 
-    expect(
-      [...answered.players.values()].map((player) => ({ userId: player.userId, id: player.id, seat: player.seat })),
-    ).toEqual(await seatsOf(game.id));
+    expect(answered.players.map((player) => player.userId)).toEqual(await usersBySeat(game.id));
   });
 
-  test("a player who leaves frees a seat that the next player takes", async () => {
+  test("a player who leaves closes the gap, and the next player takes the last seat", async () => {
     const [first, second, third, fourth] = await newUsers(4);
     const game = await repository.createNew(first.id, 3);
     for (const user of [first, second, third]) {
@@ -79,10 +74,6 @@ describe("Seats and player ids follow the order in which players joined", () => 
     await service.removePlayer(game.id, first.id);
     await service.addPlayer(game.id, fourth.id);
 
-    expect(await seatsOf(game.id)).toEqual([
-      { userId: fourth.id, id: 1, seat: 0 },
-      { userId: second.id, id: 2, seat: 1 },
-      { userId: third.id, id: 3, seat: 2 },
-    ]);
+    expect(await usersBySeat(game.id)).toEqual([second.id, third.id, fourth.id]);
   });
 });

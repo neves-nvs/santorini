@@ -66,7 +66,7 @@ export interface GameSummary {
   maxPlayers: number;
   status: GameStatus;
   phase: GamePhase;
-  currentPlayerId: number | null;
+  currentSeat: number | null;
   turnNumber: number;
   version: number;
   playerCount: number;

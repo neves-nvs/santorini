@@ -39,7 +39,7 @@ interface BackendGameState {
   players?: unknown[]
   maxPlayers?: number
   player_count?: number
-  winnerId?: number | null
+  winnerUserId?: number | null
   winner_id?: number | null
 }
 
@@ -51,7 +51,7 @@ export function mapToGameLifecycle(backendState: BackendGameState): GameLifecycl
   const playerCount = backendState.maxPlayers || backendState.player_count || 2
 
   // FINISHED state
-  if (gameStatus === 'completed' || backendState.winnerId || backendState.winner_id) {
+  if (gameStatus === 'completed' || backendState.winnerUserId || backendState.winner_id) {
     return {
       main: 'FINISHED',
       sub: 'VICTORY'

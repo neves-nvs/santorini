@@ -39,14 +39,13 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
       {Array.isArray(players) ? (
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {players.map((player: PlayerView, index: number) => {
-            const playerId = player.id
-            const playerName = `P${player.seat + 1}`
+            const playerName = `P${index + 1}`
             const playerColor = PLAYER_COLORS[index] || '#ffffff'
-            const isCurrentPlayer = playerId === gameState?.currentPlayerId
+            const isCurrentPlayer = index === gameState?.currentSeat
 
             return (
               <li
-                key={playerId}
+                key={player.userId}
                 style={{
                   marginBottom: '0.25rem',
                   padding: '0.35rem 0.5rem',

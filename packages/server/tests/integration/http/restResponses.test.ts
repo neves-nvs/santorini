@@ -28,9 +28,7 @@ const userView = {
 } satisfies Record<keyof UserView, unknown>;
 
 const playerView = {
-  id: expect.any(Number),
   userId: expect.any(Number),
-  seat: expect.any(Number),
   status: "active",
   isReady: false,
 } satisfies Record<keyof PlayerView, unknown>;
@@ -41,7 +39,7 @@ const gameSummary = {
   maxPlayers: 2,
   status: "waiting",
   phase: null,
-  currentPlayerId: null,
+  currentSeat: null,
   turnNumber: expect.any(Number),
   version: expect.any(Number),
   playerCount: 1,
@@ -57,15 +55,15 @@ const waitingGameView = {
   gameId: expect.any(Number),
   status: "waiting",
   phase: null,
-  currentPlayerId: null,
+  currentSeat: null,
   turnNumber: expect.any(Number),
   version: expect.any(Number),
   board: { cells: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => emptyCell)) },
   players: [playerView],
   maxPlayers: 2,
-  winnerPlayerId: null,
+  winnerUserId: null,
   winReason: null,
-  viewer: { role: "player", playerId: expect.any(Number), isCurrentPlayer: false, availableMoves: [] },
+  viewer: { role: "player", isCurrentPlayer: false, availableMoves: [] },
 } satisfies Record<keyof GameView, unknown>;
 
 describe("REST responses carry the shape of the shared types", () => {

@@ -1,5 +1,5 @@
 import { Game } from "./Game.ts";
-import { GamePhase, PlayerId } from "./types.ts";
+import { GamePhase, Seat, asSeat } from "./types.ts";
 import { Move } from "./Move.ts";
 import { MoveResult } from "./Board.ts";
 
@@ -7,7 +7,7 @@ import { MoveResult } from "./Board.ts";
  * Result of turn advancement
  */
 export interface TurnAdvancement {
-  nextPlayerId: PlayerId;
+  nextSeat: Seat;
   nextPhase: GamePhase;
   turnNumber: number;
   placingTurnsCompleted: number;
@@ -37,11 +37,8 @@ export class DefaultTurnPolicy {
     throw new Error(`Unknown phase: ${currentPhase}`);
   }
 
-  getNextPlayer(game: Game, currentPlayerId: PlayerId): PlayerId {
-    const playerIds = Array.from(game.players.keys());
-    const currentIndex = playerIds.indexOf(currentPlayerId);
-    const nextIndex = (currentIndex + 1) % playerIds.length;
-    return playerIds[nextIndex];
+  getNextPlayer(game: Game, currentSeat: Seat): Seat {
+    return asSeat((currentSeat + 1) % game.players.length);
   }
 
   getNextPhase(game: Game, _move: Move, _moveResult: MoveResult): GamePhase {
@@ -60,20 +57,20 @@ export class DefaultTurnPolicy {
 
   isPlacingPhaseComplete(game: Game): boolean {
     // Each player places 2 workers, so total = players * 2
-    const totalWorkersToPlace = game.players.size * 2;
+    const totalWorkersToPlace = game.players.length * 2;
     return game.placingTurnsCompleted >= totalWorkersToPlace;
   }
 
   private advancePlacingTurn(game: Game): TurnAdvancement {
     const newPlacingTurnsCompleted = game.placingTurnsCompleted + 1;
-    const nextPlayerId = this.getNextPlayer(game, game.currentPlayerId!);
+    const nextSeat = this.getNextPlayer(game, game.currentSeat!);
 
     // Check if placing phase is complete after this move
-    const isComplete = newPlacingTurnsCompleted >= game.players.size * 2;
+    const isComplete = newPlacingTurnsCompleted >= game.players.length * 2;
     const nextPhase: GamePhase = isComplete ? "moving" : "placing";
 
     return {
-      nextPlayerId: isComplete ? Array.from(game.players.keys())[0] : nextPlayerId,
+      nextSeat: isComplete ? asSeat(0) : nextSeat,
       nextPhase,
       turnNumber: isComplete ? game.turnNumber + 1 : game.turnNumber,
       placingTurnsCompleted: newPlacingTurnsCompleted,
@@ -82,7 +79,7 @@ export class DefaultTurnPolicy {
 
   private advanceMovingTurn(game: Game, moveResult: MoveResult): TurnAdvancement {
     return {
-      nextPlayerId: game.currentPlayerId!, // Same player continues to building
+      nextSeat: game.currentSeat!, // Same player continues to building
       nextPhase: "building",
       turnNumber: game.turnNumber,
       placingTurnsCompleted: game.placingTurnsCompleted,
@@ -92,10 +89,10 @@ export class DefaultTurnPolicy {
   }
 
   private advanceBuildingTurn(game: Game): TurnAdvancement {
-    const nextPlayerId = this.getNextPlayer(game, game.currentPlayerId!);
+    const nextSeat = this.getNextPlayer(game, game.currentSeat!);
 
     return {
-      nextPlayerId,
+      nextSeat,
       nextPhase: "moving",
       turnNumber: game.turnNumber + 1,
       placingTurnsCompleted: game.placingTurnsCompleted,

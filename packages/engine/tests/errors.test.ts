@@ -1,4 +1,4 @@
-import { asGameId, asPlayerId, asUserId } from "../src/types.ts";
+import { asGameId, asSeat, asUserId } from "../src/types.ts";
 import { Game } from "../src/Game.ts";
 import { GameRuleError } from "../src/errors.ts";
 
@@ -8,7 +8,7 @@ describe("GameRuleError", () => {
 
     const error = (() => {
       try {
-        game.setPlayerReady(asPlayerId(7), true);
+        game.setPlayerReady(asSeat(7), true);
       } catch (thrown) {
         return thrown;
       }

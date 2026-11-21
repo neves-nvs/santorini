@@ -1,9 +1,8 @@
-import { createMove, Game, GameEvent, GameId, Player, PlayerId, UserId } from "@santorini/engine";
+import { asSeat, createMove, Game, GameEvent, GameId, Player, Seat, UserId } from "@santorini/engine";
 import type { GameView, MoveCommand } from "@santorini/shared";
 
 import { GameNotFoundError, PlayerAlreadyInGameError, PlayerNotInGameError } from "@/errors/GameErrors.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
-import { playerIdSchema } from "@/idSchemas.ts";
 import logger from "@/logger.ts";
 
 import { GameBroadcaster } from "./GameBroadcaster.ts";
@@ -45,19 +44,15 @@ export class GameService {
     logger.info(`Processing move for game ${gameId}, user ${userId}:`, moveCommand);
 
     const result = await this.update(gameId, (game) => {
-      // Find player ID for this user
-      const playerId = this.findPlayerIdByUserId(game, userId);
-      if (!playerId) {
+      const seat = this.seatOf(game, userId);
+      if (seat === null) {
         throw new PlayerNotInGameError(gameId, userId);
       }
 
-      logger.debug(`Move validation: userId=${userId}, playerId=${playerId}, currentPlayerId=${game.currentPlayerId}`);
+      logger.debug(`Move validation: userId=${userId}, seat=${seat}, currentSeat=${game.currentSeat}`);
 
-      // Create domain move object (playerId from authenticated user)
-      const move = createMove(playerId, moveCommand);
-
-      // Apply move to domain aggregate
-      const events = game.applyMove(playerId, move);
+      const move = createMove(seat, moveCommand);
+      const events = game.applyMove(seat, move);
 
       // Check if next player is trapped (no valid moves) - only on their turn start
       if (game.status === "in-progress" && game.phase === "moving") {
@@ -84,21 +79,11 @@ export class GameService {
     logger.info(`Adding player ${userId} to game ${gameId}`);
 
     const result = await this.update(gameId, (game) => {
-      // Check if player already in game
-      for (const player of game.players.values()) {
-        if (player.userId === userId) {
-          throw new PlayerAlreadyInGameError(gameId, userId);
-        }
+      if (game.players.some((player) => player.userId === userId)) {
+        throw new PlayerAlreadyInGameError(gameId, userId);
       }
 
-      // The lowest free seat, so a player who left makes room for the next one. The player id is the seat plus one.
-      const takenSeats = new Set([...game.players.values()].map((player) => player.seat));
-      let seat = 0;
-      while (takenSeats.has(seat)) {
-        seat++;
-      }
-
-      return game.addPlayer(new Player(playerIdSchema.parse(seat + 1), userId, seat));
+      return game.addPlayer(new Player(userId));
     });
 
     logger.info(`Player ${userId} added to game ${gameId}`);
@@ -126,12 +111,12 @@ export class GameService {
     logger.info(`Setting player ${userId} ready status to ${ready} for game ${gameId}`);
 
     return this.update(gameId, (game) => {
-      const playerId = this.findPlayerIdByUserId(game, userId);
-      if (!playerId) {
+      const seat = this.seatOf(game, userId);
+      if (seat === null) {
         throw new PlayerNotInGameError(gameId, userId);
       }
 
-      return game.setPlayerReady(playerId, ready);
+      return game.setPlayerReady(seat, ready);
     });
   }
 
@@ -147,15 +132,8 @@ export class GameService {
     return this.gameViewBuilder.buildFor(game, userId);
   }
 
-  /**
-   * Helper to find player ID by user ID
-   */
-  private findPlayerIdByUserId(game: Game, userId: UserId): PlayerId | null {
-    for (const [playerId, player] of game.players) {
-      if (player.userId === userId) {
-        return playerId;
-      }
-    }
-    return null;
+  private seatOf(game: Game, userId: UserId): Seat | null {
+    const seat = game.players.findIndex((player) => player.userId === userId);
+    return seat === -1 ? null : asSeat(seat);
   }
 }

@@ -47,7 +47,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
 
   // Subscribe to optimized board state from store (already parsed)
   const storeBoardState = useGameStore(state => state.boardState)
-  const currentPlayerId = useGameStore(state => state.gameState?.currentPlayerId)
+  const currentSeat = useGameStore(state => state.gameState?.currentSeat)
 
   // Convert store board format to local BoardState format (or use sample/empty)
   const boardState = useMemo<BoardState>(() => {
@@ -69,12 +69,12 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
   )
 
   // Handle worker click for selection
-  const handleWorkerClick = (workerId: number, playerId: number, x: number, y: number) => {
-    console.log(`Worker ${workerId} (player ${playerId}) clicked at (${x}, ${y})`)
+  const handleWorkerClick = (workerId: number, seat: number, x: number, y: number) => {
+    console.log(`Worker ${workerId} (player ${seat}) clicked at (${x}, ${y})`)
 
     // Only allow selecting current player's workers
-    if (playerId !== currentPlayerId) {
-      console.log(`Not current player's worker (current: ${currentPlayerId})`)
+    if (seat !== currentSeat) {
+      console.log(`Not current player's worker (current: ${currentSeat})`)
       return
     }
 
@@ -288,7 +288,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
               {/* Worker */}
               {cell.worker && (() => {
                 // Check if this worker belongs to current player AND has available moves
-                const isCurrentPlayersWorker = cell.worker!.playerId === currentPlayerId
+                const isCurrentPlayersWorker = cell.worker!.seat === currentSeat
                 const workerHasMoves = isCurrentPlayersWorker && currentPlayerMoves.some(move =>
                   (move.type === 'move_worker' || move.type === 'build_block' || move.type === 'build_dome') &&
                   move.workerId === cell.worker!.workerId
@@ -299,11 +299,11 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
 
                 return (
                   <Worker
-                    playerId={cell.worker.playerId}
+                    seat={cell.worker.seat}
                     position={[worldX, cell.buildingLevel * BUILDING_HEIGHT + WORKER_HEIGHT_OFFSET, worldZ]}
                     canMove={workerHasMoves}
                     isSelected={isSelected}
-                    onClick={() => handleWorkerClick(cell.worker!.workerId, cell.worker!.playerId, gridX, gridZ)}
+                    onClick={() => handleWorkerClick(cell.worker!.workerId, cell.worker!.seat, gridX, gridZ)}
                   />
                 )
               })()}

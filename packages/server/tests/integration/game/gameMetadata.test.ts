@@ -1,4 +1,4 @@
-import { asPlayerId, Game, Player } from "@santorini/engine";
+import { asSeat, Game, Player } from "@santorini/engine";
 
 import { db } from "@/database.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
@@ -8,7 +8,6 @@ import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 describe("When the server records a game was created, started and finished", () => {
   const repository = new GameRepositoryDb();
 
-  // The ids restart at 1 so that a player id in a game is also a user id: games.current_player_id references users.
   afterEach(cleanupTestData);
 
   afterAll(async () => {
@@ -19,8 +18,8 @@ describe("When the server records a game was created, started and finished", () 
     const creator = (await generateTestUser()).user;
     const guest = (await generateTestUser()).user;
     const game = await repository.createNew(creator.id, 2);
-    game.addPlayer(new Player(asPlayerId(1), creator.id, 0));
-    game.addPlayer(new Player(asPlayerId(2), guest.id, 1));
+    game.addPlayer(new Player(creator.id));
+    game.addPlayer(new Player(guest.id));
     await repository.save(game);
     return game;
   }
@@ -37,8 +36,8 @@ describe("When the server records a game was created, started and finished", () 
 
   test("saving a game that just started records when, and later saves leave it alone", async () => {
     const game = await waitingGame();
-    game.setPlayerReady(asPlayerId(1), true);
-    game.setPlayerReady(asPlayerId(2), true);
+    game.setPlayerReady(asSeat(0), true);
+    game.setPlayerReady(asSeat(1), true);
     await repository.save(game);
 
     const [started] = await repository.findByStatus("in-progress");
@@ -53,15 +52,15 @@ describe("When the server records a game was created, started and finished", () 
 
   test("saving a game that just finished records when, and keeps when it started", async () => {
     const game = await waitingGame();
-    game.setPlayerReady(asPlayerId(1), true);
-    game.setPlayerReady(asPlayerId(2), true);
+    game.setPlayerReady(asSeat(0), true);
+    game.setPlayerReady(asSeat(1), true);
     await repository.save(game);
     const [started] = await repository.findByStatus("in-progress");
 
     const finished = Game.fromSnapshot({
       ...game.toSnapshot(),
       status: "completed",
-      winnerId: asPlayerId(1),
+      winnerUserId: game.players[0].userId,
       winReason: "win_condition",
     });
     await repository.save(finished);

@@ -12,7 +12,7 @@ const gameStateWith = (board: BoardView): GameState => ({
   gameId: 1,
   status: 'in-progress',
   phase: 'moving',
-  currentPlayerId: 1,
+  currentSeat: 0,
   turnNumber: 1,
   version: 1,
   board,
@@ -22,7 +22,7 @@ const gameStateWith = (board: BoardView): GameState => ({
 
 const boardWithWorkerAt = (x: number, y: number): BoardView => {
   const board = emptyBoard()
-  board.cells[x][y].worker = { playerId: 1, workerId: 1 }
+  board.cells[x][y].worker = { seat: 0, workerId: 1 }
   return board
 }
 
@@ -98,8 +98,8 @@ describe('gameStore', () => {
       useGameStore.getState().setGameState(gameStateWith(boardWithWorkerAt(0, 0)))
 
       const state = useGameStore.getState()
-      expect(state.workersByPosition.get('0,0')).toEqual({ x: 0, y: 0, playerId: 1, workerId: 1 })
-      expect(state.workersByPlayer.get(1)).toHaveLength(1)
+      expect(state.workersByPosition.get('0,0')).toEqual({ x: 0, y: 0, seat: 0, workerId: 1 })
+      expect(state.workersBySeat.get(0)).toHaveLength(1)
     })
   })
 
@@ -217,7 +217,7 @@ describe('gameStore', () => {
       expect(state.isMyTurn).toBe(false)
       expect(state.selectedWorker).toBeNull()
       expect(state.workersByPosition.size).toBe(0)
-      expect(state.workersByPlayer.size).toBe(0)
+      expect(state.workersBySeat.size).toBe(0)
     })
 
     it('should not reset connection state', () => {
@@ -242,7 +242,7 @@ describe('gameStore', () => {
     })
 
     it('should update cell worker', () => {
-      const worker = { playerId: 1, workerId: 1 }
+      const worker = { seat: 0, workerId: 1 }
       useGameStore.getState().updateBoardCell(1, 1, { worker })
 
       const state = useGameStore.getState()
@@ -268,7 +268,7 @@ describe('gameStore', () => {
     })
 
     it('should rebuild worker indices after update', () => {
-      const worker = { playerId: 1, workerId: 1 }
+      const worker = { seat: 0, workerId: 1 }
       useGameStore.getState().updateBoardCell(3, 3, { worker })
 
       const state = useGameStore.getState()
@@ -282,18 +282,18 @@ describe('gameStore', () => {
     })
 
     it('should move worker from one cell to another', () => {
-      useGameStore.getState().moveWorker(1, 1, 2, 2, 1, 1)
+      useGameStore.getState().moveWorker(1, 1, 2, 2, 0, 1)
 
       const state = useGameStore.getState()
       expect(state.boardState?.cells[1][1].worker).toBeNull()
       expect(state.boardState?.cells[2][2].worker).toEqual({
-        playerId: 1,
+        seat: 0,
         workerId: 1,
       })
     })
 
     it('should update worker indices after move', () => {
-      useGameStore.getState().moveWorker(1, 1, 2, 2, 1, 1)
+      useGameStore.getState().moveWorker(1, 1, 2, 2, 0, 1)
 
       const state = useGameStore.getState()
       expect(state.workersByPosition.has('1,1')).toBe(false)

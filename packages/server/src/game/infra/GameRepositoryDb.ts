@@ -13,7 +13,7 @@ import {
 import { Kysely, Transaction } from "kysely";
 
 import { db } from "@/database.ts";
-import { playerIdSchema } from "@/idSchemas.ts";
+import { seatSchema } from "@/idSchemas.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 import { Database, GameRow, NewPiece, PieceRow, PlayerRow } from "@/model.ts";
@@ -86,11 +86,11 @@ export class GameRepositoryDb {
       maxPlayers: gameRecord.player_count,
       status: gameRecord.game_status as GameStatus,
       phase: gameRecord.game_phase as GamePhase | null,
-      currentPlayerId: gameRecord.current_player_id,
+      currentSeat: gameRecord.current_seat,
       turnNumber: gameRecord.turn_number || 0,
       placingTurnsCompleted: gameRecord.placing_turns_completed || 0,
       version: gameRecord.version,
-      winnerId: gameRecord.winner_id,
+      winnerUserId: gameRecord.winner_user_id,
       winReason: gameRecord.win_reason,
       lastMovedWorkerId: gameRecord.last_moved_worker_id,
       lastMovedWorkerPosition:
@@ -98,7 +98,7 @@ export class GameRepositoryDb {
           ? { x: gameRecord.last_moved_worker_x, y: gameRecord.last_moved_worker_y }
           : null,
       players: playerRecords.map((p) => {
-        const player = new Player(playerIdSchema.parse(p.seat + 1), p.user_id, p.seat);
+        const player = new Player(p.user_id);
         player.setReady(p.is_ready);
         return player;
       }),
@@ -121,7 +121,7 @@ export class GameRepositoryDb {
   async createNewWithCreator(creatorId: UserId, maxPlayers: number): Promise<Game> {
     return this.database.transaction().execute(async (trx) => {
       const game = await this.insertGame(trx, creatorId, maxPlayers);
-      game.addPlayer(new Player(playerIdSchema.parse(1), creatorId, 0));
+      game.addPlayer(new Player(creatorId));
       await this.write(trx, game);
       return game;
     });
@@ -270,24 +270,24 @@ export class GameRepositoryDb {
     return {
       game_status: snapshot.status,
       game_phase: snapshot.phase,
-      current_player_id: snapshot.currentPlayerId,
+      current_seat: snapshot.currentSeat,
       turn_number: snapshot.turnNumber,
       placing_turns_completed: snapshot.placingTurnsCompleted,
       version: snapshot.version,
       last_moved_worker_id: snapshot.lastMovedWorkerId,
       last_moved_worker_x: snapshot.lastMovedWorkerPosition?.x ?? null,
       last_moved_worker_y: snapshot.lastMovedWorkerPosition?.y ?? null,
-      winner_id: snapshot.winnerId,
+      winner_user_id: snapshot.winnerUserId,
       win_reason: snapshot.winReason,
     };
   }
 
   private async replacePlayers(trx: Transaction<Database>, gameId: GameId, players: GameSnapshot["players"]) {
     await trx.deleteFrom("players").where("game_id", "=", gameId).execute();
-    for (const player of players) {
+    for (const [seat, player] of players.entries()) {
       await trx
         .insertInto("players")
-        .values({ game_id: gameId, user_id: player.userId, seat: player.seat, is_ready: player.isReady })
+        .values({ game_id: gameId, user_id: player.userId, seat, is_ready: player.isReady })
         .execute();
     }
   }
@@ -362,12 +362,12 @@ export class GameRepositoryDb {
       }
 
       if (type === "worker") {
-        const playerId = playerIdSchema.parse(Number(owner));
+        const seat = seatSchema.parse(Number(owner));
         const workerId = piece_id;
 
         // Place worker on the board
         cells[x][y].worker = {
-          playerId,
+          seat,
           workerId,
         };
       } else if (type === "building") {
@@ -444,7 +444,7 @@ export class GameRepositoryDb {
             y,
             height: cell.height,
             type: "worker",
-            owner: cell.worker.playerId.toString(), // Save as string number
+            owner: cell.worker.seat.toString(),
           });
         }
       }

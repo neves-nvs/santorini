@@ -1,4 +1,4 @@
-import { asGameId, asPlayerId, asUserId, Game, GameEvent, Player } from "@santorini/engine";
+import { asGameId, asSeat, asUserId, Game, GameEvent, Player } from "@santorini/engine";
 
 import { GameNotFoundError } from "@/errors/GameErrors.ts";
 import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
@@ -20,7 +20,7 @@ function setup(game: Game | null) {
 function gameWith(players: number): Game {
   const game = Game.create(asGameId(1), asUserId(100), 2);
   for (let seat = 0; seat < players; seat++) {
-    game.addPlayer(new Player(asPlayerId(seat + 1), asUserId(100 + seat), seat));
+    game.addPlayer(new Player(asUserId(100 + seat)));
   }
   return game;
 }
@@ -28,9 +28,7 @@ function gameWith(players: number): Game {
 describe("GameService.getGameView", () => {
   it("is the game as the user sees it", async () => {
     const game = gameWith(2);
-    for (const [playerId] of game.players) {
-      game.setPlayerReady(playerId, true);
-    }
+    game.players.forEach((_, seat) => game.setPlayerReady(asSeat(seat), true));
     const { service } = setup(game);
 
     expect((await service.getGameView(asGameId(1), asUserId(100))).viewer).toMatchObject({

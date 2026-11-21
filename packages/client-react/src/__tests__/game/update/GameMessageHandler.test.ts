@@ -14,17 +14,17 @@ const view = (overrides: Partial<InProgressGameView> = {}): InProgressGameView =
   status: 'in-progress',
   phase: 'placing',
   maxPlayers: 3,
-  currentPlayerId: 1,
+  currentSeat: 0,
   turnNumber: 1,
   version: 4,
   board: { cells: [] },
   players: [
-    { id: 1, userId: ME, seat: 0, status: 'active', isReady: true },
-    { id: 2, userId: OPPONENT, seat: 1, status: 'active', isReady: false },
+    { userId: ME, status: 'active', isReady: true },
+    { userId: OPPONENT, status: 'active', isReady: false },
   ],
-  winnerPlayerId: null,
+  winnerUserId: null,
   winReason: null,
-  viewer: { role: 'player', playerId: 1, isCurrentPlayer: true, availableMoves: [placeAt(0, 0), placeAt(2, 3)] },
+  viewer: { role: 'player', isCurrentPlayer: true, availableMoves: [placeAt(0, 0), placeAt(2, 3)] },
   ...overrides,
 })
 
@@ -54,7 +54,7 @@ describe('game_state', () => {
   it('has no moves and no turn for a player who waits, or for a spectator', () => {
     handleWebSocketMessage(
       'game_state',
-      view({ viewer: { role: 'player', playerId: 2, isCurrentPlayer: false, availableMoves: [] } })
+      view({ viewer: { role: 'player', isCurrentPlayer: false, availableMoves: [] } })
     )
     expect(useGameStore.getState()).toMatchObject({ currentPlayerMoves: [], isMyTurn: false })
 
@@ -68,8 +68,8 @@ describe('game_state', () => {
       ...view(),
       status: 'completed',
       phase: null,
-      currentPlayerId: null,
-      winnerPlayerId: 2,
+      currentSeat: null,
+      winnerUserId: OPPONENT,
       winReason: 'win_condition',
     }
 
@@ -77,7 +77,7 @@ describe('game_state', () => {
 
     expect(useGameStore.getState().gameState).toMatchObject({
       status: 'completed',
-      winnerId: 2,
+      winnerUserId: OPPONENT,
       winReason: 'win_condition',
     })
   })
@@ -94,7 +94,7 @@ describe('game_state', () => {
   it('shows the next state even when the board looks the same', () => {
     applyGameView(view({ version: 6 }))
 
-    applyGameView(view({ version: 7, players: [{ id: 1, userId: ME, seat: 0, status: 'active', isReady: false }] }))
+    applyGameView(view({ version: 7, players: [{ userId: ME, status: 'active', isReady: false }] }))
 
     expect(useGameStore.getState().gameState).toMatchObject({ version: 7, currentUserReady: false })
   })

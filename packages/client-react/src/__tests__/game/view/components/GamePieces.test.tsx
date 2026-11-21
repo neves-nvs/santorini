@@ -23,7 +23,7 @@ describe('Cell', () => {
 
 describe('Worker', () => {
   const render = (props: Partial<Parameters<typeof Worker>[0]>) =>
-    ReactThreeTestRenderer.create(<Worker playerId={1} position={[0, 0, 0]} {...props} />)
+    ReactThreeTestRenderer.create(<Worker seat={0} position={[0, 0, 0]} {...props} />)
 
   it('only reports clicks when it can move', async () => {
     const onClick = vi.fn()
@@ -38,8 +38,8 @@ describe('Worker', () => {
   })
 
   it('is drawn in its player\'s colour', async () => {
-    const first = await render({ playerId: 1 })
-    const second = await render({ playerId: 2 })
+    const first = await render({ seat: 0 })
+    const second = await render({ seat: 1 })
 
     expect(materialColors(first)).toContain(PLAYER_COLORS[0])
     expect(materialColors(second)).toContain(PLAYER_COLORS[1])

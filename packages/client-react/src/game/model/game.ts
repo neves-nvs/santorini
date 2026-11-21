@@ -37,13 +37,13 @@ export interface GameState {
   gameId: number;
   status: GameStatus;
   phase: GamePhase;
-  currentPlayerId: number | null;
+  currentSeat: number | null;
   turnNumber: number;
   version: number;
   board: BoardView;
   players: PlayerView[];
   availableMoves?: Move[];
-  winnerId?: number;
+  winnerUserId?: number;
   winReason?: string;
   isCurrentPlayer: boolean;
 

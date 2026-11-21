@@ -1,4 +1,4 @@
-import { asGameId, asPlayerId, asUserId, Game, Player } from "@santorini/engine";
+import { asGameId, asSeat, asUserId, Game, Player } from "@santorini/engine";
 import { ServerMessage } from "@santorini/shared";
 
 import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
@@ -28,11 +28,9 @@ function viewerSentTo(connection: RecordingConnection) {
 
 function startedGame(): Game {
   const game = Game.create(asGameId(1), asUserId(100), 2);
-  game.addPlayer(new Player(asPlayerId(1), asUserId(100), 0));
-  game.addPlayer(new Player(asPlayerId(2), asUserId(101), 1));
-  for (const [playerId] of game.players) {
-    game.setPlayerReady(playerId, true);
-  }
+  game.addPlayer(new Player(asUserId(100)));
+  game.addPlayer(new Player(asUserId(101)));
+  game.players.forEach((_, seat) => game.setPlayerReady(asSeat(seat), true));
   return game;
 }
 
@@ -51,7 +49,6 @@ describe("GameBroadcaster", () => {
     expect(current.role === "player" && current.availableMoves.length).toBeGreaterThan(0);
     expect(viewerSentTo(waitingPlayer)).toEqual({
       role: "player",
-      playerId: 2,
       isCurrentPlayer: false,
       availableMoves: [],
     });

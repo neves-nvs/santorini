@@ -1,7 +1,7 @@
 // Board state and game types
 
 interface WorkerData {
-  playerId: number
+  seat: number
   workerId: number
 }
 
@@ -27,17 +27,17 @@ export const createSampleBoard = (): BoardState => {
 
   // Add sample buildings and workers at different levels
   // Ground level workers
-  board[0][0] = { buildingLevel: 0, worker: { playerId: 1, workerId: 1 } }
-  board[4][4] = { buildingLevel: 0, worker: { playerId: 2, workerId: 1 } }
+  board[0][0] = { buildingLevel: 0, worker: { seat: 0, workerId: 1 } }
+  board[4][4] = { buildingLevel: 0, worker: { seat: 1, workerId: 1 } }
 
   // Level 1 building with worker
-  board[1][1] = { buildingLevel: 1, worker: { playerId: 1, workerId: 2 } }
+  board[1][1] = { buildingLevel: 1, worker: { seat: 0, workerId: 2 } }
 
   // Level 2 building with worker
-  board[2][2] = { buildingLevel: 2, worker: { playerId: 2, workerId: 2 } }
+  board[2][2] = { buildingLevel: 2, worker: { seat: 1, workerId: 2 } }
 
   // Level 3 building with worker
-  board[3][1] = { buildingLevel: 3, worker: { playerId: 1, workerId: 3 } }
+  board[3][1] = { buildingLevel: 3, worker: { seat: 0, workerId: 3 } }
 
   // Complete tower with dome (level 4) - no worker can be on dome
   board[1][3] = { buildingLevel: 4, worker: null }

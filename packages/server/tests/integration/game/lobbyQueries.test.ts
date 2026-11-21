@@ -1,4 +1,4 @@
-import { asPlayerId, Player } from "@santorini/engine";
+import { Player } from "@santorini/engine";
 
 import { db } from "@/database.ts";
 import { LobbyService } from "@/game/application/LobbyService.ts";
@@ -23,7 +23,7 @@ describe("Listing and creating games", () => {
     const creator = (await generateTestUser()).user;
     for (let created = 0; created < count; created++) {
       const game = await repository.createNew(creator.id, 2);
-      await repository.update(game.id, (loaded) => loaded.addPlayer(new Player(asPlayerId(1), creator.id, 0)));
+      await repository.update(game.id, (loaded) => loaded.addPlayer(new Player(creator.id)));
     }
     return creator;
   }
@@ -61,9 +61,7 @@ describe("Listing and creating games", () => {
     const created = await lobby.createGame(creator.id, 2);
 
     const saved = await repository.findById(created.id);
-    expect([...saved!.players.values()].map(({ userId, seat }) => ({ userId, seat }))).toEqual([
-      { userId: creator.id, seat: 0 },
-    ]);
+    expect(saved!.players.map(({ userId }) => userId)).toEqual([creator.id]);
   });
 
   test("a game that cannot take its creator is not created at all", async () => {

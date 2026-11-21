@@ -33,7 +33,7 @@ Block.displayName = 'Block'
 
 // Worker/Builder Component
 interface WorkerProps {
-  playerId: number
+  seat: number
   position: [number, number, number]
   canMove?: boolean // Whether this worker can move
   isSelected?: boolean // Whether this worker is selected
@@ -41,7 +41,7 @@ interface WorkerProps {
 }
 
 export const Worker: React.FC<WorkerProps> = ({
-  playerId,
+  seat,
   position,
   canMove = false,
   isSelected = false,
@@ -50,8 +50,8 @@ export const Worker: React.FC<WorkerProps> = ({
   // Use centralized player colors
   const colors = PLAYER_COLORS
 
-  // Simple color mapping based on playerId
-  const colorIndex = (playerId - 1) % colors.length
+  // Simple color mapping based on seat
+  const colorIndex = seat % colors.length
   const selectedColor = colors[colorIndex] || colors[0]
 
   return (

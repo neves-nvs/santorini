@@ -1,4 +1,4 @@
-import { GameId, PlayerId, UserId, WinReason } from "./types.ts";
+import { GameId, Seat, UserId, WinReason } from "./types.ts";
 import { Move } from "./Move.ts";
 
 /**
@@ -21,31 +21,31 @@ export type GameEventType =
 
 export interface GameStartedPayload {
   gameId: GameId;
-  firstPlayerId: PlayerId;
+  firstSeat: Seat;
 }
 
 export interface GameFinishedPayload {
   gameId?: GameId;
-  winnerId: PlayerId;
+  winnerUserId: UserId;
   reason: WinReason;
-  trappedPlayerId?: PlayerId | null;
+  trappedSeat?: Seat | null;
 }
 
 export interface MovePlayedPayload {
   gameId?: GameId;
-  playerId: PlayerId;
+  seat: Seat;
   move: Move;
   turnNumber: number;
 }
 
 export interface PlayerJoinedPayload {
   gameId: GameId;
-  playerId: PlayerId;
+  seat: Seat;
 }
 
 export interface TurnAdvancedPayload {
   gameId: GameId;
-  newCurrentPlayerId: PlayerId;
+  newCurrentSeat: Seat;
   phase: string;
 }
 
@@ -56,9 +56,9 @@ export interface PlayerLeftPayload {
 
 export interface PlayerReadyChangedPayload {
   gameId: GameId;
-  playerId: PlayerId;
+  seat: Seat;
   ready: boolean;
-  readyStatuses: { playerId: PlayerId; ready: boolean }[];
+  readyStatuses: { seat: Seat; ready: boolean }[];
 }
 
 export interface GameReadyPayload {

@@ -1,7 +1,7 @@
 import { Board, BoardSnapshot, MoveResult } from "./Board.ts";
 import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "./Move.ts";
 import { DefaultTurnPolicy } from "./TurnPolicy.ts";
-import { GameId, GameOutcome, GamePhase, GameStatus, PlayerId, UserId, isWinReason } from "./types.ts";
+import { GameId, GameOutcome, GamePhase, GameStatus, Seat, UserId, asSeat, isWinReason } from "./types.ts";
 import { Player } from "./Player.ts";
 
 import { GameEvent } from "./GameEvent.ts";
@@ -20,11 +20,11 @@ export class Game {
     public readonly maxPlayers: number,
     private _status: GameStatus,
     private _phase: GamePhase | null,
-    private _currentPlayerId: PlayerId | null,
+    private _currentSeat: Seat | null,
     private _turnNumber: number,
     private _placingTurnsCompleted: number,
     private _board: Board,
-    private _players: Map<PlayerId, Player>,
+    private _players: Player[],
     private _version: number,
     private _outcome: GameOutcome | null = null,
     private _lastMovedWorkerId: number | null = null,
@@ -45,7 +45,7 @@ export class Game {
       0,
       0,
       Board.createEmpty(),
-      new Map(),
+      [],
       1,
       null,
       null,
@@ -54,20 +54,17 @@ export class Game {
   }
 
   static fromSnapshot(snapshot: GameSnapshot): Game {
-    const players = new Map();
-    snapshot.players.forEach((p) => players.set(p.id, p));
-
     return new Game(
       snapshot.id,
       snapshot.creatorId,
       snapshot.maxPlayers,
       snapshot.status,
       snapshot.phase,
-      snapshot.currentPlayerId,
+      snapshot.currentSeat,
       snapshot.turnNumber,
       snapshot.placingTurnsCompleted,
       Board.fromSnapshot(snapshot.board),
-      players,
+      [...snapshot.players],
       snapshot.version,
       outcomeOf(snapshot),
       snapshot.lastMovedWorkerId,
@@ -76,13 +73,13 @@ export class Game {
   }
 
   // Core game operations
-  applyMove(playerId: PlayerId, move: Move): GameEvent[] {
-    this.validateMove(playerId, move);
+  applyMove(seat: Seat, move: Move): GameEvent[] {
+    this.validateMove(seat, move);
 
     const events: GameEvent[] = [];
 
     // Apply move to board and update state
-    const moveResult = this._board.applyMove(move, playerId);
+    const moveResult = this._board.applyMove(move, seat);
 
     // Check if move was successful
     if (!moveResult.success) {
@@ -92,16 +89,17 @@ export class Game {
     // Update game state based on move result
     if (moveResult.isWin) {
       this._status = "completed";
-      this._outcome = { winnerId: playerId, reason: "win_condition" };
+      const winnerUserId = this._players[seat].userId;
+      this._outcome = { winnerUserId, reason: "win_condition" };
       this._version++;
       this.assertInvariants();
-      events.push(new GameEvent("GameFinished", { winnerId: playerId, reason: "win_condition" }));
+      events.push(new GameEvent("GameFinished", { winnerUserId, reason: "win_condition" }));
     } else {
       // Advance turn state
       this.advanceTurn(move, moveResult);
       this._version++;
       this.assertInvariants();
-      events.push(new GameEvent("MovePlayed", { playerId, move, turnNumber: this._turnNumber }));
+      events.push(new GameEvent("MovePlayed", { seat, move, turnNumber: this._turnNumber }));
     }
     return events;
   }
@@ -111,25 +109,25 @@ export class Game {
    * Pure domain logic - no external dependencies.
    */
   getAvailableMoves(): Move[] {
-    if (this._status !== "in-progress" || !this._currentPlayerId) {
+    if (this._status !== "in-progress" || this._currentSeat === null) {
       return [];
     }
 
     switch (this._phase) {
       case "placing":
-        return this.generatePlacementMoves(this._currentPlayerId);
+        return this.generatePlacementMoves(this._currentSeat);
       case "moving":
-        return this.generateMovementMoves(this._currentPlayerId);
+        return this.generateMovementMoves(this._currentSeat);
       case "building":
-        return this.generateBuildMoves(this._currentPlayerId);
+        return this.generateBuildMoves(this._currentSeat);
       default:
         return [];
     }
   }
 
-  private generatePlacementMoves(playerId: PlayerId): Move[] {
+  private generatePlacementMoves(seat: Seat): Move[] {
     const moves: Move[] = [];
-    const workersPlaced = this.countWorkersForPlayer(playerId);
+    const workersPlaced = this.countWorkersForPlayer(seat);
 
     if (workersPlaced >= 2) return moves;
 
@@ -138,14 +136,14 @@ export class Game {
     for (let x = 0; x < 5; x++) {
       for (let y = 0; y < 5; y++) {
         if (!this._board.isPositionOccupied(x, y)) {
-          moves.push(new PlaceWorkerMove(playerId, { x, y }, nextWorkerId));
+          moves.push(new PlaceWorkerMove(seat, { x, y }, nextWorkerId));
         }
       }
     }
     return moves;
   }
 
-  private generateMovementMoves(playerId: PlayerId): Move[] {
+  private generateMovementMoves(seat: Seat): Move[] {
     const moves: Move[] = [];
 
     for (const [key, workerPos] of this._board.workers) {
@@ -153,7 +151,7 @@ export class Game {
       const ownerId = parseInt(ownerIdStr);
       const workerId = parseInt(workerIdStr);
 
-      if (ownerId !== playerId) continue;
+      if (ownerId !== seat) continue;
 
       for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
@@ -163,7 +161,7 @@ export class Game {
           const toY = workerPos.y + dy;
 
           if (this.isValidMove(workerPos.x, workerPos.y, toX, toY)) {
-            moves.push(new MoveWorkerMove(playerId, { x: toX, y: toY }, workerId, { x: workerPos.x, y: workerPos.y }));
+            moves.push(new MoveWorkerMove(seat, { x: toX, y: toY }, workerId, { x: workerPos.x, y: workerPos.y }));
           }
         }
       }
@@ -171,7 +169,7 @@ export class Game {
     return moves;
   }
 
-  private generateBuildMoves(playerId: PlayerId): Move[] {
+  private generateBuildMoves(seat: Seat): Move[] {
     const moves: Move[] = [];
 
     if (!this._lastMovedWorkerPosition || !this._lastMovedWorkerId) {
@@ -193,10 +191,10 @@ export class Game {
           const height = cell?.height ?? 0;
 
           if (height < 3) {
-            moves.push(new BuildMove(playerId, { x: bx, y: by }, "block", workerId));
+            moves.push(new BuildMove(seat, { x: bx, y: by }, "block", workerId));
           }
           if (height === 3) {
-            moves.push(new BuildMove(playerId, { x: bx, y: by }, "dome", workerId));
+            moves.push(new BuildMove(seat, { x: bx, y: by }, "dome", workerId));
           }
         }
       }
@@ -204,11 +202,11 @@ export class Game {
     return moves;
   }
 
-  private countWorkersForPlayer(playerId: PlayerId): number {
+  private countWorkersForPlayer(seat: Seat): number {
     let count = 0;
     for (const [key] of this._board.workers) {
       const [ownerIdStr] = key.split("-");
-      if (parseInt(ownerIdStr) === playerId) count++;
+      if (parseInt(ownerIdStr) === seat) count++;
     }
     return count;
   }
@@ -244,8 +242,8 @@ export class Game {
   get phase(): GamePhase | null {
     return this._phase;
   }
-  get currentPlayerId(): PlayerId | null {
-    return this._currentPlayerId;
+  get currentSeat(): Seat | null {
+    return this._currentSeat;
   }
   get turnNumber(): number {
     return this._turnNumber;
@@ -259,7 +257,7 @@ export class Game {
   get board(): Board {
     return this._board;
   }
-  get players(): ReadonlyMap<PlayerId, Player> {
+  get players(): readonly Player[] {
     return this._players;
   }
   get outcome(): GameOutcome | null {
@@ -277,7 +275,7 @@ export class Game {
    * Only applicable during moving phase.
    */
   isCurrentPlayerTrapped(): boolean {
-    if (this._status !== "in-progress" || this._phase !== "moving" || !this._currentPlayerId) {
+    if (this._status !== "in-progress" || this._phase !== "moving" || this._currentSeat === null) {
       return false;
     }
     return this.getAvailableMoves().length === 0;
@@ -294,34 +292,34 @@ export class Game {
     }
 
     // Find opponent (winner)
-    const playerIds = Array.from(this._players.keys());
-    const winnerId = playerIds.find((id) => id !== this._currentPlayerId)!;
+    const winnerSeat = this._players.findIndex((_, seat) => seat !== this._currentSeat);
+    const winnerUserId = this._players[winnerSeat].userId;
 
     this._status = "completed";
-    this._outcome = { winnerId, reason: "opponent_trapped" };
+    this._outcome = { winnerUserId, reason: "opponent_trapped" };
     this._version++;
     this.assertInvariants();
 
     return [
       new GameEvent("GameFinished", {
-        winnerId,
+        winnerUserId,
         reason: "opponent_trapped",
-        trappedPlayerId: this._currentPlayerId,
+        trappedSeat: this._currentSeat,
       }),
     ];
   }
 
   // Game lifecycle
   addPlayer(player: Player): GameEvent[] {
-    if (this._players.size >= this.maxPlayers) {
+    if (this._players.length >= this.maxPlayers) {
       throw new GameRuleError("Game is full", "game_full");
     }
 
-    this._players.set(player.id, player);
+    this._players.push(player);
     this._version++;
     const events: GameEvent[] = [];
 
-    if (this._players.size === this.maxPlayers) {
+    if (this._players.length === this.maxPlayers) {
       events.push(new GameEvent("GameReady", { gameId: this.id }));
     }
 
@@ -337,24 +335,16 @@ export class Game {
       throw new GameRuleError("Cannot remove player - game is not waiting");
     }
 
-    // Find player by userId
-    let playerToRemove: Player | undefined;
-    for (const player of this._players.values()) {
-      if (player.userId === userId) {
-        playerToRemove = player;
-        break;
-      }
-    }
-
-    if (!playerToRemove) {
+    const seat = this._players.findIndex((player) => player.userId === userId);
+    if (seat === -1) {
       throw new GameRuleError("Player not found in game", "not_in_game");
     }
 
-    if (playerToRemove.isReady) {
+    if (this._players[seat].isReady) {
       throw new GameRuleError("Cannot remove player who has already confirmed ready");
     }
 
-    this._players.delete(playerToRemove.id);
+    this._players.splice(seat, 1);
     this._version++;
 
     return [new GameEvent("PlayerLeft", { gameId: this.id, userId })];
@@ -369,12 +359,12 @@ export class Game {
    * 2. Each player must confirm/accept the game (to verify opponents)
    * 3. Once ALL players have confirmed, the game auto-starts
    */
-  setPlayerReady(playerId: PlayerId, ready: boolean): GameEvent[] {
+  setPlayerReady(seat: Seat, ready: boolean): GameEvent[] {
     if (this._status !== "waiting") {
       throw new GameRuleError("Cannot change ready status - game is not waiting");
     }
 
-    const player = this._players.get(playerId);
+    const player = this._players[seat];
     if (!player) {
       throw new GameRuleError("Player not found in game", "not_in_game");
     }
@@ -385,7 +375,7 @@ export class Game {
     const events: GameEvent[] = [
       new GameEvent("PlayerReadyChanged", {
         gameId: this.id,
-        playerId,
+        seat,
         ready,
         readyStatuses: this.getReadyStatuses(),
       }),
@@ -403,33 +393,22 @@ export class Game {
    * Check if all players are ready
    */
   areAllPlayersReady(): boolean {
-    if (this._players.size < this.maxPlayers) {
-      return false;
-    }
-    for (const player of this._players.values()) {
-      if (!player.isReady) {
-        return false;
-      }
-    }
-    return true;
+    return this._players.length === this.maxPlayers && this._players.every((player) => player.isReady);
   }
 
   /**
    * Get ready status for all players
    */
-  getReadyStatuses(): Array<{ playerId: PlayerId; ready: boolean }> {
-    return Array.from(this._players.values()).map((p) => ({
-      playerId: p.id,
-      ready: p.isReady,
-    }));
+  getReadyStatuses(): Array<{ seat: Seat; ready: boolean }> {
+    return this._players.map((player, seat) => ({ seat: asSeat(seat), ready: player.isReady }));
   }
 
   startGame(): GameEvent[] {
     if (this._status !== "waiting") {
       throw new GameRuleError("Game cannot be started");
     }
-    if (this._players.size !== this.maxPlayers) {
-      throw new GameRuleError(`Cannot start: need ${this.maxPlayers} players, have ${this._players.size}`);
+    if (this._players.length !== this.maxPlayers) {
+      throw new GameRuleError(`Cannot start: need ${this.maxPlayers} players, have ${this._players.length}`);
     }
     if (!this.areAllPlayersReady()) {
       throw new GameRuleError("Cannot start: not all players are ready");
@@ -437,11 +416,11 @@ export class Game {
 
     this._status = "in-progress";
     this._phase = "placing";
-    this._currentPlayerId = Array.from(this._players.keys())[0];
+    this._currentSeat = asSeat(0);
     this._version++;
 
     this.assertInvariants();
-    return [new GameEvent("GameStarted", { gameId: this.id, firstPlayerId: this._currentPlayerId })];
+    return [new GameEvent("GameStarted", { gameId: this.id, firstSeat: this._currentSeat })];
   }
 
   // Private methods
@@ -453,10 +432,10 @@ export class Game {
   private assertInvariants(): void {
     // Invariant: in-progress requires full player count, all ready, valid current player
     if (this._status === "in-progress") {
-      if (this._players.size !== this.maxPlayers) {
-        throw new Error(`Invariant violated: in-progress game has ${this._players.size}/${this.maxPlayers} players`);
+      if (this._players.length !== this.maxPlayers) {
+        throw new Error(`Invariant violated: in-progress game has ${this._players.length}/${this.maxPlayers} players`);
       }
-      if (!this._currentPlayerId || !this._players.has(this._currentPlayerId)) {
+      if (this._currentSeat === null || this._currentSeat >= this._players.length) {
         throw new Error("Invariant violated: in-progress game has no valid current player");
       }
       if (!this._phase) {
@@ -466,8 +445,8 @@ export class Game {
 
     // Invariant: waiting cannot have currentPlayer or phase
     if (this._status === "waiting") {
-      if (this._currentPlayerId !== null) {
-        throw new Error("Invariant violated: waiting game has currentPlayerId set");
+      if (this._currentSeat !== null) {
+        throw new Error("Invariant violated: waiting game has currentSeat set");
       }
       if (this._phase !== null) {
         throw new Error("Invariant violated: waiting game has phase set");
@@ -475,12 +454,12 @@ export class Game {
     }
   }
 
-  private validateMove(playerId: PlayerId, move: Move): void {
+  private validateMove(seat: Seat, move: Move): void {
     if (this._status !== "in-progress") {
       throw new GameRuleError("Game is not in progress");
     }
 
-    if (this._currentPlayerId !== playerId) {
+    if (this._currentSeat !== seat) {
       throw new GameRuleError("Not your turn", "not_your_turn");
     }
 
@@ -498,7 +477,7 @@ export class Game {
 
     const advancement = this._turnPolicy.advanceTurn(this, move, moveResult);
 
-    this._currentPlayerId = advancement.nextPlayerId;
+    this._currentSeat = advancement.nextSeat;
     this._phase = advancement.nextPhase;
     this._turnNumber = advancement.turnNumber;
     this._placingTurnsCompleted = advancement.placingTurnsCompleted;
@@ -514,13 +493,13 @@ export class Game {
       maxPlayers: this.maxPlayers,
       status: this._status,
       phase: this._phase,
-      currentPlayerId: this._currentPlayerId,
+      currentSeat: this._currentSeat,
       turnNumber: this._turnNumber,
       placingTurnsCompleted: this._placingTurnsCompleted,
       board: this._board.toSnapshot(),
-      players: Array.from(this._players.values()),
+      players: [...this._players],
       version: this._version,
-      winnerId: this._outcome?.winnerId ?? null,
+      winnerUserId: this._outcome?.winnerUserId ?? null,
       winReason: this._outcome?.reason ?? null,
       lastMovedWorkerId: this._lastMovedWorkerId,
       lastMovedWorkerPosition: this._lastMovedWorkerPosition,
@@ -530,18 +509,18 @@ export class Game {
 
 function outcomeOf(snapshot: GameSnapshot): GameOutcome | null {
   if (snapshot.status !== "completed") {
-    if (snapshot.winnerId !== null || snapshot.winReason !== null) {
+    if (snapshot.winnerUserId !== null || snapshot.winReason !== null) {
       throw new Error(`Invalid snapshot: game ${snapshot.id} has a winner but is not completed`);
     }
     return null;
   }
-  if (snapshot.winnerId === null) {
+  if (snapshot.winnerUserId === null) {
     throw new Error(`Invalid snapshot: completed game ${snapshot.id} has no winner`);
   }
   if (!isWinReason(snapshot.winReason)) {
     throw new Error(`Invalid snapshot: completed game ${snapshot.id} has an unknown win reason: ${snapshot.winReason}`);
   }
-  return { winnerId: snapshot.winnerId, reason: snapshot.winReason };
+  return { winnerUserId: snapshot.winnerUserId, reason: snapshot.winReason };
 }
 
 export interface GameSnapshot {
@@ -550,13 +529,13 @@ export interface GameSnapshot {
   maxPlayers: number;
   status: GameStatus;
   phase: GamePhase | null;
-  currentPlayerId: PlayerId | null;
+  currentSeat: Seat | null;
   turnNumber: number;
   placingTurnsCompleted: number;
   board: BoardSnapshot;
   players: Player[];
   version: number;
-  winnerId: PlayerId | null;
+  winnerUserId: UserId | null;
   winReason: string | null;
   lastMovedWorkerId: number | null;
   lastMovedWorkerPosition: { x: number; y: number } | null;

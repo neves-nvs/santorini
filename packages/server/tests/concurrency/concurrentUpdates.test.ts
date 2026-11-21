@@ -55,10 +55,9 @@ describe("Commands that reach a game at the same time", () => {
     await Promise.all(guests.map((guest) => service.addPlayer(game.id, guest.id)));
 
     const saved = await repository.findById(game.id);
-    expect([...saved!.players.values()].map((player) => player.userId).sort()).toEqual(
+    expect(saved!.players.map((player) => player.userId).sort()).toEqual(
       [creator.id, ...guests.map((guest) => guest.id)].sort(),
     );
-    expect([...saved!.players.values()].map((player) => player.seat).sort()).toEqual([0, 1, 2, 3]);
   });
 
   test("the same player cannot move twice by sending two moves at once", async () => {

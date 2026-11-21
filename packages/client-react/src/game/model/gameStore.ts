@@ -6,7 +6,7 @@ import type { AvailableMove, BoardView, GameState } from './game'
 export interface BoardCell {
   buildingLevel: number
   worker: {
-    playerId: number
+    seat: number
     workerId: number
   } | null
 }
@@ -21,7 +21,7 @@ export interface OptimizedBoardState {
 interface WorkerPosition {
   x: number
   y: number
-  playerId: number
+  seat: number
   workerId: number
 }
 
@@ -36,7 +36,7 @@ interface GameStore {
 
   // Workers indexed by position for fast lookups
   workersByPosition: Map<string, WorkerPosition>
-  workersByPlayer: Map<number, WorkerPosition[]>
+  workersBySeat: Map<number, WorkerPosition[]>
 
   // Turn and move state
   currentPlayerMoves: AvailableMove[]
@@ -59,13 +59,13 @@ interface GameStore {
   
   // Optimized board operations
   updateBoardCell: (x: number, y: number, cell: Partial<BoardCell>) => void
-  moveWorker: (fromX: number, fromY: number, toX: number, toY: number, playerId: number, workerId: number) => void
+  moveWorker: (fromX: number, fromY: number, toX: number, toY: number, seat: number, workerId: number) => void
   
   // Selectors (computed values)
   getBoardCell: (x: number, y: number) => BoardCell | null
   getWorkerAt: (x: number, y: number) => WorkerPosition | null
-  getWorkersByPlayer: (playerId: number) => WorkerPosition[]
-  getMovableWorkers: (currentPlayerId: number) => WorkerPosition[]
+  getWorkersBySeat: (seat: number) => WorkerPosition[]
+  getMovableWorkers: (currentSeat: number) => WorkerPosition[]
 }
 
 // Helper function to parse server board to optimized format
@@ -89,7 +89,7 @@ const parseServerBoardToOptimized = (serverBoard: BoardView): OptimizedBoardStat
           cells[x][y] = {
             buildingLevel: cell.hasDome ? height + 1 : height,
             worker: cell.worker ? {
-              playerId: cell.worker.playerId,
+              seat: cell.worker.seat,
               workerId: cell.worker.workerId
             } : null
           }
@@ -107,7 +107,7 @@ const parseServerBoardToOptimized = (serverBoard: BoardView): OptimizedBoardStat
 // Helper function to build worker indices
 const buildWorkerIndices = (boardState: OptimizedBoardState) => {
   const workersByPosition = new Map<string, WorkerPosition>()
-  const workersByPlayer = new Map<number, WorkerPosition[]>()
+  const workersBySeat = new Map<number, WorkerPosition[]>()
 
   for (let x = 0; x < 5; x++) {
     for (let y = 0; y < 5; y++) {
@@ -116,7 +116,7 @@ const buildWorkerIndices = (boardState: OptimizedBoardState) => {
         const worker: WorkerPosition = {
           x,
           y,
-          playerId: cell.worker.playerId,
+          seat: cell.worker.seat,
           workerId: cell.worker.workerId
         }
         
@@ -124,15 +124,15 @@ const buildWorkerIndices = (boardState: OptimizedBoardState) => {
         workersByPosition.set(`${x},${y}`, worker)
         
         // Index by player
-        if (!workersByPlayer.has(worker.playerId)) {
-          workersByPlayer.set(worker.playerId, [])
+        if (!workersBySeat.has(worker.seat)) {
+          workersBySeat.set(worker.seat, [])
         }
-        workersByPlayer.get(worker.playerId)!.push(worker)
+        workersBySeat.get(worker.seat)!.push(worker)
       }
     }
   }
 
-  return { workersByPosition, workersByPlayer }
+  return { workersByPosition, workersBySeat }
 }
 
 export const useGameStore = create<GameStore>()(
@@ -142,7 +142,7 @@ export const useGameStore = create<GameStore>()(
     gameId: null,
     boardState: null,
     workersByPosition: new Map(),
-    workersByPlayer: new Map(),
+    workersBySeat: new Map(),
     currentPlayerMoves: [],
     isMyTurn: false,
     selectedWorker: null,
@@ -156,7 +156,7 @@ export const useGameStore = create<GameStore>()(
           gameState: null,
           boardState: null,
           workersByPosition: new Map(),
-          workersByPlayer: new Map()
+          workersBySeat: new Map()
         })
         return
       }
@@ -165,7 +165,7 @@ export const useGameStore = create<GameStore>()(
 
       // Only reparse board if it actually changed
       let boardState = currentState.boardState
-      let indices = { workersByPosition: currentState.workersByPosition, workersByPlayer: currentState.workersByPlayer }
+      let indices = { workersByPosition: currentState.workersByPosition, workersBySeat: currentState.workersBySeat }
 
       const boardChanged = !currentState.gameState?.board ||
         JSON.stringify(currentState.gameState.board) !== JSON.stringify(gameState.board)
@@ -179,7 +179,7 @@ export const useGameStore = create<GameStore>()(
         gameState,
         boardState,
         workersByPosition: indices.workersByPosition,
-        workersByPlayer: indices.workersByPlayer
+        workersBySeat: indices.workersBySeat
       })
     },
 
@@ -205,7 +205,7 @@ export const useGameStore = create<GameStore>()(
       gameId: null,
       boardState: null,
       workersByPosition: new Map(),
-      workersByPlayer: new Map(),
+      workersBySeat: new Map(),
       currentPlayerMoves: [],
       isMyTurn: false,
       selectedWorker: null
@@ -232,11 +232,11 @@ export const useGameStore = create<GameStore>()(
       set({
         boardState: newBoardState,
         workersByPosition: indices.workersByPosition,
-        workersByPlayer: indices.workersByPlayer
+        workersBySeat: indices.workersBySeat
       })
     },
 
-    moveWorker: (fromX: number, fromY: number, toX: number, toY: number, playerId: number, workerId: number) => {
+    moveWorker: (fromX: number, fromY: number, toX: number, toY: number, seat: number, workerId: number) => {
       const state = get()
       if (!state.boardState) return
 
@@ -246,7 +246,7 @@ export const useGameStore = create<GameStore>()(
       newCells[fromX][fromY].worker = null
       
       // Add worker to new position
-      newCells[toX][toY].worker = { playerId, workerId }
+      newCells[toX][toY].worker = { seat, workerId }
 
       const newBoardState = {
         cells: newCells,
@@ -258,7 +258,7 @@ export const useGameStore = create<GameStore>()(
       set({
         boardState: newBoardState,
         workersByPosition: indices.workersByPosition,
-        workersByPlayer: indices.workersByPlayer
+        workersBySeat: indices.workersBySeat
       })
     },
 
@@ -274,14 +274,14 @@ export const useGameStore = create<GameStore>()(
       return state.workersByPosition.get(`${x},${y}`) || null
     },
 
-    getWorkersByPlayer: (playerId: number) => {
+    getWorkersBySeat: (seat: number) => {
       const state = get()
-      return state.workersByPlayer.get(playerId) || []
+      return state.workersBySeat.get(seat) || []
     },
 
-    getMovableWorkers: (currentPlayerId: number) => {
+    getMovableWorkers: (currentSeat: number) => {
       const state = get()
-      const playerWorkers = state.workersByPlayer.get(currentPlayerId) || []
+      const playerWorkers = state.workersBySeat.get(currentSeat) || []
       const moveWorkerMoves = state.currentPlayerMoves.filter(move => move.type === 'move_worker')
       
       return playerWorkers.filter(worker =>

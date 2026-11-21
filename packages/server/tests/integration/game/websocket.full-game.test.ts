@@ -11,7 +11,6 @@ interface TestPlayer {
   user: UserDTO;
   token: string;
   ws: WebSocket;
-  playerId?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,7 +178,6 @@ describe("Full Game Integration Test", () => {
       const joinPromise = waitForMessage(ws, "ok");
       ws.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
       await joinPromise;
-      players[i].playerId = i + 1; // player ids follow the order of joining
 
       const subscribePromise = waitForMessage(ws, "game_state");
       ws.send(JSON.stringify({ type: "subscribe_game", payload: { gameId } }));
@@ -223,46 +221,42 @@ describe("Full Game Integration Test", () => {
     // Player 1: place worker 1 at (2,2) - center
     response = await sendMove(players[0].ws, {
       type: "place_worker",
-      playerId: players[0].playerId,
       position: { x: 2, y: 2 },
       workerId: 1,
     });
     state = getState(response);
     expect(state.phase).toBe("placing");
-    expect(state.currentPlayerId).toBe(players[1].playerId);
+    expect(state.currentSeat).toBe(1);
 
     // Player 2: place worker 1 at (4,4) - far corner
     response = await sendMove(players[1].ws, {
       type: "place_worker",
-      playerId: players[1].playerId,
       position: { x: 4, y: 4 },
       workerId: 1,
     });
     state = getState(response);
     expect(state.phase).toBe("placing");
-    expect(state.currentPlayerId).toBe(players[0].playerId);
+    expect(state.currentSeat).toBe(0);
 
     // Player 1: place worker 2 at (2,3)
     response = await sendMove(players[0].ws, {
       type: "place_worker",
-      playerId: players[0].playerId,
       position: { x: 2, y: 3 },
       workerId: 2,
     });
     state = getState(response);
     expect(state.phase).toBe("placing");
-    expect(state.currentPlayerId).toBe(players[1].playerId);
+    expect(state.currentSeat).toBe(1);
 
     // Player 2: place worker 2 at (4,3) - game transitions to moving phase
     response = await sendMove(players[1].ws, {
       type: "place_worker",
-      playerId: players[1].playerId,
       position: { x: 4, y: 3 },
       workerId: 2,
     });
     state = getState(response);
     expect(state.phase).toBe("moving");
-    expect(state.currentPlayerId).toBe(players[0].playerId);
+    expect(state.currentSeat).toBe(0);
 
     // === PLAYING PHASE - Build tower and win ===
     // Strategy: Player 1 (A) builds tower at (2,2), climbs from (1,2)
@@ -289,7 +283,6 @@ describe("Full Game Integration Test", () => {
     // After:  (1,2)=[A1], (2,2)=1
     response = await sendMove(players[0].ws, {
       type: "move_worker",
-      playerId: players[0].playerId,
       position: { x: 1, y: 2 },
       workerId: 1,
       fromPosition: { x: 2, y: 2 },
@@ -299,7 +292,6 @@ describe("Full Game Integration Test", () => {
 
     await sendMove(players[0].ws, {
       type: "build_block",
-      playerId: players[0].playerId,
       position: { x: 2, y: 2 },
     });
 
@@ -307,14 +299,12 @@ describe("Full Game Integration Test", () => {
     // After:  (3,4)=[B1], (4,4)=1
     await sendMove(players[1].ws, {
       type: "move_worker",
-      playerId: players[1].playerId,
       position: { x: 3, y: 4 },
       workerId: 1,
       fromPosition: { x: 4, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
-      playerId: players[1].playerId,
       position: { x: 4, y: 4 },
     });
 
@@ -322,14 +312,12 @@ describe("Full Game Integration Test", () => {
     // After:  (2,2)=[A1@1], (1,2)=1
     await sendMove(players[0].ws, {
       type: "move_worker",
-      playerId: players[0].playerId,
       position: { x: 2, y: 2 },
       workerId: 1,
       fromPosition: { x: 1, y: 2 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
-      playerId: players[0].playerId,
       position: { x: 1, y: 2 },
     });
 
@@ -337,14 +325,12 @@ describe("Full Game Integration Test", () => {
     // After:  (4,4)=[B1@1], (3,4)=1
     await sendMove(players[1].ws, {
       type: "move_worker",
-      playerId: players[1].playerId,
       position: { x: 4, y: 4 },
       workerId: 1,
       fromPosition: { x: 3, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
-      playerId: players[1].playerId,
       position: { x: 3, y: 4 },
     });
 
@@ -352,14 +338,12 @@ describe("Full Game Integration Test", () => {
     // After:  (1,2)=[A1@1], (2,2)=2
     await sendMove(players[0].ws, {
       type: "move_worker",
-      playerId: players[0].playerId,
       position: { x: 1, y: 2 },
       workerId: 1,
       fromPosition: { x: 2, y: 2 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
-      playerId: players[0].playerId,
       position: { x: 2, y: 2 },
     });
 
@@ -367,14 +351,12 @@ describe("Full Game Integration Test", () => {
     // After:  (3,4)=[B1@1], (4,4)=2
     await sendMove(players[1].ws, {
       type: "move_worker",
-      playerId: players[1].playerId,
       position: { x: 3, y: 4 },
       workerId: 1,
       fromPosition: { x: 4, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
-      playerId: players[1].playerId,
       position: { x: 4, y: 4 },
     });
 
@@ -382,14 +364,12 @@ describe("Full Game Integration Test", () => {
     // After:  (2,2)=[A1@2], (1,2)=2
     await sendMove(players[0].ws, {
       type: "move_worker",
-      playerId: players[0].playerId,
       position: { x: 2, y: 2 },
       workerId: 1,
       fromPosition: { x: 1, y: 2 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
-      playerId: players[0].playerId,
       position: { x: 1, y: 2 },
     });
 
@@ -397,14 +377,12 @@ describe("Full Game Integration Test", () => {
     // After:  (4,4)=[B1@2], (3,4)=2
     await sendMove(players[1].ws, {
       type: "move_worker",
-      playerId: players[1].playerId,
       position: { x: 4, y: 4 },
       workerId: 1,
       fromPosition: { x: 3, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
-      playerId: players[1].playerId,
       position: { x: 3, y: 4 },
     });
 
@@ -412,14 +390,12 @@ describe("Full Game Integration Test", () => {
     // After:  (1,2)=[A1@2], (2,2)=3
     await sendMove(players[0].ws, {
       type: "move_worker",
-      playerId: players[0].playerId,
       position: { x: 1, y: 2 },
       workerId: 1,
       fromPosition: { x: 2, y: 2 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
-      playerId: players[0].playerId,
       position: { x: 2, y: 2 },
     });
 
@@ -427,14 +403,12 @@ describe("Full Game Integration Test", () => {
     // After:  (3,4)=[B1@2], (4,4)=3
     await sendMove(players[1].ws, {
       type: "move_worker",
-      playerId: players[1].playerId,
       position: { x: 3, y: 4 },
       workerId: 1,
       fromPosition: { x: 4, y: 4 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
-      playerId: players[1].playerId,
       position: { x: 4, y: 4 },
     });
 
@@ -450,7 +424,6 @@ describe("Full Game Integration Test", () => {
     //   +---+---+---+---+---+
     response = await sendMove(players[0].ws, {
       type: "move_worker",
-      playerId: players[0].playerId,
       position: { x: 2, y: 2 },
       workerId: 1,
       fromPosition: { x: 1, y: 2 },
@@ -459,7 +432,7 @@ describe("Full Game Integration Test", () => {
 
     // Game should be completed
     expect(state.status).toBe("completed");
-    expect(state.winnerPlayerId).toBe(players[0].playerId);
+    expect(state.winnerUserId).toBe(players[0].user.id);
     expect(state.winReason).toBe("win_condition");
   });
 
@@ -475,28 +448,24 @@ describe("Full Game Integration Test", () => {
 
     await sendMove(players[0].ws, {
       type: "place_worker",
-      playerId: players[0].playerId,
       position: { x: 0, y: 0 },
       workerId: 1,
     });
 
     await sendMove(players[1].ws, {
       type: "place_worker",
-      playerId: players[1].playerId,
       position: { x: 2, y: 1 },
       workerId: 1,
     });
 
     await sendMove(players[0].ws, {
       type: "place_worker",
-      playerId: players[0].playerId,
       position: { x: 1, y: 0 },
       workerId: 2,
     });
 
     await sendMove(players[1].ws, {
       type: "place_worker",
-      playerId: players[1].playerId,
       position: { x: 1, y: 1 },
       workerId: 2,
     });
@@ -517,14 +486,12 @@ describe("Full Game Integration Test", () => {
     // P1 turn 1: A1 moves (0,0)->(0,1), builds at (0,0)
     await sendMove(players[0].ws, {
       type: "move_worker",
-      playerId: players[0].playerId,
       position: { x: 0, y: 1 },
       workerId: 1,
       fromPosition: { x: 0, y: 0 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
-      playerId: players[0].playerId,
       position: { x: 0, y: 0 },
     });
     // (0,0)=1, A1@(0,1)
@@ -533,14 +500,12 @@ describe("Full Game Integration Test", () => {
     // B2 builds at (1,0) where A2 is? No. Build at (1,1) vacated spot
     await sendMove(players[1].ws, {
       type: "move_worker",
-      playerId: players[1].playerId,
       position: { x: 0, y: 0 },
       workerId: 2,
       fromPosition: { x: 1, y: 1 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
-      playerId: players[1].playerId,
       position: { x: 1, y: 1 },
     });
     // (0,0)=1 w/B2, (1,1)=1
@@ -548,14 +513,12 @@ describe("Full Game Integration Test", () => {
     // P1 turn 2: A2 moves (1,0)->(2,0), builds at (1,0)
     await sendMove(players[0].ws, {
       type: "move_worker",
-      playerId: players[0].playerId,
       position: { x: 2, y: 0 },
       workerId: 2,
       fromPosition: { x: 1, y: 0 },
     });
     await sendMove(players[0].ws, {
       type: "build_block",
-      playerId: players[0].playerId,
       position: { x: 1, y: 0 },
     });
     // (1,0)=1, A2@(2,0)
@@ -563,14 +526,12 @@ describe("Full Game Integration Test", () => {
     // P2 turn 2: B2 moves back (0,0)->(1,1) climb to h1, builds (0,0)
     await sendMove(players[1].ws, {
       type: "move_worker",
-      playerId: players[1].playerId,
       position: { x: 1, y: 1 },
       workerId: 2,
       fromPosition: { x: 0, y: 0 },
     });
     await sendMove(players[1].ws, {
       type: "build_block",
-      playerId: players[1].playerId,
       position: { x: 0, y: 0 },
     });
     // (0,0)=2, (1,1)=1 w/B2
@@ -603,7 +564,6 @@ describe("Full Game Integration Test", () => {
           gameId,
           move: {
             type: "place_worker",
-            playerId: players[1].playerId,
             position: { x: 0, y: 0 },
             workerId: 1,
           },
@@ -629,7 +589,6 @@ describe("Full Game Integration Test", () => {
     // Place first worker
     await sendMove(players[0].ws, {
       type: "place_worker",
-      playerId: players[0].playerId,
       position: { x: 2, y: 2 },
       workerId: 1,
     });
@@ -645,7 +604,6 @@ describe("Full Game Integration Test", () => {
           gameId,
           move: {
             type: "place_worker",
-            playerId: players[1].playerId,
             position: { x: 2, y: 2 }, // Already occupied
             workerId: 1,
           },

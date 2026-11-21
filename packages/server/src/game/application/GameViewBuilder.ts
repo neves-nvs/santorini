@@ -57,16 +57,16 @@ export class GameViewBuilder {
   buildFor(game: Game, userId: UserId): GameView {
     const state = this.visibilityPolicy.filterGameState(game, userId);
 
-    const player = state.players.find((p) => p.userId === userId);
-    const isCurrentPlayer = player !== undefined && game.currentPlayerId === player.id;
-    const viewer: Viewer = player
-      ? {
-          role: "player",
-          playerId: player.id,
-          isCurrentPlayer,
-          availableMoves: isCurrentPlayer ? game.getAvailableMoves().map(toSharedMove) : [],
-        }
-      : { role: "spectator" };
+    const seat = state.players.findIndex((p) => p.userId === userId);
+    const isCurrentPlayer = seat !== -1 && game.currentSeat === seat;
+    const viewer: Viewer =
+      seat !== -1
+        ? {
+            role: "player",
+            isCurrentPlayer,
+            availableMoves: isCurrentPlayer ? game.getAvailableMoves().map(toSharedMove) : [],
+          }
+        : { role: "spectator" };
 
     const common = {
       gameId: game.id,
@@ -84,20 +84,20 @@ export class GameViewBuilder {
           ...common,
           status: "waiting",
           phase: null,
-          currentPlayerId: null,
-          winnerPlayerId: null,
+          currentSeat: null,
+          winnerUserId: null,
           winReason: null,
         };
       case "in-progress":
-        if (game.phase === null || game.currentPlayerId === null) {
+        if (game.phase === null || game.currentSeat === null) {
           throw new Error(`Game ${game.id} is in progress without a phase or a current player`);
         }
         return {
           ...common,
           status: "in-progress",
           phase: game.phase,
-          currentPlayerId: game.currentPlayerId,
-          winnerPlayerId: null,
+          currentSeat: game.currentSeat,
+          winnerUserId: null,
           winReason: null,
         };
       case "completed": {
@@ -108,8 +108,8 @@ export class GameViewBuilder {
           ...common,
           status: "completed",
           phase: null,
-          currentPlayerId: null,
-          winnerPlayerId: game.outcome.winnerId,
+          currentSeat: null,
+          winnerUserId: game.outcome.winnerUserId,
           winReason: game.outcome.reason,
         };
       }
@@ -130,7 +130,7 @@ export class GameViewBuilder {
           hasDome: cell?.hasDome || false,
           worker: cell?.worker
             ? {
-                playerId: cell.worker.playerId,
+                seat: cell.worker.seat,
                 workerId: cell.worker.workerId,
               }
             : null,
@@ -145,9 +145,7 @@ export class GameViewBuilder {
    */
   private buildPlayersView(players: Player[]): PlayerView[] {
     return players.map((player) => ({
-      id: player.id,
       userId: player.userId,
-      seat: player.seat,
       status: player.status,
       isReady: player.isReady,
     }));
