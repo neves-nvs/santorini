@@ -1,10 +1,11 @@
-import { server, wss } from "@/main.ts";
+import request from "supertest";
 import WebSocket from "ws";
+
 import { app } from "@/app.ts";
 import { config } from "@/configs/config.ts";
-import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
 import { db } from "@/database.ts";
-import request from "supertest";
+import { server, wss } from "@/main.ts";
+import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
 
 let jwtToken: string;
 

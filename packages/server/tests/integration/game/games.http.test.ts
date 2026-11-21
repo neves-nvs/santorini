@@ -1,7 +1,8 @@
-import { specApp as app } from "@tests/integration/helper/specApp.ts";
-import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
-import { db } from "@/database.ts";
 import request from "supertest";
+
+import { db } from "@/database.ts";
+import { createTestUserWithLogin } from "@tests/integration/helper/helpers.ts";
+import { specApp as app } from "@tests/integration/helper/specApp.ts";
 
 describe("Games HTTP error responses", () => {
   afterEach(async () => {

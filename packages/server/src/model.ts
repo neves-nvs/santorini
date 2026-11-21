@@ -1,5 +1,5 @@
-import { ColumnType, Generated, Insertable, Selectable, Updateable } from "kysely";
 import { GameId, PlayerId, UserId } from "@santorini/engine";
+import { ColumnType, Generated, Insertable, Selectable, Updateable } from "kysely";
 
 export interface Database {
   users: UserTable;
@@ -7,6 +7,8 @@ export interface Database {
   players: PlayerTable;
   pieces: PieceTable;
 }
+
+// Users
 
 export interface UserTable {
   id: Generated<UserId>;
@@ -21,7 +23,9 @@ export interface UserTable {
 
 export type UserUpdate = Updateable<UserTable>;
 export type NewUser = Insertable<UserTable>;
-export type User = Selectable<UserTable>;
+export type UserRow = Selectable<UserTable>;
+
+// Games
 
 export type GameStatus = "waiting" | "in-progress" | "completed";
 export type GamePhase = "placing" | "moving" | "building";
@@ -58,7 +62,9 @@ export interface GameTable {
 
 export type GameUpdate = Updateable<GameTable>;
 export type NewGame = Insertable<GameTable>;
-export type Game = Selectable<GameTable>;
+export type GameRow = Selectable<GameTable>;
+
+// Players
 
 export interface PlayerTable {
   game_id: GameId;
@@ -70,7 +76,9 @@ export interface PlayerTable {
 
 export type PlayerUpdate = Updateable<PlayerTable>;
 export type NewPlayer = Insertable<PlayerTable>;
-export type Player = Selectable<PlayerTable>;
+export type PlayerRow = Selectable<PlayerTable>;
+
+// Pieces
 
 export interface PieceTable {
   // TODO make primary key (game_id, piece_id)
@@ -86,4 +94,4 @@ export interface PieceTable {
 
 export type PieceUpdate = Updateable<PieceTable>;
 export type NewPiece = Insertable<PieceTable>;
-export type Piece = Selectable<PieceTable>;
+export type PieceRow = Selectable<PieceTable>;

@@ -1,6 +1,7 @@
+import request from "supertest";
+
 import { app } from "@/app.ts";
 import { generateTestUser } from "@tests/integration/helper/helpers.ts";
-import request from "supertest";
 
 describe("Session Cookie Integration Tests", () => {
   let credentials: { username: string; password: string };

@@ -1,8 +1,10 @@
-import { NewGame } from "@/model.ts";
-import { UserDTO } from "@/users/userDTO.ts";
-import { specApp as app } from "./specApp.ts";
 import { randomBytes } from "crypto";
 import request from "supertest";
+
+import { NewGame } from "@/model.ts";
+import { UserDTO } from "@/users/userDTO.ts";
+
+import { specApp as app } from "./specApp.ts";
 
 export async function generateTestUser() {
   const randomUsername = randomBytes(6).toString("hex");

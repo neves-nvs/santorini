@@ -1,15 +1,15 @@
-import * as path from "path";
-
-import { Client, ClientConfig, Pool } from "pg";
-import { FileMigrationProvider, Migrator } from "kysely/migration";
+import { randomUUID } from "crypto";
+import { promises as fs } from "fs";
 import { Kysely, PostgresDialect } from "kysely";
+import { FileMigrationProvider, Migrator } from "kysely/migration";
+import * as path from "path";
+import { Client, ClientConfig, Pool } from "pg";
+import { fileURLToPath } from "url";
+
+import { WebSocketConnection } from "@/websockets/WebSocketConnection.ts";
 
 import { ConnectionInfo } from "./globalSetup.ts";
-import { WebSocketConnection } from "@/websockets/WebSocketConnection.ts";
 import { checkAgainstAsyncApi } from "./helper/asyncApiContract.ts";
-import { fileURLToPath } from "url";
-import { promises as fs } from "fs";
-import { randomUUID } from "crypto";
 
 async function loadContainerInfoFromEnv(): Promise<ConnectionInfo> {
   return {

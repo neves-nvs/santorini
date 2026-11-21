@@ -1,8 +1,9 @@
-import { User } from "@/model.ts";
 import WebSocket from "ws";
 
+import { UserRow } from "@/model.ts";
+
 export class AuthenticatedWebSocket extends WebSocket {
-  public user?: User;
+  public user?: UserRow;
 
   constructor(address: string | URL, protocols?: string | string[], options?: WebSocket.ClientOptions) {
     super(address, protocols, options);

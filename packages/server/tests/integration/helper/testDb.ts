@@ -1,5 +1,6 @@
-import { db } from "@/database.ts";
 import { sql } from "kysely";
+
+import { db } from "@/database.ts";
 
 /**
  * Fast truncation-based test cleanup

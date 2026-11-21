@@ -1,5 +1,6 @@
-import { app } from "@/app.ts";
 import request from "supertest";
+
+import { app } from "@/app.ts";
 
 describe("Rate Limit Integration Tests", () => {
   async function remainingFor(clientAddress: string): Promise<number> {

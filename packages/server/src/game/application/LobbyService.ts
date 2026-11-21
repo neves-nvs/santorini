@@ -1,6 +1,7 @@
 import { GameId, UserId } from "@santorini/engine";
-import { GameRepositoryDb, StoredGame } from "@/game/infra/GameRepositoryDb.ts";
 import { Game } from "@santorini/engine";
+
+import { GameRepositoryDb, StoredGame } from "@/game/infra/GameRepositoryDb.ts";
 import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 
@@ -12,13 +13,13 @@ export class LobbyService {
   constructor(private gameRepository: GameRepositoryDb) {}
 
   /**
-   * Create a new game
+   * Create a new game with its creator as the first player
    */
   async createGame(creatorId: UserId, maxPlayers: number = 2): Promise<Game> {
     logger.info(`Creating new game for user ${sanitizeForLog(creatorId)}, max players: ${sanitizeForLog(maxPlayers)}`);
 
     // Let the repository generate the ID and create the game
-    const game = await this.gameRepository.createNew(creatorId, maxPlayers);
+    const game = await this.gameRepository.createNewWithCreator(creatorId, maxPlayers);
 
     logger.info(`Game ${game.id} created successfully`);
     return game;

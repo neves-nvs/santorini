@@ -10,12 +10,13 @@ import {
   Player,
   UserId,
 } from "@santorini/engine";
-import { Database, Game as GameRecord, NewPiece, Piece } from "@/model.ts";
 import { Kysely, Transaction } from "kysely";
+
 import { db } from "@/database.ts";
-import logger from "@/logger.ts";
 import { playerIdSchema } from "@/idSchemas.ts";
+import logger from "@/logger.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
+import { Database, GameRow, NewPiece, PieceRow, PlayerRow } from "@/model.ts";
 
 /** What the server records about a game that the rules do not need: when it was created, started and finished. */
 export interface GameMetadata {
@@ -27,6 +28,14 @@ export interface GameMetadata {
 export interface StoredGame {
   game: Game;
   metadata: GameMetadata;
+}
+
+function groupByGame<Row extends { game_id: GameId }>(rows: Row[]): Map<GameId, Row[]> {
+  const groups = new Map<GameId, Row[]>();
+  for (const row of rows) {
+    groups.set(row.game_id, [...(groups.get(row.game_id) ?? []), row]);
+  }
+  return groups;
 }
 
 /**
@@ -49,20 +58,28 @@ export class GameRepositoryDb {
       return null;
     }
 
-    // Load players
-    const playerRecords = await database
+    const playerRecords = await this.loadPlayers(database, [gameId]);
+    const pieceRecords = await this.loadPieces(database, [gameId]);
+
+    return this.buildGame(gameRecord, playerRecords, pieceRecords);
+  }
+
+  private async loadPlayers(database: Kysely<Database>, gameIds: GameId[]): Promise<PlayerRow[]> {
+    return database
       .selectFrom("players")
-      .innerJoin("users", "players.user_id", "users.id")
-      .where("players.game_id", "=", gameId)
-      .select(["players.user_id", "players.seat", "players.is_ready", "users.username"])
-      .orderBy("players.seat", "asc")
+      .where("game_id", "in", gameIds)
+      .select(["game_id", "user_id", "seat", "is_ready"])
+      .orderBy("game_id")
+      .orderBy("seat")
       .execute();
+  }
 
-    // Load board state (pieces)
-    const pieceRecords = await database.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
+  private async loadPieces(database: Kysely<Database>, gameIds: GameId[]): Promise<PieceRow[]> {
+    return database.selectFrom("pieces").where("game_id", "in", gameIds).selectAll().execute();
+  }
 
-    // Convert to domain snapshot
-    // Player IDs and seats are derived from stable array order
+  /** Restores the aggregate from the rows of one game. */
+  private buildGame(gameRecord: GameRow, playerRecords: PlayerRow[], pieceRecords: PieceRow[]): Game {
     const snapshot: GameSnapshot = {
       id: gameRecord.id,
       creatorId: gameRecord.user_creator_id,
@@ -88,7 +105,6 @@ export class GameRepositoryDb {
       board: this.convertPiecesToBoardSnapshot(pieceRecords),
     };
 
-    // Restore domain aggregate from snapshot
     return Game.fromSnapshot(snapshot);
   }
 
@@ -96,9 +112,25 @@ export class GameRepositoryDb {
    * Create a new game with database-generated ID
    */
   async createNew(creatorId: UserId, maxPlayers: number): Promise<Game> {
+    return this.insertGame(this.database, creatorId, maxPlayers);
+  }
+
+  /**
+   * Create a new game and seat its creator in one transaction, so there is never a game without its creator
+   */
+  async createNewWithCreator(creatorId: UserId, maxPlayers: number): Promise<Game> {
+    return this.database.transaction().execute(async (trx) => {
+      const game = await this.insertGame(trx, creatorId, maxPlayers);
+      game.addPlayer(new Player(playerIdSchema.parse(1), creatorId, 0));
+      await this.write(trx, game);
+      return game;
+    });
+  }
+
+  private async insertGame(database: Kysely<Database>, creatorId: UserId, maxPlayers: number): Promise<Game> {
     logger.debug(`Creating new game for user ${sanitizeForLog(creatorId)}, max players: ${sanitizeForLog(maxPlayers)}`);
 
-    const gameRecord = await this.database
+    const gameRecord = await database
       .insertInto("games")
       .values({
         user_creator_id: creatorId,
@@ -111,11 +143,8 @@ export class GameRepositoryDb {
       .returning("id")
       .executeTakeFirstOrThrow();
 
-    // Create domain aggregate with the database-generated ID
-    const game = Game.create(gameRecord.id, creatorId, maxPlayers);
-
     logger.debug(`Game ${gameRecord.id} created in database`);
-    return game; // Return the created game
+    return Game.create(gameRecord.id, creatorId, maxPlayers);
   }
 
   /**
@@ -263,22 +292,24 @@ export class GameRepositoryDb {
     }
   }
 
-  private async loadStored(records: GameRecord[]): Promise<StoredGame[]> {
-    const stored: StoredGame[] = [];
-    for (const record of records) {
-      const game = await this.findById(record.id);
-      if (game) {
-        stored.push({
-          game,
-          metadata: {
-            createdAt: new Date(record.created_at),
-            startedAt: record.started_at ? new Date(record.started_at) : null,
-            finishedAt: record.finished_at ? new Date(record.finished_at) : null,
-          },
-        });
-      }
+  /** Builds the games of a list from one query for their players and one for their pieces. */
+  private async loadStored(records: GameRow[]): Promise<StoredGame[]> {
+    if (records.length === 0) {
+      return [];
     }
-    return stored;
+
+    const gameIds = records.map((record) => record.id);
+    const players = groupByGame(await this.loadPlayers(this.database, gameIds));
+    const pieces = groupByGame(await this.loadPieces(this.database, gameIds));
+
+    return records.map((record) => ({
+      game: this.buildGame(record, players.get(record.id) ?? [], pieces.get(record.id) ?? []),
+      metadata: {
+        createdAt: new Date(record.created_at),
+        startedAt: record.started_at ? new Date(record.started_at) : null,
+        finishedAt: record.finished_at ? new Date(record.finished_at) : null,
+      },
+    }));
   }
 
   /**
@@ -299,7 +330,7 @@ export class GameRepositoryDb {
   /**
    * Get pieces by game ID (used by BoardService for legacy rule compatibility)
    */
-  async getPiecesByGame(gameId: GameId): Promise<Piece[]> {
+  async getPiecesByGame(gameId: GameId): Promise<PieceRow[]> {
     logger.debug(`Loading pieces for game ${gameId}`);
 
     return this.database.selectFrom("pieces").where("game_id", "=", gameId).selectAll().execute();
@@ -308,7 +339,7 @@ export class GameRepositoryDb {
   /**
    * Convert pieces records to board snapshot
    */
-  private convertPiecesToBoardSnapshot(pieces: Piece[]): BoardSnapshot {
+  private convertPiecesToBoardSnapshot(pieces: PieceRow[]): BoardSnapshot {
     logger.debug(`Converting ${pieces.length} pieces to board snapshot`);
 
     // Create empty 5x5 board

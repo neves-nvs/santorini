@@ -1,7 +1,8 @@
 import { Writable } from "stream";
-import { config } from "@/configs/config.ts";
 import request from "supertest";
 import { transports } from "winston";
+
+import { config } from "@/configs/config.ts";
 
 process.env.FORCE_LOGS = "true";
 

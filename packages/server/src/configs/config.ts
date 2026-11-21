@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
+
 import { loadConfig } from "./loadConfig.ts";
 
 dotenv.config();

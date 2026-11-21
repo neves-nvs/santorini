@@ -1,4 +1,5 @@
-import { CLIENT_MESSAGE_TYPES, WS_MESSAGE_TYPES, WireError } from "@santorini/shared";
+import { CLIENT_MESSAGE_TYPES, WireError, WS_MESSAGE_TYPES } from "@santorini/shared";
+
 import { Connection } from "@/game/infra/Connection.ts";
 import { sanitizeForLog } from "@/logSanitizer.ts";
 

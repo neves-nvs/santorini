@@ -1,25 +1,27 @@
-import { CookieOptions, NextFunction, Request, Response, Router } from "express";
 import {
   CurrentUserResponse,
   ErrorResponse,
   LoginRequest,
+  loginRequestSchema,
   LogoutResponse,
   TextResponse,
   WebSocketTicketResponse,
-  loginRequestSchema,
 } from "@santorini/shared";
-import { ForbiddenError, UnauthorizedError } from "@/errors/HttpErrors.ts";
-import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
-import { StatusCodes } from "http-status-codes";
-import { User } from "@/model.ts";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
+import { CookieOptions, NextFunction, Request, Response, Router } from "express";
+import { StatusCodes } from "http-status-codes";
+import jwt, { JwtPayload, VerifyErrors } from "jsonwebtoken";
+import passport from "passport";
+
 import { config } from "@/configs/config.ts";
-import { findUserByUsername } from "@/users/userRepository.ts";
+import { ForbiddenError, UnauthorizedError } from "@/errors/HttpErrors.ts";
 import logger from "@/logger.ts";
 import { loginRateLimitMiddleware } from "@/middlewares/authRateLimitMiddleware.ts";
-import passport from "passport";
-import { randomBytes } from "crypto";
 import { validateBody } from "@/middlewares/middleware.ts";
+import { UserRow } from "@/model.ts";
+import { findUserByUsername } from "@/users/userRepository.ts";
+
 import { webSocketTickets } from "./webSocketTickets.ts";
 
 // Compared against when there is no hash to check, so an unknown user takes as long as a wrong password.
@@ -32,8 +34,8 @@ function sessionCookieOptions(req: Request): CookieOptions {
 /**
  * Get authenticated user from request. Only call after authenticate middleware.
  */
-export function getUser(req: Request): User {
-  return req.user as User;
+export function getUser(req: Request): UserRow {
+  return req.user as UserRow;
 }
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {

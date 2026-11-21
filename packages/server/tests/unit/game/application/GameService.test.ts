@@ -1,9 +1,10 @@
-import { Game, GameEvent, Player, asGameId, asPlayerId, asUserId } from "@santorini/engine";
-import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
+import { asGameId, asPlayerId, asUserId, Game, GameEvent, Player } from "@santorini/engine";
+
 import { GameNotFoundError } from "@/errors/GameErrors.ts";
-import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
+import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
 import { GameService } from "@/game/application/GameService.ts";
 import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
+import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 
 function setup(game: Game | null) {
   const repository = {

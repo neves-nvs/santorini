@@ -1,17 +1,18 @@
-import { Game, Player, asGameId, asPlayerId, asUserId } from "@santorini/engine";
+import { asGameId, asPlayerId, asUserId, Game, Player } from "@santorini/engine";
+import { ServerMessage } from "@santorini/shared";
+
+import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
 import { Connection } from "@/game/infra/Connection.ts";
 import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
-import { GameBroadcaster } from "@/game/application/GameBroadcaster.ts";
-import { ServerMessage } from "@santorini/shared";
-import { User } from "@/model.ts";
+import { UserRow } from "@/model.ts";
 
 class RecordingConnection implements Connection {
   isOpen = true;
   readonly sent: ServerMessage[] = [];
-  readonly user: User;
+  readonly user: UserRow;
 
   constructor(userId: number) {
-    this.user = { id: userId, username: `user-${userId}` } as User;
+    this.user = { id: userId, username: `user-${userId}` } as UserRow;
   }
 
   send(message: ServerMessage): void {

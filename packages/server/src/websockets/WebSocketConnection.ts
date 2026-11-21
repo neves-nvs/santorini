@@ -1,12 +1,13 @@
-import { Connection } from "@/game/infra/Connection.ts";
 import { ServerMessage } from "@santorini/shared";
-import { User } from "@/model.ts";
 import WebSocket from "ws";
+
+import { Connection } from "@/game/infra/Connection.ts";
+import { UserRow } from "@/model.ts";
 
 export class WebSocketConnection implements Connection {
   constructor(
     private readonly socket: WebSocket,
-    readonly user: User,
+    readonly user: UserRow,
   ) {}
 
   get isOpen(): boolean {

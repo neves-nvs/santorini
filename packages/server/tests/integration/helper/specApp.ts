@@ -1,7 +1,9 @@
-import * as OpenApiValidator from "express-openapi-validator";
-import { app } from "@/app.ts";
-import express from "express";
 import { fileURLToPath } from "node:url";
+
+import express from "express";
+import * as OpenApiValidator from "express-openapi-validator";
+
+import { app } from "@/app.ts";
 
 // The real app behind a validator that checks every request and response against packages/shared/api/openapi.yaml.
 export const specApp = express();

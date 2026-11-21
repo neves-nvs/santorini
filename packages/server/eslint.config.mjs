@@ -1,5 +1,6 @@
 import globals from "globals";
 import js from "@eslint/js";
+import simpleImportSort from "eslint-plugin-simple-import-sort";
 import tseslint from "typescript-eslint";
 
 export default [
@@ -25,10 +26,20 @@ export default [
       },
     },
     rules: {
-      "sort-imports": "error",
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "off",
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    },
+  },
+  {
+    // Packages, then the @/ and @tests/ aliases, then ./ paths, with a blank line between the groups
+    files: ["**/*.ts", "**/*.tsx"],
+    plugins: { "simple-import-sort": simpleImportSort },
+    rules: {
+      "simple-import-sort/imports": [
+        "error",
+        { groups: [["^\\u0000"], ["^node:"], ["^@?\\w"], ["^@/", "^@tests/"], ["^\\."]] },
+      ],
     },
   },
   {

@@ -1,5 +1,6 @@
-import { Game, Player, asGameId, asPlayerId, asUserId } from "@santorini/engine";
+import { asGameId, asPlayerId, asUserId, Game, Player } from "@santorini/engine";
 import { GameView } from "@santorini/shared";
+
 import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
 
 const CURRENT_USER = asUserId(100);

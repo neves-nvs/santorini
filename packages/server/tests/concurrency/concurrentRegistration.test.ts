@@ -1,7 +1,8 @@
+import request from "supertest";
+
 import { app } from "@/app.ts";
 import { config } from "@/configs/config.ts";
 import { db } from "@/database.ts";
-import request from "supertest";
 
 const SIMULTANEOUS_REQUESTS = 10;
 const ROUNDS = 3;

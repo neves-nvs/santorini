@@ -1,6 +1,7 @@
+import { readFileSync } from "node:fs";
+
 import Ajv from "ajv";
 import { parse } from "yaml";
-import { readFileSync } from "node:fs";
 
 type Json = { [key: string]: unknown };
 

@@ -1,9 +1,10 @@
-import { GameRuleError, asGameId } from "@santorini/engine";
-import { Connection } from "@/game/infra/Connection.ts";
-import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
+import { asGameId, GameRuleError } from "@santorini/engine";
+import { ServerMessage } from "@santorini/shared";
+
 import { GameNotFoundError } from "@/errors/GameErrors.ts";
 import { GameService } from "@/game/application/GameService.ts";
-import { ServerMessage } from "@santorini/shared";
+import { Connection } from "@/game/infra/Connection.ts";
+import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
 import { WsRouter } from "@/websockets/WsRouter.ts";
 
 function setup() {

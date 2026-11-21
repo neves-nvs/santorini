@@ -1,18 +1,20 @@
 import "./auth/passport.ts";
-import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./middlewares/morganMiddleware.ts";
-import { StatusCodes } from "http-status-codes";
-import authController from "./auth/authController.ts";
-import { config } from "./configs/config.ts";
+
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import express from "express";
+import helmet from "helmet";
+import { StatusCodes } from "http-status-codes";
+import { sql } from "kysely";
+import passport from "passport";
+
+import authController from "./auth/authController.ts";
+import { gameRoutes } from "./composition-root.ts";
+import { config } from "./configs/config.ts";
 import { db } from "./database.ts";
 import errorHandler from "./middlewares/errorMiddleware.ts";
-import express from "express";
-import { gameRoutes } from "./composition-root.ts";
-import helmet from "helmet";
-import passport from "passport";
+import { morganBodyMiddleware, morganMiddleware, morganResBodyMiddleware } from "./middlewares/morganMiddleware.ts";
 import { rateLimitMiddleware } from "./middlewares/rateLimitMiddleware.ts";
-import { sql } from "kysely";
 import userController from "./users/userController.ts";
 
 const CORS_CONFIG = {

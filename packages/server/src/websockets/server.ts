@@ -1,10 +1,12 @@
-import { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
 import { Server } from "http";
-import { WebSocketConnection } from "./WebSocketConnection.ts";
 import { WebSocketServer } from "ws";
-import logger from "@/logger.ts";
+
 import { webSocketAuthUpgrade } from "@/auth/webSocketAuth.ts";
 import { wsRouter } from "@/composition-root.ts";
+import logger from "@/logger.ts";
+
+import { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
+import { WebSocketConnection } from "./WebSocketConnection.ts";
 
 const MAX_MESSAGE_BYTES = 16 * 1024;
 
