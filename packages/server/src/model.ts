@@ -8,6 +8,8 @@ export interface Database {
   pieces: PieceTable;
 }
 
+// Users
+
 export interface UserTable {
   id: Generated<UserId>;
   username: string;
@@ -22,6 +24,8 @@ export interface UserTable {
 export type UserUpdate = Updateable<UserTable>;
 export type NewUser = Insertable<UserTable>;
 export type UserRow = Selectable<UserTable>;
+
+// Games
 
 export type GameStatus = "waiting" | "in-progress" | "completed";
 export type GamePhase = "placing" | "moving" | "building";
@@ -60,6 +64,8 @@ export type GameUpdate = Updateable<GameTable>;
 export type NewGame = Insertable<GameTable>;
 export type GameRow = Selectable<GameTable>;
 
+// Players
+
 export interface PlayerTable {
   game_id: GameId;
   user_id: UserId;
@@ -71,6 +77,8 @@ export interface PlayerTable {
 export type PlayerUpdate = Updateable<PlayerTable>;
 export type NewPlayer = Insertable<PlayerTable>;
 export type PlayerRow = Selectable<PlayerTable>;
+
+// Pieces
 
 export interface PieceTable {
   // TODO make primary key (game_id, piece_id)
