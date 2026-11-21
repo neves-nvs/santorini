@@ -29,7 +29,6 @@ const userView = {
 
 const playerView = {
   userId: expect.any(Number),
-  status: "active",
   isReady: false,
 } satisfies Record<keyof PlayerView, unknown>;
 

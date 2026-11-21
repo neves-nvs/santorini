@@ -1,4 +1,5 @@
-import { GameId, Seat, UserId } from "@santorini/engine";
+import { GameId, GamePhase, Seat, UserId } from "@santorini/engine";
+import { GameStatus } from "@santorini/shared";
 import { ColumnType, Generated, Insertable, Selectable, Updateable } from "kysely";
 
 export interface Database {
@@ -26,9 +27,6 @@ export type NewUser = Insertable<UserTable>;
 export type UserRow = Selectable<UserTable>;
 
 // Games
-
-export type GameStatus = "waiting" | "in-progress" | "completed";
-export type GamePhase = "placing" | "moving" | "building";
 
 export interface GameTable {
   id: Generated<GameId>;

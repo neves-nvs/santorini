@@ -43,7 +43,6 @@ function gameToDto({ game, metadata }: StoredGame): GameSummary {
     playerCount: game.players.length,
     players: game.players.map((p) => ({
       userId: p.userId,
-      status: p.status,
       isReady: p.isReady,
     })),
     createdAt: metadata.createdAt.toISOString(),

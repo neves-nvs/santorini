@@ -12,7 +12,7 @@ const aGame = (id: number, status: GameSummary['status']): GameSummary => ({
   turnNumber: 0,
   version: 1,
   playerCount: 1,
-  players: [{ userId: 1, status: 'active', isReady: false }],
+  players: [{ userId: 1, isReady: false }],
   createdAt: '2026-01-01T00:00:00.000Z',
   startedAt: null,
   finishedAt: null,
