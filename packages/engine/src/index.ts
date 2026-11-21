@@ -4,6 +4,6 @@ export * from "./Game.ts";
 export * from "./GameEvent.ts";
 export * from "./Move.ts";
 export * from "./Player.ts";
-export * from "./TurnPolicy.ts";
+export * from "./rules.ts";
 export * from "./types.ts";
 export * from "./VisibilityPolicy.ts";

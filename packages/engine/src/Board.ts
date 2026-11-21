@@ -1,11 +1,9 @@
 /**
- * Board Domain Entity
- *
- * Represents the Santorini game board with all its state and rules.
- * Encapsulates board-level game logic and validation.
+ * The cells of the board, as the server and the view read them. The rules work on the same data as plain JSON
+ * (`BoardSnapshot`, see rules.ts).
  */
 
-import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove, Position, isBoardCoordinate } from "./Move.ts";
+import { isBoardCoordinate } from "./Move.ts";
 import { Seat } from "./types.ts";
 
 export interface WorkerRef {
@@ -19,15 +17,6 @@ export interface BoardCell {
   worker?: WorkerRef;
 }
 
-export interface MoveResult {
-  success: boolean;
-  isWin?: boolean;
-  winner?: Seat;
-  lastMovedWorkerId?: number;
-  lastMovedWorkerPosition?: Position;
-  error?: string;
-}
-
 export interface BoardCellSnapshot {
   height: number;
   hasDome: boolean;
@@ -39,233 +28,48 @@ export interface BoardSnapshot {
 }
 
 export class Board {
-  private constructor(
-    private _cells: BoardCell[][],
-    private _workers: Map<string, { x: number; y: number; seat: Seat }>,
-  ) {}
+  private constructor(private _cells: BoardCell[][]) {}
 
   static createEmpty(): Board {
-    const cells: BoardCell[][] = [];
-
-    for (let x = 0; x < 5; x++) {
-      cells[x] = [];
-      for (let y = 0; y < 5; y++) {
-        cells[x][y] = {
-          height: 0,
-          hasDome: false,
-        };
-      }
-    }
-
-    return new Board(cells, new Map());
+    return Board.fromSnapshot(null);
   }
 
   static fromSnapshot(snapshot: BoardSnapshot | null): Board {
-    if (!snapshot || !snapshot.cells) {
-      return Board.createEmpty();
-    }
-
     const cells: BoardCell[][] = [];
-    const workers = new Map<string, { x: number; y: number; seat: Seat }>();
 
     for (let x = 0; x < 5; x++) {
       cells[x] = [];
       for (let y = 0; y < 5; y++) {
-        const cellData = snapshot.cells[x]?.[y] || { height: 0, hasDome: false, worker: null };
+        const cellData = snapshot?.cells?.[x]?.[y] || { height: 0, hasDome: false, worker: null };
 
         cells[x][y] = {
           height: cellData.height || 0,
           hasDome: cellData.hasDome || false,
-          worker: cellData.worker
-            ? {
-                seat: cellData.worker.seat,
-                workerId: cellData.worker.workerId,
-              }
-            : undefined,
+          worker: cellData.worker ? { seat: cellData.worker.seat, workerId: cellData.worker.workerId } : undefined,
         };
-
-        // Track workers for quick lookup
-        if (cellData.worker) {
-          const workerKey = `${cellData.worker.seat}-${cellData.worker.workerId}`;
-          workers.set(workerKey, {
-            x,
-            y,
-            seat: cellData.worker.seat,
-          });
-        }
       }
     }
 
-    return new Board(cells, workers);
+    return new Board(cells);
   }
 
   get cells(): ReadonlyArray<ReadonlyArray<BoardCell>> {
     return this._cells;
   }
 
-  get workers(): ReadonlyMap<string, { x: number; y: number; seat: Seat }> {
-    return this._workers;
+  getCell(x: number, y: number): BoardCell | null {
+    return isBoardCoordinate(x) && isBoardCoordinate(y) ? this._cells[x][y] : null;
   }
 
   toSnapshot(): BoardSnapshot {
-    const cells: BoardCellSnapshot[][] = [];
-    for (let x = 0; x < 5; x++) {
-      cells[x] = [];
-      for (let y = 0; y < 5; y++) {
-        const cell = this._cells[x][y];
-        cells[x][y] = {
+    return {
+      cells: this._cells.map((column) =>
+        column.map((cell) => ({
           height: cell.height,
           hasDome: cell.hasDome,
           worker: cell.worker ? { seat: cell.worker.seat, workerId: cell.worker.workerId } : null,
-        };
-      }
-    }
-    return { cells };
-  }
-
-  applyMove(move: Move, seat: Seat): MoveResult {
-    if (!move.isValid()) {
-      return { success: false, error: "Invalid move" };
-    }
-
-    switch (move.type) {
-      case "place_worker":
-        return this.applyPlaceWorker(move as PlaceWorkerMove, seat);
-      case "move_worker":
-        return this.applyMoveWorker(move as MoveWorkerMove, seat);
-      case "build_block":
-      case "build_dome":
-        return this.applyBuild(move as BuildMove);
-      default:
-        return { success: false, error: "Unknown move type" };
-    }
-  }
-
-  isValidPosition(x: number, y: number): boolean {
-    return isBoardCoordinate(x) && isBoardCoordinate(y);
-  }
-
-  isPositionOccupied(x: number, y: number): boolean {
-    if (!this.isValidPosition(x, y)) return true;
-    return this._cells[x][y].worker !== undefined;
-  }
-
-  getCell(x: number, y: number): BoardCell | null {
-    if (!this.isValidPosition(x, y)) return null;
-    return this._cells[x][y];
-  }
-
-  private applyPlaceWorker(move: PlaceWorkerMove, seat: Seat): MoveResult {
-    const { position, workerId } = move;
-
-    if (this.isPositionOccupied(position.x, position.y)) {
-      return { success: false, error: "Position occupied" };
-    }
-
-    // Place worker on board
-    this._cells[position.x][position.y].worker = {
-      seat,
-      workerId,
+        })),
+      ),
     };
-
-    // Track worker position
-    const workerKey = `${seat}-${workerId}`;
-    this._workers.set(workerKey, { x: position.x, y: position.y, seat });
-
-    return { success: true };
-  }
-
-  private applyMoveWorker(move: MoveWorkerMove, seat: Seat): MoveResult {
-    const { position, fromPosition, workerId } = move;
-
-    // Validate move (height difference, adjacency, etc.)
-    if (!this.isValidWorkerMove(fromPosition, position, seat, workerId)) {
-      return { success: false, error: "Invalid worker move" };
-    }
-
-    // Remove worker from old position
-    this._cells[fromPosition.x][fromPosition.y].worker = undefined;
-
-    // Place worker at new position
-    this._cells[position.x][position.y].worker = {
-      seat,
-      workerId,
-    };
-
-    // Update worker tracking
-    const workerKey = `${seat}-${workerId}`;
-    this._workers.set(workerKey, { x: position.x, y: position.y, seat });
-
-    // Check for win condition (moved from level 2 to level 3)
-    const fromCell = this._cells[fromPosition.x][fromPosition.y];
-    const toCell = this._cells[position.x][position.y];
-    const isWin = fromCell.height === 2 && toCell.height === 3;
-
-    return {
-      success: true,
-      isWin,
-      winner: isWin ? seat : undefined,
-      lastMovedWorkerId: workerId,
-      lastMovedWorkerPosition: position,
-    };
-  }
-
-  private applyBuild(move: BuildMove): MoveResult {
-    const { position, buildingType } = move;
-
-    if (this.isPositionOccupied(position.x, position.y)) {
-      return { success: false, error: "Cannot build on occupied position" };
-    }
-
-    const cell = this._cells[position.x][position.y];
-
-    if (cell.hasDome) {
-      return { success: false, error: "Cannot build on dome" };
-    }
-
-    if (buildingType === "dome") {
-      cell.hasDome = true;
-    } else {
-      if (cell.height >= 3) {
-        return { success: false, error: "Cannot build above level 3" };
-      }
-      cell.height++;
-    }
-
-    return { success: true };
-  }
-
-  private isValidWorkerMove(from: Position, to: Position, seat: Seat, workerId: number): boolean {
-    // Check if worker exists at from position
-    const fromCell = this._cells[from.x][from.y];
-    if (!fromCell.worker || fromCell.worker.seat !== seat || fromCell.worker.workerId !== workerId) {
-      return false;
-    }
-
-    // Check if destination is valid and not occupied
-    if (this.isPositionOccupied(to.x, to.y)) {
-      return false;
-    }
-
-    // Check adjacency (can only move to adjacent cells)
-    const dx = Math.abs(to.x - from.x);
-    const dy = Math.abs(to.y - from.y);
-    if (dx > 1 || dy > 1 || (dx === 0 && dy === 0)) {
-      return false;
-    }
-
-    // Check height difference (can only move up 1 level)
-    const fromHeight = fromCell.height;
-    const toHeight = this._cells[to.x][to.y].height;
-    if (toHeight > fromHeight + 1) {
-      return false;
-    }
-
-    // Check for dome
-    if (this._cells[to.x][to.y].hasDome) {
-      return false;
-    }
-
-    return true;
   }
 }
