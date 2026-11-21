@@ -13,11 +13,8 @@ async function registerUser(page: Page, role: string): Promise<void> {
 }
 
 // Helper to create a new game and return the game ID
-async function createGame(page: Page, playerCount: number = 2): Promise<string> {
+async function createGame(page: Page): Promise<string> {
   await page.goto('/lobby')
-  
-  // Select player count
-  await page.locator('select').selectOption(playerCount.toString())
   
   // Click create game
   await page.getByRole('button', { name: /create game/i }).click()
