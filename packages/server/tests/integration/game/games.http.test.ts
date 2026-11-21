@@ -33,7 +33,7 @@ describe("Games HTTP error responses", () => {
     expect(list.body[0].maxPlayers).toBe(2);
   });
 
-  test.each([1, 5, "3", 2.5])("400 when maxPlayers is %j", async (maxPlayers) => {
+  test.each([1, 3, 4, 5, "3", 2.5])("400 when maxPlayers is %j", async (maxPlayers) => {
     const { token } = await createTestUserWithLogin();
 
     const response = await request(app).post("/games").set("Cookie", `token=${token}`).send({ maxPlayers }).expect(400);

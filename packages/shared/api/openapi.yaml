@@ -259,7 +259,7 @@ paths:
             schema:
               type: object
               properties:
-                maxPlayers: { type: integer, minimum: 2, maximum: 4, default: 2 }
+                maxPlayers: { type: integer, minimum: 2, maximum: 2, default: 2 }
       responses:
         "200":
           description: The new game

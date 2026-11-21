@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/user/model/appStore'
 import { userApi } from '@/user/services/userApi'
@@ -66,7 +66,6 @@ const LobbyPage = () => {
   const logout = useAppStore((s) => s.logout)
   usePageTitle('Lobby')
   const navigate = useNavigate()
-  const playerCountId = useId()
 
   const [loading, setLoading] = useState(Boolean(username))
   const [error, setError] = useState('')
@@ -75,7 +74,6 @@ const LobbyPage = () => {
   const [availableGames, setAvailableGames] = useState<GameSummary[]>([])
   const [myGames, setMyGames] = useState<GameSummary[]>([])
   const [activeTab, setActiveTab] = useState<GameTab>('available')
-  const [playerCount, setPlayerCount] = useState(2)
 
   const fetchGames = useCallback(async () => {
     refreshInFlight.current = true
@@ -133,7 +131,7 @@ const LobbyPage = () => {
     setError('')
 
     try {
-      const result = await gameApi.createGame({ maxPlayers: playerCount })
+      const result = await gameApi.createGame({})
       if (result.gameId) {
         const gameId = result.gameId.toString()
         navigate(`/game/${gameId}`)
@@ -208,22 +206,6 @@ const LobbyPage = () => {
         <div className="lobby-panels">
           <div className="lobby-panel">
             <h2 className="lobby-panel-title">Create New Game</h2>
-
-            <div className="lobby-field">
-              <label htmlFor={playerCountId} className="lobby-label">
-                Number of Players
-              </label>
-              <select
-                id={playerCountId}
-                className="lobby-select"
-                value={playerCount}
-                onChange={(e) => setPlayerCount(Number(e.target.value))}
-              >
-                <option value={2}>2 Players</option>
-                <option value={3}>3 Players</option>
-                <option value={4}>4 Players</option>
-              </select>
-            </div>
 
             <button onClick={handleCreateGame} disabled={loading} className="lobby-create">
               {loading ? 'Creating...' : 'Create Game'}
