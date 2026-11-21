@@ -14,8 +14,9 @@ export interface Position {
   y: number;
 }
 
+/** `seat` is the position of the owner in `GameView.players`. */
 export interface WorkerRef {
-  playerId: number;
+  seat: number;
   workerId: number;
 }
 
@@ -35,10 +36,9 @@ export interface BoardView {
 
 export type PlayerStatus = 'active' | 'disconnected' | 'blocked' | 'eliminated';
 
+/** A player has no seat field: the position in `GameView.players` is the seat, counted from 0. */
 export interface PlayerView {
-  id: number;
   userId: number;
-  seat: number;
   status: PlayerStatus;
   isReady: boolean;
 }
@@ -49,6 +49,10 @@ export interface PlayerView {
 
 export type GameStatus = 'waiting' | 'in-progress' | 'completed';
 export type GamePhase = 'placing' | 'moving' | 'building' | null;
+export type ActivePhase = Exclude<GamePhase, null>;
+
+export const WIN_REASONS = ['win_condition', 'opponent_trapped'] as const;
+export type WinReason = (typeof WIN_REASONS)[number];
 
 // ============================================================================
 // Move Types
@@ -112,24 +116,48 @@ export type MoveCommand = PlaceWorkerCommand | MoveWorkerCommand | BuildCommand;
  * Who is looking. A player gets the moves they can play now; someone watching, or whose seat was freed, gets none.
  */
 export type Viewer =
-  | { role: 'player'; playerId: number; isCurrentPlayer: boolean; availableMoves: Move[] }
+  | { role: 'player'; isCurrentPlayer: boolean; availableMoves: Move[] }
   | { role: 'spectator' };
 
-/**
- * A game as one user sees it. The server sends it as the payload of every `game_state` and as the body of
- * `GET /games/:gameId`. `currentPlayerId` and `winnerPlayerId` are per-game player ids, not user ids.
- */
-export interface GameView {
+interface GameViewBase {
   gameId: number;
-  status: GameStatus;
-  phase: GamePhase;
   maxPlayers: number;
-  currentPlayerId: number | null;
   turnNumber: number;
   version: number;
   board: BoardView;
   players: PlayerView[];
-  winnerPlayerId: number | null;
-  winReason: string | null;
   viewer: Viewer;
 }
+
+export interface WaitingGameView extends GameViewBase {
+  status: 'waiting';
+  phase: null;
+  currentSeat: null;
+  winnerUserId: null;
+  winReason: null;
+}
+
+export interface InProgressGameView extends GameViewBase {
+  status: 'in-progress';
+  phase: ActivePhase;
+  currentSeat: number;
+  winnerUserId: null;
+  winReason: null;
+}
+
+export interface CompletedGameView extends GameViewBase {
+  status: 'completed';
+  phase: null;
+  currentSeat: null;
+  winnerUserId: number;
+  winReason: WinReason;
+}
+
+/**
+ * A game as one user sees it. The server sends it as the payload of every `game_state` and as the body of
+ * `GET /games/:gameId`. `status` decides which of the other fields are set: a game that has not started has no
+ * phase, current player or winner, a game in progress has a phase and a current player, and a finished one has
+ * a winner and the reason, and nobody to move. `currentSeat` is a position in `players`, counted from 0, and
+ * `winnerUserId` is the user who won.
+ */
+export type GameView = WaitingGameView | InProgressGameView | CompletedGameView;

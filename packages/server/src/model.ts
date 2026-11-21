@@ -1,4 +1,4 @@
-import { GameId, PlayerId, UserId } from "@santorini/engine";
+import { GameId, Seat, UserId } from "@santorini/engine";
 import { ColumnType, Generated, Insertable, Selectable, Updateable } from "kysely";
 
 export interface Database {
@@ -39,7 +39,8 @@ export interface GameTable {
 
   game_status: GameStatus;
   game_phase: GamePhase | null;
-  current_player_id: PlayerId | null;
+  /** The position of the player whose turn it is, counted from 0. */
+  current_seat: Seat | null;
   turn_number: number;
   placing_turns_completed: number;
 
@@ -51,7 +52,7 @@ export interface GameTable {
   last_moved_worker_x: number | null;
   last_moved_worker_y: number | null;
 
-  winner_id: PlayerId | null;
+  winner_user_id: UserId | null;
   win_reason: string | null;
 
   created_at: ColumnType<Date, string, never>;
@@ -69,7 +70,7 @@ export type GameRow = Selectable<GameTable>;
 export interface PlayerTable {
   game_id: GameId;
   user_id: UserId;
-  /** Where the player sits, from 0 in the order of joining; the player id inside the game is the seat plus one. */
+  /** The position of the player in the game, from 0 in the order of joining. The domain only sees the order. */
   seat: number;
   is_ready: boolean;
 }

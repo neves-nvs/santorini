@@ -1,4 +1,4 @@
-import { asGameId, asPlayerId, asUserId } from "../src/types.ts";
+import { asGameId, asSeat, asUserId } from "../src/types.ts";
 import { BuildMove, MoveWorkerMove, PlaceWorkerMove } from "../src/Move.ts";
 
 import { Game } from "../src/Game.ts";
@@ -11,15 +11,13 @@ describe("Game Domain", () => {
 
   // Helper to start game with all players ready (auto-starts when last player is ready)
   function startGameWithReadyPlayers(g: Game): void {
-    for (const [playerId] of g.players) {
-      g.setPlayerReady(playerId, true);
-    }
+    g.players.forEach((_, seat) => g.setPlayerReady(asSeat(seat), true));
   }
 
   beforeEach(() => {
     game = Game.create(asGameId(1), asUserId(100), 2);
-    player1 = new Player(asPlayerId(1), asUserId(100), 0);
-    player2 = new Player(asPlayerId(2), asUserId(101), 1);
+    player1 = new Player(asUserId(100));
+    player2 = new Player(asUserId(101));
   });
 
   describe("Game Creation", () => {
@@ -27,20 +25,20 @@ describe("Game Domain", () => {
       expect(game.id).toBe(1);
       expect(game.status).toBe("waiting");
       expect(game.phase).toBeNull();
-      expect(game.currentPlayerId).toBeNull();
+      expect(game.currentSeat).toBeNull();
       expect(game.version).toBe(1);
-      expect(game.players.size).toBe(0);
+      expect(game.players.length).toBe(0);
     });
   });
 
   describe("Player Management", () => {
     it("should add players to the game", () => {
       const events1 = game.addPlayer(player1);
-      expect(game.players.size).toBe(1);
+      expect(game.players.length).toBe(1);
       expect(events1).toHaveLength(0); // No events until game is full
 
       const events2 = game.addPlayer(player2);
-      expect(game.players.size).toBe(2);
+      expect(game.players.length).toBe(2);
       expect(events2).toHaveLength(1);
       expect(events2[0].type).toBe("GameReady");
     });
@@ -49,7 +47,7 @@ describe("Game Domain", () => {
       game.addPlayer(player1);
       game.addPlayer(player2);
 
-      const player3 = new Player(asPlayerId(3), asUserId(102), 2);
+      const player3 = new Player(asUserId(102));
       expect(() => game.addPlayer(player3)).toThrow("Game is full");
     });
   });
@@ -66,7 +64,7 @@ describe("Game Domain", () => {
 
       expect(game.status).toBe("in-progress");
       expect(game.phase).toBe("placing");
-      expect(game.currentPlayerId).toBe(1);
+      expect(game.currentSeat).toBe(0);
       // Version increments: +1 per ready + 1 for start = +3
       expect(game.version).toBe(versionBefore + 3);
     });
@@ -78,7 +76,7 @@ describe("Game Domain", () => {
     it("should not start game if not enough players", () => {
       const smallGame = Game.create(asGameId(2), asUserId(100), 2);
       smallGame.addPlayer(player1);
-      smallGame.setPlayerReady(asPlayerId(1), true);
+      smallGame.setPlayerReady(asSeat(0), true);
       expect(() => smallGame.startGame()).toThrow("Cannot start: need 2 players, have 1");
     });
 
@@ -110,8 +108,8 @@ describe("Game Domain", () => {
 
     it("should generate fewer placement moves after worker placed", () => {
       startGameWithReadyPlayers(game);
-      const move = new PlaceWorkerMove(asPlayerId(1), { x: 2, y: 2 }, 1);
-      game.applyMove(asPlayerId(1), move);
+      const move = new PlaceWorkerMove(asSeat(0), { x: 2, y: 2 }, 1);
+      game.applyMove(asSeat(0), move);
 
       const moves = game.getAvailableMoves();
       // 24 remaining cells (player 2's turn now for their first worker)
@@ -128,8 +126,8 @@ describe("Game Domain", () => {
 
     it("should process valid place worker move", () => {
       const versionBefore = game.version;
-      const move = new PlaceWorkerMove(asPlayerId(1), { x: 0, y: 0 }, 1);
-      const events = game.applyMove(asPlayerId(1), move);
+      const move = new PlaceWorkerMove(asSeat(0), { x: 0, y: 0 }, 1);
+      const events = game.applyMove(asSeat(0), move);
 
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe("MovePlayed");
@@ -137,8 +135,8 @@ describe("Game Domain", () => {
     });
 
     it("should reject move from wrong player", () => {
-      const move = new PlaceWorkerMove(asPlayerId(2), { x: 0, y: 0 }, 1);
-      expect(() => game.applyMove(asPlayerId(2), move)).toThrow("Not your turn");
+      const move = new PlaceWorkerMove(asSeat(1), { x: 0, y: 0 }, 1);
+      expect(() => game.applyMove(asSeat(1), move)).toThrow("Not your turn");
     });
 
     it.each([
@@ -149,15 +147,15 @@ describe("Game Domain", () => {
       ["a missing coordinate", { x: 0 }],
       ["a missing position", undefined],
     ])("should reject a placement with %s", (_description, position) => {
-      const move = new PlaceWorkerMove(asPlayerId(1), position as unknown as { x: number; y: number }, 1);
-      expect(() => game.applyMove(asPlayerId(1), move)).toThrow("Invalid move");
+      const move = new PlaceWorkerMove(asSeat(0), position as unknown as { x: number; y: number }, 1);
+      expect(() => game.applyMove(asSeat(0), move)).toThrow("Invalid move");
     });
 
     it("should reject move when game not in progress", () => {
       const waitingGame = Game.create(asGameId(2), asUserId(100), 2);
-      const move = new PlaceWorkerMove(asPlayerId(1), { x: 0, y: 0 }, 1);
+      const move = new PlaceWorkerMove(asSeat(0), { x: 0, y: 0 }, 1);
 
-      expect(() => waitingGame.applyMove(asPlayerId(1), move)).toThrow("Game is not in progress");
+      expect(() => waitingGame.applyMove(asSeat(0), move)).toThrow("Game is not in progress");
     });
   });
 
@@ -169,22 +167,22 @@ describe("Game Domain", () => {
     });
 
     it("should place worker on empty board", () => {
-      const move = new PlaceWorkerMove(asPlayerId(1), { x: 2, y: 2 }, 1);
-      game.applyMove(asPlayerId(1), move);
+      const move = new PlaceWorkerMove(asSeat(0), { x: 2, y: 2 }, 1);
+      game.applyMove(asSeat(0), move);
 
       const cell = game.board.getCell(2, 2);
-      expect(cell?.worker?.playerId).toBe(1);
+      expect(cell?.worker?.seat).toBe(0);
       expect(cell?.worker?.workerId).toBe(1);
     });
 
     it("should not allow placing worker on occupied position", () => {
       // Place first worker
-      const move1 = new PlaceWorkerMove(asPlayerId(1), { x: 2, y: 2 }, 1);
-      game.applyMove(asPlayerId(1), move1);
+      const move1 = new PlaceWorkerMove(asSeat(0), { x: 2, y: 2 }, 1);
+      game.applyMove(asSeat(0), move1);
 
       // Try to place second worker on same position
-      const move2 = new PlaceWorkerMove(asPlayerId(1), { x: 2, y: 2 }, 2);
-      expect(() => game.applyMove(asPlayerId(1), move2)).toThrow();
+      const move2 = new PlaceWorkerMove(asSeat(0), { x: 2, y: 2 }, 2);
+      expect(() => game.applyMove(asSeat(0), move2)).toThrow();
     });
   });
 
@@ -200,9 +198,52 @@ describe("Game Domain", () => {
       expect(restoredGame.id).toBe(game.id);
       expect(restoredGame.status).toBe(game.status);
       expect(restoredGame.phase).toBe(game.phase);
-      expect(restoredGame.currentPlayerId).toBe(game.currentPlayerId);
+      expect(restoredGame.currentSeat).toBe(game.currentSeat);
       expect(restoredGame.version).toBe(game.version);
-      expect(restoredGame.players.size).toBe(game.players.size);
+      expect(restoredGame.players.length).toBe(game.players.length);
+    });
+  });
+
+  describe("Outcome of a stored game", () => {
+    function startedSnapshot() {
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+      startGameWithReadyPlayers(game);
+      return game.toSnapshot();
+    }
+
+    it("has no outcome while the game is on", () => {
+      expect(game.outcome).toBeNull();
+    });
+
+    it("restores the winner and the reason of a completed game together", () => {
+      const restored = Game.fromSnapshot({
+        ...startedSnapshot(),
+        status: "completed",
+        winnerUserId: asUserId(101),
+        winReason: "opponent_trapped",
+      });
+
+      expect(restored.outcome).toEqual({ winnerUserId: 101, reason: "opponent_trapped" });
+      expect(restored.toSnapshot()).toMatchObject({ winnerUserId: 101, winReason: "opponent_trapped" });
+    });
+
+    it("refuses a completed game with no winner", () => {
+      const snapshot = { ...startedSnapshot(), status: "completed" as const, winnerUserId: null, winReason: "win_condition" };
+
+      expect(() => Game.fromSnapshot(snapshot)).toThrow(/completed game 1 has no winner/);
+    });
+
+    it("refuses a completed game with a reason the rules do not know", () => {
+      const snapshot = { ...startedSnapshot(), status: "completed" as const, winnerUserId: asUserId(100), winReason: "teleport" };
+
+      expect(() => Game.fromSnapshot(snapshot)).toThrow(/unknown win reason/);
+    });
+
+    it("refuses a winner on a game that is not completed", () => {
+      const snapshot = { ...startedSnapshot(), winnerUserId: asUserId(100), winReason: "win_condition" };
+
+      expect(() => Game.fromSnapshot(snapshot)).toThrow(/not completed/);
     });
   });
 
@@ -215,30 +256,30 @@ describe("Game Domain", () => {
 
     it("should stay in placing phase while workers are being placed", () => {
       // Player 1 places first worker
-      game.applyMove(asPlayerId(1), new PlaceWorkerMove(asPlayerId(1), { x: 0, y: 0 }, 1));
+      game.applyMove(asSeat(0), new PlaceWorkerMove(asSeat(0), { x: 0, y: 0 }, 1));
       expect(game.phase).toBe("placing");
-      expect(game.currentPlayerId).toBe(2); // Player 2's turn
+      expect(game.currentSeat).toBe(1); // Player 2's turn
 
       // Player 2 places first worker
-      game.applyMove(asPlayerId(2), new PlaceWorkerMove(asPlayerId(2), { x: 1, y: 0 }, 1));
+      game.applyMove(asSeat(1), new PlaceWorkerMove(asSeat(1), { x: 1, y: 0 }, 1));
       expect(game.phase).toBe("placing");
-      expect(game.currentPlayerId).toBe(1); // Player 1's turn
+      expect(game.currentSeat).toBe(0); // Player 1's turn
 
       // Player 1 places second worker
-      game.applyMove(asPlayerId(1), new PlaceWorkerMove(asPlayerId(1), { x: 0, y: 1 }, 2));
+      game.applyMove(asSeat(0), new PlaceWorkerMove(asSeat(0), { x: 0, y: 1 }, 2));
       expect(game.phase).toBe("placing");
-      expect(game.currentPlayerId).toBe(2); // Player 2's turn
+      expect(game.currentSeat).toBe(1); // Player 2's turn
     });
 
     it("should transition to moving phase after all workers placed", () => {
       // Place all 4 workers
-      game.applyMove(asPlayerId(1), new PlaceWorkerMove(asPlayerId(1), { x: 0, y: 0 }, 1));
-      game.applyMove(asPlayerId(2), new PlaceWorkerMove(asPlayerId(2), { x: 4, y: 4 }, 1));
-      game.applyMove(asPlayerId(1), new PlaceWorkerMove(asPlayerId(1), { x: 0, y: 1 }, 2));
-      game.applyMove(asPlayerId(2), new PlaceWorkerMove(asPlayerId(2), { x: 4, y: 3 }, 2));
+      game.applyMove(asSeat(0), new PlaceWorkerMove(asSeat(0), { x: 0, y: 0 }, 1));
+      game.applyMove(asSeat(1), new PlaceWorkerMove(asSeat(1), { x: 4, y: 4 }, 1));
+      game.applyMove(asSeat(0), new PlaceWorkerMove(asSeat(0), { x: 0, y: 1 }, 2));
+      game.applyMove(asSeat(1), new PlaceWorkerMove(asSeat(1), { x: 4, y: 3 }, 2));
 
       expect(game.phase).toBe("moving");
-      expect(game.currentPlayerId).toBe(1); // Player 1 starts moving phase
+      expect(game.currentSeat).toBe(0); // Player 1 starts moving phase
       expect(game.placingTurnsCompleted).toBe(4);
     });
   });
@@ -249,10 +290,10 @@ describe("Game Domain", () => {
       game.addPlayer(player2);
       startGameWithReadyPlayers(game);
       // Place all workers
-      game.applyMove(asPlayerId(1), new PlaceWorkerMove(asPlayerId(1), { x: 2, y: 2 }, 1));
-      game.applyMove(asPlayerId(2), new PlaceWorkerMove(asPlayerId(2), { x: 4, y: 4 }, 1));
-      game.applyMove(asPlayerId(1), new PlaceWorkerMove(asPlayerId(1), { x: 2, y: 3 }, 2));
-      game.applyMove(asPlayerId(2), new PlaceWorkerMove(asPlayerId(2), { x: 4, y: 3 }, 2));
+      game.applyMove(asSeat(0), new PlaceWorkerMove(asSeat(0), { x: 2, y: 2 }, 1));
+      game.applyMove(asSeat(1), new PlaceWorkerMove(asSeat(1), { x: 4, y: 4 }, 1));
+      game.applyMove(asSeat(0), new PlaceWorkerMove(asSeat(0), { x: 2, y: 3 }, 2));
+      game.applyMove(asSeat(1), new PlaceWorkerMove(asSeat(1), { x: 4, y: 3 }, 2));
     });
 
     it("should generate movement moves for current player workers", () => {
@@ -265,23 +306,23 @@ describe("Game Domain", () => {
     });
 
     it("should reject a movement from a position that is not on the board", () => {
-      const move = new MoveWorkerMove(asPlayerId(1), { x: 1, y: 2 }, 1, { x: 2.5, y: 2 });
-      expect(() => game.applyMove(asPlayerId(1), move)).toThrow("Invalid move");
+      const move = new MoveWorkerMove(asSeat(0), { x: 1, y: 2 }, 1, { x: 2.5, y: 2 });
+      expect(() => game.applyMove(asSeat(0), move)).toThrow("Invalid move");
     });
 
     it("should transition to building phase after movement", () => {
-      const move = new MoveWorkerMove(asPlayerId(1), { x: 1, y: 2 }, 1, { x: 2, y: 2 });
-      game.applyMove(asPlayerId(1), move);
+      const move = new MoveWorkerMove(asSeat(0), { x: 1, y: 2 }, 1, { x: 2, y: 2 });
+      game.applyMove(asSeat(0), move);
 
       expect(game.phase).toBe("building");
-      expect(game.currentPlayerId).toBe(1); // Same player builds
+      expect(game.currentSeat).toBe(0); // Same player builds
       expect(game.lastMovedWorkerId).toBe(1);
       expect(game.lastMovedWorkerPosition).toEqual({ x: 1, y: 2 });
     });
 
     it("should only allow moved worker to build", () => {
       // Move worker 1
-      game.applyMove(asPlayerId(1), new MoveWorkerMove(asPlayerId(1), { x: 1, y: 2 }, 1, { x: 2, y: 2 }));
+      game.applyMove(asSeat(0), new MoveWorkerMove(asSeat(0), { x: 1, y: 2 }, 1, { x: 2, y: 2 }));
 
       const buildMoves = game.getAvailableMoves();
       // Build moves should be adjacent to worker 1's new position (1,2)
@@ -296,17 +337,17 @@ describe("Game Domain", () => {
       game.addPlayer(player2);
       startGameWithReadyPlayers(game);
       // Place all workers
-      game.applyMove(asPlayerId(1), new PlaceWorkerMove(asPlayerId(1), { x: 2, y: 2 }, 1));
-      game.applyMove(asPlayerId(2), new PlaceWorkerMove(asPlayerId(2), { x: 4, y: 4 }, 1));
-      game.applyMove(asPlayerId(1), new PlaceWorkerMove(asPlayerId(1), { x: 2, y: 3 }, 2));
-      game.applyMove(asPlayerId(2), new PlaceWorkerMove(asPlayerId(2), { x: 4, y: 3 }, 2));
+      game.applyMove(asSeat(0), new PlaceWorkerMove(asSeat(0), { x: 2, y: 2 }, 1));
+      game.applyMove(asSeat(1), new PlaceWorkerMove(asSeat(1), { x: 4, y: 4 }, 1));
+      game.applyMove(asSeat(0), new PlaceWorkerMove(asSeat(0), { x: 2, y: 3 }, 2));
+      game.applyMove(asSeat(1), new PlaceWorkerMove(asSeat(1), { x: 4, y: 3 }, 2));
       // Move player 1's worker
-      game.applyMove(asPlayerId(1), new MoveWorkerMove(asPlayerId(1), { x: 1, y: 2 }, 1, { x: 2, y: 2 }));
+      game.applyMove(asSeat(0), new MoveWorkerMove(asSeat(0), { x: 1, y: 2 }, 1, { x: 2, y: 2 }));
     });
 
     it("should allow building on adjacent empty cell", () => {
-      const buildMove = new BuildMove(asPlayerId(1), { x: 0, y: 2 }, "block");
-      const events = game.applyMove(asPlayerId(1), buildMove);
+      const buildMove = new BuildMove(asSeat(0), { x: 0, y: 2 }, "block");
+      const events = game.applyMove(asSeat(0), buildMove);
 
       expect(events[0].type).toBe("MovePlayed");
       const cell = game.board.getCell(0, 2);
@@ -314,21 +355,21 @@ describe("Game Domain", () => {
     });
 
     it("should transition to next player moving phase after build", () => {
-      game.applyMove(asPlayerId(1), new BuildMove(asPlayerId(1), { x: 0, y: 2 }, "block"));
+      game.applyMove(asSeat(0), new BuildMove(asSeat(0), { x: 0, y: 2 }, "block"));
 
       expect(game.phase).toBe("moving");
-      expect(game.currentPlayerId).toBe(2); // Player 2's turn
+      expect(game.currentSeat).toBe(1); // Player 2's turn
       expect(game.lastMovedWorkerId).toBeNull();
     });
 
     it("should increment building height on successive builds", () => {
-      game.applyMove(asPlayerId(1), new BuildMove(asPlayerId(1), { x: 0, y: 2 }, "block"));
+      game.applyMove(asSeat(0), new BuildMove(asSeat(0), { x: 0, y: 2 }, "block"));
       // Player 2's turn - move and build elsewhere
-      game.applyMove(asPlayerId(2), new MoveWorkerMove(asPlayerId(2), { x: 3, y: 4 }, 1, { x: 4, y: 4 }));
-      game.applyMove(asPlayerId(2), new BuildMove(asPlayerId(2), { x: 4, y: 4 }, "block"));
+      game.applyMove(asSeat(1), new MoveWorkerMove(asSeat(1), { x: 3, y: 4 }, 1, { x: 4, y: 4 }));
+      game.applyMove(asSeat(1), new BuildMove(asSeat(1), { x: 4, y: 4 }, "block"));
       // Player 1's turn - build again on same cell
-      game.applyMove(asPlayerId(1), new MoveWorkerMove(asPlayerId(1), { x: 0, y: 2 }, 1, { x: 1, y: 2 }));
-      game.applyMove(asPlayerId(1), new BuildMove(asPlayerId(1), { x: 1, y: 2 }, "block"));
+      game.applyMove(asSeat(0), new MoveWorkerMove(asSeat(0), { x: 0, y: 2 }, 1, { x: 1, y: 2 }));
+      game.applyMove(asSeat(0), new BuildMove(asSeat(0), { x: 1, y: 2 }, "block"));
 
       expect(game.board.getCell(0, 2)?.height).toBe(1);
       expect(game.board.getCell(1, 2)?.height).toBe(1);
@@ -357,8 +398,8 @@ describe("Game Domain", () => {
       snapshot.board.cells[0][2].height = 3;
       const testGame = Game.fromSnapshot(snapshot);
 
-      const buildMove = new BuildMove(asPlayerId(1), { x: 0, y: 2 }, "dome");
-      const events = testGame.applyMove(asPlayerId(1), buildMove);
+      const buildMove = new BuildMove(asSeat(0), { x: 0, y: 2 }, "dome");
+      const events = testGame.applyMove(asSeat(0), buildMove);
 
       expect(events[0].type).toBe("MovePlayed");
       const cell = testGame.board.getCell(0, 2);
@@ -381,20 +422,19 @@ describe("Game Domain", () => {
       snapshot.board.cells[1][1].height = 2;
       snapshot.board.cells[1][2].height = 3;
       snapshot.phase = "moving";
-      snapshot.currentPlayerId = asPlayerId(1);
+      snapshot.currentSeat = asSeat(0);
 
       // Place worker on level 2
-      snapshot.board.cells[1][1].worker = { playerId: asPlayerId(1), workerId: 1 };
+      snapshot.board.cells[1][1].worker = { seat: asSeat(0), workerId: 1 };
       // Add worker tracking
       const testGame = Game.fromSnapshot(snapshot);
 
       // Move up to level 3 - should win
-      const winMove = new MoveWorkerMove(asPlayerId(1), { x: 1, y: 2 }, 1, { x: 1, y: 1 });
-      const events = testGame.applyMove(asPlayerId(1), winMove);
+      const winMove = new MoveWorkerMove(asSeat(0), { x: 1, y: 2 }, 1, { x: 1, y: 1 });
+      const events = testGame.applyMove(asSeat(0), winMove);
 
       expect(testGame.status).toBe("completed");
-      expect(testGame.winnerId).toBe(1);
-      expect(testGame.winReason).toBe("win_condition");
+      expect(testGame.outcome).toEqual({ winnerUserId: 100, reason: "win_condition" });
       expect(events.some((e) => e.type === "GameFinished")).toBe(true);
     });
   });
@@ -409,15 +449,15 @@ describe("Game Domain", () => {
       // Worker in corner with domes on all sides
       const snapshot = game.toSnapshot();
       snapshot.phase = "moving";
-      snapshot.currentPlayerId = asPlayerId(1);
+      snapshot.currentSeat = asSeat(0);
 
       // Player 1 worker at 0,0
-      snapshot.board.cells[0][0].worker = { playerId: asPlayerId(1), workerId: 1 };
+      snapshot.board.cells[0][0].worker = { seat: asSeat(0), workerId: 1 };
       // Player 1 second worker at 0,4 also trapped
-      snapshot.board.cells[0][4].worker = { playerId: asPlayerId(1), workerId: 2 };
+      snapshot.board.cells[0][4].worker = { seat: asSeat(0), workerId: 2 };
       // Player 2 workers elsewhere
-      snapshot.board.cells[4][4].worker = { playerId: asPlayerId(2), workerId: 1 };
-      snapshot.board.cells[4][3].worker = { playerId: asPlayerId(2), workerId: 2 };
+      snapshot.board.cells[4][4].worker = { seat: asSeat(1), workerId: 1 };
+      snapshot.board.cells[4][3].worker = { seat: asSeat(1), workerId: 2 };
 
       // Surround worker 1 with domes
       snapshot.board.cells[0][1].hasDome = true;
@@ -446,13 +486,13 @@ describe("Game Domain", () => {
 
       const snapshot = game.toSnapshot();
       snapshot.phase = "moving";
-      snapshot.currentPlayerId = asPlayerId(1);
+      snapshot.currentSeat = asSeat(0);
 
       // Player 1 workers trapped
-      snapshot.board.cells[0][0].worker = { playerId: asPlayerId(1), workerId: 1 };
-      snapshot.board.cells[0][4].worker = { playerId: asPlayerId(1), workerId: 2 };
-      snapshot.board.cells[4][4].worker = { playerId: asPlayerId(2), workerId: 1 };
-      snapshot.board.cells[4][3].worker = { playerId: asPlayerId(2), workerId: 2 };
+      snapshot.board.cells[0][0].worker = { seat: asSeat(0), workerId: 1 };
+      snapshot.board.cells[0][4].worker = { seat: asSeat(0), workerId: 2 };
+      snapshot.board.cells[4][4].worker = { seat: asSeat(1), workerId: 1 };
+      snapshot.board.cells[4][3].worker = { seat: asSeat(1), workerId: 2 };
 
       // Domes around worker 1
       snapshot.board.cells[0][1].hasDome = true;
@@ -470,8 +510,7 @@ describe("Game Domain", () => {
       const events = testGame.checkAndHandleNoMoves();
 
       expect(testGame.status).toBe("completed");
-      expect(testGame.winnerId).toBe(2); // Player 2 wins
-      expect(testGame.winReason).toBe("opponent_trapped");
+      expect(testGame.outcome).toEqual({ winnerUserId: 101, reason: "opponent_trapped" });
       expect(events.some((e) => e.type === "GameFinished")).toBe(true);
     });
   });

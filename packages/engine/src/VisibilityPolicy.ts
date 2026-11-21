@@ -1,4 +1,4 @@
-import { GameId, PlayerId } from "./types.ts";
+import { GameId, GameOutcome, Seat } from "./types.ts";
 import { Board } from "./Board.ts";
 import { Game } from "./Game.ts";
 import { Player } from "./Player.ts";
@@ -7,13 +7,12 @@ export interface FilteredGameState {
   id: GameId;
   status: string;
   phase: string | null;
-  currentPlayerId: PlayerId | null;
+  currentSeat: Seat | null;
   turnNumber: number;
   version: number;
   board: Board;
   players: Player[];
-  winnerId: PlayerId | null;
-  winReason: string | null;
+  outcome: GameOutcome | null;
 }
 
 /**
@@ -24,7 +23,7 @@ export class VisibilityPolicy {
   /**
    * Determine if a player can see another player's hand/hidden information
    */
-  canSeePlayerHiddenInfo(_viewerId: number, _targetPlayerId: number, _game: Game): boolean {
+  canSeePlayerHiddenInfo(_viewerId: number, _targetSeat: number, _game: Game): boolean {
     // In Santorini, there's no hidden information between players
     // All board state is visible to all players
     return true;
@@ -41,9 +40,9 @@ export class VisibilityPolicy {
   /**
    * Determine if a player can see available moves for another player
    */
-  canSeeAvailableMoves(viewerId: number, targetPlayerId: number, game: Game): boolean {
+  canSeeAvailableMoves(viewerId: number, targetSeat: number, game: Game): boolean {
     // Only the current player can see their available moves
-    return viewerId === targetPlayerId && game.currentPlayerId === viewerId;
+    return viewerId === targetSeat && game.currentSeat === viewerId;
   }
 
   /**
@@ -63,13 +62,12 @@ export class VisibilityPolicy {
       id: game.id,
       status: game.status,
       phase: game.phase,
-      currentPlayerId: game.currentPlayerId,
+      currentSeat: game.currentSeat,
       turnNumber: game.turnNumber,
       version: game.version,
       board: game.board,
-      players: Array.from(game.players.values()),
-      winnerId: game.winnerId,
-      winReason: game.winReason,
+      players: [...game.players],
+      outcome: game.outcome,
     };
   }
 }

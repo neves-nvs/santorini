@@ -1,4 +1,4 @@
-import { asGameId, asPlayerId, Game, Player } from "@santorini/engine";
+import { asGameId, asSeat, Game, Player } from "@santorini/engine";
 
 import { db } from "@/database.ts";
 import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
@@ -8,7 +8,6 @@ import { cleanupTestData } from "@tests/integration/helper/testDb.ts";
 describe("Saving and loading a game", () => {
   const repository = new GameRepositoryDb();
 
-  // The ids restart at 1 so that a player id in a game is also a user id: games.current_player_id references users.
   afterEach(cleanupTestData);
 
   afterAll(async () => {
@@ -19,11 +18,11 @@ describe("Saving and loading a game", () => {
     const creator = (await generateTestUser()).user;
     const guest = (await generateTestUser()).user;
     const game = await repository.createNew(creator.id, 2);
-    game.addPlayer(new Player(asPlayerId(1), creator.id, 0));
-    game.addPlayer(new Player(asPlayerId(2), guest.id, 1));
+    game.addPlayer(new Player(creator.id));
+    game.addPlayer(new Player(guest.id));
     await repository.save(game);
-    game.setPlayerReady(asPlayerId(1), true);
-    game.setPlayerReady(asPlayerId(2), true);
+    game.setPlayerReady(asSeat(0), true);
+    game.setPlayerReady(asSeat(1), true);
     await repository.save(game);
     return game;
   }
@@ -51,12 +50,10 @@ describe("Saving and loading a game", () => {
     const creator = (await generateTestUser()).user;
     const game = await repository.createNew(creator.id, 2);
 
-    const result = await repository.update(game.id, (loaded) =>
-      loaded.addPlayer(new Player(asPlayerId(1), creator.id, 0)),
-    );
+    const result = await repository.update(game.id, (loaded) => loaded.addPlayer(new Player(creator.id)));
 
     expect(result?.events).toEqual([]);
-    expect((await repository.findById(game.id))?.players.size).toBe(1);
+    expect((await repository.findById(game.id))?.players.length).toBe(1);
   });
 
   test("update saves nothing when the change throws", async () => {
@@ -65,12 +62,12 @@ describe("Saving and loading a game", () => {
 
     await expect(
       repository.update(game.id, (loaded) => {
-        loaded.addPlayer(new Player(asPlayerId(1), creator.id, 0));
+        loaded.addPlayer(new Player(creator.id));
         throw new Error("refused");
       }),
     ).rejects.toThrow("refused");
 
-    expect((await repository.findById(game.id))?.players.size).toBe(0);
+    expect((await repository.findById(game.id))?.players.length).toBe(0);
   });
 
   test("update answers null for a game that does not exist", async () => {
@@ -93,13 +90,13 @@ describe("Saving and loading a game", () => {
     const created = await repository.createNew(creator.id, 3);
     await db.deleteFrom("games").where("id", "=", created.id).execute();
     const game = Game.fromSnapshot({ ...Game.create(created.id, creator.id, 3).toSnapshot(), turnNumber: 4 });
-    game.addPlayer(new Player(asPlayerId(1), creator.id, 0));
-    game.addPlayer(new Player(asPlayerId(2), guest.id, 1));
+    game.addPlayer(new Player(creator.id));
+    game.addPlayer(new Player(guest.id));
 
     await repository.save(game);
 
     const reloaded = await repository.findById(game.id);
     expect(reloaded?.toSnapshot()).toMatchObject({ maxPlayers: 3, creatorId: creator.id, turnNumber: 4 });
-    expect(reloaded?.players.size).toBe(2);
+    expect(reloaded?.players.length).toBe(2);
   });
 });

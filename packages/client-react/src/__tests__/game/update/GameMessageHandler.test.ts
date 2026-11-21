@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyGameView, handleWebSocketMessage, resetMessageHandlerState } from '@/game/update/GameMessageHandler'
-import type { GameView, Move } from '@santorini/shared'
+import type { CompletedGameView, InProgressGameView, Move } from '@santorini/shared'
 import { useAppStore } from '@/user/model/appStore'
 import { useGameStore } from '@/game/model/gameStore'
 
@@ -9,22 +9,22 @@ const OPPONENT = 11
 
 const placeAt = (x: number, y: number): Move => ({ type: 'place_worker', workerId: 1, position: { x, y } })
 
-const view = (overrides: Partial<GameView> = {}): GameView => ({
+const view = (overrides: Partial<InProgressGameView> = {}): InProgressGameView => ({
   gameId: 5,
   status: 'in-progress',
   phase: 'placing',
   maxPlayers: 3,
-  currentPlayerId: 1,
+  currentSeat: 0,
   turnNumber: 1,
   version: 4,
   board: { cells: [] },
   players: [
-    { id: 1, userId: ME, seat: 0, status: 'active', isReady: true },
-    { id: 2, userId: OPPONENT, seat: 1, status: 'active', isReady: false },
+    { userId: ME, status: 'active', isReady: true },
+    { userId: OPPONENT, status: 'active', isReady: false },
   ],
-  winnerPlayerId: null,
+  winnerUserId: null,
   winReason: null,
-  viewer: { role: 'player', playerId: 1, isCurrentPlayer: true, availableMoves: [placeAt(0, 0), placeAt(2, 3)] },
+  viewer: { role: 'player', isCurrentPlayer: true, availableMoves: [placeAt(0, 0), placeAt(2, 3)] },
   ...overrides,
 })
 
@@ -54,7 +54,7 @@ describe('game_state', () => {
   it('has no moves and no turn for a player who waits, or for a spectator', () => {
     handleWebSocketMessage(
       'game_state',
-      view({ viewer: { role: 'player', playerId: 2, isCurrentPlayer: false, availableMoves: [] } })
+      view({ viewer: { role: 'player', isCurrentPlayer: false, availableMoves: [] } })
     )
     expect(useGameStore.getState()).toMatchObject({ currentPlayerMoves: [], isMyTurn: false })
 
@@ -64,12 +64,21 @@ describe('game_state', () => {
   })
 
   it('shows the winner of a finished game', () => {
-    handleWebSocketMessage('game_state', view({ status: 'completed', winnerPlayerId: 2, winReason: 'reached level 3' }))
+    const finished: CompletedGameView = {
+      ...view(),
+      status: 'completed',
+      phase: null,
+      currentSeat: null,
+      winnerUserId: OPPONENT,
+      winReason: 'win_condition',
+    }
+
+    handleWebSocketMessage('game_state', finished)
 
     expect(useGameStore.getState().gameState).toMatchObject({
       status: 'completed',
-      winnerId: 2,
-      winReason: 'reached level 3',
+      winnerUserId: OPPONENT,
+      winReason: 'win_condition',
     })
   })
 
@@ -85,7 +94,7 @@ describe('game_state', () => {
   it('shows the next state even when the board looks the same', () => {
     applyGameView(view({ version: 6 }))
 
-    applyGameView(view({ version: 7, players: [{ id: 1, userId: ME, seat: 0, status: 'active', isReady: false }] }))
+    applyGameView(view({ version: 7, players: [{ userId: ME, status: 'active', isReady: false }] }))
 
     expect(useGameStore.getState().gameState).toMatchObject({ version: 7, currentUserReady: false })
   })

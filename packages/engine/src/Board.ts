@@ -6,10 +6,10 @@
  */
 
 import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove, Position, isBoardCoordinate } from "./Move.ts";
-import { PlayerId } from "./types.ts";
+import { Seat } from "./types.ts";
 
 export interface WorkerRef {
-  playerId: PlayerId;
+  seat: Seat;
   workerId: number;
 }
 
@@ -22,7 +22,7 @@ export interface BoardCell {
 export interface MoveResult {
   success: boolean;
   isWin?: boolean;
-  winner?: PlayerId;
+  winner?: Seat;
   lastMovedWorkerId?: number;
   lastMovedWorkerPosition?: Position;
   error?: string;
@@ -41,7 +41,7 @@ export interface BoardSnapshot {
 export class Board {
   private constructor(
     private _cells: BoardCell[][],
-    private _workers: Map<string, { x: number; y: number; playerId: PlayerId }>,
+    private _workers: Map<string, { x: number; y: number; seat: Seat }>,
   ) {}
 
   static createEmpty(): Board {
@@ -66,7 +66,7 @@ export class Board {
     }
 
     const cells: BoardCell[][] = [];
-    const workers = new Map<string, { x: number; y: number; playerId: PlayerId }>();
+    const workers = new Map<string, { x: number; y: number; seat: Seat }>();
 
     for (let x = 0; x < 5; x++) {
       cells[x] = [];
@@ -78,7 +78,7 @@ export class Board {
           hasDome: cellData.hasDome || false,
           worker: cellData.worker
             ? {
-                playerId: cellData.worker.playerId,
+                seat: cellData.worker.seat,
                 workerId: cellData.worker.workerId,
               }
             : undefined,
@@ -86,11 +86,11 @@ export class Board {
 
         // Track workers for quick lookup
         if (cellData.worker) {
-          const workerKey = `${cellData.worker.playerId}-${cellData.worker.workerId}`;
+          const workerKey = `${cellData.worker.seat}-${cellData.worker.workerId}`;
           workers.set(workerKey, {
             x,
             y,
-            playerId: cellData.worker.playerId,
+            seat: cellData.worker.seat,
           });
         }
       }
@@ -103,7 +103,7 @@ export class Board {
     return this._cells;
   }
 
-  get workers(): ReadonlyMap<string, { x: number; y: number; playerId: PlayerId }> {
+  get workers(): ReadonlyMap<string, { x: number; y: number; seat: Seat }> {
     return this._workers;
   }
 
@@ -116,23 +116,23 @@ export class Board {
         cells[x][y] = {
           height: cell.height,
           hasDome: cell.hasDome,
-          worker: cell.worker ? { playerId: cell.worker.playerId, workerId: cell.worker.workerId } : null,
+          worker: cell.worker ? { seat: cell.worker.seat, workerId: cell.worker.workerId } : null,
         };
       }
     }
     return { cells };
   }
 
-  applyMove(move: Move, playerId: PlayerId): MoveResult {
+  applyMove(move: Move, seat: Seat): MoveResult {
     if (!move.isValid()) {
       return { success: false, error: "Invalid move" };
     }
 
     switch (move.type) {
       case "place_worker":
-        return this.applyPlaceWorker(move as PlaceWorkerMove, playerId);
+        return this.applyPlaceWorker(move as PlaceWorkerMove, seat);
       case "move_worker":
-        return this.applyMoveWorker(move as MoveWorkerMove, playerId);
+        return this.applyMoveWorker(move as MoveWorkerMove, seat);
       case "build_block":
       case "build_dome":
         return this.applyBuild(move as BuildMove);
@@ -155,7 +155,7 @@ export class Board {
     return this._cells[x][y];
   }
 
-  private applyPlaceWorker(move: PlaceWorkerMove, playerId: PlayerId): MoveResult {
+  private applyPlaceWorker(move: PlaceWorkerMove, seat: Seat): MoveResult {
     const { position, workerId } = move;
 
     if (this.isPositionOccupied(position.x, position.y)) {
@@ -164,22 +164,22 @@ export class Board {
 
     // Place worker on board
     this._cells[position.x][position.y].worker = {
-      playerId,
+      seat,
       workerId,
     };
 
     // Track worker position
-    const workerKey = `${playerId}-${workerId}`;
-    this._workers.set(workerKey, { x: position.x, y: position.y, playerId });
+    const workerKey = `${seat}-${workerId}`;
+    this._workers.set(workerKey, { x: position.x, y: position.y, seat });
 
     return { success: true };
   }
 
-  private applyMoveWorker(move: MoveWorkerMove, playerId: PlayerId): MoveResult {
+  private applyMoveWorker(move: MoveWorkerMove, seat: Seat): MoveResult {
     const { position, fromPosition, workerId } = move;
 
     // Validate move (height difference, adjacency, etc.)
-    if (!this.isValidWorkerMove(fromPosition, position, playerId, workerId)) {
+    if (!this.isValidWorkerMove(fromPosition, position, seat, workerId)) {
       return { success: false, error: "Invalid worker move" };
     }
 
@@ -188,13 +188,13 @@ export class Board {
 
     // Place worker at new position
     this._cells[position.x][position.y].worker = {
-      playerId,
+      seat,
       workerId,
     };
 
     // Update worker tracking
-    const workerKey = `${playerId}-${workerId}`;
-    this._workers.set(workerKey, { x: position.x, y: position.y, playerId });
+    const workerKey = `${seat}-${workerId}`;
+    this._workers.set(workerKey, { x: position.x, y: position.y, seat });
 
     // Check for win condition (moved from level 2 to level 3)
     const fromCell = this._cells[fromPosition.x][fromPosition.y];
@@ -204,7 +204,7 @@ export class Board {
     return {
       success: true,
       isWin,
-      winner: isWin ? playerId : undefined,
+      winner: isWin ? seat : undefined,
       lastMovedWorkerId: workerId,
       lastMovedWorkerPosition: position,
     };
@@ -235,10 +235,10 @@ export class Board {
     return { success: true };
   }
 
-  private isValidWorkerMove(from: Position, to: Position, playerId: PlayerId, workerId: number): boolean {
+  private isValidWorkerMove(from: Position, to: Position, seat: Seat, workerId: number): boolean {
     // Check if worker exists at from position
     const fromCell = this._cells[from.x][from.y];
-    if (!fromCell.worker || fromCell.worker.playerId !== playerId || fromCell.worker.workerId !== workerId) {
+    if (!fromCell.worker || fromCell.worker.seat !== seat || fromCell.worker.workerId !== workerId) {
       return false;
     }
 

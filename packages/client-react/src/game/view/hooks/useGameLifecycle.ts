@@ -64,8 +64,8 @@ export function useGameLifecycle() {
     currentPlayer: gameState?.currentPlayer,
     
     // Winner info
-    winner: gameState?.winnerId,
-    isGameWon: !!gameState?.winnerId
+    winner: gameState?.winnerUserId,
+    isGameWon: !!gameState?.winnerUserId
   }), [lifecycle, currentPlayers, totalPlayers, readyCount, isMyTurn, gameState])
 
   return {

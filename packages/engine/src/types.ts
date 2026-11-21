@@ -13,9 +13,20 @@ type Brand<Value, Name extends string> = Value & { readonly [brand]: Name };
 
 export type GameId = Brand<number, "GameId">;
 export type UserId = Brand<number, "UserId">;
-/** The seat of a player inside one game, which is not the id of the user who plays it. */
-export type PlayerId = Brand<number, "PlayerId">;
+/** The seat a player holds in one game, counted from 0 in the order of joining. It is not the id of the user who plays it. */
+export type Seat = Brand<number, "Seat">;
 
 export const asGameId = (value: number): GameId => value as GameId;
 export const asUserId = (value: number): UserId => value as UserId;
-export const asPlayerId = (value: number): PlayerId => value as PlayerId;
+export const asSeat = (value: number): Seat => value as Seat;
+
+export const WIN_REASONS = ["win_condition", "opponent_trapped"] as const;
+export type WinReason = (typeof WIN_REASONS)[number];
+
+/** How a finished game ended: the winner and the reason always come together. */
+export interface GameOutcome {
+  readonly winnerUserId: UserId;
+  readonly reason: WinReason;
+}
+
+export const isWinReason = (value: string | null): value is WinReason => WIN_REASONS.some((reason) => reason === value);

@@ -1,4 +1,4 @@
-import { PlayerId, UserId } from "./types.ts";
+import { UserId } from "./types.ts";
 
 /**
  * Player Domain Entity
@@ -11,9 +11,7 @@ export type PlayerStatus = "active" | "disconnected" | "blocked" | "eliminated";
 
 export class Player {
   constructor(
-    public readonly id: PlayerId,
     public readonly userId: UserId,
-    public readonly seat: number,
     private _status: PlayerStatus = "active",
     private _isReady: boolean = false,
   ) {}

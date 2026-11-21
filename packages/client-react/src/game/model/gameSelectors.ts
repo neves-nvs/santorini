@@ -35,8 +35,8 @@ export const useCellWorker = (x: number, y: number) =>
 export const useWorkerAt = (x: number, y: number) => 
   useGameStore(state => state.workersByPosition.get(`${x},${y}`) || null)
 
-export const useWorkersByPlayer = (playerId: number) => 
-  useGameStore(state => state.workersByPlayer.get(playerId) || [])
+export const useWorkersBySeat = (seat: number) => 
+  useGameStore(state => state.workersBySeat.get(seat) || [])
 
 export const useAllWorkers = () => 
   useGameStore(state => Array.from(state.workersByPosition.values()))
@@ -72,9 +72,9 @@ export const useIsConnecting = () =>
   useGameStore(state => state.isConnecting)
 
 // Computed selectors for game logic
-export const useMovableWorkers = (currentPlayerId: number) => 
+export const useMovableWorkers = (currentSeat: number) => 
   useGameStore(state => {
-    const playerWorkers = state.workersByPlayer.get(currentPlayerId) || []
+    const playerWorkers = state.workersBySeat.get(currentSeat) || []
     const moveWorkerMoves = state.currentPlayerMoves.filter(move => move.type === 'move_worker')
     
     return playerWorkers.filter(worker =>
@@ -99,10 +99,10 @@ export const useIsValidPosition = (x: number, y: number, selectedWorkerId?: numb
   })
 
 // Worker interaction selectors
-export const useCanWorkerMove = (x: number, y: number, currentPlayerId: number) => 
+export const useCanWorkerMove = (x: number, y: number, currentSeat: number) => 
   useGameStore(state => {
     const worker = state.workersByPosition.get(`${x},${y}`)
-    if (!worker || worker.playerId !== currentPlayerId) return false
+    if (!worker || worker.seat !== currentSeat) return false
     
     const moveWorkerMoves = state.currentPlayerMoves.filter(move => move.type === 'move_worker')
     return moveWorkerMoves.some(move => move.workerId === worker.workerId)
@@ -150,7 +150,7 @@ export const useStoreStats = () =>
     hasGameState: !!state.gameState,
     hasBoardState: !!state.boardState,
     workerCount: state.workersByPosition.size,
-    playerCount: state.workersByPlayer.size,
+    playerCount: state.workersBySeat.size,
     moveCount: state.currentPlayerMoves.length,
     lastBoardUpdate: state.boardState?.lastUpdated || 0
   }))

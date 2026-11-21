@@ -37,14 +37,12 @@ function gameToDto({ game, metadata }: StoredGame): GameSummary {
     maxPlayers: game.maxPlayers,
     status: game.status,
     phase: game.phase,
-    currentPlayerId: game.currentPlayerId,
+    currentSeat: game.currentSeat,
     turnNumber: game.turnNumber,
     version: game.version,
-    playerCount: game.players.size,
-    players: Array.from(game.players.values()).map((p) => ({
-      id: p.id,
+    playerCount: game.players.length,
+    players: game.players.map((p) => ({
       userId: p.userId,
-      seat: p.seat,
       status: p.status,
       isReady: p.isReady,
     })),

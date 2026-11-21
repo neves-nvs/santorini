@@ -1,4 +1,4 @@
-import { GameId, GameRuleError, PlayerId, UserId } from "@santorini/engine";
+import { GameId, GameRuleError, Seat, UserId } from "@santorini/engine";
 import type { ErrorCode, WireError } from "@santorini/shared";
 import { StatusCodes } from "http-status-codes";
 
@@ -54,9 +54,9 @@ export class InvalidGameStateError extends GameError {
 export class NotPlayerTurnError extends GameError {
   public readonly httpStatus = StatusCodes.FORBIDDEN;
 
-  constructor(gameId: GameId, userId: UserId, currentPlayerId: PlayerId) {
+  constructor(gameId: GameId, userId: UserId, currentSeat: Seat) {
     super(
-      `It's not player ${userId}'s turn in game ${gameId} (current: ${currentPlayerId})`,
+      `It's not player ${userId}'s turn in game ${gameId} (current seat: ${currentSeat})`,
       "Not your turn",
       "not_your_turn",
     );

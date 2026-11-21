@@ -1,4 +1,4 @@
-import { PlayerId } from "./types.ts";
+import { Seat } from "./types.ts";
 /**
  * Move Value Objects
  *
@@ -34,7 +34,7 @@ export type MoveType = "place_worker" | "move_worker" | "build_block" | "build_d
 export abstract class Move {
   constructor(
     public readonly type: MoveType,
-    public readonly playerId: PlayerId,
+    public readonly seat: Seat,
     public readonly position: Position,
   ) {}
 
@@ -43,11 +43,11 @@ export abstract class Move {
 
 export class PlaceWorkerMove extends Move {
   constructor(
-    playerId: PlayerId,
+    seat: Seat,
     position: Position,
     public readonly workerId: number,
   ) {
-    super("place_worker", playerId, position);
+    super("place_worker", seat, position);
   }
 
   isValid(): boolean {
@@ -57,12 +57,12 @@ export class PlaceWorkerMove extends Move {
 
 export class MoveWorkerMove extends Move {
   constructor(
-    playerId: PlayerId,
+    seat: Seat,
     position: Position,
     public readonly workerId: number,
     public readonly fromPosition: Position,
   ) {
-    super("move_worker", playerId, position);
+    super("move_worker", seat, position);
   }
 
   isValid(): boolean {
@@ -72,12 +72,12 @@ export class MoveWorkerMove extends Move {
 
 export class BuildMove extends Move {
   constructor(
-    playerId: PlayerId,
+    seat: Seat,
     position: Position,
     public readonly buildingType: "block" | "dome",
     public readonly workerId: number = 0,
   ) {
-    super(buildingType === "block" ? "build_block" : "build_dome", playerId, position);
+    super(buildingType === "block" ? "build_block" : "build_dome", seat, position);
   }
 
   isValid(): boolean {
@@ -86,18 +86,18 @@ export class BuildMove extends Move {
 }
 
 // Factory function to create moves from raw data
-// playerId is provided separately (from authenticated user)
-export function createMove(playerId: PlayerId, moveData: MoveInput): Move {
+// seat is provided separately (from authenticated user)
+export function createMove(seat: Seat, moveData: MoveInput): Move {
   switch (moveData.type) {
     case "place_worker":
-      return new PlaceWorkerMove(playerId, moveData.position, moveData.workerId ?? 0);
+      return new PlaceWorkerMove(seat, moveData.position, moveData.workerId ?? 0);
 
     case "move_worker":
-      return new MoveWorkerMove(playerId, moveData.position, moveData.workerId ?? 0, moveData.fromPosition);
+      return new MoveWorkerMove(seat, moveData.position, moveData.workerId ?? 0, moveData.fromPosition);
 
     case "build_block":
     case "build_dome":
-      return new BuildMove(playerId, moveData.position, moveData.type === "build_block" ? "block" : "dome");
+      return new BuildMove(seat, moveData.position, moveData.type === "build_block" ? "block" : "dome");
 
     default:
       throw new Error(`Unknown move type: ${(moveData as { type: string }).type}`);

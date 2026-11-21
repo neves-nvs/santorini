@@ -63,10 +63,10 @@ describe('createSampleBoard', () => {
     const board = createSampleBoard()
 
     // Ground level workers
-    expect(board[0][0].worker).toEqual({ playerId: 1, workerId: 1 })
+    expect(board[0][0].worker).toEqual({ seat: 0, workerId: 1 })
     expect(board[0][0].buildingLevel).toBe(0)
 
-    expect(board[4][4].worker).toEqual({ playerId: 2, workerId: 1 })
+    expect(board[4][4].worker).toEqual({ seat: 1, workerId: 1 })
     expect(board[4][4].buildingLevel).toBe(0)
   })
 
@@ -74,21 +74,21 @@ describe('createSampleBoard', () => {
     const board = createSampleBoard()
 
     expect(board[1][1].buildingLevel).toBe(1)
-    expect(board[1][1].worker).toEqual({ playerId: 1, workerId: 2 })
+    expect(board[1][1].worker).toEqual({ seat: 0, workerId: 2 })
   })
 
   it('should place workers on level 2 building', () => {
     const board = createSampleBoard()
 
     expect(board[2][2].buildingLevel).toBe(2)
-    expect(board[2][2].worker).toEqual({ playerId: 2, workerId: 2 })
+    expect(board[2][2].worker).toEqual({ seat: 1, workerId: 2 })
   })
 
   it('should place workers on level 3 building', () => {
     const board = createSampleBoard()
 
     expect(board[3][1].buildingLevel).toBe(3)
-    expect(board[3][1].worker).toEqual({ playerId: 1, workerId: 3 })
+    expect(board[3][1].worker).toEqual({ seat: 0, workerId: 3 })
   })
 
   it('should create complete tower with dome (level 4)', () => {
@@ -124,8 +124,8 @@ describe('createSampleBoard', () => {
       for (let y = 0; y < 5; y++) {
         const worker = board[x][y].worker
         if (worker) {
-          if (worker.playerId === 1) player1Workers.push(worker)
-          if (worker.playerId === 2) player2Workers.push(worker)
+          if (worker.seat === 0) player1Workers.push(worker)
+          if (worker.seat === 1) player2Workers.push(worker)
         }
       }
     }

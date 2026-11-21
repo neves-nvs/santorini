@@ -12,8 +12,8 @@ vi.mock('@/game/services/WebSocketClient', () => ({ webSocketClient: { request: 
 type Renderer = Awaited<ReturnType<typeof ReactThreeTestRenderer.create>>
 type SceneNode = Renderer['scene']
 
-const ME = 1
-const OPPONENT = 2
+const ME = 0
+const OPPONENT = 1
 const GAME_ID = 7
 const DEBUG_OFF = {
   showAxis: false,
@@ -37,7 +37,7 @@ const seed = ({
     currentPlayerMoves: moves,
     selectedWorker,
     gameId: String(GAME_ID),
-    gameState: { currentPlayerId: ME } as GameState,
+    gameState: { currentSeat: ME } as GameState,
   })
 
 const render = (onCellClick?: (x: number, y: number) => void, onMoveError?: (message: string) => void) =>
@@ -77,10 +77,10 @@ const build = (workerId: number, type: 'build_block' | 'build_dome', ...at: Arra
   validPositions: at.map(([x, y]) => ({ x, y })),
 })
 
-const withWorkers = (...workers: Array<{ x: number; y: number; playerId: number; workerId: number; level?: number }>) => {
+const withWorkers = (...workers: Array<{ x: number; y: number; seat: number; workerId: number; level?: number }>) => {
   const cells = emptyCells()
-  for (const { x, y, playerId, workerId, level = 0 } of workers) {
-    cells[x][y] = { buildingLevel: level, worker: { playerId, workerId } }
+  for (const { x, y, seat, workerId, level = 0 } of workers) {
+    cells[x][y] = { buildingLevel: level, worker: { seat, workerId } }
   }
   return cells
 }
@@ -94,7 +94,7 @@ beforeEach(() => {
 
 describe('what the board draws', () => {
   it('draws one block per building level, a piece per worker, and the board base', async () => {
-    const cells = withWorkers({ x: 0, y: 0, playerId: ME, workerId: 1 })
+    const cells = withWorkers({ x: 0, y: 0, seat: ME, workerId: 1 })
     cells[2][2].buildingLevel = 3
     cells[4][4].buildingLevel = 1
     seed({ cells })
@@ -200,9 +200,9 @@ describe('placing workers', () => {
 })
 
 describe('selecting a worker', () => {
-  const mine = { x: 0, y: 0, playerId: ME, workerId: 10 }
+  const mine = { x: 0, y: 0, seat: ME, workerId: 10 }
   // worker ids repeat across players, so the opponent's worker has the same id as mine
-  const theirs = { x: 4, y: 4, playerId: OPPONENT, workerId: 10 }
+  const theirs = { x: 4, y: 4, seat: OPPONENT, workerId: 10 }
 
   it('selects my worker when it has moves, and deselects on a second click', async () => {
     seed({ cells: withWorkers(mine, theirs), moves: [move(10, [0, 0], [0, 1])] })
@@ -225,7 +225,7 @@ describe('selecting a worker', () => {
   })
 
   it('does not select a worker that has no moves', async () => {
-    seed({ cells: withWorkers(mine, { ...theirs, playerId: ME, workerId: 11 }), moves: [move(10, [0, 0], [0, 1])] })
+    seed({ cells: withWorkers(mine, { ...theirs, seat: ME, workerId: 11 }), moves: [move(10, [0, 0], [0, 1])] })
     const renderer = await render()
 
     await click(renderer, workerAt(renderer, 4, 4))
@@ -234,7 +234,7 @@ describe('selecting a worker', () => {
   })
 
   it('shows move markers only for the selected worker', async () => {
-    const other = { x: 2, y: 2, playerId: ME, workerId: 11 }
+    const other = { x: 2, y: 2, seat: ME, workerId: 11 }
     seed({
       cells: withWorkers(mine, other),
       moves: [move(10, [0, 0], [0, 1], [1, 1]), move(11, [2, 2], [3, 3])],
@@ -250,7 +250,7 @@ describe('selecting a worker', () => {
 })
 
 describe('moving and building', () => {
-  const mine = { x: 0, y: 0, playerId: ME, workerId: 10 }
+  const mine = { x: 0, y: 0, seat: ME, workerId: 10 }
   const selected = { workerId: 10, x: 0, y: 0 }
 
   it('ignores a move click until a worker is selected', async () => {
