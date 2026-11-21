@@ -16,10 +16,10 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-(cd "$root/packages/shared" && exec npm run dev) &
+(cd "$root/packages/engine" && exec npm run dev) &
 pids+=("$!")
 
-(cd "$root/packages/engine" && exec npm run dev) &
+(cd "$root/packages/shared" && exec npm run dev) &
 pids+=("$!")
 
 "$root/scripts/server" &
@@ -28,8 +28,8 @@ pids+=("$!")
 "$root/scripts/client-react" &
 pids+=("$!")
 
-echo "Shared:       rebuilds packages/shared on change"
 echo "Engine:       rebuilds packages/engine on change"
+echo "Shared:       rebuilds packages/shared on change"
 echo "Server:       http://localhost:${PORT:-3000}"
 echo "Client React: http://localhost:5174"
 echo "Database:     ${SANTORINI_DB_CONTAINER:-santorini-postgres} remains running; stop with scripts/db-down"

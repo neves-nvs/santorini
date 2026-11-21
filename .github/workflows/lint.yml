@@ -72,8 +72,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build the shared package
-        run: npm run build:shared
+      - name: Build the shared and engine packages
+        run: npm run build:libraries
 
       - name: Lint
         run: npm run lint

@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
 # Build from the repository root with scripts/docker-build (docker-bake.hcl). The packages are npm workspaces
-# that share one lockfile, so the build stage installs from the root and builds packages/shared before the client.
+# that share one lockfile, so the build stage installs from the root and builds packages/engine and packages/shared
+# (which depends on it) before the client.
 ARG NODE_VERSION=26
 
 FROM node:${NODE_VERSION}-slim AS build
@@ -11,7 +12,9 @@ COPY packages/shared/package.json packages/shared/
 COPY packages/engine/package.json packages/engine/
 COPY packages/server/package.json packages/server/
 COPY packages/client-react/package.json packages/client-react/
-RUN --mount=type=cache,target=/root/.npm npm ci -w packages/shared -w packages/client-react
+RUN --mount=type=cache,target=/root/.npm npm ci -w packages/engine -w packages/shared -w packages/client-react
+COPY packages/engine packages/engine
+RUN npm run build -w packages/engine
 COPY packages/shared packages/shared
 RUN npm run build -w packages/shared
 COPY packages/client-react packages/client-react

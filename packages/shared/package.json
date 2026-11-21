@@ -27,6 +27,7 @@
     "typescript-native": "npm:typescript@^7.0.2"
   },
   "dependencies": {
+    "@santorini/engine": "*",
     "zod": "^4.6.7"
   }
 }

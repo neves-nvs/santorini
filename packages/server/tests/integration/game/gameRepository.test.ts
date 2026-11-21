@@ -99,4 +99,19 @@ describe("Saving and loading a game", () => {
     expect(reloaded?.toSnapshot()).toMatchObject({ maxPlayers: 3, creatorId: creator.id, turnNumber: 4 });
     expect(reloaded?.players.length).toBe(2);
   });
+
+  test.each([
+    ["status", { game_status: "paused" }],
+    ["phase", { game_phase: "resting" }],
+  ])("refuses a stored game with an unknown %s instead of loading it", async (_column, columns) => {
+    const creator = (await generateTestUser()).user;
+    const { id } = await repository.createNew(creator.id, 2);
+    await db
+      .updateTable("games")
+      .set(columns as never)
+      .where("id", "=", id)
+      .execute();
+
+    await expect(repository.findById(id)).rejects.toThrow();
+  });
 });

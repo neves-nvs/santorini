@@ -4,12 +4,12 @@ import {
   Game,
   GameEvent,
   GameId,
-  GamePhase,
   GameSnapshot,
   GameStatus,
   Player,
   UserId,
 } from "@santorini/engine";
+import { gamePhaseSchema, gameStatusSchema } from "@santorini/shared";
 import { Kysely, Transaction } from "kysely";
 
 import { db } from "@/database.ts";
@@ -84,8 +84,8 @@ export class GameRepositoryDb {
       id: gameRecord.id,
       creatorId: gameRecord.user_creator_id,
       maxPlayers: gameRecord.player_count,
-      status: gameRecord.game_status as GameStatus,
-      phase: gameRecord.game_phase as GamePhase | null,
+      status: gameStatusSchema.parse(gameRecord.game_status),
+      phase: gamePhaseSchema.nullable().parse(gameRecord.game_phase),
       currentSeat: gameRecord.current_seat,
       turnNumber: gameRecord.turn_number || 0,
       placingTurnsCompleted: gameRecord.placing_turns_completed || 0,

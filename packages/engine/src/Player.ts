@@ -7,7 +7,8 @@ import { UserId } from "./types.ts";
  * Links to the User entity but contains game-specific state.
  */
 
-export type PlayerStatus = "active" | "disconnected" | "blocked" | "eliminated";
+export const PLAYER_STATUSES = ["active", "disconnected", "blocked", "eliminated"] as const;
+export type PlayerStatus = (typeof PLAYER_STATUSES)[number];
 
 export class Player {
   constructor(

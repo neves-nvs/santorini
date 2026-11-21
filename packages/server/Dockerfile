@@ -16,10 +16,10 @@ COPY packages/client-react/package.json packages/client-react/
 
 FROM manifests AS build
 RUN --mount=type=cache,target=/root/.npm npm ci -w packages/shared -w packages/engine -w packages/server
-COPY packages/shared packages/shared
-RUN npm run build -w packages/shared
 COPY packages/engine packages/engine
 RUN npm run build -w packages/engine
+COPY packages/shared packages/shared
+RUN npm run build -w packages/shared
 COPY packages/server packages/server
 RUN npm run build -w packages/server
 

@@ -5,8 +5,11 @@
  * These should match the database types but are defined here for domain independence.
  */
 
-export type GameStatus = "waiting" | "in-progress" | "completed";
-export type GamePhase = "placing" | "moving" | "building";
+export const GAME_STATUSES = ["waiting", "in-progress", "completed"] as const;
+export type GameStatus = (typeof GAME_STATUSES)[number];
+
+export const GAME_PHASES = ["placing", "moving", "building"] as const;
+export type GamePhase = (typeof GAME_PHASES)[number];
 
 declare const brand: unique symbol;
 type Brand<Value, Name extends string> = Value & { readonly [brand]: Name };
