@@ -210,7 +210,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
   return (
     <group>
       {/* Debug Axis (toggleable) */}
-      <DebugAxis visible={debugState?.showAxis ?? true} />
+      {import.meta.env.DEV && <DebugAxis visible={debugState?.showAxis ?? true} />}
 
       {/* Board Base */}
       <BoardBase />

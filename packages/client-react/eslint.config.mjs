@@ -60,6 +60,11 @@ export default [
     files: ["src/**/*.ts", "src/**/*.tsx"],
     rules: restricted(),
   },
+  {
+    // The tests run in Node, not in the browser, and one of them sets NODE_ENV for a production build
+    files: ["src/__tests__/**/*.ts", "src/__tests__/**/*.tsx"],
+    rules: { "no-restricted-syntax": ["error", parentPath] },
+  },
   ...layerBlocks,
   {
     files: ["src/shared/**/*.ts", "src/shared/**/*.tsx"],
