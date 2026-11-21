@@ -95,7 +95,8 @@ class PerformanceMonitor {
 }
 
 // Global instance
-export const performanceMonitor = new PerformanceMonitor()
+// Marked pure so that a production build, which never calls it, leaves the whole class out
+export const performanceMonitor = /* @__PURE__ */ new PerformanceMonitor()
 
 // Make it available globally for console access
 if (typeof window !== 'undefined' && import.meta.env.DEV) {
