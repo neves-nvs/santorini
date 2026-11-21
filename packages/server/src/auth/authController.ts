@@ -75,7 +75,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   })(req, res, next);
 };
 
-export const router = Router();
+const router = Router();
 
 type NoParams = Record<string, string>;
 
@@ -123,3 +123,5 @@ router.get<NoParams, CurrentUserResponse | ErrorResponse>("/me", authenticate, (
   const user = getUser(req);
   res.status(StatusCodes.OK).json({ id: user.id, username: user.username });
 });
+
+export default router;
