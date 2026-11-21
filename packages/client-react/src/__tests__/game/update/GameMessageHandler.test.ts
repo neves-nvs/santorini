@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyGameView, handleWebSocketMessage, resetMessageHandlerState } from '@/game/update/GameMessageHandler'
-import type { GameView, Move } from '@santorini/shared'
+import type { CompletedGameView, InProgressGameView, Move } from '@santorini/shared'
 import { useAppStore } from '@/user/model/appStore'
 import { useGameStore } from '@/game/model/gameStore'
 
@@ -9,7 +9,7 @@ const OPPONENT = 11
 
 const placeAt = (x: number, y: number): Move => ({ type: 'place_worker', workerId: 1, position: { x, y } })
 
-const view = (overrides: Partial<GameView> = {}): GameView => ({
+const view = (overrides: Partial<InProgressGameView> = {}): InProgressGameView => ({
   gameId: 5,
   status: 'in-progress',
   phase: 'placing',
@@ -64,12 +64,21 @@ describe('game_state', () => {
   })
 
   it('shows the winner of a finished game', () => {
-    handleWebSocketMessage('game_state', view({ status: 'completed', winnerPlayerId: 2, winReason: 'reached level 3' }))
+    const finished: CompletedGameView = {
+      ...view(),
+      status: 'completed',
+      phase: null,
+      currentPlayerId: null,
+      winnerPlayerId: 2,
+      winReason: 'win_condition',
+    }
+
+    handleWebSocketMessage('game_state', finished)
 
     expect(useGameStore.getState().gameState).toMatchObject({
       status: 'completed',
       winnerId: 2,
-      winReason: 'reached level 3',
+      winReason: 'win_condition',
     })
   })
 

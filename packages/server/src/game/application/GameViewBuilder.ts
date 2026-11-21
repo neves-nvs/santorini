@@ -12,12 +12,12 @@ import {
 import {
   BoardView,
   CellView,
-  GamePhase,
-  GameStatus,
   GameView,
   Move as SharedMove,
   PlayerView,
   Viewer,
+  WIN_REASONS,
+  WinReason,
 } from "@santorini/shared";
 
 /**
@@ -53,6 +53,10 @@ export function toSharedMove(move: Move): SharedMove {
   };
 }
 
+function isWinReason(reason: string | null): reason is WinReason {
+  return WIN_REASONS.some((known) => known === reason);
+}
+
 /**
  * Domain service that builds the view of a game for one user
  * Centralizes view generation logic with visibility policies
@@ -77,20 +81,55 @@ export class GameViewBuilder {
         }
       : { role: "spectator" };
 
-    return {
+    const common = {
       gameId: game.id,
-      status: state.status as GameStatus,
-      phase: state.phase as GamePhase,
       maxPlayers: game.maxPlayers,
-      currentPlayerId: state.currentPlayerId,
       turnNumber: state.turnNumber,
       version: state.version,
       board: this.buildBoardView(state.board),
       players: this.buildPlayersView(state.players),
-      winnerPlayerId: state.winnerId,
-      winReason: state.winReason,
       viewer,
     };
+
+    switch (game.status) {
+      case "waiting":
+        return {
+          ...common,
+          status: "waiting",
+          phase: null,
+          currentPlayerId: null,
+          winnerPlayerId: null,
+          winReason: null,
+        };
+      case "in-progress":
+        if (game.phase === null || game.currentPlayerId === null) {
+          throw new Error(`Game ${game.id} is in progress without a phase or a current player`);
+        }
+        return {
+          ...common,
+          status: "in-progress",
+          phase: game.phase,
+          currentPlayerId: game.currentPlayerId,
+          winnerPlayerId: null,
+          winReason: null,
+        };
+      case "completed": {
+        if (game.winnerId === null) {
+          throw new Error(`Game ${game.id} is completed with no winner`);
+        }
+        if (!isWinReason(game.winReason)) {
+          throw new Error(`Game ${game.id} is completed with an unknown win reason: ${game.winReason}`);
+        }
+        return {
+          ...common,
+          status: "completed",
+          phase: null,
+          currentPlayerId: null,
+          winnerPlayerId: game.winnerId,
+          winReason: game.winReason,
+        };
+      }
+    }
   }
 
   /**

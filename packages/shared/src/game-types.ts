@@ -49,6 +49,10 @@ export interface PlayerView {
 
 export type GameStatus = 'waiting' | 'in-progress' | 'completed';
 export type GamePhase = 'placing' | 'moving' | 'building' | null;
+export type ActivePhase = Exclude<GamePhase, null>;
+
+export const WIN_REASONS = ['win_condition', 'opponent_trapped'] as const;
+export type WinReason = (typeof WIN_REASONS)[number];
 
 // ============================================================================
 // Move Types
@@ -115,21 +119,45 @@ export type Viewer =
   | { role: 'player'; playerId: number; isCurrentPlayer: boolean; availableMoves: Move[] }
   | { role: 'spectator' };
 
-/**
- * A game as one user sees it. The server sends it as the payload of every `game_state` and as the body of
- * `GET /games/:gameId`. `currentPlayerId` and `winnerPlayerId` are per-game player ids, not user ids.
- */
-export interface GameView {
+interface GameViewBase {
   gameId: number;
-  status: GameStatus;
-  phase: GamePhase;
   maxPlayers: number;
-  currentPlayerId: number | null;
   turnNumber: number;
   version: number;
   board: BoardView;
   players: PlayerView[];
-  winnerPlayerId: number | null;
-  winReason: string | null;
   viewer: Viewer;
 }
+
+export interface WaitingGameView extends GameViewBase {
+  status: 'waiting';
+  phase: null;
+  currentPlayerId: null;
+  winnerPlayerId: null;
+  winReason: null;
+}
+
+export interface InProgressGameView extends GameViewBase {
+  status: 'in-progress';
+  phase: ActivePhase;
+  currentPlayerId: number;
+  winnerPlayerId: null;
+  winReason: null;
+}
+
+export interface CompletedGameView extends GameViewBase {
+  status: 'completed';
+  phase: null;
+  currentPlayerId: null;
+  winnerPlayerId: number;
+  winReason: WinReason;
+}
+
+/**
+ * A game as one user sees it. The server sends it as the payload of every `game_state` and as the body of
+ * `GET /games/:gameId`. `status` decides which of the other fields are set: a game that has not started has no
+ * phase, current player or winner, a game in progress has a phase and a current player, and a finished one has
+ * a winner and the reason, and nobody to move. `currentPlayerId` and `winnerPlayerId` are per-game player ids,
+ * not user ids.
+ */
+export type GameView = WaitingGameView | InProgressGameView | CompletedGameView;

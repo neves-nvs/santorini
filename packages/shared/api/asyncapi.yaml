@@ -307,15 +307,59 @@ components:
             position: { $ref: "#/components/schemas/Position" }
     GameView:
       description: |
-        A game as one user sees it. `currentPlayerId` and `winnerPlayerId` are per-game player ids, not user ids.
+        A game as one user sees it. `status` decides which of the other fields are set: a game that has not started
+        has no phase, current player or winner, a game in progress has a phase and a current player, and a finished
+        one has a winner and the reason, and nobody to move. `currentPlayerId` and `winnerPlayerId` are per-game
+        player ids, not user ids.
+      oneOf:
+        - $ref: "#/components/schemas/WaitingGameView"
+        - $ref: "#/components/schemas/InProgressGameView"
+        - $ref: "#/components/schemas/CompletedGameView"
+      discriminator:
+        propertyName: status
+        mapping:
+          waiting: "#/components/schemas/WaitingGameView"
+          in-progress: "#/components/schemas/InProgressGameView"
+          completed: "#/components/schemas/CompletedGameView"
+    WaitingGameView:
+      allOf:
+        - $ref: "#/components/schemas/GameViewBase"
+        - type: object
+          required: [status, phase, currentPlayerId, winnerPlayerId, winReason]
+          properties:
+            status: { const: waiting }
+            phase: { type: "null" }
+            currentPlayerId: { type: "null" }
+            winnerPlayerId: { type: "null" }
+            winReason: { type: "null" }
+    InProgressGameView:
+      allOf:
+        - $ref: "#/components/schemas/GameViewBase"
+        - type: object
+          required: [status, phase, currentPlayerId, winnerPlayerId, winReason]
+          properties:
+            status: { const: in-progress }
+            phase: { enum: [placing, moving, building] }
+            currentPlayerId: { type: integer }
+            winnerPlayerId: { type: "null" }
+            winReason: { type: "null" }
+    CompletedGameView:
+      allOf:
+        - $ref: "#/components/schemas/GameViewBase"
+        - type: object
+          required: [status, phase, currentPlayerId, winnerPlayerId, winReason]
+          properties:
+            status: { const: completed }
+            phase: { type: "null" }
+            currentPlayerId: { type: "null" }
+            winnerPlayerId: { type: integer }
+            winReason: { enum: [win_condition, opponent_trapped] }
+    GameViewBase:
       type: object
-      required: [gameId, status, phase, maxPlayers, currentPlayerId, turnNumber, version, board, players, winnerPlayerId, winReason, viewer]
+      required: [gameId, maxPlayers, turnNumber, version, board, players, viewer]
       properties:
         gameId: { type: integer }
-        status: { $ref: "#/components/schemas/GameStatus" }
-        phase: { $ref: "#/components/schemas/GamePhase" }
         maxPlayers: { type: integer }
-        currentPlayerId: { type: [integer, "null"] }
         turnNumber: { type: integer }
         version: { type: integer }
         board:
@@ -352,8 +396,6 @@ components:
               seat: { type: integer }
               status: { type: string, enum: [active, disconnected, blocked, eliminated] }
               isReady: { type: boolean }
-        winnerPlayerId: { type: [integer, "null"] }
-        winReason: { type: [string, "null"] }
         viewer: { $ref: "#/components/schemas/Viewer" }
     Viewer:
       description: Who is looking. A player gets the moves they can play now; a watcher, or someone whose seat was freed, gets none.
