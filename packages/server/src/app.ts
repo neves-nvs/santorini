@@ -8,7 +8,7 @@ import { StatusCodes } from "http-status-codes";
 import { sql } from "kysely";
 import passport from "passport";
 
-import authController from "./auth/authController.ts";
+import { router } from "./auth/authController.ts";
 import { gameRoutes } from "./composition-root.ts";
 import { config } from "./configs/config.ts";
 import { db } from "./database.ts";
@@ -57,7 +57,7 @@ app.use(cors(CORS_CONFIG));
 
 app.use(passport.initialize());
 
-app.use("/", authController);
+app.use("/", router);
 app.use("/games", gameRoutes);
 app.use("/users", userController);
 
