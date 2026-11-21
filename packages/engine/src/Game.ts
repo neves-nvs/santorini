@@ -1,6 +1,6 @@
-import { Board, BoardSnapshot, MoveResult } from "./Board.ts";
-import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "./Move.ts";
-import { DefaultTurnPolicy } from "./TurnPolicy.ts";
+import { Board, BoardSnapshot } from "./Board.ts";
+import { Move } from "./Move.ts";
+import { GameContext, GameState, applyMove, availableMoves, isTrapped } from "./rules.ts";
 import { GameId, GameOutcome, GamePhase, GameStatus, Seat, UserId, asSeat, isWinReason } from "./types.ts";
 import { Player } from "./Player.ts";
 
@@ -30,8 +30,6 @@ export class Game {
     private _lastMovedWorkerId: number | null = null,
     private _lastMovedWorkerPosition: { x: number; y: number } | null = null,
   ) {}
-
-  private readonly _turnPolicy = new DefaultTurnPolicy();
 
   // Factory methods
   static create(id: GameId, creatorId: UserId, maxPlayers: number): Game {
@@ -74,165 +72,33 @@ export class Game {
 
   // Core game operations
   applyMove(seat: Seat, move: Move): GameEvent[] {
-    this.validateMove(seat, move);
+    this.validateMove(move);
 
-    const events: GameEvent[] = [];
-
-    // Apply move to board and update state
-    const moveResult = this._board.applyMove(move, seat);
-
-    // Check if move was successful
-    if (!moveResult.success) {
-      throw new GameRuleError(moveResult.error || "Move failed", "illegal_move");
+    const result = applyMove(this.toState(), this.context, seat, move);
+    if (!result.ok) {
+      throw new GameRuleError(result.error, result.code);
     }
 
-    // Update game state based on move result
-    if (moveResult.isWin) {
+    this.setState(result.state);
+    this._version++;
+
+    if (result.winner !== null) {
+      const winnerUserId = this._players[result.winner].userId;
       this._status = "completed";
-      const winnerUserId = this._players[seat].userId;
       this._outcome = { winnerUserId, reason: "win_condition" };
-      this._version++;
       this.assertInvariants();
-      events.push(new GameEvent("GameFinished", { winnerUserId, reason: "win_condition" }));
-    } else {
-      // Advance turn state
-      this.advanceTurn(move, moveResult);
-      this._version++;
-      this.assertInvariants();
-      events.push(new GameEvent("MovePlayed", { seat, move, turnNumber: this._turnNumber }));
+      return [new GameEvent("GameFinished", { winnerUserId, reason: "win_condition" })];
     }
-    return events;
+
+    this.assertInvariants();
+    return [new GameEvent("MovePlayed", { seat, move, turnNumber: this._turnNumber })];
   }
 
   /**
    * Generate all available moves for the current player based on phase.
-   * Pure domain logic - no external dependencies.
    */
   getAvailableMoves(): Move[] {
-    if (this._status !== "in-progress" || this._currentSeat === null) {
-      return [];
-    }
-
-    switch (this._phase) {
-      case "placing":
-        return this.generatePlacementMoves(this._currentSeat);
-      case "moving":
-        return this.generateMovementMoves(this._currentSeat);
-      case "building":
-        return this.generateBuildMoves(this._currentSeat);
-      default:
-        return [];
-    }
-  }
-
-  private generatePlacementMoves(seat: Seat): Move[] {
-    const moves: Move[] = [];
-    const workersPlaced = this.countWorkersForPlayer(seat);
-
-    if (workersPlaced >= 2) return moves;
-
-    const nextWorkerId = workersPlaced + 1;
-
-    for (let x = 0; x < 5; x++) {
-      for (let y = 0; y < 5; y++) {
-        if (!this._board.isPositionOccupied(x, y)) {
-          moves.push(new PlaceWorkerMove(seat, { x, y }, nextWorkerId));
-        }
-      }
-    }
-    return moves;
-  }
-
-  private generateMovementMoves(seat: Seat): Move[] {
-    const moves: Move[] = [];
-
-    for (const [key, workerPos] of this._board.workers) {
-      const [ownerIdStr, workerIdStr] = key.split("-");
-      const ownerId = parseInt(ownerIdStr);
-      const workerId = parseInt(workerIdStr);
-
-      if (ownerId !== seat) continue;
-
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
-          if (dx === 0 && dy === 0) continue;
-
-          const toX = workerPos.x + dx;
-          const toY = workerPos.y + dy;
-
-          if (this.isValidMove(workerPos.x, workerPos.y, toX, toY)) {
-            moves.push(new MoveWorkerMove(seat, { x: toX, y: toY }, workerId, { x: workerPos.x, y: workerPos.y }));
-          }
-        }
-      }
-    }
-    return moves;
-  }
-
-  private generateBuildMoves(seat: Seat): Move[] {
-    const moves: Move[] = [];
-
-    if (!this._lastMovedWorkerPosition || !this._lastMovedWorkerId) {
-      return moves;
-    }
-
-    const { x: wx, y: wy } = this._lastMovedWorkerPosition;
-    const workerId = this._lastMovedWorkerId;
-
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        if (dx === 0 && dy === 0) continue;
-
-        const bx = wx + dx;
-        const by = wy + dy;
-
-        if (this.isValidBuildPosition(bx, by)) {
-          const cell = this._board.getCell(bx, by);
-          const height = cell?.height ?? 0;
-
-          if (height < 3) {
-            moves.push(new BuildMove(seat, { x: bx, y: by }, "block", workerId));
-          }
-          if (height === 3) {
-            moves.push(new BuildMove(seat, { x: bx, y: by }, "dome", workerId));
-          }
-        }
-      }
-    }
-    return moves;
-  }
-
-  private countWorkersForPlayer(seat: Seat): number {
-    let count = 0;
-    for (const [key] of this._board.workers) {
-      const [ownerIdStr] = key.split("-");
-      if (parseInt(ownerIdStr) === seat) count++;
-    }
-    return count;
-  }
-
-  private isValidMove(fromX: number, fromY: number, toX: number, toY: number): boolean {
-    if (!this._board.isValidPosition(toX, toY)) return false;
-    if (this._board.isPositionOccupied(toX, toY)) return false;
-
-    const fromCell = this._board.getCell(fromX, fromY);
-    const toCell = this._board.getCell(toX, toY);
-
-    if (!fromCell || !toCell) return false;
-    if (toCell.hasDome) return false;
-    if (toCell.height > fromCell.height + 1) return false;
-
-    return true;
-  }
-
-  private isValidBuildPosition(x: number, y: number): boolean {
-    if (!this._board.isValidPosition(x, y)) return false;
-    if (this._board.isPositionOccupied(x, y)) return false;
-
-    const cell = this._board.getCell(x, y);
-    if (!cell || cell.hasDome) return false;
-
-    return true;
+    return this._status === "in-progress" ? availableMoves(this.toState()) : [];
   }
 
   // Getters
@@ -275,10 +141,7 @@ export class Game {
    * Only applicable during moving phase.
    */
   isCurrentPlayerTrapped(): boolean {
-    if (this._status !== "in-progress" || this._phase !== "moving" || this._currentSeat === null) {
-      return false;
-    }
-    return this.getAvailableMoves().length === 0;
+    return this._status === "in-progress" && isTrapped(this.toState());
   }
 
   /**
@@ -454,35 +317,46 @@ export class Game {
     }
   }
 
-  private validateMove(seat: Seat, move: Move): void {
+  private validateMove(move: Move): void {
     if (this._status !== "in-progress") {
       throw new GameRuleError("Game is not in progress");
-    }
-
-    if (this._currentSeat !== seat) {
-      throw new GameRuleError("Not your turn", "not_your_turn");
     }
 
     if (!move) {
       throw new GameRuleError("Move is required");
     }
-
-    // Additional move validation would go here
   }
 
-  private advanceTurn(move: Move, moveResult: MoveResult): void {
-    if (!this._phase) {
-      throw new Error("Cannot advance turn: game phase not set");
+  private get context(): GameContext {
+    return { playerCount: this.maxPlayers };
+  }
+
+  private toState(): GameState {
+    if (this._phase === null || this._currentSeat === null) {
+      throw new Error("A game that has not started has no state");
     }
 
-    const advancement = this._turnPolicy.advanceTurn(this, move, moveResult);
+    return {
+      board: this._board.toSnapshot(),
+      phase: this._phase,
+      currentSeat: this._currentSeat,
+      turnNumber: this._turnNumber,
+      placingTurnsCompleted: this._placingTurnsCompleted,
+      lastMovedWorker:
+        this._lastMovedWorkerId !== null && this._lastMovedWorkerPosition !== null
+          ? { workerId: this._lastMovedWorkerId, position: this._lastMovedWorkerPosition }
+          : null,
+    };
+  }
 
-    this._currentSeat = advancement.nextSeat;
-    this._phase = advancement.nextPhase;
-    this._turnNumber = advancement.turnNumber;
-    this._placingTurnsCompleted = advancement.placingTurnsCompleted;
-    this._lastMovedWorkerId = advancement.lastMovedWorkerId || null;
-    this._lastMovedWorkerPosition = advancement.lastMovedWorkerPosition || null;
+  private setState(state: GameState): void {
+    this._board = Board.fromSnapshot(state.board);
+    this._phase = state.phase;
+    this._currentSeat = state.currentSeat;
+    this._turnNumber = state.turnNumber;
+    this._placingTurnsCompleted = state.placingTurnsCompleted;
+    this._lastMovedWorkerId = state.lastMovedWorker?.workerId ?? null;
+    this._lastMovedWorkerPosition = state.lastMovedWorker?.position ?? null;
   }
 
   // Snapshot for persistence
