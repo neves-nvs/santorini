@@ -1,4 +1,5 @@
-import { GameId, GamePhase, GameStatus, Seat, UserId } from "@santorini/engine";
+import { GameId, GamePhase, Seat, UserId } from "@santorini/engine";
+import { GameStatus } from "@santorini/shared";
 import { ColumnType, Generated, Insertable, Selectable, Updateable } from "kysely";
 
 export interface Database {

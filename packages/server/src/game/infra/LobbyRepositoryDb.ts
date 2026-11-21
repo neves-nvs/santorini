@@ -1,4 +1,5 @@
-import { GameStatus, UserId } from "@santorini/engine";
+import { UserId } from "@santorini/engine";
+import { GameStatus } from "@santorini/shared";
 import { Kysely } from "kysely";
 
 import { db } from "@/database.ts";

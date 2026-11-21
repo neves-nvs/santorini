@@ -5,10 +5,10 @@
  * These types define the structure of data sent over WebSocket.
  */
 
-import type { GamePhase as ActivePhase, GameStatus, PlayerStatus, Position, WinReason } from '@santorini/engine';
+import type { GamePhase as ActivePhase, Position, WinReason } from '@santorini/engine';
 
 // What the engine defines comes from the engine.
-export type { ActivePhase, GameStatus, PlayerStatus, Position, WinReason };
+export type { ActivePhase, Position, WinReason };
 
 // ============================================================================
 // Position and Board Types
@@ -37,13 +37,15 @@ export interface BoardView {
 /** A player has no seat field: the position in `GameView.players` is the seat, counted from 0. */
 export interface PlayerView {
   userId: number;
-  status: PlayerStatus;
   isReady: boolean;
 }
 
 // ============================================================================
 // Game State Types
 // ============================================================================
+
+export const GAME_STATUSES = ['waiting', 'in-progress', 'completed'] as const;
+export type GameStatus = (typeof GAME_STATUSES)[number];
 
 /** On the wire a game that is not in progress has no phase. */
 export type GamePhase = ActivePhase | null;

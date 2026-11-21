@@ -5,11 +5,10 @@ import {
   GameEvent,
   GameId,
   GameSnapshot,
-  GameStatus,
   Player,
   UserId,
 } from "@santorini/engine";
-import { gamePhaseSchema, gameStatusSchema } from "@santorini/shared";
+import { gamePhaseSchema, GameStatus, gameStatusSchema } from "@santorini/shared";
 import { Kysely, Transaction } from "kysely";
 
 import { db } from "@/database.ts";

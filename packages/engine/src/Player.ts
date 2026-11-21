@@ -7,19 +7,11 @@ import { UserId } from "./types.ts";
  * Links to the User entity but contains game-specific state.
  */
 
-export const PLAYER_STATUSES = ["active", "disconnected", "blocked", "eliminated"] as const;
-export type PlayerStatus = (typeof PLAYER_STATUSES)[number];
-
 export class Player {
   constructor(
     public readonly userId: UserId,
-    private _status: PlayerStatus = "active",
     private _isReady: boolean = false,
   ) {}
-
-  get status(): PlayerStatus {
-    return this._status;
-  }
 
   get isReady(): boolean {
     return this._isReady;
@@ -27,17 +19,5 @@ export class Player {
 
   setReady(ready: boolean): void {
     this._isReady = ready;
-  }
-
-  setStatus(status: PlayerStatus): void {
-    this._status = status;
-  }
-
-  isActive(): boolean {
-    return this._status === "active";
-  }
-
-  isEliminated(): boolean {
-    return this._status === "eliminated" || this._status === "blocked";
   }
 }

@@ -420,10 +420,9 @@ components:
     PlayerView:
       type: object
       description: A player has no seat field. The position in `players` is the seat, counted from 0.
-      required: [userId, status, isReady]
+      required: [userId, isReady]
       properties:
         userId: { type: integer }
-        status: { type: string, enum: [active, disconnected, blocked, eliminated] }
         isReady: { type: boolean }
     GameStatus:
       type: string

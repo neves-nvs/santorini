@@ -4,7 +4,7 @@ import PlayerList from '@/game/view/components/PlayerList'
 import { useGameStore } from '@/game/model/gameStore'
 import type { GameState, PlayerView } from '@/game/model/game'
 
-const player = (userId: number): PlayerView => ({ userId, status: 'active', isReady: false })
+const player = (userId: number): PlayerView => ({ userId, isReady: false })
 
 const showGame = (players: PlayerView[], totalPlayers = 2) =>
   useGameStore.setState({ gameState: { players, totalPlayers, currentSeat: null } as GameState })

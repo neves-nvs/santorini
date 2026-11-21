@@ -146,7 +146,6 @@ export class GameViewBuilder {
   private buildPlayersView(players: Player[]): PlayerView[] {
     return players.map((player) => ({
       userId: player.userId,
-      status: player.status,
       isReady: player.isReady,
     }));
   }

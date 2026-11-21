@@ -5,8 +5,7 @@
  * These should match the database types but are defined here for domain independence.
  */
 
-export const GAME_STATUSES = ["waiting", "in-progress", "completed"] as const;
-export type GameStatus = (typeof GAME_STATUSES)[number];
+export type GameStatus = "waiting" | "in-progress" | "completed";
 
 export const GAME_PHASES = ["placing", "moving", "building"] as const;
 export type GamePhase = (typeof GAME_PHASES)[number];

@@ -19,8 +19,8 @@ const view = (overrides: Partial<InProgressGameView> = {}): InProgressGameView =
   version: 4,
   board: { cells: [] },
   players: [
-    { userId: ME, status: 'active', isReady: true },
-    { userId: OPPONENT, status: 'active', isReady: false },
+    { userId: ME, isReady: true },
+    { userId: OPPONENT, isReady: false },
   ],
   winnerUserId: null,
   winReason: null,
@@ -94,7 +94,7 @@ describe('game_state', () => {
   it('shows the next state even when the board looks the same', () => {
     applyGameView(view({ version: 6 }))
 
-    applyGameView(view({ version: 7, players: [{ userId: ME, status: 'active', isReady: false }] }))
+    applyGameView(view({ version: 7, players: [{ userId: ME, isReady: false }] }))
 
     expect(useGameStore.getState().gameState).toMatchObject({ version: 7, currentUserReady: false })
   })
