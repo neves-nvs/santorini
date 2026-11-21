@@ -1,7 +1,7 @@
 import { Board, BoardSnapshot, MoveResult } from "./Board.ts";
 import { BuildMove, Move, MoveWorkerMove, PlaceWorkerMove } from "./Move.ts";
 import { DefaultTurnPolicy } from "./TurnPolicy.ts";
-import { GameId, GameOutcome, GamePhase, GameStatus, Seat, UserId, asSeat, isWinReason } from "./types.ts";
+import { GameId, GameOutcome, GamePhase, GameSetup, GameStatus, Seat, UserId, asSeat, isWinReason } from "./types.ts";
 import { Player } from "./Player.ts";
 
 import { GameEvent } from "./GameEvent.ts";
@@ -50,6 +50,33 @@ export class Game {
       null,
       null,
       null,
+    );
+  }
+
+  /** A game that is already in progress: every player is seated and the first seat places a worker. */
+  static start(id: GameId, setup: GameSetup): Game {
+    if (setup.players.length < 2) {
+      throw new GameRuleError("A game needs at least two players");
+    }
+
+    const players = setup.players.map((userId) => {
+      const player = new Player(userId);
+      player.setReady(true);
+      return player;
+    });
+
+    return new Game(
+      id,
+      setup.creatorId,
+      players.length,
+      "in-progress",
+      "placing",
+      asSeat(0),
+      0,
+      0,
+      Board.createEmpty(),
+      players,
+      1,
     );
   }
 

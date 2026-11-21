@@ -30,3 +30,9 @@ export interface GameOutcome {
 }
 
 export const isWinReason = (value: string | null): value is WinReason => WIN_REASONS.some((reason) => reason === value);
+
+/** Who plays a new game. The seat of a player is its position in the list. */
+export interface GameSetup {
+  readonly creatorId: UserId;
+  readonly players: readonly UserId[];
+}
