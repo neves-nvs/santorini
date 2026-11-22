@@ -5,7 +5,7 @@ import {
   GameSummary,
   GameView,
   LogoutResponse,
-  PlayerView,
+  GameSummaryPlayerView,
   UserView,
   WebSocketTicketResponse,
 } from "@santorini/shared";
@@ -30,7 +30,12 @@ const userView = {
 const playerView = {
   userId: expect.any(Number),
   isReady: false,
-} satisfies Record<keyof PlayerView, unknown>;
+} satisfies Record<keyof GameSummaryPlayerView, unknown>;
+
+const gamePlayerView = {
+  ...playerView,
+  isConnected: false,
+};
 
 const gameSummary = {
   id: expect.any(Number),
@@ -58,7 +63,7 @@ const waitingGameView = {
   turnNumber: expect.any(Number),
   version: expect.any(Number),
   board: { cells: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => emptyCell)) },
-  players: [playerView],
+  players: [gamePlayerView],
   maxPlayers: 2,
   winnerUserId: null,
   winReason: null,

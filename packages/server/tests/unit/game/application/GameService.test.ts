@@ -12,7 +12,7 @@ function setup(game: Game | null) {
     update: async (_gameId: unknown, change: (game: Game) => GameEvent[]) =>
       game ? { game, events: change(game) } : null,
   } as unknown as GameRepositoryDb;
-  const broadcaster = { broadcastGameUpdate: vi.fn() };
+  const broadcaster = { broadcastGameUpdate: vi.fn(), connectedUsers: () => new Set() };
   const service = new GameService(repository, new GameViewBuilder(), broadcaster as unknown as GameBroadcaster);
   return { service, broadcaster, repository };
 }

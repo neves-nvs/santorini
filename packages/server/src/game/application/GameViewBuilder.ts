@@ -54,7 +54,7 @@ export class GameViewBuilder {
   /**
    * The game as this user sees it: a player gets the moves they can play now, anyone else watches
    */
-  buildFor(game: Game, userId: UserId, connectedUsers?: ReadonlySet<UserId>): GameView {
+  buildFor(game: Game, userId: UserId, connectedUsers: ReadonlySet<UserId>): GameView {
     const state = this.visibilityPolicy.filterGameState(game, userId);
 
     const seat = state.players.findIndex((p) => p.userId === userId);
@@ -143,11 +143,11 @@ export class GameViewBuilder {
   /**
    * Build players representation for frontend
    */
-  private buildPlayersView(players: Player[], connectedUsers?: ReadonlySet<UserId>): GamePlayerView[] {
+  private buildPlayersView(players: Player[], connectedUsers: ReadonlySet<UserId>): GamePlayerView[] {
     return players.map((player) => ({
       userId: player.userId,
       isReady: player.isReady,
-      ...(connectedUsers ? { isConnected: connectedUsers.has(player.userId) } : {}),
+      isConnected: connectedUsers.has(player.userId),
     }));
   }
 }

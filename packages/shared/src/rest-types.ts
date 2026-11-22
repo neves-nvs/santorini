@@ -1,4 +1,4 @@
-import type { GamePhase, GameStatus, PlayerView } from './game-types.ts';
+import type { GamePhase, GameStatus, GameSummaryPlayerView } from './game-types.ts';
 import type { WireError } from './websocket-types.ts';
 
 // ============================================================================
@@ -70,7 +70,7 @@ export interface GameSummary {
   turnNumber: number;
   version: number;
   playerCount: number;
-  players: PlayerView[];
+  players: GameSummaryPlayerView[];
   createdAt: string;
   startedAt: string | null;
   finishedAt: string | null;

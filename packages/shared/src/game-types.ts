@@ -34,15 +34,16 @@ export interface BoardView {
 // Player Types
 // ============================================================================
 
-/** A player has no seat field: the position in `GameView.players` is the seat, counted from 0. */
-export interface PlayerView {
+/** A lightweight player entry in a lobby game summary. */
+export interface GameSummaryPlayerView {
   userId: number;
   isReady: boolean;
 }
 
-/** A player in a live game view, with connection presence when it is available. */
-export interface GamePlayerView extends PlayerView {
-  isConnected?: boolean;
+/** A seated player in a live game view. The position in the array is the seat, counted from 0. */
+export interface GamePlayerView extends GameSummaryPlayerView {
+  /** True when this user has an open WebSocket subscribed to this game. */
+  isConnected: boolean;
 }
 
 // ============================================================================

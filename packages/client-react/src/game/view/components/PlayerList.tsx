@@ -24,7 +24,7 @@ const PlayerList = memo(() => {
         const player = gameState.players[index]
         const isCurrentPlayer = player !== undefined && index === gameState.currentSeat
         const isYou = player !== undefined && player.userId === currentUserId
-        const isConnected = player?.isConnected ?? false
+        const isConnected = player?.isConnected === true
         const connectionLabel = isConnected ? 'Connected' : 'Disconnected'
 
         return (

@@ -417,17 +417,17 @@ components:
       properties:
         x: { type: integer, minimum: 0, maximum: 4 }
         y: { type: integer, minimum: 0, maximum: 4 }
-    PlayerView:
+    GameSummaryPlayerView:
       type: object
-      description: A player has no seat field. The position in `players` is the seat, counted from 0.
+      description: A lightweight player entry in a lobby game summary.
       required: [userId, isReady]
       properties:
         userId: { type: integer }
         isReady: { type: boolean }
     GamePlayerView:
       type: object
-      description: A player in a live game view, with connection presence when it is available.
-      required: [userId, isReady]
+      description: A seated player in a live game view. The position in the array is the seat, counted from 0.
+      required: [userId, isReady, isConnected]
       properties:
         userId: { type: integer }
         isReady: { type: boolean }
@@ -456,7 +456,7 @@ components:
         playerCount: { type: integer }
         players:
           type: array
-          items: { $ref: "#/components/schemas/PlayerView" }
+          items: { $ref: "#/components/schemas/GameSummaryPlayerView" }
         createdAt: { type: string, format: date-time }
         startedAt: { type: [string, "null"], format: date-time }
         finishedAt: { type: [string, "null"], format: date-time }

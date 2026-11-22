@@ -1,7 +1,7 @@
 export type {
   BoardView,
   GamePlayerView,
-  PlayerView,
+  GameSummaryPlayerView,
   Move,
   GameView
 } from '@santorini/shared';
