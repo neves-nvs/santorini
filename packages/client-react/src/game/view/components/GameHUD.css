@@ -16,6 +16,7 @@
   min-height: 44px;
   align-items: center;
   justify-content: center;
+  gap: 0.45rem;
   padding: 0.625rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 12px;
@@ -25,6 +26,7 @@
   font: inherit;
   font-size: 0.9rem;
   font-weight: 650;
+  line-height: 1;
   list-style: none;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.24);
   backdrop-filter: blur(12px);
@@ -34,14 +36,19 @@
   display: none;
 }
 
-.game-menu-trigger::after {
-  content: '⌄';
-  margin-left: 0.5rem;
-  font-size: 1rem;
+.game-menu-chevron {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
   transition: transform 160ms ease;
 }
 
-.game-menu-disclosure[open] .game-menu-trigger::after {
+.game-menu-disclosure[open] .game-menu-chevron {
   transform: rotate(180deg);
 }
 
@@ -141,7 +148,7 @@
 
 .game-player {
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-columns: 10px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.55rem;
   min-height: 48px;
@@ -175,6 +182,7 @@
 }
 
 .game-player-name {
+  min-width: 0;
   overflow: hidden;
   color: #f8fafc;
   font-size: 0.82rem;
@@ -191,9 +199,8 @@
 .game-player-connection {
   width: 10px;
   height: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.82);
+  flex: 0 0 auto;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.7);
 }
 
 .game-player-connection--online {
@@ -205,15 +212,21 @@
 }
 
 .game-player-ready {
-  grid-column: 2 / 4;
-  justify-self: start;
-  margin-top: -0.1rem;
-  color: #fecaca;
+  flex: 0 0 auto;
+  padding: 0.12rem 0.38rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
   font-size: 0.7rem;
+  line-height: 1.25;
+  white-space: nowrap;
 }
 
 .game-player-ready--yes {
   color: #86efac;
+  border-color: rgba(34, 197, 94, 0.24);
+  background: rgba(34, 197, 94, 0.12);
 }
 
 .game-player-waiting {
@@ -279,7 +292,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .game-menu-trigger::after,
+  .game-menu-chevron,
   .game-menu-link,
   .game-ready-button {
     transition: none;

@@ -10,7 +10,17 @@ const GameNavigation = memo(() => {
   return (
     <nav aria-label="Game" className="game-menu">
       <details className="game-menu-disclosure">
-        <summary className="game-menu-trigger">Menu</summary>
+        <summary className="game-menu-trigger">
+          <span>Menu</span>
+          <svg
+            aria-hidden="true"
+            className="game-menu-chevron"
+            viewBox="0 0 20 20"
+            fill="none"
+          >
+            <path d="m5.5 7.5 4.5 4.5 4.5-4.5" />
+          </svg>
+        </summary>
         <div className="game-menu-panel">
           <p className="game-menu-context">
             {username || 'Guest'}{gameId ? ` · Game ${gameId}` : ''}

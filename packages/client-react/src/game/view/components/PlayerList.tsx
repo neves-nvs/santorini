@@ -44,6 +44,11 @@ const PlayerList = memo(() => {
               {player && isYou && <span className="game-player-you">{username || 'You'} · You</span>}
               {isCurrentPlayer && <span className="game-player-turn">{isYou ? 'Your turn' : 'Current turn'}</span>}
             </span>
+            {player && isWaiting && (
+              <span className={`game-player-ready${player.isReady ? ' game-player-ready--yes' : ''}`}>
+                {player.isReady ? 'Ready' : 'Not ready'}
+              </span>
+            )}
             {player ? (
               <span
                 role="img"
@@ -53,11 +58,6 @@ const PlayerList = memo(() => {
               />
             ) : (
               <span className="game-player-waiting">Open</span>
-            )}
-            {player && isWaiting && (
-              <span className={`game-player-ready${player.isReady ? ' game-player-ready--yes' : ''}`}>
-                {player.isReady ? 'Ready' : 'Not ready'}
-              </span>
             )}
           </li>
         )
