@@ -349,7 +349,7 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       expect(broadcast.payload.players.map((p: { userId: number }) => p.userId)).not.toContain(user2.id);
     });
 
-    test("should NOT auto-remove ready player when they disconnect", async () => {
+    test("removes a ready player on disconnect and resets readiness when the roster changes", async () => {
       players = await createAndJoinPlayers(2);
 
       // Player 1 subscribes to get broadcasts
@@ -367,24 +367,23 @@ describe("WebSocket Game Ready and Auto-Start Tests", () => {
       );
       await readyPromise;
 
-      // Track if the seat is freed (it shouldn't be)
-      let playerLeftReceived = false;
-      const playerLeftHandler = (data: WebSocket.RawData) => {
-        const msg = JSON.parse(data.toString());
-        if (msg.type === "game_state" && msg.payload.players.length === 1) {
-          playerLeftReceived = true;
-        }
-      };
-      players[0].ws.on("message", playerLeftHandler);
-
-      // Player 2 disconnects (after readying)
+      const onePlayerState = waitForPlayerCount(players[0].ws, 1);
       players[1].ws.close();
+      const afterLeave = await onePlayerState;
+      expect(afterLeave.payload.players[0]).toMatchObject({ userId: players[0].user.id, isReady: false });
 
-      // Wait a bit for potential broadcast
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const replacement = await helpers.createTestUserWithLogin();
+      const replacementSocket = await createPlayerConnection(replacement.user, replacement.token);
+      players.push({ ...replacement, ws: replacementSocket });
 
-      players[0].ws.off("message", playerLeftHandler);
-      expect(playerLeftReceived).toBe(false);
+      const twoPlayerState = waitForPlayerCount(players[0].ws, 2);
+      const joinPromise = waitForMessage(replacementSocket, "ok");
+      replacementSocket.send(JSON.stringify({ type: "join_game", payload: { gameId } }));
+      await joinPromise;
+      await twoPlayerState;
+
+      const replacementView = await readGameState(replacementSocket);
+      expect(replacementView.players.map((player: { isReady: boolean }) => player.isReady)).toEqual([false, false]);
     });
   });
 });

@@ -34,6 +34,7 @@ const playerView = {
 
 const gamePlayerView = {
   ...playerView,
+  username: expect.any(String),
   isConnected: false,
 };
 

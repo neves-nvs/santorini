@@ -6,7 +6,6 @@ import { useAppStore } from '@/user/model/appStore'
 const PlayerList = memo(() => {
   const gameState = useGameState()
   const currentUserId = useAppStore((s) => s.userId)
-  const username = useAppStore((s) => s.username)
 
   if (!gameState) return <p className="game-players-loading">Loading players...</p>
 
@@ -41,7 +40,11 @@ const PlayerList = memo(() => {
               <strong className="game-player-name">
                 {player ? `P${index + 1}` : 'Waiting for player'}
               </strong>
-              {player && isYou && <span className="game-player-you">{username || 'You'} · You</span>}
+              {player && (
+                <span className="game-player-username">
+                  {player.username}{isYou ? ' · You' : ''}
+                </span>
+              )}
               {isCurrentPlayer && <span className="game-player-turn">{isYou ? 'Your turn' : 'Current turn'}</span>}
             </span>
             {player && isWaiting && (

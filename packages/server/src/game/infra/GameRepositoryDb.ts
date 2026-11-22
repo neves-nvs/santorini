@@ -63,6 +63,19 @@ export class GameRepositoryDb {
     return this.buildGame(gameRecord, playerRecords, pieceRecords);
   }
 
+  /** Load usernames for the IDs in a game's player list for its live view. */
+  async findUsernames(userIds: readonly UserId[]): Promise<Map<UserId, string>> {
+    if (userIds.length === 0) return new Map();
+
+    const rows = await this.database
+      .selectFrom("users")
+      .where("id", "in", [...userIds])
+      .select(["id", "username"])
+      .execute();
+
+    return new Map(rows.map(({ id, username }) => [id, username]));
+  }
+
   private async loadPlayers(database: Kysely<Database>, gameIds: GameId[]): Promise<PlayerRow[]> {
     return database
       .selectFrom("players")

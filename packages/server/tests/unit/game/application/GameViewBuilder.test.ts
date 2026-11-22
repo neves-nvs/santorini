@@ -6,8 +6,10 @@ import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
 const CURRENT_USER = asUserId(100);
 const WAITING_USER = asUserId(101);
 const OUTSIDER = asUserId(999);
-const buildView = (game: Game, userId: typeof CURRENT_USER) =>
-  new GameViewBuilder().buildFor(game, userId, new Set<typeof CURRENT_USER>());
+const buildView = (game: Game, userId: typeof CURRENT_USER) => {
+  const usernames = new Map(game.players.map((player) => [player.userId, `user-${player.userId}`] as const));
+  return new GameViewBuilder().buildFor(game, userId, new Set<typeof CURRENT_USER>(), usernames);
+};
 
 function startedGame(): Game {
   const game = Game.create(asGameId(1), CURRENT_USER, 2);

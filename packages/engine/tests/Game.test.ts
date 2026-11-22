@@ -50,6 +50,19 @@ describe("Game Domain", () => {
       const player3 = new Player(asUserId(102));
       expect(() => game.addPlayer(player3)).toThrow("Game is full");
     });
+
+    it("clears readiness when a waiting game's roster changes", () => {
+      game.addPlayer(player1);
+      game.addPlayer(player2);
+      game.setPlayerReady(asSeat(0), true);
+
+      game.removePlayer(asUserId(101));
+      expect(game.players.map((player) => player.isReady)).toEqual([false]);
+
+      const replacement = new Player(asUserId(102));
+      game.addPlayer(replacement);
+      expect(game.players.map((player) => player.isReady)).toEqual([false, false]);
+    });
   });
 
   describe("Game Lifecycle", () => {

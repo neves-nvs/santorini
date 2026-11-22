@@ -9,6 +9,8 @@ import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 function setup(game: Game | null) {
   const repository = {
     findById: async () => game,
+    findUsernames: async (userIds: readonly number[]) =>
+      new Map(userIds.map((userId) => [userId, `user-${userId}`] as const)),
     update: async (_gameId: unknown, change: (game: Game) => GameEvent[]) =>
       game ? { game, events: change(game) } : null,
   } as unknown as GameRepositoryDb;
