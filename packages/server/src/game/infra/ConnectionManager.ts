@@ -166,6 +166,11 @@ export class ConnectionManager {
     });
   }
 
+  /** The distinct players with an open WebSocket subscribed to this game. */
+  connectedUsers(gameId: GameId): Set<UserId> {
+    return new Set(this.subscribers(gameId).map(({ userId }) => userId));
+  }
+
   /**
    * Get the number of connected players in a game
    */

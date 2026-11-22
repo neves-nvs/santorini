@@ -40,6 +40,11 @@ export interface PlayerView {
   isReady: boolean;
 }
 
+/** A player in a live game view, with connection presence when it is available. */
+export interface GamePlayerView extends PlayerView {
+  isConnected?: boolean;
+}
+
 // ============================================================================
 // Game State Types
 // ============================================================================
@@ -121,7 +126,7 @@ interface GameViewBase {
   turnNumber: number;
   version: number;
   board: BoardView;
-  players: PlayerView[];
+  players: GamePlayerView[];
   viewer: Viewer;
 }
 

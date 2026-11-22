@@ -390,10 +390,11 @@ components:
           items:
             type: object
             description: A player has no seat field. The position in `players` is the seat, counted from 0.
-            required: [userId, isReady]
+            required: [userId, isReady, isConnected]
             properties:
               userId: { type: integer }
               isReady: { type: boolean }
+              isConnected: { type: boolean, description: Whether the player has an open WebSocket subscribed to this game. }
         viewer: { $ref: "#/components/schemas/Viewer" }
     Viewer:
       description: Who is looking. A player gets the moves they can play now; a watcher, or someone whose seat was freed, gets none.

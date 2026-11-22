@@ -129,7 +129,13 @@ export class GameService {
       throw new GameNotFoundError(gameId);
     }
 
-    return this.gameViewBuilder.buildFor(game, userId);
+    return this.gameViewBuilder.buildFor(game, userId, this.gameBroadcaster.connectedUsers(game.id));
+  }
+
+  /** Broadcast a fresh game view after connection presence changes. */
+  async broadcastCurrentView(gameId: GameId): Promise<void> {
+    const game = await this.gameRepository.findById(gameId);
+    if (game) this.gameBroadcaster.broadcastPresence(gameId, game);
   }
 
   private seatOf(game: Game, userId: UserId): Seat | null {

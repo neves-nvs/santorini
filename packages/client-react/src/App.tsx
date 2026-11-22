@@ -64,7 +64,7 @@ const AppRoutes = () => {
   }
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingScreen />}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/auth" element={username ? <Navigate to="/lobby" replace /> : <AuthPage />} />

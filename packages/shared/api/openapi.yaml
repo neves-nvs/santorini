@@ -424,6 +424,16 @@ components:
       properties:
         userId: { type: integer }
         isReady: { type: boolean }
+    GamePlayerView:
+      type: object
+      description: A player in a live game view, with connection presence when it is available.
+      required: [userId, isReady]
+      properties:
+        userId: { type: integer }
+        isReady: { type: boolean }
+        isConnected:
+          type: boolean
+          description: Whether the player has an open WebSocket subscribed to this game.
     GameStatus:
       type: string
       enum: [waiting, in-progress, completed]
@@ -556,7 +566,7 @@ components:
                             workerId: { type: integer }
         players:
           type: array
-          items: { $ref: "#/components/schemas/PlayerView" }
+          items: { $ref: "#/components/schemas/GamePlayerView" }
         viewer: { $ref: "#/components/schemas/Viewer" }
     Viewer:
       description: Who is looking. A player gets the moves they can play now; a watcher, or someone whose seat was freed, gets none.

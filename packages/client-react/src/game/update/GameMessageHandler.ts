@@ -19,8 +19,8 @@ import type { AvailableMove, GameState, GameView, Move } from '@/game/model/game
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import { log, logError } from '@/shared/utils/log'
 
-// The newest version of each game this client has shown. Every game_state is a whole snapshot, so one that is not
-// newer (an old one, or the same one twice) changes nothing and is dropped.
+// The newest version of each game this client has shown. Game data versions increase on game changes, while
+// connection presence can change without changing the saved game version.
 const lastVersionByGame = new Map<number, number>()
 
 /**
@@ -45,13 +45,25 @@ export function handleWebSocketMessage(type: string, payload: unknown): void {
  * Show a game as the server sees it for this user. Used for game_state messages and for the REST snapshot.
  */
 export function applyGameView(gameView: GameView): void {
-  if (gameView.version <= (lastVersionByGame.get(gameView.gameId) ?? -1)) {
+  const lastVersion = lastVersionByGame.get(gameView.gameId) ?? -1
+  if (gameView.version < lastVersion) {
     log('Ignoring a game state that is not newer than the one shown')
     return
   }
-  lastVersionByGame.set(gameView.gameId, gameView.version)
 
   const store = useGameStore.getState()
+  if (gameView.version === lastVersion) {
+    const currentPlayers = store.gameState?.players ?? []
+    const presenceChanged = gameView.players.some(
+      (player, index) => player.isConnected !== currentPlayers[index]?.isConnected
+    )
+    if (!presenceChanged) {
+      log('Ignoring a game state that is not newer than the one shown')
+      return
+    }
+  }
+  lastVersionByGame.set(gameView.gameId, gameView.version)
+
   const { viewer } = gameView
   const isCurrentPlayer = viewer.role === 'player' && viewer.isCurrentPlayer
   const availableMoves = viewer.role === 'player' ? viewer.availableMoves : []
@@ -140,6 +152,16 @@ export function handleConnectionChange(connected: boolean): void {
   store.setConnecting(false)
 
   if (!connected) {
+    const gameState = store.gameState
+    const currentUserId = useAppStore.getState().userId
+    if (gameState && currentUserId !== null) {
+      store.setGameState({
+        ...gameState,
+        players: gameState.players.map((player) =>
+          player.userId === currentUserId ? { ...player, isConnected: false } : player
+        )
+      })
+    }
     resetMessageHandlerState()
   }
 }

@@ -1,86 +1,69 @@
-import { memo, useEffect } from 'react'
+import { memo } from 'react'
 import { useGameState } from '@/game/model/gameSelectors'
 import { PLAYER_COLORS } from '@/game/model/gameConstants'
-import type { PlayerView } from '@/game/model/game'
+import { useAppStore } from '@/user/model/appStore'
 
-interface PlayerListProps {
-  className?: string
-  style?: React.CSSProperties
-}
-
-/**
- * Displays the list of players in the game with their colors and status
- */
-const PlayerList = memo(({ className, style }: PlayerListProps) => {
+const PlayerList = memo(() => {
   const gameState = useGameState()
+  const currentUserId = useAppStore((s) => s.userId)
+  const username = useAppStore((s) => s.username)
 
-  // Debug: Log when player list changes
-  useEffect(() => {
-    console.log('PlayerList re-rendered with players:', gameState?.players)
-  }, [gameState?.players])
-
-  // Handle undefined/null players gracefully
-  const players = gameState?.players || []
-
-  if (!gameState) {
-    return (
-      <div className={className} style={style}>
-        <p>Loading players...</p>
-      </div>
-    )
-  }
+  if (!gameState) return <p className="game-players-loading">Loading players...</p>
 
   const seats = gameState.totalPlayers || 2
+  const players = gameState.players
+  const isWaiting = gameState.status === 'waiting'
 
   return (
-    <div className={className} style={style}>
-      <h3 style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)', margin: '0 0 0.5rem 0' }}>
-        Players ({players.length}/{seats})
-      </h3>
+    <>
+      <div className="game-players-header">
+        <h2>Players ({players.length}/{seats})</h2>
+      </div>
+      <ul className="game-player-list">
+      {Array.from({ length: seats }, (_, index) => {
+        const player = gameState.players[index]
+        const isCurrentPlayer = player !== undefined && index === gameState.currentSeat
+        const isYou = player !== undefined && player.userId === currentUserId
+        const isConnected = player?.isConnected ?? false
+        const connectionLabel = isConnected ? 'Connected' : 'Disconnected'
 
-      {Array.isArray(players) ? (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {Array.from({ length: seats }, (_, index) => {
-            const player: PlayerView | undefined = players[index]
-            const playerColor = PLAYER_COLORS[index] || '#ffffff'
-            const isCurrentPlayer = player !== undefined && index === gameState?.currentSeat
-
-            return (
-              <li
-                key={index}
-                style={{
-                  opacity: player ? 1 : 0.5,
-                  marginBottom: '0.25rem',
-                  padding: '0.35rem 0.5rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: '4px',
-                  border: isCurrentPlayer
-                    ? '2px solid yellow'
-                    : player
-                      ? '1px solid transparent'
-                      : '1px dashed rgba(255, 255, 255, 0.4)',
-                  fontSize: 'clamp(0.8rem, 2vw, 0.9rem)'
-                }}
-              >
-                <span
-                  style={{
-                    color: playerColor,
-                    fontWeight: 'bold',
-                    marginRight: '0.35rem'
-                  }}
-                >
-                  ●
-                </span>
-                {player ? `P${index + 1}` : 'Waiting for a player'}
-                {isCurrentPlayer && ' ★'}
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        <div>Players: {JSON.stringify(gameState.players)}</div>
-      )}
-    </div>
+        return (
+          <li
+            key={player?.userId ?? `empty-seat-${index}`}
+            className={`game-player${isCurrentPlayer ? ' game-player--active' : ''}${!player ? ' game-player--empty' : ''}`}
+          >
+            <span
+              aria-hidden="true"
+              className="game-player-color"
+              style={{ backgroundColor: PLAYER_COLORS[index] || '#94a3b8' }}
+            />
+            <span className="game-player-copy">
+              <strong className="game-player-name">
+                {player ? `P${index + 1}` : 'Waiting for player'}
+              </strong>
+              {player && isYou && <span className="game-player-you">{username || 'You'} · You</span>}
+              {isCurrentPlayer && <span className="game-player-turn">{isYou ? 'Your turn' : 'Current turn'}</span>}
+            </span>
+            {player ? (
+              <span
+                role="img"
+                aria-label={connectionLabel}
+                title={connectionLabel}
+                className={`game-player-connection${isConnected ? ' game-player-connection--online' : ' game-player-connection--offline'}`}
+              />
+            ) : (
+              <span className="game-player-waiting">Open</span>
+            )}
+            {player && isWaiting && (
+              <span className={`game-player-ready${player.isReady ? ' game-player-ready--yes' : ''}`}>
+                {player.isReady ? 'Ready' : 'Not ready'}
+              </span>
+            )}
+          </li>
+        )
+      })}
+      </ul>
+    </>
   )
 })
 

@@ -28,7 +28,7 @@ export function useGameLifecycle() {
   // Calculate derived values
   const currentPlayers = gameState?.players?.length || 0
   const totalPlayers = gameState?.totalPlayers || 2
-  const readyCount = gameState?.playersReadyStatus?.filter((p: { isReady: boolean }) => p.isReady).length || 0
+  const readyCount = gameState?.players.filter((player) => player.isReady).length || 0
 
   // Get user-friendly status message
   const statusMessage = useMemo(() => {

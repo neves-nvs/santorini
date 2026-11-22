@@ -1,5 +1,6 @@
 export type {
   BoardView,
+  GamePlayerView,
   PlayerView,
   Move,
   GameView
@@ -8,7 +9,7 @@ export type {
 import type {
   Position,
   BoardView,
-  PlayerView,
+  GamePlayerView,
   GameStatus,
   GamePhase,
   Move
@@ -41,7 +42,7 @@ export interface GameState {
   turnNumber: number;
   version: number;
   board: BoardView;
-  players: PlayerView[];
+  players: GamePlayerView[];
   availableMoves?: Move[];
   winnerUserId?: number;
   winReason?: string;
