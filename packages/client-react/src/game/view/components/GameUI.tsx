@@ -5,6 +5,7 @@ import GameBoard from './GameBoard'
 import GameStatusBar from './GameStatusBar'
 import GameLobby from './GameLobby'
 import GameNavigation from './GameNavigation'
+import GameResultPanel from './GameResultPanel'
 import DebugMenu from '@/game/view/debug/DebugMenu'
 import { PerformanceDashboard } from '@/game/view/debug/PerformanceDashboard'
 import { useDebugState } from '@/game/view/debug/useDebugState'
@@ -32,8 +33,10 @@ const GameUI = memo(() => {
       {/* Persistent Navigation */}
       <GameNavigation />
 
-      {/* Game Status Bar */}
-      <GameStatusBar />
+      {/* The result panel replaces the phase message after the game ends. */}
+      {gameState?.status !== 'completed' && <GameStatusBar />}
+
+      <GameResultPanel />
 
       {/* Game Lobby (waiting/ready controls) */}
       <GameLobby />
