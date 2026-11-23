@@ -3,7 +3,6 @@ import { ToastProvider } from './shared/ui/ToastContext'
 import { type ReactNode, lazy, Suspense, useEffect, useState } from 'react'
 import { useAppStore } from './user/model/appStore'
 import { userApi } from './user/services/userApi'
-import HomePage from './shared/pages/HomePage'
 import AuthPage from './user/view/AuthPage'
 import LobbyPage from './pages/LobbyPage'
 import NotFoundPage from './shared/pages/NotFoundPage'
@@ -66,7 +65,7 @@ const AppRoutes = () => {
   return (
     <Suspense fallback={null}>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to={username ? '/lobby' : '/auth'} replace />} />
         <Route path="/auth" element={username ? <Navigate to="/lobby" replace /> : <AuthPage />} />
         <Route path="/lobby" element={<RequireAuth><LobbyPage /></RequireAuth>} />
         <Route path="/game" element={<RequireAuth><GamePage /></RequireAuth>} />
