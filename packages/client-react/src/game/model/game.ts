@@ -42,7 +42,7 @@ export interface GameState {
   version: number;
   board: BoardView;
   players: PlayerView[];
-  availableMoves?: Move[];
+  availableMoves: AvailableMove[];
   winnerUserId?: number;
   winReason?: string;
   isCurrentPlayer: boolean;
@@ -57,8 +57,6 @@ export interface GameState {
   readyCount?: number;
   totalPlayers?: number;
 
-  // Turn state tracking
-  isMyTurn?: boolean;
 }
 
 // Available move format for UI (transformed from server moves)
@@ -69,3 +67,5 @@ export interface AvailableMove {
   // For move_worker moves: the worker's current position (where they're moving FROM)
   fromPosition?: Position;
 }
+
+export const EMPTY_AVAILABLE_MOVES: AvailableMove[] = []

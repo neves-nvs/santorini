@@ -1,118 +1,88 @@
 import { useGameStore } from './gameStore'
+import { EMPTY_AVAILABLE_MOVES } from './game'
+import type { BoardView } from './game'
 
-// Optimized selectors for R3F components to prevent unnecessary re-renders
+const EMPTY_CELLS: BoardView['cells'] = []
 
-// Board-level selectors
-export const useBoardState = () => 
-  useGameStore(state => state.boardState)
+function selectBoard(state: ReturnType<typeof useGameStore.getState>) {
+  return state.gameState?.board ?? null
+}
 
-export const useBoardCells = () => 
-  useGameStore(state => state.boardState?.cells || [])
+function toBuildingLevel(cell: { height: number; hasDome: boolean }) {
+  return cell.hasDome ? cell.height + 1 : cell.height
+}
 
-export const useBoardLastUpdated = () => 
-  useGameStore(state => state.boardState?.lastUpdated || 0)
+// Board selectors read from the canonical server snapshot instead of a second cached board.
+export const useBoardState = () => useGameStore(selectBoard)
 
-// Individual cell selectors (most granular)
-export const useBoardCell = (x: number, y: number) => 
-  useGameStore(state => {
-    if (!state.boardState || x < 0 || x >= 5 || y < 0 || y >= 5) return null
-    return state.boardState.cells[x][y]
-  })
+export const useBoardCells = () => useGameStore(state => state.gameState?.board.cells ?? EMPTY_CELLS)
 
-export const useCellBuildingLevel = (x: number, y: number) => 
-  useGameStore(state => {
-    if (!state.boardState || x < 0 || x >= 5 || y < 0 || y >= 5) return 0
-    return state.boardState.cells[x][y].buildingLevel
-  })
+export const useBoardLastUpdated = () => useGameStore(state => state.gameState?.version ?? 0)
 
-export const useCellWorker = (x: number, y: number) => 
-  useGameStore(state => {
-    if (!state.boardState || x < 0 || x >= 5 || y < 0 || y >= 5) return null
-    return state.boardState.cells[x][y].worker
-  })
+export const useBoardCell = (x: number, y: number) => useGameStore(state => {
+  const cell = state.gameState?.board.cells[x]?.[y]
+  return cell ? { buildingLevel: toBuildingLevel(cell), worker: cell.worker } : null
+})
 
-// Worker-specific selectors
-export const useWorkerAt = (x: number, y: number) => 
-  useGameStore(state => state.workersByPosition.get(`${x},${y}`) || null)
+export const useCellBuildingLevel = (x: number, y: number) => useGameStore(state => {
+  const cell = state.gameState?.board.cells[x]?.[y]
+  return cell ? toBuildingLevel(cell) : 0
+})
 
-export const useWorkersBySeat = (seat: number) => 
-  useGameStore(state => state.workersBySeat.get(seat) || [])
+export const useCellWorker = (x: number, y: number) =>
+  useGameStore(state => state.gameState?.board.cells[x]?.[y]?.worker ?? null)
 
-export const useAllWorkers = () => 
-  useGameStore(state => Array.from(state.workersByPosition.values()))
+export const useWorkerAt = (x: number, y: number) => useGameStore(state => {
+  const worker = state.gameState?.board.cells[x]?.[y]?.worker
+  return worker ? { x, y, ...worker } : null
+})
 
-// Move and turn selectors
-export const useCurrentPlayerMoves = () => 
-  useGameStore(state => state.currentPlayerMoves)
+export const useWorkersBySeat = (seat: number) => useGameStore(state =>
+  state.getWorkersBySeat(seat)
+)
 
-export const useIsMyTurn = () => 
-  useGameStore(state => state.isMyTurn)
+export const useAllWorkers = () => useGameStore(state =>
+  state.gameState?.board.cells.flatMap((row, x) => row.flatMap((cell, y) =>
+    cell.worker ? [{ x, y, ...cell.worker }] : []
+  )) ?? []
+)
 
-export const useSelectedWorker = () => 
-  useGameStore(state => state.selectedWorker)
+export const useCurrentPlayerMoves = () =>
+  useGameStore(state => state.gameState?.availableMoves ?? EMPTY_AVAILABLE_MOVES)
 
-// Game state selectors
-export const useGameId = () => 
-  useGameStore(state => state.gameId)
+export const useIsMyTurn = () =>
+  useGameStore(state => state.gameState?.isCurrentPlayer ?? false)
 
-export const useGameState = () => 
-  useGameStore(state => state.gameState)
+export const useSelectedWorker = () => useGameStore(state => state.selectedWorker)
+export const useGameId = () => useGameStore(state => state.gameId)
+export const useGameState = () => useGameStore(state => state.gameState)
+export const useCurrentPlayer = () => useGameStore(state => state.gameState?.currentPlayer)
+export const useGamePhase = () => useGameStore(state => state.gameState?.phase)
+export const useIsConnected = () => useGameStore(state => state.isConnected)
+export const useIsConnecting = () => useGameStore(state => state.isConnecting)
 
-export const useCurrentPlayer = () => 
-  useGameStore(state => state.gameState?.currentPlayer)
+export const useMovableWorkers = (currentSeat: number) => useGameStore(state =>
+  state.getMovableWorkers(currentSeat)
+)
 
-export const useGamePhase = () =>
-  useGameStore(state => state.gameState?.phase)
+export const useIsValidPosition = (x: number, y: number, selectedWorkerId?: number) => useGameStore(state => {
+  const moves = state.gameState?.availableMoves ?? EMPTY_AVAILABLE_MOVES
+  return moves.some(move =>
+    (selectedWorkerId === undefined || move.workerId === selectedWorkerId) &&
+    move.validPositions.some(position => position.x === x && position.y === y)
+  )
+})
 
-// Connection selectors
-export const useIsConnected = () => 
-  useGameStore(state => state.isConnected)
-
-export const useIsConnecting = () => 
-  useGameStore(state => state.isConnecting)
-
-// Computed selectors for game logic
-export const useMovableWorkers = (currentSeat: number) => 
-  useGameStore(state => {
-    const playerWorkers = state.workersBySeat.get(currentSeat) || []
-    const moveWorkerMoves = state.currentPlayerMoves.filter(move => move.type === 'move_worker')
-    
-    return playerWorkers.filter(worker =>
-      moveWorkerMoves.some(move => move.workerId === worker.workerId)
+export const useCanWorkerMove = (x: number, y: number, currentSeat: number) => useGameStore(state => {
+  const worker = state.gameState?.board.cells[x]?.[y]?.worker
+  return !!worker && worker.seat === currentSeat &&
+    (state.gameState?.availableMoves ?? EMPTY_AVAILABLE_MOVES).some(move =>
+      move.type === 'move_worker' && move.workerId === worker.workerId
     )
-  })
+})
 
-// Specific position validation
-export const useIsValidPosition = (x: number, y: number, selectedWorkerId?: number) => 
-  useGameStore(state => {
-    const moves = state.currentPlayerMoves
-    if (!Array.isArray(moves)) return false
-
-    for (const move of moves) {
-      if (selectedWorkerId && move.workerId !== selectedWorkerId) continue
-      
-      const isValid = move.validPositions.some(pos => pos.x === x && pos.y === y)
-      if (isValid) return true
-    }
-    
-    return false
-  })
-
-// Worker interaction selectors
-export const useCanWorkerMove = (x: number, y: number, currentSeat: number) => 
-  useGameStore(state => {
-    const worker = state.workersByPosition.get(`${x},${y}`)
-    if (!worker || worker.seat !== currentSeat) return false
-    
-    const moveWorkerMoves = state.currentPlayerMoves.filter(move => move.type === 'move_worker')
-    return moveWorkerMoves.some(move => move.workerId === worker.workerId)
-  })
-
-// Individual action selectors (stable references to prevent infinite re-renders)
 export const useSetGameState = () => useGameStore(state => state.setGameState)
 export const useSetGameId = () => useGameStore(state => state.setGameId)
-export const useSetCurrentPlayerMoves = () => useGameStore(state => state.setCurrentPlayerMoves)
-export const useSetMyTurn = () => useGameStore(state => state.setMyTurn)
 export const useSetSelectedWorker = () => useGameStore(state => state.setSelectedWorker)
 export const useSetConnected = () => useGameStore(state => state.setConnected)
 export const useSetConnecting = () => useGameStore(state => state.setConnecting)
@@ -121,37 +91,28 @@ export const useResetGame = () => useGameStore(state => state.resetGame)
 export const useUpdateBoardCell = () => useGameStore(state => state.updateBoardCell)
 export const useMoveWorker = () => useGameStore(state => state.moveWorker)
 
-// Legacy actions selector (for backward compatibility, but prefer individual selectors)
-export const useGameActions = () =>
-  useGameStore(state => ({
-    setGameState: state.setGameState,
-    setGameId: state.setGameId,
-    setCurrentPlayerMoves: state.setCurrentPlayerMoves,
-    setMyTurn: state.setMyTurn,
-    setSelectedWorker: state.setSelectedWorker,
-    setConnected: state.setConnected,
-    setConnecting: state.setConnecting,
-    resetGame: state.resetGame,
-    updateBoardCell: state.updateBoardCell,
-    moveWorker: state.moveWorker
-  }))
+export const useGameActions = () => useGameStore(state => ({
+  setGameState: state.setGameState,
+  setGameId: state.setGameId,
+  setSelectedWorker: state.setSelectedWorker,
+  setConnected: state.setConnected,
+  setConnecting: state.setConnecting,
+  resetGame: state.resetGame,
+  updateBoardCell: state.updateBoardCell,
+  moveWorker: state.moveWorker
+}))
 
-// Shallow comparison selectors for complex objects
-export const useGameStateShallow = () =>
-  useGameStore(state => ({
-    id: state.gameState?.id,
-    currentPlayer: state.gameState?.currentPlayer,
-    phase: state.gameState?.phase,
-    cellCount: state.gameState?.board?.cells?.length
-  }))
+export const useGameStateShallow = () => useGameStore(state => ({
+  id: state.gameState?.id,
+  currentPlayer: state.gameState?.currentPlayer,
+  phase: state.gameState?.phase,
+  cellCount: state.gameState?.board.cells.length
+}))
 
-// Performance monitoring selector
-export const useStoreStats = () => 
-  useGameStore(state => ({
-    hasGameState: !!state.gameState,
-    hasBoardState: !!state.boardState,
-    workerCount: state.workersByPosition.size,
-    playerCount: state.workersBySeat.size,
-    moveCount: state.currentPlayerMoves.length,
-    lastBoardUpdate: state.boardState?.lastUpdated || 0
-  }))
+export const useStoreStats = () => useGameStore(state => ({
+  hasGameState: !!state.gameState,
+  workerCount: state.gameState?.board.cells.flat().filter(cell => cell.worker).length ?? 0,
+  playerCount: state.gameState?.players.length ?? 0,
+  moveCount: state.gameState?.availableMoves.length ?? 0,
+  lastBoardUpdate: state.gameState?.version ?? 0
+}))
