@@ -4,7 +4,7 @@ These findings were reviewed against the earlier `feat/game-screen-ux` work. Thi
 
 ## Queue
 
-- [ ] **1. Show a useful game result** *(current PR)*. State who won and why, then give players a clear next action when the game ends.
+- [x] **1. Show a useful game result.** State who won and why, then give players a clear next action when the game ends.
 - [ ] **2. Make connection recovery visible and recoverable.** Distinguish connecting, reconnecting, connected, and retry exhaustion; clear transient errors after recovery.
 - [ ] **3. Fix mobile viewport and keyboard behavior.** Use dynamic viewport sizing for the app and board, and keep the auth form scrollable above the on-screen keyboard.
 - [ ] **4. Add an accessible alternative to 3D game input.** Provide keyboard and screen-reader operable actions that do not depend on clicking canvas meshes.
