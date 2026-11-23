@@ -18,3 +18,9 @@ These findings were reviewed against the earlier `feat/game-screen-ux` work. Thi
 - Keep each PR scoped to one queue item. Add coverage in task 8; don't broaden earlier tasks into a test-infrastructure change.
 - Capture visual evidence for UI changes in the PR discussion without leaving screenshots in the repository.
 - Report checks run and known gaps in the PR description.
+
+### Browser and screenshot review
+
+- `npm run test:e2e` runs the Playwright suite on desktop Chromium, mobile Chromium, desktop and mobile WebKit, and desktop Firefox.
+- `npm run test:e2e:screenshots -w packages/client-react` starts the disposable test stack and saves auth, lobby, and game screenshots for each browser project under `packages/client-react/test-results/`.
+- `test-results/` is git-ignored. Attach the generated screenshots to the pull request discussion for visual review; do not commit them.
