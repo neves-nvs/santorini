@@ -33,7 +33,12 @@ class FakeSocket {
   }
 }
 
-const events = { onMessage: vi.fn(), onConnectionChange: vi.fn(), onReset: vi.fn() }
+const events = {
+  onMessage: vi.fn(),
+  onConnectionChange: vi.fn(),
+  onConnectionStatusChange: vi.fn(),
+  onReset: vi.fn()
+}
 
 async function connected(): Promise<FakeSocket> {
   await webSocketClient.connect()

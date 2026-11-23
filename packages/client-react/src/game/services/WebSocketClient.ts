@@ -15,6 +15,7 @@
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import type { OkMessage, WireError } from '@santorini/shared'
 import { ErrorType, GameError } from '@/shared/utils/errorHandler'
+import type { ConnectionStatus } from '@/game/model/gameStore'
 import { gameApi } from './gameApi'
 import { RECONNECTION_DELAY } from '@/game/model/gameConstants'
 
@@ -34,6 +35,7 @@ type MessageHandler = (type: string, payload: unknown) => void
 export interface SocketEvents {
   onMessage: MessageHandler
   onConnectionChange: (connected: boolean) => void
+  onConnectionStatusChange: (status: ConnectionStatus, attempt: number, maxAttempts: number) => void
   onReset: () => void
 }
 
@@ -49,7 +51,12 @@ function getWebSocketUrl(): string {
 }
 
 // The update layer registers itself at startup (main.tsx), so services never import it.
-let events: SocketEvents = { onMessage: () => {}, onConnectionChange: () => {}, onReset: () => {} }
+let events: SocketEvents = {
+  onMessage: () => {},
+  onConnectionChange: () => {},
+  onConnectionStatusChange: () => {},
+  onReset: () => {}
+}
 
 class WebSocketClient {
   private socket: WebSocket | null = null
@@ -68,6 +75,10 @@ class WebSocketClient {
   async connect(): Promise<void> {
     console.log('WebSocketClient.connect called')
     this.shouldReconnect = true
+    if (this.isOpenOrOpening()) return
+
+    this.reconnectAttempts = 0
+    events.onConnectionStatusChange('connecting', 0, this.maxReconnectAttempts)
     await this.openSocket()
   }
 
@@ -86,6 +97,7 @@ class WebSocketClient {
     }
 
     events.onConnectionChange(false)
+    events.onConnectionStatusChange('disconnected', 0, this.maxReconnectAttempts)
     events.onReset()
   }
 
@@ -145,6 +157,10 @@ class WebSocketClient {
       return
     }
 
+    if (this.reconnectAttempts === 0) {
+      events.onConnectionStatusChange('connecting', 0, this.maxReconnectAttempts)
+    }
+
     let ticket: string
     try {
       ticket = await gameApi.createWebSocketTicket()
@@ -163,6 +179,7 @@ class WebSocketClient {
     this.socket.onopen = () => {
       console.log('WebSocket connected')
       this.reconnectAttempts = 0
+      events.onConnectionStatusChange('connected', 0, this.maxReconnectAttempts)
       events.onConnectionChange(true)
     }
 
@@ -190,12 +207,19 @@ class WebSocketClient {
   }
 
   private attemptReconnect(): void {
-    if (!this.shouldReconnect || this.reconnectAttempts >= this.maxReconnectAttempts) {
+    if (!this.shouldReconnect) {
+      events.onConnectionStatusChange('disconnected', 0, this.maxReconnectAttempts)
+      return
+    }
+
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('Reconnecting is off or the maximum number of attempts was reached')
+      events.onConnectionStatusChange('failed', this.reconnectAttempts, this.maxReconnectAttempts)
       return
     }
 
     this.reconnectAttempts++
+    events.onConnectionStatusChange('reconnecting', this.reconnectAttempts, this.maxReconnectAttempts)
     console.log(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
 
     setTimeout(() => {
