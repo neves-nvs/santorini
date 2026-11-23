@@ -6,6 +6,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import Board3D from './Board3D'
 import type { DebugState } from '@/game/model/debugState'
 import { useToast } from '@/shared/ui/useToast'
+import './GameBoard.css'
 
 export type CameraType = 'perspective' | 'orthographic'
 
@@ -72,14 +73,7 @@ const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cam
     <div
       role="img"
       aria-label="3D Santorini board. The game status, players and controls are in the panels around it."
-      style={{
-        width: '100vw',
-        height: '100vh',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        zIndex: 0
-      }}
+      className="game-board-canvas"
     >
       <Canvas shadows style={{ width: '100%', height: '100%' }}>
         <Suspense fallback={
