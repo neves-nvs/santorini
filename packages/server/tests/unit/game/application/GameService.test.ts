@@ -75,6 +75,17 @@ describe("GameService publishes every change to the game", () => {
     expect(broadcaster.broadcastGameUpdate).toHaveBeenCalledExactlyOnceWith(game);
   });
 
+  it("returns the committed update when username loading prevents publication", async () => {
+    const game = gameWith(1);
+    const { service, broadcaster } = setup(game);
+    vi.mocked(broadcaster.broadcastGameUpdate).mockRejectedValue(new Error("username lookup failed"));
+
+    const result = await service.addPlayer(asGameId(1), asUserId(200));
+
+    expect(result.game.players).toHaveLength(2);
+    expect(result.events).toHaveLength(1);
+  });
+
   it("not after a join that is refused", async () => {
     const { service, broadcaster } = setup(gameWith(2));
 

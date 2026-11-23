@@ -29,7 +29,12 @@ export class GameService {
       throw new GameNotFoundError(gameId);
     }
 
-    await this.gameBroadcaster.broadcastGameUpdate(result.game);
+    try {
+      await this.gameBroadcaster.broadcastGameUpdate(result.game);
+    } catch (error) {
+      // The repository update has committed. A publication failure must not make the command look rejected.
+      logger.error(`Failed to broadcast the committed update for game ${gameId}:`, error);
+    }
     return result;
   }
 
