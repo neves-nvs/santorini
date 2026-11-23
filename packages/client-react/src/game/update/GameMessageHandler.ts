@@ -14,6 +14,7 @@
  */
 
 import { useGameStore } from '@/game/model/gameStore'
+import type { ConnectionStatus } from '@/game/model/gameStore'
 import { useAppStore } from '@/user/model/appStore'
 import type { AvailableMove, GameState, GameView, Move } from '@/game/model/game'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
@@ -142,5 +143,13 @@ export function handleConnectionChange(connected: boolean): void {
   if (!connected) {
     resetMessageHandlerState()
   }
+}
+
+export function handleConnectionStatusChange(
+  status: ConnectionStatus,
+  attempt: number,
+  maxAttempts: number
+): void {
+  useGameStore.getState().setConnectionStatus(status, attempt, maxAttempts)
 }
 

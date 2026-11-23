@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { useAppStore } from '@/user/model/appStore'
 import { useIsConnected, useIsConnecting } from '@/game/model/gameSelectors'
-import { handleConnectionChange, handleWebSocketMessage, resetMessageHandlerState } from '@/game/update/GameMessageHandler'
+import {
+  handleConnectionChange,
+  handleConnectionStatusChange,
+  handleWebSocketMessage,
+  resetMessageHandlerState
+} from '@/game/update/GameMessageHandler'
 import { webSocketClient } from '@/game/services/WebSocketClient'
 
 // The view joins the layers: services never import update. This module loads with the lazy game page, so the
@@ -9,6 +14,7 @@ import { webSocketClient } from '@/game/services/WebSocketClient'
 webSocketClient.setEvents({
   onMessage: handleWebSocketMessage,
   onConnectionChange: handleConnectionChange,
+  onConnectionStatusChange: handleConnectionStatusChange,
   onReset: resetMessageHandlerState,
 })
 

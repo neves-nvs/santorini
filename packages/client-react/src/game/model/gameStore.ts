@@ -17,6 +17,8 @@ export interface OptimizedBoardState {
   lastUpdated: number
 }
 
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'reconnecting' | 'connected' | 'failed'
+
 // Worker position for efficient lookups
 interface WorkerPosition {
   x: number
@@ -46,6 +48,9 @@ interface GameStore {
   // Connection state
   isConnected: boolean
   isConnecting: boolean
+  connectionStatus: ConnectionStatus
+  reconnectAttempt: number
+  maxReconnectAttempts: number
 
   // Actions
   setGameState: (gameState: GameState | null) => void
@@ -55,6 +60,7 @@ interface GameStore {
   setSelectedWorker: (worker: { workerId: number; x: number; y: number } | null) => void
   setConnected: (connected: boolean) => void
   setConnecting: (connecting: boolean) => void
+  setConnectionStatus: (status: ConnectionStatus, attempt?: number, maxAttempts?: number) => void
   resetGame: () => void
   
   // Optimized board operations
@@ -148,6 +154,9 @@ export const useGameStore = create<GameStore>()(
     selectedWorker: null,
     isConnected: false,
     isConnecting: false,
+    connectionStatus: 'disconnected',
+    reconnectAttempt: 0,
+    maxReconnectAttempts: 5,
 
     // Actions
     setGameState: (gameState: GameState | null) => {
@@ -199,6 +208,14 @@ export const useGameStore = create<GameStore>()(
     }),
 
     setConnecting: (connecting: boolean) => set({ isConnecting: connecting }),
+
+    setConnectionStatus: (connectionStatus, reconnectAttempt = 0, maxReconnectAttempts = 5) => set({
+      connectionStatus,
+      reconnectAttempt,
+      maxReconnectAttempts,
+      isConnected: connectionStatus === 'connected',
+      isConnecting: connectionStatus === 'connecting' || connectionStatus === 'reconnecting'
+    }),
 
     resetGame: () => set({
       gameState: null,

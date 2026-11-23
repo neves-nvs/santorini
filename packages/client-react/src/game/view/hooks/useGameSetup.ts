@@ -51,13 +51,14 @@ export function useGameSetup(gameId?: string): GameSetupResult {
       setIsLoading(true)
       setIsReady(false)
       setLocalError(null)
+      setError(null)
       initializingRef.current = false
       setGameState(null)
       resetActionState(prevGameIdRef.current || undefined)
     }
 
     setGameId(gameId)
-  }, [gameId, setGameId, setGameState, resetActionState])
+  }, [gameId, setGameId, setGameState, resetActionState, setError])
 
   // The server forgets a dropped socket, so the socket that replaces it has to join and subscribe again
   useEffect(() => {
@@ -73,6 +74,8 @@ export function useGameSetup(gameId?: string): GameSetupResult {
 
     initializingRef.current = true
     console.log('Initializing game:', gameId)
+    setLocalError(null)
+    setError(null)
 
     try {
       // 1. Fetch game state first to check if already in game
@@ -87,6 +90,8 @@ export function useGameSetup(gameId?: string): GameSetupResult {
 
       setIsLoading(false)
       setIsReady(true)
+      setLocalError(null)
+      setError(null)
       console.log('Game initialization complete')
     } catch (error) {
       console.error('Game initialization failed:', error)
