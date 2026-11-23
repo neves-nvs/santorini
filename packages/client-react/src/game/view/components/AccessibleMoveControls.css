@@ -94,3 +94,29 @@
   margin: 0.75rem 0 0;
   line-height: 1.5;
 }
+
+.accessible-move-controls__board {
+  margin-top: 0.75rem;
+}
+
+.accessible-move-controls__board summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.accessible-move-controls__board table {
+  border-collapse: collapse;
+  line-height: 1.5;
+}
+
+.accessible-move-controls__board caption {
+  text-align: left;
+}
+
+.accessible-move-controls__board td {
+  padding: 0.2rem 0.5rem 0.2rem 0;
+  vertical-align: top;
+}

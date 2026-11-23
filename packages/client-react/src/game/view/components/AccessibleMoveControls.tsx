@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { WS_MESSAGE_TYPES } from '@santorini/shared'
 import type { MoveCommand } from '@santorini/shared'
 import { useCurrentPlayerMoves, useGameId, useGameState, useIsMyTurn } from '@/game/model/gameSelectors'
@@ -35,6 +35,7 @@ const AccessibleMoveControls = () => {
   const isMyTurn = useIsMyTurn()
   const [pending, setPending] = useState(false)
   const [feedback, setFeedback] = useState('')
+  const headingRef = useRef<HTMLHeadingElement>(null)
 
   if (gameState?.status !== 'in-progress') return null
 
@@ -53,6 +54,7 @@ const AccessibleMoveControls = () => {
       setFeedback(error instanceof Error ? error.message : 'The move could not be sent. Please try again.')
     } finally {
       setPending(false)
+      headingRef.current?.focus()
     }
   }
 
@@ -61,7 +63,7 @@ const AccessibleMoveControls = () => {
       <details>
         <summary>Keyboard game controls</summary>
         <div className="accessible-move-controls__panel">
-          <h2>Choose a game action</h2>
+          <h2 ref={headingRef} tabIndex={-1}>Choose a game action</h2>
           <p className="accessible-move-controls__instructions" id="move-control-instructions">
             {isMyTurn
               ? `Your turn${gameState.phase ? `: ${gameState.phase.replace(/_/g, ' ')}` : ''}. Choose an available action.`
@@ -93,6 +95,30 @@ const AccessibleMoveControls = () => {
           ) : (
             <p>{isMyTurn ? 'No available actions. The game state may be updating.' : 'Waiting for your turn.'}</p>
           )}
+          <details className="accessible-move-controls__board">
+            <summary>Read the current board</summary>
+            <table>
+              <caption>Board squares, tower heights, domes, and workers</caption>
+              <tbody>
+                {gameState.board.cells.map((row, x) => (
+                  <tr key={x}>
+                    {row.map((cell, y) => {
+                      const position = formatPosition({ x, y })
+                      const worker = cell.worker
+                        ? `, Player ${cell.worker.seat + 1} worker ${cell.worker.workerId}`
+                        : ''
+                      const dome = cell.hasDome ? ', dome' : ''
+                      return (
+                        <td key={position}>
+                          {position}: level {cell.height}{dome}{worker}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
           <p className="accessible-move-controls__feedback" role="status" aria-live="polite">
             {pending ? 'Sending move…' : feedback}
           </p>
