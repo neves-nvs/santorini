@@ -2,6 +2,7 @@ import { memo, useEffect } from 'react'
 import { useGameState } from '@/game/model/gameSelectors'
 import { PLAYER_COLORS } from '@/game/model/gameConstants'
 import type { PlayerView } from '@/game/model/game'
+import './PlayerList.css'
 
 interface PlayerListProps {
   className?: string
@@ -24,7 +25,7 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
 
   if (!gameState) {
     return (
-      <div className={className} style={style}>
+      <div className={`player-list${className ? ` ${className}` : ''}`} style={style}>
         <p>Loading players...</p>
       </div>
     )
@@ -33,13 +34,13 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
   const seats = gameState.totalPlayers || 2
 
   return (
-    <div className={className} style={style}>
-      <h3 style={{ fontSize: 'clamp(0.85rem, 2vw, 1rem)', margin: '0 0 0.5rem 0' }}>
+    <div className={`player-list${className ? ` ${className}` : ''}`} style={style}>
+      <h3 className="player-list__heading">
         Players ({players.length}/{seats})
       </h3>
 
       {Array.isArray(players) ? (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <ul className="player-list__items">
           {Array.from({ length: seats }, (_, index) => {
             const player: PlayerView | undefined = players[index]
             const playerColor = PLAYER_COLORS[index] || '#ffffff'
@@ -48,26 +49,13 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
             return (
               <li
                 key={index}
-                style={{
-                  opacity: player ? 1 : 0.5,
-                  marginBottom: '0.25rem',
-                  padding: '0.35rem 0.5rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: '4px',
-                  border: isCurrentPlayer
-                    ? '2px solid yellow'
-                    : player
-                      ? '1px solid transparent'
-                      : '1px dashed rgba(255, 255, 255, 0.4)',
-                  fontSize: 'clamp(0.8rem, 2vw, 0.9rem)'
-                }}
+                className={`player-list__item${!player ? ' player-list__item--waiting' : ''}${isCurrentPlayer ? ' player-list__item--current' : ''}`}
+                style={{ opacity: player ? 1 : 0.72 }}
               >
                 <span
-                  style={{
-                    color: playerColor,
-                    fontWeight: 'bold',
-                    marginRight: '0.35rem'
-                  }}
+                  className="player-list__marker"
+                  style={{ color: playerColor }}
+                  aria-hidden="true"
                 >
                   ●
                 </span>

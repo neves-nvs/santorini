@@ -59,7 +59,8 @@
 .auth-hint {
   margin: 0.375rem 0 0;
   color: #555;
-  font-size: 0.875rem;
+  font-size: var(--text-caption);
+  line-height: 1.45;
 }
 
 .auth-submit {
