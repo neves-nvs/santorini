@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { test, expect, Page } from '@playwright/test'
+import type { WebSocketRoute } from '@playwright/test'
 
 // Registers a new user through the UI; the client then logs in and opens the lobby
 async function registerUser(page: Page, role: string): Promise<void> {
@@ -50,6 +51,52 @@ test.describe('Game Join and Ready Flow', () => {
 })
 
 test.describe('Two Player Join and Ready Flow', () => {
+  test('receives the other player’s updates after a transient resubscribe failure', async ({ page, browser, baseURL }) => {
+    const opponent = await browser.newContext({ baseURL })
+    let activeSocket: WebSocketRoute | undefined
+    let rejectNextSubscription = false
+    let socketsOpened = 0
+
+    try {
+      await page.routeWebSocket((url) => url.searchParams.has('ticket'), (socket) => {
+        const server = socket.connectToServer()
+        activeSocket = socket
+        socketsOpened++
+        socket.onMessage((raw) => {
+          const { type, id } = JSON.parse(String(raw))
+          if (rejectNextSubscription && type === 'subscribe_game') {
+            rejectNextSubscription = false
+            socket.send(JSON.stringify({ type: 'error', id, payload: { code: 'internal', message: 'Temporary error' } }))
+          } else {
+            server.send(raw)
+          }
+        })
+      })
+
+      await registerUser(page, 'player-one')
+      const gameId = await createGame(page)
+      const waiting = page.getByText('Waiting for players (1/2 joined)', { exact: true })
+      await expect(waiting).toBeVisible()
+
+      if (!activeSocket) throw new Error('The game did not open a WebSocket')
+      rejectNextSubscription = true
+      await activeSocket.close({ code: 1012, reason: 'Service restart' })
+      await expect.poll(() => socketsOpened).toBe(3)
+      await expect(waiting).toBeVisible()
+
+      const otherPage = await opponent.newPage()
+      await registerUser(otherPage, 'player-two')
+      await otherPage.goto(`/game/${gameId}`)
+      await expect(page.getByRole('heading', { name: 'Players (2/2)' })).toBeVisible()
+      await page.getByRole('button', { name: 'Ready to Start Game' }).click()
+      await otherPage.getByRole('button', { name: 'Ready to Start Game' }).click()
+      await expect(page.getByRole('heading', { name: 'Game Lobby' })).toBeHidden()
+      await expect(otherPage.getByRole('heading', { name: 'Game Lobby' })).toBeHidden()
+    } finally {
+      await opponent.close()
+    }
+  })
+
   test('player 1 UI updates when player 2 joins', async ({ browser }) => {
     const context1 = await browser.newContext()
     const context2 = await browser.newContext()

@@ -1,120 +1,55 @@
-/**
- * useGameSetup - Coordinates game page initialization
- * 
- * This hook orchestrates:
- * 1. WebSocket connection (via useGameConnection)
- * 2. Game state fetching
- * 3. Game joining
- * 4. Game subscription
- * 
- * Components just call useGameSetup(gameId) and get loading/error states.
- */
-
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState } from 'react'
+import { useGameStore } from '@/game/model/gameStore'
+import { ConnectionInterruptedError, webSocketClient } from '@/game/services/WebSocketClient'
+import { GameError } from '@/shared/utils/errorHandler'
 import { useGameConnection } from './useGameConnection'
-import { useGameActions } from './useGameActions'
-import { useAppStore } from '@/user/model/appStore'
-import { useSetGameId, useSetGameState } from '@/game/model/gameSelectors'
 
 interface GameSetupResult {
-  isLoading: boolean
+  gameId: string
+  connectionId: number
   error: string | null
-  isConnected: boolean
-  isReady: boolean // True when game state is loaded and subscribed
 }
 
-export function useGameSetup(gameId?: string): GameSetupResult {
-  const appError = useAppStore((s) => s.error)
-  const setError = useAppStore((s) => s.setError)
-  const { isConnected, isConnecting } = useGameConnection()
-  const { joinGame, subscribeToGame, fetchGameState, resetActionState } = useGameActions()
-  const setGameId = useSetGameId()
-  const setGameState = useSetGameState()
+export function useGameSetup(gameId?: string) {
+  const { isConnected, connectionId } = useGameConnection()
+  const setGameId = useGameStore((state) => state.setGameId)
+  const resetGame = useGameStore((state) => state.resetGame)
+  const [result, setResult] = useState<GameSetupResult | null>(null)
 
-  const [isLoading, setIsLoading] = useState(true)
-  const [localError, setLocalError] = useState<string | null>(null)
-  const [isReady, setIsReady] = useState(false)
-
-  // Refs to track initialization state
-  const prevGameIdRef = useRef<string | null>(null)
-  const initializingRef = useRef(false)
-
-  // Reset state when gameId changes
   useEffect(() => {
-    if (!gameId) return
+    resetGame()
+    if (gameId) setGameId(gameId)
+  }, [gameId, resetGame, setGameId])
 
-    if (prevGameIdRef.current !== gameId) {
-      console.log('Game ID changed:', prevGameIdRef.current, '→', gameId)
-      prevGameIdRef.current = gameId
+  useEffect(() => {
+    if (!gameId || !isConnected) return
 
-      // Clear state for new game
-      setIsLoading(true)
-      setIsReady(false)
-      setLocalError(null)
-      setError(null)
-      initializingRef.current = false
-      setGameState(null)
-      resetActionState(prevGameIdRef.current || undefined)
+    let cancelled = false
+    const isCurrent = () => !cancelled && useGameStore.getState().connectionId === connectionId
+
+    async function subscribe(id: string) {
+      try {
+        await webSocketClient.joinGame(id)
+        if (!isCurrent()) return
+        // The subscription sends a full snapshot before its acknowledgment.
+        await webSocketClient.subscribeToGame(id)
+        if (isCurrent()) setResult({ gameId: id, connectionId, error: null })
+      } catch (error) {
+        if (!isCurrent()) return
+        if (error instanceof ConnectionInterruptedError) return
+        if (error instanceof GameError && (error.code === 'internal' || error.code === 'rate_limited')) {
+          webSocketClient.retryConnection()
+          return
+        }
+        const message = error instanceof Error ? error.message : 'Failed to load game'
+        setResult({ gameId: id, connectionId, error: message })
+      }
     }
 
-    setGameId(gameId)
-  }, [gameId, setGameId, setGameState, resetActionState, setError])
+    void subscribe(gameId)
+    return () => { cancelled = true }
+  }, [gameId, isConnected, connectionId])
 
-  // The server forgets a dropped socket, so the socket that replaces it has to join and subscribe again
-  useEffect(() => {
-    if (!gameId || isConnected) return
-
-    resetActionState(gameId)
-    initializingRef.current = false
-  }, [gameId, isConnected, resetActionState])
-
-  // Initialize game when connected
-  const initializeGame = useCallback(async () => {
-    if (!gameId || !isConnected || initializingRef.current) return
-
-    initializingRef.current = true
-    console.log('Initializing game:', gameId)
-    setLocalError(null)
-    setError(null)
-
-    try {
-      // 1. Fetch game state first to check if already in game
-      await fetchGameState(gameId)
-
-      // 2. Take a seat. A full or started game fails here, before anything is subscribed.
-      console.log('Joining game via WebSocket...')
-      await joinGame(gameId)
-
-      // 3. Subscribe to get the state and every update after it
-      await subscribeToGame(gameId)
-
-      setIsLoading(false)
-      setIsReady(true)
-      setLocalError(null)
-      setError(null)
-      console.log('Game initialization complete')
-    } catch (error) {
-      console.error('Game initialization failed:', error)
-      const errorMsg = error instanceof Error ? error.message : 'Failed to initialize game'
-      setLocalError(errorMsg)
-      setError(errorMsg)
-      setIsLoading(false)
-      initializingRef.current = false
-    }
-  }, [gameId, isConnected, fetchGameState, joinGame, subscribeToGame, setError])
-
-  // Trigger initialization when connected
-  useEffect(() => {
-    if (gameId && isConnected && !initializingRef.current) {
-      initializeGame()
-    }
-  }, [gameId, isConnected, initializeGame])
-
-  return {
-    isLoading: isLoading || isConnecting,
-    error: localError || appError,
-    isConnected,
-    isReady
-  }
+  const current = isConnected && result?.connectionId === connectionId && result.gameId === gameId ? result : null
+  return { isReady: current !== null && current.error === null, error: current?.error ?? null }
 }
-

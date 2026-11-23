@@ -14,6 +14,7 @@ interface GameBoardProps {
   debugState?: Pick<DebugState, 'showAxis' | 'showBoundingBoxes' | 'useSampleBoard'>
   onCellClick?: (x: number, y: number) => void
   cameraType?: CameraType
+  canPlay?: boolean
 }
 
 // Camera settings
@@ -62,7 +63,7 @@ const CameraResizeHandler: React.FC<{
   return null
 }
 
-const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cameraType = 'orthographic' }) => {
+const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cameraType = 'orthographic', canPlay = true }) => {
   const { showToast } = useToast()
   const controlsRef = useRef<OrbitControlsImpl | null>(null)
   const orthoRef = useRef<OrthoImpl | null>(null)
@@ -122,7 +123,7 @@ const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cam
           <hemisphereLight args={['#87CEEB', '#8B4513', 0.6]} />
 
           {/* 3D Board */}
-          <Board3D debugState={debugState} onCellClick={onCellClick} onMoveError={(message) => showToast(message, 'error')} />
+          <Board3D debugState={debugState} onCellClick={onCellClick} canPlay={canPlay} onMoveError={(message) => showToast(message, 'error')} />
 
           {/* Camera Controls */}
           <OrbitControls

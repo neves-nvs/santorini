@@ -29,6 +29,7 @@ interface GameStore {
   isConnected: boolean
   isConnecting: boolean
   connectionStatus: ConnectionStatus
+  connectionId: number
   reconnectAttempt: number
   maxReconnectAttempts: number
 
@@ -73,6 +74,7 @@ export const useGameStore = create<GameStore>()(
     isConnected: false,
     isConnecting: false,
     connectionStatus: 'disconnected',
+    connectionId: 0,
     reconnectAttempt: 0,
     maxReconnectAttempts: 5,
 
@@ -93,13 +95,14 @@ export const useGameStore = create<GameStore>()(
 
     setConnected: (isConnected) => set({ isConnected, isConnecting: false }),
     setConnecting: (isConnecting) => set({ isConnecting }),
-    setConnectionStatus: (connectionStatus, reconnectAttempt = 0, maxReconnectAttempts = 5) => set({
+    setConnectionStatus: (connectionStatus, reconnectAttempt = 0, maxReconnectAttempts = 5) => set((state) => ({
       connectionStatus,
+      connectionId: state.connectionId + (connectionStatus === 'connected' ? 1 : 0),
       reconnectAttempt,
       maxReconnectAttempts,
       isConnected: connectionStatus === 'connected',
       isConnecting: connectionStatus === 'connecting' || connectionStatus === 'reconnecting'
-    }),
+    })),
 
     resetGame: () => set({
       gameState: null,

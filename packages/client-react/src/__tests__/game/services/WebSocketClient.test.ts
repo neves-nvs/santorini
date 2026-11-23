@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ErrorType } from '@/shared/utils/errorHandler'
 import { webSocketClient } from '@/game/services/WebSocketClient'
+import { gameApi } from '@/game/services/gameApi'
 
 vi.mock('@/game/services/gameApi', () => ({ gameApi: { createWebSocketTicket: vi.fn(async () => 'ticket') } }))
 
@@ -9,7 +10,7 @@ class FakeSocket {
   static readonly OPEN = 1
   static instances: FakeSocket[] = []
 
-  readyState = FakeSocket.OPEN
+  readyState = FakeSocket.CONNECTING
   sent: Array<{ type: string; id?: string; payload: unknown }> = []
   onopen: (() => void) | null = null
   onmessage: ((event: { data: string }) => void) | null = null
@@ -28,6 +29,16 @@ class FakeSocket {
     this.readyState = 3
   }
 
+  open() {
+    this.readyState = FakeSocket.OPEN
+    this.onopen?.()
+  }
+
+  drop() {
+    this.close()
+    this.onclose?.({ code: 1006, reason: '' })
+  }
+
   receive(message: object) {
     this.onmessage?.({ data: JSON.stringify(message) })
   }
@@ -43,7 +54,7 @@ const events = {
 async function connected(): Promise<FakeSocket> {
   await webSocketClient.connect()
   const socket = FakeSocket.instances[FakeSocket.instances.length - 1]
-  socket.onopen?.()
+  socket.open()
   return socket
 }
 
@@ -59,6 +70,8 @@ describe('WebSocketClient requests', () => {
 
   afterEach(() => {
     webSocketClient.disconnect()
+    vi.useRealTimers()
+    vi.mocked(gameApi.createWebSocketTicket).mockReset().mockResolvedValue('ticket')
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
@@ -118,12 +131,79 @@ describe('WebSocketClient requests', () => {
     const socket = await connected()
 
     const result = webSocketClient.joinGame('7')
-    socket.onclose?.({ code: 1006, reason: '' })
+    socket.drop()
 
     await expect(result).rejects.toThrow('Connection closed')
   })
 
   it('rejects a request when there is no open socket', async () => {
     await expect(webSocketClient.request('join_game', { gameId: 7 })).rejects.toThrow('WebSocket not connected')
+  })
+
+  it('reopens the socket when the network returns after the initial retry window', async () => {
+    vi.useFakeTimers()
+    const socket = await connected()
+    vi.mocked(gameApi.createWebSocketTicket).mockRejectedValue(new Error('Offline'))
+
+    socket.drop()
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect(events.onConnectionStatusChange).toHaveBeenLastCalledWith('failed', 5, 5)
+
+    vi.mocked(gameApi.createWebSocketTicket).mockResolvedValue('fresh-ticket')
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect(FakeSocket.instances).toHaveLength(2)
+    FakeSocket.instances[1].open()
+    expect(events.onConnectionChange).toHaveBeenLastCalledWith(true)
+  })
+
+  it('replaces an open socket that never acknowledges a game subscription', async () => {
+    vi.useFakeTimers()
+    await connected()
+    const rejected = vi.fn()
+    void webSocketClient.subscribeToGame('7').catch(rejected)
+
+    await vi.advanceTimersByTimeAsync(12_000)
+    expect(rejected).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringMatching(/timed out/i) }))
+    expect(FakeSocket.instances).toHaveLength(2)
+  })
+
+  it('times out a stalled ticket request and tries for a fresh ticket', async () => {
+    vi.useFakeTimers()
+    vi.mocked(gameApi.createWebSocketTicket).mockImplementationOnce((signal) =>
+      new Promise((_, reject) => signal?.addEventListener('abort', () => reject(signal.reason), { once: true })),
+    )
+    const connecting = webSocketClient.connect()
+
+    await vi.advanceTimersByTimeAsync(11_000)
+    await connecting
+    expect(gameApi.createWebSocketTicket).toHaveBeenCalledTimes(2)
+    expect(FakeSocket.instances).toHaveLength(1)
+    FakeSocket.instances[0].open()
+    expect(events.onConnectionChange).toHaveBeenLastCalledWith(true)
+  })
+
+  it('times out a stalled WebSocket handshake and retries', async () => {
+    vi.useFakeTimers()
+    await webSocketClient.connect()
+    const stalled = FakeSocket.instances[0]
+
+    await vi.advanceTimersByTimeAsync(11_000)
+    expect(stalled.readyState).toBe(3)
+    expect(FakeSocket.instances).toHaveLength(2)
+  })
+
+  it('ignores a close event from a previous socket while the replacement is subscribing', async () => {
+    const previous = await connected()
+    webSocketClient.disconnect()
+    const replacement = await connected()
+    const rejected = vi.fn()
+    const subscription = webSocketClient.subscribeToGame('7').catch(rejected)
+
+    previous.drop()
+    replacement.receive({ type: 'ok', id: replacement.sent[0].id, payload: { gameId: 7 } })
+
+    await expect(subscription).resolves.toEqual({ gameId: 7 })
+    expect(rejected).not.toHaveBeenCalled()
+    expect(events.onConnectionChange).toHaveBeenLastCalledWith(true)
   })
 })

@@ -1,64 +1,39 @@
 import { memo } from 'react'
-import { useAppStore } from '@/user/model/appStore'
-import { useGameState, useCurrentPlayerMoves, useIsMyTurn, useIsConnected } from '@/game/model/gameSelectors'
+import { useGameId, useGameState, useCurrentPlayerMoves, useIsMyTurn, useIsConnected } from '@/game/model/gameSelectors'
 import GameBoard from './GameBoard'
 import GameStatusBar from './GameStatusBar'
 import GameLobby from './GameLobby'
 import GameNavigation from './GameNavigation'
 import GameResultPanel from './GameResultPanel'
+import GameConnectionFeedback from './GameConnectionFeedback'
 import AccessibleMoveControls from './AccessibleMoveControls'
 import DebugMenu from '@/game/view/debug/DebugMenu'
 import { PerformanceDashboard } from '@/game/view/debug/PerformanceDashboard'
 import { useDebugState } from '@/game/view/debug/useDebugState'
+import './GameHeader.css'
 
-const GameUI = memo(() => {
+const GameUI = memo(({ isReady }: { isReady: boolean }) => {
+  const gameId = useGameId()
   const gameState = useGameState()
   const currentPlayerMoves = useCurrentPlayerMoves()
   const isMyTurn = useIsMyTurn()
   const isConnected = useIsConnected()
 
-  const appError = useAppStore((s) => s.error)
-
-  // Use debug state hook (includes camera type)
   const { debugState, handleDebugChange, cameraType, toggleCameraType } = useDebugState()
 
-  // All state management moved to custom hooks
-
-  // Ready state logic moved to useReadyState hook
-
   return (
-    <div style={{ pointerEvents: 'none' }}> {/* Don't block 3D board interactions */}
-      {/* Full-screen 3D Game Board - always mounted, reads state from store */}
-      <GameBoard debugState={debugState} cameraType={cameraType} />
-      <AccessibleMoveControls />
+    <>
+      <GameBoard debugState={debugState} cameraType={cameraType} canPlay={isReady} />
+      {isReady && <AccessibleMoveControls />}
 
-      {/* Persistent Navigation */}
-      <GameNavigation />
-
-      {/* The result panel replaces the phase message after the game ends. */}
-      {gameState?.status !== 'completed' && <GameStatusBar />}
+      <header className="game-header">
+        <GameNavigation />
+        {gameId && !isReady && <GameConnectionFeedback />}
+        {isReady && gameState?.status !== 'completed' && <GameStatusBar />}
+      </header>
 
       <GameResultPanel />
-
-      {/* Game Lobby (waiting/ready controls) */}
-      <GameLobby />
-
-      {/* Error Display */}
-      {appError && (
-        <div role="alert" style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: '#b91c1c',
-          color: 'white',
-          padding: '1rem',
-          borderRadius: '8px',
-          zIndex: 1000
-        }}>
-          <strong>Error:</strong> {appError}
-        </div>
-      )}
+      <GameLobby canPlay={isReady} />
 
       {import.meta.env.DEV && (
         <>
@@ -83,7 +58,7 @@ const GameUI = memo(() => {
           />
         </>
       )}
-    </div>
+    </>
   )
 })
 

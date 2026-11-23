@@ -9,8 +9,8 @@ import type {
 
 export class GameApi {
   // A one-time ticket for opening a WebSocket (browsers cannot set headers on the handshake)
-  async createWebSocketTicket(): Promise<string> {
-    const { ticket } = await request<WebSocketTicketResponse>('/ws-ticket', { method: 'POST' })
+  async createWebSocketTicket(signal?: AbortSignal): Promise<string> {
+    const { ticket } = await request<WebSocketTicketResponse>('/ws-ticket', { method: 'POST', signal })
     return ticket
   }
 

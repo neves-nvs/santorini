@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { useGameSetup } from '@/game/view/hooks/useGameSetup'
+import { useGameStore } from '@/game/model/gameStore'
+import { gameApi } from '@/game/services/gameApi'
+import { ErrorType, GameError } from '@/shared/utils/errorHandler'
 
 const connection = vi.hoisted(() => ({ isConnected: true }))
 
 vi.mock('@/game/view/hooks/useGameConnection', () => ({
-  useGameConnection: () => ({ isConnected: connection.isConnected, isConnecting: false }),
+  useGameConnection: () => ({ isConnected: connection.isConnected, connectionId: useGameStore.getState().connectionId }),
 }))
 
 vi.mock('@/game/services/gameApi', () => ({
@@ -27,13 +30,12 @@ vi.mock('@/game/services/gameApi', () => ({
   },
 }))
 
-vi.mock('@/game/services/WebSocketClient', () => ({
+vi.mock('@/game/services/WebSocketClient', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/game/services/WebSocketClient')>(),
   webSocketClient: {
     joinGame: vi.fn(),
     subscribeToGame: vi.fn(),
-    unsubscribeFromGame: vi.fn(),
-    request: vi.fn(),
-    setReady: vi.fn(),
+    retryConnection: vi.fn(),
   },
 }))
 
@@ -61,11 +63,40 @@ describe('useGameSetup', () => {
 
     connection.isConnected = false
     act(() => rerender())
+    expect(result.current.isReady).toBe(false)
+    useGameStore.getState().setConnectionStatus('connected')
     connection.isConnected = true
     act(() => rerender())
 
     await waitFor(() => expect(webSocketClient.subscribeToGame).toHaveBeenCalledTimes(2))
     expect(webSocketClient.joinGame).toHaveBeenCalledTimes(2)
+  })
+
+  it('subscribes on a fresh page even if the HTTP game snapshot stalls', async () => {
+    vi.mocked(gameApi.getGame).mockImplementationOnce(() => new Promise(() => {}))
+    const { result } = renderHook(() => useGameSetup('5'))
+
+    await waitFor(() => expect(result.current.isReady).toBe(true))
+    expect(webSocketClient.subscribeToGame).toHaveBeenCalledWith('5')
+  })
+
+  it('retries a transient subscription failure and waits for the new subscription', async () => {
+    vi.mocked(webSocketClient.subscribeToGame).mockRejectedValueOnce(
+      new GameError(ErrorType.WEBSOCKET, 'Try again', 'internal'),
+    )
+    const { result, rerender } = renderHook(() => useGameSetup('5'))
+
+    await waitFor(() => expect(webSocketClient.retryConnection).toHaveBeenCalledOnce())
+    expect(result.current.isReady).toBe(false)
+    expect(result.current.error).toBeNull()
+    connection.isConnected = false
+    act(() => rerender())
+    useGameStore.getState().setConnectionStatus('connected')
+    connection.isConnected = true
+    act(() => rerender())
+
+    await waitFor(() => expect(result.current.isReady).toBe(true))
+    expect(webSocketClient.subscribeToGame).toHaveBeenCalledTimes(2)
   })
 
   it('shows why the game could not be joined and does not subscribe', async () => {

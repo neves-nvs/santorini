@@ -34,6 +34,7 @@ interface Board3DProps {
   onCellClick?: (x: number, y: number) => void
   // The board is drawn inside the canvas, where React context is not available, so the caller shows the error
   onMoveError?: (message: string) => void
+  canPlay?: boolean
 }
 
 /**
@@ -43,7 +44,8 @@ interface Board3DProps {
 const Board3D: React.FC<Board3DProps> = React.memo(({
   debugState,
   onCellClick,
-  onMoveError
+  onMoveError,
+  canPlay = true
 }) => {
 
   // Read the server snapshot directly and adapt its cells for 3D rendering.
@@ -65,7 +67,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
   const selectedWorker = useSelectedWorker()
   const setSelectedWorker = useSetSelectedWorker()
 
-  const currentPlayerMoves = useGameStore(state => state.gameState?.availableMoves ?? EMPTY_AVAILABLE_MOVES)
+  const currentPlayerMoves = useGameStore(state => canPlay ? state.gameState?.availableMoves ?? EMPTY_AVAILABLE_MOVES : EMPTY_AVAILABLE_MOVES)
 
   const validPositions = useMemo(
     () => validPositionsFor(currentPlayerMoves, selectedWorker?.workerId),
@@ -74,6 +76,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
 
   // Handle worker click for selection
   const handleWorkerClick = (workerId: number, seat: number, x: number, y: number) => {
+    if (!canPlay) return
     console.log(`Worker ${workerId} (player ${seat}) clicked at (${x}, ${y})`)
 
     // Only allow selecting current player's workers
@@ -110,6 +113,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
   useRenderTracker('Board3D', [serverBoard, debugState?.useSampleBoard])
 
   const handleCellClick = (gridX: number, gridZ: number) => {
+    if (!canPlay) return
     console.log(`handleCellClick called: grid(${gridX}, ${gridZ})`)
     console.log(`Clicked cell: grid(${gridX}, ${gridZ})`)
 

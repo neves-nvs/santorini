@@ -1,6 +1,5 @@
 import { memo } from 'react'
 import { useGameLifecycle } from '@/game/view/hooks/useGameLifecycle'
-import './GameStatusBar.css'
 
 interface GameStatusBarProps {
   className?: string
