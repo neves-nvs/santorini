@@ -6,6 +6,7 @@ import GameStatusBar from './GameStatusBar'
 import GameLobby from './GameLobby'
 import GameNavigation from './GameNavigation'
 import GameResultPanel from './GameResultPanel'
+import AccessibleMoveControls from './AccessibleMoveControls'
 import DebugMenu from '@/game/view/debug/DebugMenu'
 import { PerformanceDashboard } from '@/game/view/debug/PerformanceDashboard'
 import { useDebugState } from '@/game/view/debug/useDebugState'
@@ -29,6 +30,7 @@ const GameUI = memo(() => {
     <div style={{ pointerEvents: 'none' }}> {/* Don't block 3D board interactions */}
       {/* Full-screen 3D Game Board - always mounted, reads state from store */}
       <GameBoard debugState={debugState} cameraType={cameraType} />
+      <AccessibleMoveControls />
 
       {/* Persistent Navigation */}
       <GameNavigation />

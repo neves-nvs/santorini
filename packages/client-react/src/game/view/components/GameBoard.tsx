@@ -72,7 +72,7 @@ const GameBoard: React.FC<GameBoardProps> = memo(({ debugState, onCellClick, cam
   return (
     <div
       role="img"
-      aria-label="3D Santorini board. The game status, players and controls are in the panels around it."
+      aria-label="Interactive 3D Santorini board for pointer and touch input. Keyboard actions are available in the Keyboard game controls panel."
       className="game-board-canvas"
     >
       <Canvas shadows style={{ width: '100%', height: '100%' }}>
