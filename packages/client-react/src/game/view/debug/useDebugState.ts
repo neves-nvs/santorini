@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { DEFAULT_DEBUG_STATE, type DebugState } from '@/game/model/debugState'
 import type { CameraType } from '@/game/view/components/GameBoard'
 
@@ -9,32 +9,6 @@ import type { CameraType } from '@/game/view/components/GameBoard'
 export function useDebugState() {
   const [debugState, setDebugState] = useState<DebugState>(DEFAULT_DEBUG_STATE)
   const [cameraType, setCameraType] = useState<CameraType>('orthographic')
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    // Only enable in development
-    if (!import.meta.env.DEV) {
-      return
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Ctrl+Shift+P: Toggle performance dashboard
-      if (event.ctrlKey && event.shiftKey && event.key === 'P') {
-        event.preventDefault()
-        setDebugState(prev => ({ ...prev, showPerformance: !prev.showPerformance }))
-      }
-      // C: Toggle camera type
-      if (event.key === 'c' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-        const target = event.target as HTMLElement
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
-          setCameraType(prev => prev === 'orthographic' ? 'perspective' : 'orthographic')
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
 
   const handleDebugChange = useCallback((key: keyof DebugState, value: boolean) => {
     setDebugState(prev => ({ ...prev, [key]: value }))
