@@ -56,8 +56,8 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
                   className={`player-list__marker${player ? ' player-list__marker--connected' : ' player-list__marker--waiting'}`}
                   style={{ color: playerColor }}
                   role="img"
-                  aria-label={player ? 'Connected' : 'Waiting for a player'}
-                  title={player ? 'Connected' : 'Waiting for a player'}
+                  aria-label={player ? 'Seat occupied' : 'Waiting for a player'}
+                  title={player ? 'Seat occupied' : 'Waiting for a player'}
                 >
                   {player ? '●' : '○'}
                 </span>

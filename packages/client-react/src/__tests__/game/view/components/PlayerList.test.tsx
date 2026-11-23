@@ -20,6 +20,7 @@ describe('PlayerList', () => {
     render(<PlayerList />)
 
     expect(screen.getByText('P1')).toBeTruthy()
+    expect(screen.getByRole('img', { name: 'Seat occupied' })).toBeInTheDocument()
     expect(screen.getAllByText('Waiting for a player')).toHaveLength(2)
     expect(screen.getByText('Players (1/3)')).toBeTruthy()
   })
