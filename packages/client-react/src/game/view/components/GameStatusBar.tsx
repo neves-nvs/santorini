@@ -19,7 +19,7 @@ const GameStatusBar = memo(({ className, style }: GameStatusBarProps) => {
       className={className}
       style={{
         position: 'absolute',
-        top: 'clamp(10px, 2vw, 20px)',
+        top: 'clamp(68px, 9vh, 84px)',
         left: '50%',
         transform: 'translateX(-50%)',
         background: 'rgba(0, 0, 0, 0.8)',

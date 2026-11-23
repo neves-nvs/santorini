@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useGameState, useGameId } from '@/game/model/gameSelectors'
 import { useAppStore } from '@/user/model/appStore'
 import { useToast } from '@/shared/ui/useToast'
@@ -16,16 +16,13 @@ export function useReadyState() {
   
   const serverReady = gameState?.currentUserReady
   const [isReady, setIsReady] = useState(serverReady ?? false)
-  const [previousServerReady, setPreviousServerReady] = useState(serverReady)
   const [isSettingReady, setIsSettingReady] = useState(false)
 
-  // Follow the server whenever its ready state changes
-  if (serverReady !== previousServerReady) {
-    setPreviousServerReady(serverReady)
-    if (serverReady !== undefined) {
-      setIsReady(serverReady)
-    }
-  }
+  // A newer game snapshot is authoritative even if readiness stayed false. Roster changes reset every
+  // player's readiness, so observing only a boolean transition can leave the optimistic true state stuck.
+  useEffect(() => {
+    setIsReady(serverReady ?? false)
+  }, [gameId, gameState?.version, serverReady])
 
   const handleReadyToggle = useCallback(async () => {
     if (!gameId) return
@@ -47,12 +44,12 @@ export function useReadyState() {
       await webSocketClient.setReady(gameId, newReadyState)
     } catch (error) {
       console.error('Failed to send ready status:', error)
-      setIsReady(!newReadyState)
+      setIsReady(serverReady ?? false)
       showToast(error instanceof Error ? error.message : 'Could not change your ready status', 'error')
     } finally {
       setIsSettingReady(false)
     }
-  }, [gameId, isReady, username, showToast])
+  }, [gameId, isReady, username, showToast, serverReady])
 
   return {
     isReady,
@@ -63,9 +60,9 @@ export function useReadyState() {
     canToggleReady: !isSettingReady && gameId,
     readyButtonText: isSettingReady 
       ? 'Setting...' 
-      : ((isReady || gameState?.currentUserReady) 
+      : (isReady
           ? 'Waiting for other players' 
           : 'Ready to Start Game'),
-    isDisabled: isSettingReady || isReady || gameState?.currentUserReady
+    isDisabled: isSettingReady || isReady
   }
 }

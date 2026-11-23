@@ -15,8 +15,8 @@ import { GameViewBuilder } from "./GameViewBuilder.ts";
 export class GameService {
   constructor(
     private gameRepository: GameRepositoryDb,
-    private gameViewBuilder: GameViewBuilder = new GameViewBuilder(),
-    private gameBroadcaster: GameBroadcaster = new GameBroadcaster(),
+    private gameViewBuilder: GameViewBuilder,
+    private gameBroadcaster: GameBroadcaster,
   ) {}
 
   /** Runs a command on one game while holding its lock, then tells everyone who watches the game. */
@@ -29,7 +29,12 @@ export class GameService {
       throw new GameNotFoundError(gameId);
     }
 
-    this.gameBroadcaster.broadcastGameUpdate(result.game);
+    try {
+      await this.gameBroadcaster.broadcastGameUpdate(result.game);
+    } catch (error) {
+      // The repository update has committed. A publication failure must not make the command look rejected.
+      logger.error(`Failed to broadcast the committed update for game ${gameId}:`, error);
+    }
     return result;
   }
 
@@ -92,7 +97,7 @@ export class GameService {
 
   /**
    * Remove a player from a game.
-   * Only allowed if game is in 'waiting' status and player hasn't readied.
+   * Only allowed while waiting; disconnecting/removing a player resets readiness for the remaining roster.
    */
   async removePlayer(gameId: GameId, userId: UserId): Promise<{ game: Game; events: GameEvent[] }> {
     logger.info(`Removing player ${userId} from game ${gameId}`);
@@ -129,7 +134,14 @@ export class GameService {
       throw new GameNotFoundError(gameId);
     }
 
-    return this.gameViewBuilder.buildFor(game, userId);
+    const usernames = await this.gameRepository.findUsernames(game.players.map((player) => player.userId));
+    return this.gameViewBuilder.buildFor(game, userId, this.gameBroadcaster.connectedUsers(game.id), usernames);
+  }
+
+  /** Broadcast a fresh game view after connection presence changes. */
+  async broadcastCurrentView(gameId: GameId): Promise<void> {
+    const game = await this.gameRepository.findById(gameId);
+    if (game) await this.gameBroadcaster.broadcastPresence(gameId, game);
   }
 
   private seatOf(game: Game, userId: UserId): Seat | null {

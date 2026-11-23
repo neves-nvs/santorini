@@ -417,13 +417,24 @@ components:
       properties:
         x: { type: integer, minimum: 0, maximum: 4 }
         y: { type: integer, minimum: 0, maximum: 4 }
-    PlayerView:
+    GameSummaryPlayerView:
       type: object
-      description: A player has no seat field. The position in `players` is the seat, counted from 0.
+      description: A lightweight player entry in a lobby game summary.
       required: [userId, isReady]
       properties:
         userId: { type: integer }
         isReady: { type: boolean }
+    GamePlayerView:
+      type: object
+      description: A seated player in a live game view. The position in the array is the seat, counted from 0.
+      required: [userId, username, isReady, isConnected]
+      properties:
+        userId: { type: integer }
+        username: { type: string }
+        isReady: { type: boolean }
+        isConnected:
+          type: boolean
+          description: Whether the player has an open WebSocket subscribed to this game.
     GameStatus:
       type: string
       enum: [waiting, in-progress, completed]
@@ -446,7 +457,7 @@ components:
         playerCount: { type: integer }
         players:
           type: array
-          items: { $ref: "#/components/schemas/PlayerView" }
+          items: { $ref: "#/components/schemas/GameSummaryPlayerView" }
         createdAt: { type: string, format: date-time }
         startedAt: { type: [string, "null"], format: date-time }
         finishedAt: { type: [string, "null"], format: date-time }
@@ -556,7 +567,7 @@ components:
                             workerId: { type: integer }
         players:
           type: array
-          items: { $ref: "#/components/schemas/PlayerView" }
+          items: { $ref: "#/components/schemas/GamePlayerView" }
         viewer: { $ref: "#/components/schemas/Viewer" }
     Viewer:
       description: Who is looking. A player gets the moves they can play now; a watcher, or someone whose seat was freed, gets none.

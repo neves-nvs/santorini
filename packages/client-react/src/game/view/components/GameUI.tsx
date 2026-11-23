@@ -8,6 +8,7 @@ import GameNavigation from './GameNavigation'
 import DebugMenu from '@/game/view/debug/DebugMenu'
 import { PerformanceDashboard } from '@/game/view/debug/PerformanceDashboard'
 import { useDebugState } from '@/game/view/debug/useDebugState'
+import './GameHUD.css'
 
 const GameUI = memo(() => {
   const gameState = useGameState()
@@ -29,13 +30,13 @@ const GameUI = memo(() => {
       {/* Full-screen 3D Game Board - always mounted, reads state from store */}
       <GameBoard debugState={debugState} cameraType={cameraType} />
 
-      {/* Persistent Navigation */}
+      {/* Compact menu replaces the always-open navigation card */}
       <GameNavigation />
 
       {/* Game Status Bar */}
       <GameStatusBar />
 
-      {/* Game Lobby (waiting/ready controls) */}
+      {/* Player and readiness panel stays visible throughout the game */}
       <GameLobby />
 
       {/* Error Display */}

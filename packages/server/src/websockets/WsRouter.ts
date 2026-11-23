@@ -106,6 +106,7 @@ export class WsRouter {
         }
         this.connectionManager.addClient(gameId, userId, connection);
         await this.sendGameView(connection, userId, gameId);
+        await this.gameService.broadcastCurrentView(gameId);
         return { gameId };
 
       case "set_ready":
@@ -145,6 +146,7 @@ export class WsRouter {
       logger.info(`Player ${userId} auto-removed from game ${gameId}`);
     } catch {
       logger.debug(`Player ${userId} not auto-removed from game ${gameId}`);
+      await this.gameService.broadcastCurrentView(gameId);
     }
   }
 

@@ -6,6 +6,10 @@ import { GameViewBuilder } from "@/game/application/GameViewBuilder.ts";
 const CURRENT_USER = asUserId(100);
 const WAITING_USER = asUserId(101);
 const OUTSIDER = asUserId(999);
+const buildView = (game: Game, userId: typeof CURRENT_USER) => {
+  const usernames = new Map(game.players.map((player) => [player.userId, `user-${player.userId}`] as const));
+  return new GameViewBuilder().buildFor(game, userId, new Set<typeof CURRENT_USER>(), usernames);
+};
 
 function startedGame(): Game {
   const game = Game.create(asGameId(1), CURRENT_USER, 2);
@@ -25,33 +29,29 @@ function finishedGame(): Game {
 }
 
 describe("GameViewBuilder viewer", () => {
-  const builder = new GameViewBuilder();
-
   it("gives the available moves to the player whose turn it is", () => {
-    const { viewer } = builder.buildFor(startedGame(), CURRENT_USER);
+    const { viewer } = buildView(startedGame(), CURRENT_USER);
 
     expect(viewer).toMatchObject({ role: "player", isCurrentPlayer: true });
     expect(viewer.role === "player" && viewer.availableMoves.length).toBeGreaterThan(0);
   });
 
   it("gives a player whose turn it is not an empty list of moves", () => {
-    const { viewer } = builder.buildFor(startedGame(), WAITING_USER);
+    const { viewer } = buildView(startedGame(), WAITING_USER);
 
     expect(viewer).toEqual({ role: "player", isCurrentPlayer: false, availableMoves: [] });
   });
 
   it("shows a user who is not in the game as a spectator, with no moves", () => {
-    const { viewer } = builder.buildFor(startedGame(), OUTSIDER);
+    const { viewer } = buildView(startedGame(), OUTSIDER);
 
     expect(viewer).toEqual({ role: "spectator" });
   });
 });
 
 describe("GameViewBuilder game", () => {
-  const builder = new GameViewBuilder();
-
   it("names the game limits and has no winner while the game is on", () => {
-    const view = builder.buildFor(startedGame(), CURRENT_USER);
+    const view = buildView(startedGame(), CURRENT_USER);
 
     expect(view).toMatchObject({
       gameId: 1,
@@ -68,15 +68,13 @@ describe("GameViewBuilder game", () => {
 
     const sameGame = (view: GameView) => ({ ...view, viewer: undefined });
 
-    expect(sameGame(builder.buildFor(game, OUTSIDER))).toEqual(sameGame(builder.buildFor(game, CURRENT_USER)));
+    expect(sameGame(buildView(game, OUTSIDER))).toEqual(sameGame(buildView(game, CURRENT_USER)));
   });
 });
 
 describe("GameViewBuilder game lifecycle", () => {
-  const builder = new GameViewBuilder();
-
   it("shows a game still waiting for players with no phase, current player or winner", () => {
-    const view = builder.buildFor(Game.create(asGameId(1), CURRENT_USER, 2), CURRENT_USER);
+    const view = buildView(Game.create(asGameId(1), CURRENT_USER, 2), CURRENT_USER);
 
     expect(view).toMatchObject({
       status: "waiting",
@@ -88,7 +86,7 @@ describe("GameViewBuilder game lifecycle", () => {
   });
 
   it("shows a game in progress with its phase and current player", () => {
-    const view = builder.buildFor(startedGame(), CURRENT_USER);
+    const view = buildView(startedGame(), CURRENT_USER);
 
     expect(view).toMatchObject({
       status: "in-progress",
@@ -100,7 +98,7 @@ describe("GameViewBuilder game lifecycle", () => {
   });
 
   it("shows a finished game with its winner and reason, and nobody to move", () => {
-    const view = builder.buildFor(finishedGame(), CURRENT_USER);
+    const view = buildView(finishedGame(), CURRENT_USER);
 
     expect(view).toMatchObject({
       status: "completed",
@@ -114,7 +112,7 @@ describe("GameViewBuilder game lifecycle", () => {
 
 describe("GameView type", () => {
   it("has no representation for a game that contradicts its status", () => {
-    const view = new GameViewBuilder().buildFor(startedGame(), CURRENT_USER);
+    const view = buildView(startedGame(), CURRENT_USER);
     const { viewer, board, players } = view;
     const common = { gameId: 1, maxPlayers: 2, turnNumber: 0, version: 1, board, players, viewer };
 

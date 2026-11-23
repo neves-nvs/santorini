@@ -9,7 +9,7 @@ import {
   UserId,
   VisibilityPolicy,
 } from "@santorini/engine";
-import { BoardView, CellView, GameView, Move as SharedMove, PlayerView, Viewer } from "@santorini/shared";
+import { BoardView, CellView, GamePlayerView, GameView, Move as SharedMove, Viewer } from "@santorini/shared";
 
 /**
  * Convert domain Move to shared Move format
@@ -54,7 +54,12 @@ export class GameViewBuilder {
   /**
    * The game as this user sees it: a player gets the moves they can play now, anyone else watches
    */
-  buildFor(game: Game, userId: UserId): GameView {
+  buildFor(
+    game: Game,
+    userId: UserId,
+    connectedUsers: ReadonlySet<UserId>,
+    usernames: ReadonlyMap<UserId, string>,
+  ): GameView {
     const state = this.visibilityPolicy.filterGameState(game, userId);
 
     const seat = state.players.findIndex((p) => p.userId === userId);
@@ -74,7 +79,7 @@ export class GameViewBuilder {
       turnNumber: state.turnNumber,
       version: state.version,
       board: this.buildBoardView(state.board),
-      players: this.buildPlayersView(state.players),
+      players: this.buildPlayersView(state.players, connectedUsers, usernames),
       viewer,
     };
 
@@ -143,10 +148,23 @@ export class GameViewBuilder {
   /**
    * Build players representation for frontend
    */
-  private buildPlayersView(players: Player[]): PlayerView[] {
-    return players.map((player) => ({
-      userId: player.userId,
-      isReady: player.isReady,
-    }));
+  private buildPlayersView(
+    players: Player[],
+    connectedUsers: ReadonlySet<UserId>,
+    usernames: ReadonlyMap<UserId, string>,
+  ): GamePlayerView[] {
+    return players.map((player) => {
+      const username = usernames.get(player.userId);
+      if (username === undefined) {
+        throw new Error(`Missing username for player ${player.userId}`);
+      }
+
+      return {
+        userId: player.userId,
+        username,
+        isReady: player.isReady,
+        isConnected: connectedUsers.has(player.userId),
+      };
+    });
   }
 }

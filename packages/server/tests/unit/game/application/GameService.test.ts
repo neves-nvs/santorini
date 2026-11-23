@@ -9,10 +9,12 @@ import { GameRepositoryDb } from "@/game/infra/GameRepositoryDb.ts";
 function setup(game: Game | null) {
   const repository = {
     findById: async () => game,
+    findUsernames: async (userIds: readonly number[]) =>
+      new Map(userIds.map((userId) => [userId, `user-${userId}`] as const)),
     update: async (_gameId: unknown, change: (game: Game) => GameEvent[]) =>
       game ? { game, events: change(game) } : null,
   } as unknown as GameRepositoryDb;
-  const broadcaster = { broadcastGameUpdate: vi.fn() };
+  const broadcaster = { broadcastGameUpdate: vi.fn(), connectedUsers: () => new Set() };
   const service = new GameService(repository, new GameViewBuilder(), broadcaster as unknown as GameBroadcaster);
   return { service, broadcaster, repository };
 }
@@ -71,6 +73,17 @@ describe("GameService publishes every change to the game", () => {
     await service.setPlayerReady(asGameId(1), asUserId(100), true);
 
     expect(broadcaster.broadcastGameUpdate).toHaveBeenCalledExactlyOnceWith(game);
+  });
+
+  it("returns the committed update when username loading prevents publication", async () => {
+    const game = gameWith(1);
+    const { service, broadcaster } = setup(game);
+    vi.mocked(broadcaster.broadcastGameUpdate).mockRejectedValue(new Error("username lookup failed"));
+
+    const result = await service.addPlayer(asGameId(1), asUserId(200));
+
+    expect(result.game.players).toHaveLength(2);
+    expect(result.events).toHaveLength(1);
   });
 
   it("not after a join that is refused", async () => {

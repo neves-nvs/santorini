@@ -2,11 +2,16 @@ import { act, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import PlayerList from '@/game/view/components/PlayerList'
 import { useGameStore } from '@/game/model/gameStore'
-import type { GameState, PlayerView } from '@/game/model/game'
+import type { GamePlayerView, GameState } from '@/game/model/game'
 
-const player = (userId: number): PlayerView => ({ userId, isReady: false })
+const player = (userId: number): GamePlayerView => ({
+  userId,
+  username: `player-${userId}`,
+  isReady: false,
+  isConnected: false,
+})
 
-const showGame = (players: PlayerView[], totalPlayers = 2) =>
+const showGame = (players: GamePlayerView[], totalPlayers = 2) =>
   useGameStore.setState({ gameState: { players, totalPlayers, currentSeat: null } as GameState })
 
 describe('PlayerList', () => {
@@ -20,6 +25,7 @@ describe('PlayerList', () => {
     render(<PlayerList />)
 
     expect(screen.getByText('P1')).toBeTruthy()
+    expect(screen.getByText('player-10')).toBeTruthy()
     expect(screen.getAllByText('Waiting for a player')).toHaveLength(2)
     expect(screen.getByText('Players (1/3)')).toBeTruthy()
   })

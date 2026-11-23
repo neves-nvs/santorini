@@ -25,7 +25,11 @@ const gameRepository = new GameRepositoryDb(db);
 const gameViewBuilder = new GameViewBuilder();
 
 // Application
-const gameBroadcaster = new GameBroadcaster(gameViewBuilder, connectionManager);
+const gameBroadcaster = new GameBroadcaster(
+  gameViewBuilder,
+  connectionManager,
+  (userIds) => gameRepository.findUsernames(userIds),
+);
 const gameService = new GameService(gameRepository, gameViewBuilder, gameBroadcaster);
 const lobbyService = new LobbyService(gameRepository);
 

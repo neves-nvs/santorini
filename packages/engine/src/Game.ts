@@ -179,6 +179,7 @@ export class Game {
     }
 
     this._players.push(player);
+    this.resetPlayerReadiness();
     this._version++;
     const events: GameEvent[] = [];
 
@@ -190,8 +191,7 @@ export class Game {
   }
 
   /**
-   * Remove a player from the game.
-   * Only allowed if game is in 'waiting' status and player hasn't readied.
+   * Remove a player from a waiting game. A changed roster requires every remaining player to ready again.
    */
   removePlayer(userId: UserId): GameEvent[] {
     if (this._status !== "waiting") {
@@ -203,11 +203,8 @@ export class Game {
       throw new GameRuleError("Player not found in game", "not_in_game");
     }
 
-    if (this._players[seat].isReady) {
-      throw new GameRuleError("Cannot remove player who has already confirmed ready");
-    }
-
     this._players.splice(seat, 1);
+    this.resetPlayerReadiness();
     this._version++;
 
     return [new GameEvent("PlayerLeft", { gameId: this.id, userId })];
@@ -314,6 +311,12 @@ export class Game {
       if (this._phase !== null) {
         throw new Error("Invariant violated: waiting game has phase set");
       }
+    }
+  }
+
+  private resetPlayerReadiness(): void {
+    for (const player of this._players) {
+      player.setReady(false);
     }
   }
 
