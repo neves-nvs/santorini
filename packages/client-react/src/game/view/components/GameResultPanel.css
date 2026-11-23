@@ -2,14 +2,18 @@
   position: fixed;
   inset: 0;
   z-index: 1100;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
   background: rgba(8, 15, 28, 0.48);
   pointer-events: auto;
 }
 
 .game-result-panel {
+  flex: none;
+  margin-block: auto;
   width: min(100%, 28rem);
   padding: clamp(1.5rem, 5vw, 2.5rem);
   border: 1px solid rgba(255, 255, 255, 0.72);
