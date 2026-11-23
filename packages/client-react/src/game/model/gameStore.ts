@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import { EMPTY_AVAILABLE_MOVES } from './game'
-import type { AvailableMove, BoardView, GameState } from './game'
+import type { BoardView, GameState } from './game'
 
 export interface BoardCell {
   buildingLevel: number
