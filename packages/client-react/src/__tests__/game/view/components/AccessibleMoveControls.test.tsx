@@ -1,9 +1,16 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AccessibleMoveControls from '@/game/view/components/AccessibleMoveControls'
-import { useGameStore } from '@/game/model/gameStore'
 import { webSocketClient } from '@/game/services/WebSocketClient'
 import type { GameState } from '@/game/model/game'
+
+const selectors = vi.hoisted(() => ({
+  useCurrentPlayerMoves: vi.fn(),
+  useGameId: vi.fn(),
+  useGameState: vi.fn(),
+  useIsMyTurn: vi.fn(),
+}))
+vi.mock('@/game/model/gameSelectors', () => selectors)
 
 const board = {
   cells: Array.from({ length: 5 }, (_, x) => Array.from({ length: 5 }, (_, y) => ({
@@ -22,19 +29,17 @@ const gameState = (version: number, phase: string) => ({
 
 describe('AccessibleMoveControls', () => {
   beforeEach(() => {
-    useGameStore.setState({
-      gameId: '7',
-      gameState: gameState(1, 'moving'),
-      currentPlayerMoves: [{
-        type: 'move_worker', workerId: 1, fromPosition: { x: 1, y: 1 }, validPositions: [{ x: 2, y: 1 }],
-      }],
-      isMyTurn: true,
-    })
+    selectors.useGameId.mockReturnValue('7')
+    selectors.useGameState.mockReturnValue(gameState(1, 'moving'))
+    selectors.useCurrentPlayerMoves.mockReturnValue([{
+      type: 'move_worker', workerId: 1, fromPosition: { x: 1, y: 1 }, validPositions: [{ x: 2, y: 1 }],
+    }])
+    selectors.useIsMyTurn.mockReturnValue(true)
     vi.spyOn(webSocketClient, 'request').mockResolvedValue({} as never)
   })
 
   it('describes board occupants and returns focus to the action heading after move and build', async () => {
-    render(<AccessibleMoveControls />)
+    const { rerender } = render(<AccessibleMoveControls />)
     fireEvent.click(screen.getByText('Keyboard game controls'))
 
     fireEvent.click(screen.getByText('Read the current board'))
@@ -47,16 +52,13 @@ describe('AccessibleMoveControls', () => {
     fireEvent.click(moveButton)
     await waitFor(() => expect(heading).toHaveFocus())
 
-    act(() => {
-      useGameStore.setState({
-        gameState: gameState(2, 'building'),
-        currentPlayerMoves: [{
-          type: 'build_block', workerId: 1, validPositions: [{ x: 2, y: 2 }],
-        }],
-      })
-    })
+    selectors.useGameState.mockReturnValue(gameState(2, 'building'))
+    selectors.useCurrentPlayerMoves.mockReturnValue([{
+      type: 'build_block', workerId: 1, validPositions: [{ x: 2, y: 2 }],
+    }])
+    act(() => rerender(<AccessibleMoveControls />))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Build a block at C3' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Build a block with worker 1 at C3' }))
     await waitFor(() => expect(heading).toHaveFocus())
   })
 })
