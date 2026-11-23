@@ -17,7 +17,11 @@ import type { OkMessage, WireError } from '@santorini/shared'
 import { ErrorType, GameError } from '@/shared/utils/errorHandler'
 import type { ConnectionStatus } from '@/game/model/gameStore'
 import { gameApi } from './gameApi'
-import { RECONNECTION_DELAY } from '@/game/model/gameConstants'
+import { CONNECTION_TIMEOUT, RECONNECTION_DELAY } from '@/game/model/gameConstants'
+
+const BACKGROUND_RETRY_DELAY = 15_000
+
+export class ConnectionInterruptedError extends Error {}
 
 interface WebSocketMessage {
   type: string
@@ -28,6 +32,7 @@ interface WebSocketMessage {
 interface PendingRequest {
   resolve: (result: OkMessage['payload']) => void
   reject: (error: Error) => void
+  timeout: ReturnType<typeof setTimeout>
 }
 
 type MessageHandler = (type: string, payload: unknown) => void
@@ -62,9 +67,11 @@ class WebSocketClient {
   private socket: WebSocket | null = null
   private serverAddress = getWebSocketUrl()
   private reconnectAttempts = 0
-  private maxReconnectAttempts = 5
-  private reconnectDelay = RECONNECTION_DELAY
+  private readonly maxReconnectAttempts = 5
   private shouldReconnect = false
+  private opening: AbortController | null = null
+  private handshakeTimeout: ReturnType<typeof setTimeout> | undefined
+  private retryTimeout: ReturnType<typeof setTimeout> | undefined
   private pending = new Map<string, PendingRequest>()
   private lastRequestId = 0
 
@@ -73,10 +80,10 @@ class WebSocketClient {
    * connection asks the server for a one-time ticket first.
    */
   async connect(): Promise<void> {
-    console.log('WebSocketClient.connect called')
     this.shouldReconnect = true
-    if (this.isOpenOrOpening()) return
+    if (this.socket || this.opening) return
 
+    clearTimeout(this.retryTimeout)
     this.reconnectAttempts = 0
     events.onConnectionStatusChange('connecting', 0, this.maxReconnectAttempts)
     await this.openSocket()
@@ -86,15 +93,12 @@ class WebSocketClient {
    * Disconnect and cleanup
    */
   disconnect(): void {
-    console.log('WebSocketClient disconnecting')
     this.shouldReconnect = false
     this.reconnectAttempts = 0
-    this.rejectPendingRequests(new Error('Disconnected'))
-
-    if (this.socket) {
-      this.socket.close()
-      this.socket = null
-    }
+    clearTimeout(this.retryTimeout)
+    this.opening?.abort()
+    this.opening = null
+    this.closeSocket(new ConnectionInterruptedError('Disconnected'))
 
     events.onConnectionChange(false)
     events.onConnectionStatusChange('disconnected', 0, this.maxReconnectAttempts)
@@ -112,14 +116,22 @@ class WebSocketClient {
    * Send a command and wait for the server's answer: the `ok` payload, or a rejection with the server's error.
    */
   request(type: string, payload: unknown): Promise<OkMessage['payload']> {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      return Promise.reject(new Error(`WebSocket not connected. State: ${this.socket?.readyState ?? 'null'}`))
+    const socket = this.socket
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return Promise.reject(new ConnectionInterruptedError('WebSocket not connected'))
     }
 
     const id = String(++this.lastRequestId)
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject })
-      this.socket?.send(JSON.stringify({ type, id, payload }))
+      const timeout = setTimeout(() => {
+        if (this.socket === socket) this.retryConnection(new ConnectionInterruptedError(`WebSocket command timed out: ${type}`))
+      }, CONNECTION_TIMEOUT)
+      this.pending.set(id, { resolve, reject, timeout })
+      try {
+        socket.send(JSON.stringify({ type, id, payload }))
+      } catch {
+        this.retryConnection(new ConnectionInterruptedError(`Could not send WebSocket command: ${type}`))
+      }
     })
   }
 
@@ -127,12 +139,11 @@ class WebSocketClient {
   // Game-specific convenience methods (just wrap send)
   // ─────────────────────────────────────────────────────────────
 
-  subscribeToGame(gameId: string): Promise<OkMessage['payload']> {
-    return this.request(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: parseInt(gameId) })
-  }
-
-  unsubscribeFromGame(gameId: string): void {
-    console.log('Unsubscribe requested (cleanup on disconnect):', gameId)
+  async subscribeToGame(gameId: string): Promise<OkMessage['payload']> {
+    const socket = this.socket
+    const result = await this.request(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: parseInt(gameId) })
+    if (this.socket === socket) this.reconnectAttempts = 0
+    return result
   }
 
   joinGame(gameId: string): Promise<OkMessage['payload']> {
@@ -147,43 +158,51 @@ class WebSocketClient {
   // Private methods
   // ─────────────────────────────────────────────────────────────
 
-  private isOpenOrOpening(): boolean {
-    return this.socket?.readyState === WebSocket.CONNECTING || this.socket?.readyState === WebSocket.OPEN
+  retryConnection(reason = new ConnectionInterruptedError('Reconnecting to game')): void {
+    if (!this.socket) return
+    this.closeSocket(reason)
+    events.onConnectionChange(false)
+    this.attemptReconnect()
   }
 
   private async openSocket(): Promise<void> {
-    if (this.isOpenOrOpening()) {
-      console.log('WebSocket already connecting/connected')
-      return
-    }
+    if (!this.shouldReconnect || this.socket || this.opening) return
 
-    if (this.reconnectAttempts === 0) {
-      events.onConnectionStatusChange('connecting', 0, this.maxReconnectAttempts)
-    }
-
-    let ticket: string
+    const opening = new AbortController()
+    this.opening = opening
+    const ticketTimeout = setTimeout(() => opening.abort(), CONNECTION_TIMEOUT)
     try {
-      ticket = await gameApi.createWebSocketTicket()
+      const ticket = await gameApi.createWebSocketTicket(opening.signal)
+      if (this.opening !== opening) return
+      opening.signal.throwIfAborted()
+      this.bindSocket(new WebSocket(`${this.serverAddress}?ticket=${ticket}`))
     } catch (error) {
-      console.error('Failed to get a WebSocket ticket:', error)
-      this.attemptReconnect()
-      return
+      if (this.opening === opening) {
+        console.error('Failed to open game WebSocket:', error)
+        this.attemptReconnect()
+      }
+    } finally {
+      clearTimeout(ticketTimeout)
+      if (this.opening === opening) this.opening = null
     }
+  }
 
-    // disconnect() may have run, or another call may have opened the socket, while the ticket was on its way
-    if (!this.shouldReconnect || this.isOpenOrOpening()) return
+  private bindSocket(socket: WebSocket): void {
+    this.socket = socket
+    this.handshakeTimeout = setTimeout(() => {
+      if (this.socket === socket) this.retryConnection(new ConnectionInterruptedError('WebSocket handshake timed out'))
+    }, CONNECTION_TIMEOUT)
 
-    console.log('Creating WebSocket connection')
-    this.socket = new WebSocket(`${this.serverAddress}?ticket=${ticket}`)
-
-    this.socket.onopen = () => {
+    socket.onopen = () => {
+      if (this.socket !== socket) return
+      clearTimeout(this.handshakeTimeout)
       console.log('WebSocket connected')
-      this.reconnectAttempts = 0
       events.onConnectionStatusChange('connected', 0, this.maxReconnectAttempts)
       events.onConnectionChange(true)
     }
 
-    this.socket.onmessage = (event) => {
+    socket.onmessage = (event) => {
+      if (this.socket !== socket) return
       try {
         const message: WebSocketMessage = JSON.parse(event.data)
         if (!this.settleRequest(message)) {
@@ -194,45 +213,39 @@ class WebSocketClient {
       }
     }
 
-    this.socket.onclose = (event) => {
+    socket.onclose = (event) => {
+      if (this.socket !== socket) return
       console.log('WebSocket closed:', event.code, event.reason)
-      this.rejectPendingRequests(new Error('Connection closed'))
-      events.onConnectionChange(false)
-      this.attemptReconnect()
+      this.retryConnection(new ConnectionInterruptedError('Connection closed'))
     }
 
-    this.socket.onerror = (error) => {
+    socket.onerror = (error) => {
+      if (this.socket !== socket) return
       console.error('WebSocket error:', error)
     }
   }
 
   private attemptReconnect(): void {
-    if (!this.shouldReconnect) {
-      events.onConnectionStatusChange('disconnected', 0, this.maxReconnectAttempts)
-      return
-    }
+    if (!this.shouldReconnect) return
 
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Reconnecting is off or the maximum number of attempts was reached')
-      events.onConnectionStatusChange('failed', this.reconnectAttempts, this.maxReconnectAttempts)
-      return
-    }
+    const backgroundRetry = this.reconnectAttempts >= this.maxReconnectAttempts
+    if (!backgroundRetry) this.reconnectAttempts++
+    events.onConnectionStatusChange(backgroundRetry ? 'failed' : 'reconnecting', this.reconnectAttempts, this.maxReconnectAttempts)
 
-    this.reconnectAttempts++
-    events.onConnectionStatusChange('reconnecting', this.reconnectAttempts, this.maxReconnectAttempts)
-    console.log(`Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
-
-    setTimeout(() => {
+    clearTimeout(this.retryTimeout)
+    this.retryTimeout = setTimeout(() => {
       void this.openSocket()
-    }, this.reconnectDelay * this.reconnectAttempts)
+    }, backgroundRetry ? BACKGROUND_RETRY_DELAY : RECONNECTION_DELAY * this.reconnectAttempts)
   }
 
   // An ok or error that answers a request is handed to its caller. Anything else is an event for the update layer.
   private settleRequest(message: WebSocketMessage): boolean {
+    if (message.type !== WS_MESSAGE_TYPES.OK && message.type !== WS_MESSAGE_TYPES.ERROR) return false
     const request = message.id === undefined ? undefined : this.pending.get(message.id)
     if (!request || message.id === undefined) return false
 
     this.pending.delete(message.id)
+    clearTimeout(request.timeout)
     if (message.type === WS_MESSAGE_TYPES.OK) {
       request.resolve(message.payload as OkMessage['payload'])
     } else {
@@ -242,8 +255,15 @@ class WebSocketClient {
     return true
   }
 
-  private rejectPendingRequests(reason: Error): void {
-    this.pending.forEach((request) => request.reject(reason))
+  private closeSocket(reason: Error): void {
+    clearTimeout(this.handshakeTimeout)
+    const socket = this.socket
+    this.socket = null
+    socket?.close()
+    this.pending.forEach((request) => {
+      clearTimeout(request.timeout)
+      request.reject(reason)
+    })
     this.pending.clear()
   }
 }
@@ -286,8 +306,8 @@ export const webSocketClient = {
     return this.getInstance().subscribeToGame(gameId)
   },
 
-  unsubscribeFromGame(gameId: string): void {
-    this.getInstance().unsubscribeFromGame(gameId)
+  retryConnection(): void {
+    instance?.retryConnection()
   },
 
   joinGame(gameId: string): Promise<OkMessage['payload']> {

@@ -50,6 +50,8 @@ export async function request<T>(
       return await response.text() as unknown as T
     }
   } catch (error) {
+    if (config.signal?.aborted) throw error
+
     // If it's already a GameError, just re-throw
     if (error instanceof Error && error.name === 'GameError') {
       throw error

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useAppStore } from '@/user/model/appStore'
-import { useIsConnected, useIsConnecting } from '@/game/model/gameSelectors'
+import { useGameStore } from '@/game/model/gameStore'
 import {
   handleConnectionChange,
   handleConnectionStatusChange,
@@ -18,50 +18,16 @@ webSocketClient.setEvents({
   onReset: resetMessageHandlerState,
 })
 
-/**
- * useGameConnection - WebSocket connection lifecycle only
- *
- * This hook ONLY handles:
- * - Connecting when user is authenticated
- * - Disconnecting on logout
- *
- * It does NOT handle:
- * - Game joining (use useGameActions.joinGame)
- * - Game subscription (use useGameActions.subscribeToGame)
- * - Game state fetching (use useGameActions.fetchGameState)
- */
 export function useGameConnection() {
   const username = useAppStore((s) => s.username)
-  const isConnected = useIsConnected()
-  const isConnecting = useIsConnecting()
-  const connectionAttemptedRef = useRef(false)
+  const isConnected = useGameStore((state) => state.isConnected)
+  const connectionId = useGameStore((state) => state.connectionId)
 
-  // Connect WebSocket when authenticated
   useEffect(() => {
-    if (username && !isConnected && !isConnecting && !connectionAttemptedRef.current) {
-      console.log('Initiating WebSocket connection for user:', username)
-      connectionAttemptedRef.current = true
-      webSocketClient.connect()
-    }
-  }, [username, isConnected, isConnecting])
-
-  // Reset connection attempt flag when user logs out
-  useEffect(() => {
-    if (!username) {
-      connectionAttemptedRef.current = false
-    }
+    if (!username) return
+    void webSocketClient.connect()
+    return () => webSocketClient.disconnect()
   }, [username])
 
-  // The socket belongs to the game page: leaving it closes the socket, and the server cleans up
-  useEffect(() => {
-    return () => {
-      connectionAttemptedRef.current = false
-      webSocketClient.disconnect()
-    }
-  }, [])
-
-  return {
-    isConnected,
-    isConnecting
-  }
+  return { isConnected, connectionId }
 }

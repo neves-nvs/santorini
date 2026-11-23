@@ -1,0 +1,113 @@
+.game-header {
+  position: absolute;
+  inset: calc(env(safe-area-inset-top) + var(--space-3))
+    calc(env(safe-area-inset-right) + var(--space-3))
+    auto
+    calc(env(safe-area-inset-left) + var(--space-3));
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.game-navigation {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  justify-self: start;
+  max-width: 100%;
+}
+
+.game-navigation-back,
+.game-player-name,
+.game-status-bar,
+.game-connection-feedback {
+  border-radius: var(--radius-md);
+  background: #25364b;
+  color: white;
+  line-height: 1.4;
+}
+
+.game-navigation-back {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding-inline: var(--space-3);
+  font-weight: 650;
+  text-decoration: none;
+  pointer-events: auto;
+}
+
+.game-navigation-back:hover {
+  background: #182639;
+  color: white;
+}
+
+.game-player-name {
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  overflow: hidden;
+  font-size: var(--text-caption);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-status-bar,
+.game-connection-feedback {
+  grid-column: 2;
+  justify-self: center;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-body);
+  text-align: center;
+}
+
+.game-status-bar {
+  font-weight: 650;
+}
+
+.game-connection-feedback--failed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: #7f1d1d;
+}
+
+.game-connection-feedback--failed p {
+  margin: 0;
+}
+
+.game-connection-feedback--failed button {
+  min-height: 44px;
+  padding-inline: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: white;
+  color: #7f1d1d;
+  font: inherit;
+  font-weight: 650;
+  pointer-events: auto;
+}
+
+@media (max-width: 680px) {
+  .game-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .game-navigation {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .game-status-bar,
+  .game-connection-feedback {
+    grid-column: 1;
+  }
+}

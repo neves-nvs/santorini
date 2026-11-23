@@ -6,19 +6,21 @@ import PlayerList from './PlayerList'
 interface GameLobbyProps {
   className?: string
   style?: React.CSSProperties
+  canPlay?: boolean
 }
 
 /**
  * Lobby component shown when game is in WAITING state
  * Handles player joining, ready checks, and game start
  */
-const GameLobby = memo(({ className, style }: GameLobbyProps) => {
+const GameLobby = memo(({ className, style, canPlay = true }: GameLobbyProps) => {
   const { ui, gameInfo } = useGameLifecycle()
   const { 
     handleReadyToggle, 
     readyButtonText, 
-    isDisabled 
+    isDisabled: readyDisabled
   } = useReadyState()
+  const isDisabled = !canPlay || readyDisabled
 
   // Only show lobby when in waiting state
   if (!ui.showLobbyControls) {
