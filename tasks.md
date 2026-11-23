@@ -5,8 +5,8 @@ These findings were reviewed against the earlier `feat/game-screen-ux` work. Thi
 ## Queue
 
 - [x] **1. Show a useful game result.** State who won and why, then give players a clear next action when the game ends. ([PR #185](https://github.com/neves-nvs/santorini/pull/185))
-- [x] **2. Make connection recovery visible and recoverable.** Distinguish connecting, reconnecting, connected, and retry exhaustion; clear transient errors after recovery.
-- [ ] **3. Fix mobile viewport and keyboard behavior.** Use dynamic viewport sizing for the app and board, and keep the auth form scrollable above the on-screen keyboard.
+- [x] **2. Make connection recovery visible and recoverable.** Distinguish connecting, reconnecting, connected, and retry exhaustion; clear transient errors after recovery. ([PR #186](https://github.com/neves-nvs/santorini/pull/186))
+- [x] **3. Fix mobile viewport and keyboard behavior.** Use dynamic viewport sizing for the app and board, and keep the auth form scrollable above the on-screen keyboard. ([PR #187](https://github.com/neves-nvs/santorini/pull/187))
 - [ ] **4. Add an accessible alternative to 3D game input.** Provide keyboard and screen-reader operable actions that do not depend on clicking canvas meshes.
 - [ ] **5. Simplify game client state.** Reduce duplicated derived state and make game changes/reset paths preserve one clear source of truth.
 - [ ] **6. Establish consistent UI tokens and readable type.** Replace scattered page-level values where practical, and increase undersized player/status text.

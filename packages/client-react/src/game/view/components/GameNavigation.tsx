@@ -23,8 +23,8 @@ const GameNavigation = memo(({ className, style }: GameNavigationProps) => {
       className={className}
       style={{
         position: 'absolute',
-        top: 'clamp(10px, 2vw, 20px)',
-        left: 'clamp(10px, 2vw, 20px)',
+        top: 'calc(env(safe-area-inset-top, 0px) + clamp(10px, 2vw, 20px))',
+        left: 'calc(env(safe-area-inset-left, 0px) + clamp(10px, 2vw, 20px))',
         background: 'rgba(0, 0, 0, 0.8)',
         color: 'white',
         padding: 'clamp(0.5rem, 2vw, 1rem)',

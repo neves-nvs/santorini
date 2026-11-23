@@ -192,3 +192,10 @@
   text-decoration: none;
   font-size: 1.1rem;
 }
+
+@media (max-width: 600px) {
+  .lobby-games {
+    max-height: none;
+    overflow: visible;
+  }
+}

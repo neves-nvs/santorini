@@ -31,14 +31,14 @@ const GameLobby = memo(({ className, style }: GameLobbyProps) => {
       className={className}
       style={{
         position: 'absolute',
-        bottom: 'clamp(10px, 2vw, 20px)',
-        right: 'clamp(10px, 2vw, 20px)',
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + clamp(10px, 2vw, 20px))',
+        right: 'calc(env(safe-area-inset-right, 0px) + clamp(10px, 2vw, 20px))',
         background: 'rgba(0, 0, 0, 0.8)',
         color: 'white',
         padding: 'clamp(0.75rem, 2vw, 1.5rem)',
         borderRadius: '8px',
         width: 'clamp(200px, 50vw, 300px)',
-        maxHeight: 'calc(100vh - 100px)',
+        maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem)',
         overflowY: 'auto',
         zIndex: 1000,
         pointerEvents: 'auto', // Allow clicks on lobby controls

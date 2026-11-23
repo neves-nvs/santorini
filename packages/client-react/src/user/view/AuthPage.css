@@ -2,8 +2,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--brand-gradient);
-  padding: 1rem;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
 }
 
 .auth-card {
