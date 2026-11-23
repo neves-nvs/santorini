@@ -4,6 +4,7 @@
   z-index: 1100;
   display: flex;
   flex-direction: column;
+  align-items: center;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
