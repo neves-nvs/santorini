@@ -141,11 +141,8 @@ class WebSocketClient {
   // Game-specific convenience methods (just wrap send)
   // ─────────────────────────────────────────────────────────────
 
-  async subscribeToGame(gameId: string): Promise<OkMessage['payload']> {
-    const socket = this.socket
-    const result = await this.request(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: parseInt(gameId) })
-    if (this.socket === socket) this.reconnectAttempts = 0
-    return result
+  subscribeToGame(gameId: string): Promise<OkMessage['payload']> {
+    return this.request(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: parseInt(gameId) })
   }
 
   joinGame(gameId: string): Promise<OkMessage['payload']> {
@@ -154,6 +151,10 @@ class WebSocketClient {
 
   setReady(gameId: string, isReady: boolean): Promise<OkMessage['payload']> {
     return this.request(WS_MESSAGE_TYPES.SET_READY, { gameId: parseInt(gameId), isReady })
+  }
+
+  resetReconnectBackoff(): void {
+    if (this.isConnected()) this.reconnectAttempts = 0
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -316,6 +317,10 @@ export const webSocketClient = {
 
   retryConnection(): void {
     instance?.retryConnection()
+  },
+
+  resetReconnectBackoff(): void {
+    instance?.resetReconnectBackoff()
   },
 
   joinGame(gameId: string): Promise<OkMessage['payload']> {

@@ -181,6 +181,28 @@ describe('WebSocketClient requests', () => {
     expect(events.onConnectionChange).toHaveBeenLastCalledWith(true)
   })
 
+  it('preserves reconnect backoff across subscriptions until explicitly reset', async () => {
+    vi.useFakeTimers()
+    const original = await connected()
+    original.drop()
+    await vi.advanceTimersByTimeAsync(1_000)
+    const replacement = FakeSocket.instances[1]
+    replacement.open()
+    const subscription = webSocketClient.subscribeToGame('7')
+    replacement.receive({ type: 'ok', id: replacement.sent[0].id, payload: { gameId: 7 } })
+    await subscription
+
+    replacement.drop()
+    expect(events.onConnectionStatusChange).toHaveBeenLastCalledWith('reconnecting', 2, 5)
+    await vi.advanceTimersByTimeAsync(2_000)
+    const next = FakeSocket.instances[2]
+    next.open()
+
+    webSocketClient.resetReconnectBackoff()
+    next.drop()
+    expect(events.onConnectionStatusChange).toHaveBeenLastCalledWith('reconnecting', 1, 5)
+  })
+
   it('replaces an open socket that never acknowledges a game subscription', async () => {
     vi.useFakeTimers()
     await connected()

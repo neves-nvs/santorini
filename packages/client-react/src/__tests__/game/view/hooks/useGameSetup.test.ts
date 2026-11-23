@@ -36,6 +36,7 @@ vi.mock('@/game/services/WebSocketClient', async (importOriginal) => ({
     joinGame: vi.fn(),
     subscribeToGame: vi.fn(),
     retryConnection: vi.fn(),
+    resetReconnectBackoff: vi.fn(),
   },
 }))
 
@@ -55,6 +56,7 @@ describe('useGameSetup', () => {
 
     expect(webSocketClient.joinGame).toHaveBeenCalledTimes(1)
     expect(webSocketClient.subscribeToGame).toHaveBeenCalledTimes(1)
+    expect(webSocketClient.resetReconnectBackoff).toHaveBeenCalledOnce()
   })
 
   it('joins and subscribes again on the socket that replaces a dropped one', async () => {
@@ -89,6 +91,7 @@ describe('useGameSetup', () => {
     await waitFor(() => expect(webSocketClient.retryConnection).toHaveBeenCalledOnce())
     expect(result.current.isReady).toBe(false)
     expect(result.current.error).toBeNull()
+    expect(webSocketClient.resetReconnectBackoff).not.toHaveBeenCalled()
     connection.isConnected = false
     act(() => rerender())
     useGameStore.getState().setConnectionStatus('connected')
@@ -97,6 +100,7 @@ describe('useGameSetup', () => {
 
     await waitFor(() => expect(result.current.isReady).toBe(true))
     expect(webSocketClient.subscribeToGame).toHaveBeenCalledTimes(2)
+    expect(webSocketClient.resetReconnectBackoff).toHaveBeenCalledOnce()
   })
 
   it('shows why the game could not be joined and does not subscribe', async () => {
@@ -107,5 +111,27 @@ describe('useGameSetup', () => {
     await waitFor(() => expect(result.current.error).toBe('Game is full'))
     expect(result.current.isReady).toBe(false)
     expect(webSocketClient.subscribeToGame).not.toHaveBeenCalled()
+    expect(webSocketClient.resetReconnectBackoff).not.toHaveBeenCalled()
+  })
+
+  it('does not reset backoff when an obsolete subscription finishes', async () => {
+    let finishSubscription!: () => void
+    vi.mocked(webSocketClient.subscribeToGame).mockImplementationOnce(() => new Promise((resolve) => {
+      finishSubscription = () => resolve({ gameId: 5 })
+    }))
+    const { result, rerender } = renderHook(() => useGameSetup('5'))
+    await waitFor(() => expect(webSocketClient.subscribeToGame).toHaveBeenCalledOnce())
+    expect(webSocketClient.resetReconnectBackoff).not.toHaveBeenCalled()
+
+    connection.isConnected = false
+    act(() => rerender())
+    useGameStore.getState().setConnectionStatus('connected')
+    connection.isConnected = true
+    act(() => rerender())
+    await waitFor(() => expect(result.current.isReady).toBe(true))
+    expect(webSocketClient.resetReconnectBackoff).toHaveBeenCalledOnce()
+
+    await act(async () => finishSubscription())
+    expect(webSocketClient.resetReconnectBackoff).toHaveBeenCalledOnce()
   })
 })
