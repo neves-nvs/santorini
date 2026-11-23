@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react'
+import { memo } from 'react'
 import { useGameState } from '@/game/model/gameSelectors'
 import { PLAYER_COLORS } from '@/game/model/gameConstants'
 import type { PlayerView } from '@/game/model/game'
@@ -14,11 +14,6 @@ interface PlayerListProps {
  */
 const PlayerList = memo(({ className, style }: PlayerListProps) => {
   const gameState = useGameState()
-
-  // Debug: Log when player list changes
-  useEffect(() => {
-    console.log('PlayerList re-rendered with players:', gameState?.players)
-  }, [gameState?.players])
 
   // Handle undefined/null players gracefully
   const players = gameState?.players || []
@@ -63,6 +58,9 @@ const PlayerList = memo(({ className, style }: PlayerListProps) => {
                 </span>
                 {player ? `P${index + 1}` : 'Waiting for a player'}
                 {isCurrentPlayer && ' ★'}
+                {player && gameState.status === 'waiting' && (
+                  <span className="player-list__readiness">{player.isReady ? 'Ready' : 'Not ready'}</span>
+                )}
               </li>
             )
           })}

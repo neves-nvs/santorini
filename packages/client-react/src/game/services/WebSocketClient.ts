@@ -20,6 +20,7 @@ import { gameApi } from './gameApi'
 import { CONNECTION_TIMEOUT, RECONNECTION_DELAY } from '@/game/model/gameConstants'
 
 const BACKGROUND_RETRY_DELAY = 15_000
+const HEARTBEAT_INTERVAL = 15_000
 
 export class ConnectionInterruptedError extends Error {}
 
@@ -72,6 +73,7 @@ class WebSocketClient {
   private opening: AbortController | null = null
   private handshakeTimeout: ReturnType<typeof setTimeout> | undefined
   private retryTimeout: ReturnType<typeof setTimeout> | undefined
+  private heartbeatInterval: ReturnType<typeof setInterval> | undefined
   private pending = new Map<string, PendingRequest>()
   private lastRequestId = 0
 
@@ -199,6 +201,11 @@ class WebSocketClient {
       console.log('WebSocket connected')
       events.onConnectionStatusChange('connected', 0, this.maxReconnectAttempts)
       events.onConnectionChange(true)
+      this.heartbeatInterval = setInterval(() => {
+        void this.request(WS_MESSAGE_TYPES.PING, {}).catch(() => {
+          if (this.socket === socket) this.retryConnection()
+        })
+      }, HEARTBEAT_INTERVAL)
     }
 
     socket.onmessage = (event) => {
@@ -256,6 +263,7 @@ class WebSocketClient {
   }
 
   private closeSocket(reason: Error): void {
+    clearInterval(this.heartbeatInterval)
     clearTimeout(this.handshakeTimeout)
     const socket = this.socket
     this.socket = null

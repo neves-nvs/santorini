@@ -59,6 +59,31 @@ async function connected(): Promise<FakeSocket> {
 }
 
 describe('WebSocketClient requests', () => {
+  it('detects a silent drop while idle and replaces the unresponsive socket', async () => {
+    vi.useFakeTimers()
+    const socket = await connected()
+    await vi.advanceTimersByTimeAsync(15_000)
+    expect(socket.sent).toContainEqual({ type: 'ping', id: expect.any(String), payload: {} })
+    await vi.advanceTimersByTimeAsync(11_000)
+    expect(socket.readyState).toBe(3)
+    expect(FakeSocket.instances).toHaveLength(2)
+  })
+
+  it('keeps a healthy idle connection and stops heartbeats when leaving the game', async () => {
+    vi.useFakeTimers()
+    const socket = await connected()
+    for (let i = 0; i < 3; i++) {
+      await vi.advanceTimersByTimeAsync(15_000)
+      const ping = socket.sent[socket.sent.length - 1]
+      expect(ping?.type).toBe('ping')
+      socket.receive({ type: 'ok', id: ping?.id, payload: {} })
+    }
+    expect(FakeSocket.instances).toHaveLength(1)
+    webSocketClient.disconnect()
+    const count = socket.sent.length
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(socket.sent).toHaveLength(count)
+  })
   beforeEach(() => {
     vi.stubGlobal('WebSocket', FakeSocket)
     vi.spyOn(console, 'log').mockImplementation(() => {})

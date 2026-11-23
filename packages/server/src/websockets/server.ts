@@ -6,6 +6,7 @@ import { wsRouter } from "@/composition-root.ts";
 import logger from "@/logger.ts";
 
 import { AuthenticatedWebSocket } from "./authenticatedWebsocket.ts";
+import { monitorHeartbeat } from "./heartbeat.ts";
 import { WebSocketConnection } from "./WebSocketConnection.ts";
 
 const MAX_MESSAGE_BYTES = 16 * 1024;
@@ -25,6 +26,7 @@ export function createWebSocketServer(httpServer: Server): WebSocketServer {
       return;
     }
     const connection = new WebSocketConnection(ws, ws.user);
+    monitorHeartbeat(ws);
 
     ws.on("error", (error: Error) => {
       logger.error("[WS] Error:", error);

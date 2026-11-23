@@ -7,6 +7,14 @@ import { Connection } from "@/game/infra/Connection.ts";
 import { ConnectionManager } from "@/game/infra/ConnectionManager.ts";
 import { WsRouter } from "@/websockets/WsRouter.ts";
 
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 function setup() {
   const sent: ServerMessage[] = [];
   const connection: Connection = {
@@ -19,10 +27,12 @@ function setup() {
     getGameView: vi.fn(async () => ({})),
     setPlayerReady: vi.fn(),
     applyMove: vi.fn(),
+    removePlayer: vi.fn(),
   };
-  const router = new WsRouter(gameService as unknown as GameService, new ConnectionManager());
+  const manager = new ConnectionManager();
+  const router = new WsRouter(gameService as unknown as GameService, manager);
   const handle = (frame: unknown) => router.handleMessage(connection, JSON.stringify(frame));
-  return { sent, handle, gameService, router, connection };
+  return { sent, handle, gameService, router, connection, manager };
 }
 
 const invalidFrame = { type: "error", payload: { code: "invalid_message", message: "Invalid message format" } };
@@ -131,6 +141,80 @@ describe("WsRouter input validation", () => {
 });
 
 describe("WsRouter replies", () => {
+  test("answers a heartbeat without needing a game or changing it", async () => {
+    const { sent, handle, gameService } = setup();
+    await handle({ type: "ping", id: "heartbeat", payload: {} });
+    expect(sent).toEqual([{ type: "ok", id: "heartbeat", payload: {} }]);
+    expect(gameService.addPlayer).not.toHaveBeenCalled();
+  });
+
+  test("rolls back a failed subscription so the same socket can retry", async () => {
+    const { handle, gameService, manager, connection, sent } = setup();
+    gameService.getGameView.mockRejectedValueOnce(new Error("Temporary database failure"));
+    await handle({ type: "subscribe_game", id: "first", payload: { gameId: 7 } });
+    expect(manager.gameOf(connection)).toBeUndefined();
+    await handle({ type: "subscribe_game", id: "retry", payload: { gameId: 7 } });
+    expect(sent).toContainEqual({ type: "ok", id: "retry", payload: { gameId: 7 } });
+  });
+
+  test("finishes old disconnect cleanup before acknowledging a replacement join", async () => {
+    const { handle, gameService, router, connection } = setup();
+    await handle({ type: "subscribe_game", payload: { gameId: 7 } });
+    const started = deferred<void>();
+    const finish = deferred<void>();
+    gameService.removePlayer.mockImplementationOnce(async () => {
+      started.resolve();
+      await finish.promise;
+    });
+    const disconnect = router.handleDisconnect(connection);
+    await started.promise;
+    const replacement = { ...connection, send: vi.fn() };
+    const join = router.handleMessage(replacement, JSON.stringify({ type: "join_game", payload: { gameId: 7 } }));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(gameService.addPlayer).not.toHaveBeenCalled();
+    finish.resolve();
+    await Promise.all([disconnect, join]);
+    expect(gameService.addPlayer).toHaveBeenCalledOnce();
+  });
+
+  test("preserves a replacement player between join and subscription", async () => {
+    const { handle, gameService, router, connection } = setup();
+    await handle({ type: "subscribe_game", payload: { gameId: 7 } });
+    const replacement = { ...connection, send: vi.fn() };
+    await router.handleMessage(replacement, JSON.stringify({ type: "join_game", payload: { gameId: 7 } }));
+    await router.handleDisconnect(connection);
+    expect(gameService.removePlayer).not.toHaveBeenCalled();
+    await router.handleDisconnect(replacement);
+    expect(gameService.removePlayer).toHaveBeenCalledOnce();
+  });
+
+  test("does not restore a subscription if the socket closes during its initial snapshot", async () => {
+    const { handle, gameService, router, connection, manager } = setup();
+    const started = deferred<void>();
+    const snapshot = deferred<object>();
+    gameService.getGameView.mockImplementationOnce(() => {
+      started.resolve();
+      return snapshot.promise;
+    });
+    const subscribe = handle({ type: "subscribe_game", payload: { gameId: 7 } });
+    await started.promise;
+    const disconnect = router.handleDisconnect(connection);
+    snapshot.resolve({});
+    await Promise.all([subscribe, disconnect]);
+    expect(manager.gameOf(connection)).toBeUndefined();
+    expect(manager.subscribers(asGameId(7))).toEqual([]);
+    expect(gameService.removePlayer).toHaveBeenCalledOnce();
+  });
+
+  test("a failed join does not protect a seat or trigger disconnect cleanup", async () => {
+    const { handle, gameService, router, connection } = setup();
+    gameService.addPlayer.mockRejectedValueOnce(new GameNotFoundError(asGameId(7)));
+    await handle({ type: "join_game", payload: { gameId: 7 } });
+    await router.handleDisconnect(connection);
+    expect(gameService.removePlayer).not.toHaveBeenCalled();
+  });
+
   test("answers a command with one ok that carries its id", async () => {
     const { sent, handle } = setup();
 

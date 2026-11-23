@@ -12,6 +12,10 @@ info:
     exactly one `ok` or `error` carrying the same `id` (no `id` when the command had none). When a command changes a game, the
     resulting `game_state` reaches every subscribed socket, the sender included, before the `ok`.
 
+    **Heartbeat.** The client sends `ping` with an empty payload every 15 seconds, and reconnects if no reply arrives
+    within 10 seconds. The server also sends WebSocket control pings every 30 seconds and terminates sockets that
+    miss the next pong. These pings require no game subscription.
+
     **Errors.** The payload of an `error` is `{ code, message, details? }`. `code` is stable and meant for programs, `message`
     for people, `details.issues` lists the invalid fields of an `invalid_payload`. A message that is not a JSON object has the
     code `invalid_message`; an unknown `type` has `unknown_type`. Details of an unexpected failure stay in the server log: the
@@ -20,7 +24,9 @@ info:
     **Joining and subscribing are separate.** `join_game` makes the user a player. `subscribe_game` registers this socket
     for the game's updates, as a player or as a watcher, and sends the current state before it answers `ok`. A client that is
     playing sends both. Only a subscribed socket receives `game_state`, after every change to the game: a join, a leave, a ready, a move. A player who
-    has not clicked ready is removed from a waiting game when their last subscribed socket closes. A ready player keeps the seat.
+    has not clicked ready is removed from a waiting game when their last joined or subscribed socket closes.
+    A replacement join protects the seat before it subscribes. Disconnect cleanup and game commands execute in order
+    within each game. A ready player keeps the seat.
 
 defaultContentType: application/json
 servers:
@@ -42,6 +48,7 @@ channels:
       One connection per browser window. The upgrade is refused with 401 without a valid token and with 403 when the
       `Origin` header is not an allowed origin or the server's own origin.
     messages:
+      ping: { $ref: "#/components/messages/ping" }
       joinGame: { $ref: "#/components/messages/joinGame" }
       leaveGame: { $ref: "#/components/messages/leaveGame" }
       subscribeGame: { $ref: "#/components/messages/subscribeGame" }
@@ -51,6 +58,14 @@ channels:
       error: { $ref: "#/components/messages/error" }
       gameState: { $ref: "#/components/messages/gameState" }
 operations:
+  ping:
+    action: receive
+    channel: { $ref: "#/channels/game" }
+    summary: Check that the connection is responsive
+    messages: [{ $ref: "#/channels/game/messages/ping" }]
+    reply:
+      channel: { $ref: "#/channels/game" }
+      messages: [{ $ref: "#/channels/game/messages/ok" }, { $ref: "#/channels/game/messages/error" }]
   joinGame:
     action: receive
     channel: { $ref: "#/channels/game" }
@@ -79,6 +94,7 @@ operations:
       Open to any logged-in user, so someone who is not in the game can watch it. Sends a `game_state` with the
       user's view, then answers `ok` with the `gameId`. A connection follows one game: subscribing again, to the same game
       or another, gives an `error` (`invalid_game_state`), so a client opens a new connection for each game page.
+      If the initial snapshot fails, the subscription is rolled back and the same socket can retry.
     messages: [{ $ref: "#/channels/game/messages/subscribeGame" }]
     reply:
       channel: { $ref: "#/channels/game" }
@@ -113,6 +129,17 @@ operations:
     messages: [{ $ref: "#/channels/game/messages/gameState" }]
 components:
   messages:
+    ping:
+      name: ping
+      payload:
+        type: object
+        required: [type, payload]
+        properties:
+          type: { const: ping }
+          id: { $ref: "#/components/schemas/RequestId" }
+          payload:
+            type: object
+            additionalProperties: false
     joinGame:
       name: join_game
       payload:

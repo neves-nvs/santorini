@@ -46,3 +46,8 @@
 .player-list__marker--waiting {
   font-size: 1.1rem;
 }
+
+.player-list__readiness {
+  margin-left: auto;
+  font-size: var(--text-caption);
+}

@@ -58,6 +58,7 @@ const command = <Type extends string, Payload extends z.ZodType>(type: Type, pay
   z.object({ type: z.literal(type), id: requestIdSchema.optional(), payload })
 
 export const clientMessageSchema = z.discriminatedUnion('type', [
+  command('ping', z.object({})),
   command('join_game', gameRefSchema),
   command('leave_game', gameRefSchema),
   command('subscribe_game', gameRefSchema),
