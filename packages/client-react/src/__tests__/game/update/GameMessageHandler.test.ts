@@ -32,7 +32,7 @@ describe('game_state', () => {
   beforeEach(() => {
     vi.spyOn(console, 'log').mockImplementation(() => {})
     resetMessageHandlerState()
-    useGameStore.setState({ gameState: null, currentPlayerMoves: [], isMyTurn: false })
+    useGameStore.getState().resetGame()
     useAppStore.setState({ userId: ME })
   })
 
@@ -43,12 +43,12 @@ describe('game_state', () => {
   it('shows the game, the moves of the player whose turn it is, and their ready status', () => {
     handleWebSocketMessage('game_state', view())
 
-    const { gameState, currentPlayerMoves, isMyTurn } = useGameStore.getState()
+    const { gameState } = useGameStore.getState()
     expect(gameState).toMatchObject({ gameId: 5, version: 4, isCurrentPlayer: true, currentUserReady: true, totalPlayers: 3 })
-    expect(currentPlayerMoves).toEqual([
+    expect(gameState?.availableMoves).toEqual([
       { type: 'place_worker', workerId: 1, validPositions: [{ x: 0, y: 0 }, { x: 2, y: 3 }] },
     ])
-    expect(isMyTurn).toBe(true)
+    expect(gameState?.isCurrentPlayer).toBe(true)
   })
 
   it('has no moves and no turn for a player who waits, or for a spectator', () => {
@@ -56,10 +56,10 @@ describe('game_state', () => {
       'game_state',
       view({ viewer: { role: 'player', isCurrentPlayer: false, availableMoves: [] } })
     )
-    expect(useGameStore.getState()).toMatchObject({ currentPlayerMoves: [], isMyTurn: false })
+    expect(useGameStore.getState().gameState).toMatchObject({ availableMoves: [], isCurrentPlayer: false })
 
     handleWebSocketMessage('game_state', view({ version: 5, viewer: { role: 'spectator' } }))
-    expect(useGameStore.getState()).toMatchObject({ currentPlayerMoves: [], isMyTurn: false })
+    expect(useGameStore.getState().gameState).toMatchObject({ availableMoves: [], isCurrentPlayer: false })
     expect(useGameStore.getState().gameState?.isCurrentPlayer).toBe(false)
   })
 

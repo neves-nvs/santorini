@@ -14,6 +14,7 @@ import { BUILDING_HEIGHT, WORKER_HEIGHT_OFFSET } from '@/game/model/gameConstant
 import { useRenderTracker } from '@/game/view/debug/performanceMonitor'
 import type { DebugState } from '@/game/model/debugState'
 import type { AvailableMove, BuildPosition, Move } from '@/game/model/game'
+import { EMPTY_AVAILABLE_MOVES } from '@/game/model/game'
 import { validPositionsFor } from '@/game/model/validPositions'
 
 interface MoveSubmission {
@@ -45,23 +46,26 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
   onMoveError
 }) => {
 
-  // Subscribe to optimized board state from store (already parsed)
-  const storeBoardState = useGameStore(state => state.boardState)
+  // Read the server snapshot directly and adapt its cells for 3D rendering.
+  const serverBoard = useGameStore(state => state.gameState?.board)
   const currentSeat = useGameStore(state => state.gameState?.currentSeat)
 
-  // Convert store board format to local BoardState format (or use sample/empty)
+  // Convert the server board format to the renderer's building-level format.
   const boardState = useMemo<BoardState>(() => {
-    if (storeBoardState?.cells) {
-      return storeBoardState.cells
+    if (serverBoard?.cells) {
+      return serverBoard.cells.map((row) => row.map((cell) => ({
+        buildingLevel: cell.hasDome ? cell.height + 1 : cell.height,
+        worker: cell.worker
+      })))
     }
     return createEmptyBoard()
-  }, [storeBoardState])
+  }, [serverBoard])
 
   // Zustand selectors for optimized re-renders (stable references)
   const selectedWorker = useSelectedWorker()
   const setSelectedWorker = useSetSelectedWorker()
 
-  const currentPlayerMoves = useGameStore(state => state.currentPlayerMoves)
+  const currentPlayerMoves = useGameStore(state => state.gameState?.availableMoves ?? EMPTY_AVAILABLE_MOVES)
 
   const validPositions = useMemo(
     () => validPositionsFor(currentPlayerMoves, selectedWorker?.workerId),
@@ -79,7 +83,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     }
 
     // Check if this worker has any available moves (move_worker or build)
-    const moves = useGameStore.getState().currentPlayerMoves
+    const moves = useGameStore.getState().gameState?.availableMoves ?? EMPTY_AVAILABLE_MOVES
     const hasMovesForWorker = moves.some(move =>
       (move.type === 'move_worker' || move.type === 'build_block' || move.type === 'build_dome') &&
       move.workerId === workerId
@@ -103,7 +107,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
   }
 
   // Track component renders for performance monitoring
-  useRenderTracker('Board3D', [storeBoardState, debugState?.useSampleBoard])
+  useRenderTracker('Board3D', [serverBoard, debugState?.useSampleBoard])
 
   const handleCellClick = (gridX: number, gridZ: number) => {
     console.log(`handleCellClick called: grid(${gridX}, ${gridZ})`)
@@ -112,7 +116,7 @@ const Board3D: React.FC<Board3DProps> = React.memo(({
     // Get current game state directly from Zustand store
     const store = useGameStore.getState()
     const gameId = store.gameId
-    const moves = store.currentPlayerMoves
+    const moves = store.gameState?.availableMoves ?? EMPTY_AVAILABLE_MOVES
     const currentSelectedWorker = selectedWorker
 
     console.log('Available moves:', moves)

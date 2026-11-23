@@ -55,7 +55,7 @@ export function applyGameView(gameView: GameView): void {
   const store = useGameStore.getState()
   const { viewer } = gameView
   const isCurrentPlayer = viewer.role === 'player' && viewer.isCurrentPlayer
-  const availableMoves = viewer.role === 'player' ? viewer.availableMoves : []
+  const serverMoves = viewer.role === 'player' ? viewer.availableMoves : []
 
   log('Processing game state - phase:', gameView.phase, 'isCurrentPlayer:', isCurrentPlayer)
 
@@ -72,24 +72,15 @@ export function applyGameView(gameView: GameView): void {
     version: gameView.version,
     board: gameView.board,
     players: gameView.players,
-    availableMoves,
+    availableMoves: isCurrentPlayer ? transformMovesToUIFormat(serverMoves) : [],
     winnerUserId: gameView.winnerUserId ?? undefined,
     winReason: gameView.winReason ?? undefined,
     isCurrentPlayer,
-    isMyTurn: isCurrentPlayer,
     currentUserReady: currentUserPlayer?.isReady ?? false,
     totalPlayers: gameView.maxPlayers
   }
 
   store.setGameState(gameState)
-
-  if (isCurrentPlayer && availableMoves.length > 0) {
-    store.setCurrentPlayerMoves(transformMovesToUIFormat(availableMoves))
-    store.setMyTurn(true)
-  } else {
-    store.setCurrentPlayerMoves([])
-    store.setMyTurn(false)
-  }
 }
 
 /**

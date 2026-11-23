@@ -33,11 +33,19 @@ const seed = ({
   selectedWorker = null as { workerId: number; x: number; y: number } | null,
 }) =>
   useGameStore.setState({
-    boardState: { cells, lastUpdated: 0 },
-    currentPlayerMoves: moves,
     selectedWorker,
     gameId: String(GAME_ID),
-    gameState: { currentSeat: ME } as GameState,
+    gameState: {
+      currentSeat: ME,
+      availableMoves: moves,
+      board: {
+        cells: cells.map((row) => row.map((cell) => ({
+          height: Math.min(cell.buildingLevel, 3),
+          hasDome: cell.buildingLevel >= 4,
+          worker: cell.worker
+        })))
+      }
+    } as GameState,
   })
 
 const render = (onCellClick?: (x: number, y: number) => void, onMoveError?: (message: string) => void) =>
@@ -123,7 +131,7 @@ describe('what the board draws', () => {
   })
 
   it('draws an empty board when the game has not loaded', async () => {
-    useGameStore.setState({ boardState: null })
+    useGameStore.setState({ gameState: null })
 
     const renderer = await render()
 
