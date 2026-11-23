@@ -126,7 +126,11 @@ if ! docker info >/dev/null 2>&1; then
   echo "Docker is not running; the test stack starts a throwaway Postgres container." >&2
   exit 1
 fi
-(cd "$root/packages/client-react" && node scripts/ensure-browser.mjs "${SMOKE_BROWSER_CHANNEL:-}")
+if [ "${SMOKE_BROWSER_SET:-}" = "all" ]; then
+  (cd "$root/packages/client-react" && node scripts/ensure-browsers.mjs)
+else
+  (cd "$root/packages/client-react" && node scripts/ensure-browser.mjs "${SMOKE_BROWSER_CHANNEL:-}")
+fi
 
 failed=0
 case "$mode" in
