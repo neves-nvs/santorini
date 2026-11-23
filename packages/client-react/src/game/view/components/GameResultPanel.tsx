@@ -31,13 +31,9 @@ const GameResultPanel = memo(() => {
       <section className="game-result-panel" role="status" aria-live="polite" aria-atomic="true">
         <span className="game-result-mark" aria-hidden="true">
           {didCurrentUserWin ? (
-            <svg className="game-result-star" viewBox="0 0 24 24" focusable="false">
-              <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" />
-            </svg>
+            <img className="game-result-icon game-result-star" src="/icons/star.svg" alt="" />
           ) : (
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="m5 12.5 4.2 4.2L19 7" />
-            </svg>
+            <img className="game-result-icon" src="/icons/check.svg" alt="" />
           )}
         </span>
         <p className="game-result-eyebrow">Game complete</p>

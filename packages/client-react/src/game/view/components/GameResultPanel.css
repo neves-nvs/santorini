@@ -37,19 +37,15 @@
   font-size: 1.5rem;
 }
 
-.game-result-mark svg {
+.game-result-icon {
+  display: block;
   width: 1.5rem;
   height: 1.5rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
 }
 
-.game-result-mark svg.game-result-star {
-  fill: currentColor;
-  stroke: none;
+.game-result-star {
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .game-result-eyebrow {
