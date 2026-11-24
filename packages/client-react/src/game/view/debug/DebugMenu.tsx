@@ -117,7 +117,7 @@ const DebugMenu = memo(({ debugState, onDebugChange, cameraType, onToggleCamera,
           </strong></div>
           <div><strong>Available Moves:</strong> {gameContext.state.currentPlayerMoves.length}</div>
           <div><strong>Board:</strong> {gameContext.state.gameState?.board ? 'Present' : 'Missing'}</div>
-          <div><strong>Players Ready:</strong> {gameContext.state.gameState?.playersReadyStatus?.filter((p) => p.isReady).length || 0}/{gameContext.state.gameState?.playersReadyStatus?.length || 0}</div>
+          <div><strong>Players Ready:</strong> {gameContext.state.gameState?.players.filter((p) => p.isReady).length || 0}/{gameContext.state.gameState?.players.length || 0}</div>
         </div>
       </div>
 

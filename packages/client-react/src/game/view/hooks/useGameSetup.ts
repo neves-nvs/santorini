@@ -33,7 +33,9 @@ export function useGameSetup(gameId?: string) {
         if (!isCurrent()) return
         // The subscription sends a full snapshot before its acknowledgment.
         await webSocketClient.subscribeToGame(id)
-        if (isCurrent()) setResult({ gameId: id, connectionId, error: null })
+        if (!isCurrent()) return
+        webSocketClient.resetReconnectBackoff()
+        setResult({ gameId: id, connectionId, error: null })
       } catch (error) {
         if (!isCurrent()) return
         if (error instanceof ConnectionInterruptedError) return

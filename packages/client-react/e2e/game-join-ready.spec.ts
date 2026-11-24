@@ -89,12 +89,45 @@ test.describe('Two Player Join and Ready Flow', () => {
       await otherPage.goto(`/game/${gameId}`)
       await expect(page.getByRole('heading', { name: 'Players (2/2)' })).toBeVisible()
       await page.getByRole('button', { name: 'Ready to Start Game' }).click()
+      await expect(otherPage.getByText('Waiting for players (1/2 ready)', { exact: true })).toBeVisible()
+      await expect(otherPage.getByRole('listitem').filter({ hasText: 'P1' }).getByText('Ready', { exact: true })).toBeVisible()
       await otherPage.getByRole('button', { name: 'Ready to Start Game' }).click()
       await expect(page.getByRole('heading', { name: 'Game Lobby' })).toBeHidden()
       await expect(otherPage.getByRole('heading', { name: 'Game Lobby' })).toBeHidden()
     } finally {
       await opponent.close()
     }
+  })
+
+  test('recovers when an idle connection silently stops returning heartbeats', async ({ page }) => {
+    await page.clock.install()
+    let socketsOpened = 0
+    let dropHeartbeat = false
+    let missedPing = false
+    await page.routeWebSocket((url) => url.searchParams.has('ticket'), (socket) => {
+      const server = socket.connectToServer()
+      const first = ++socketsOpened === 1
+      socket.onMessage((raw) => {
+        const message = JSON.parse(String(raw))
+        if (first && dropHeartbeat && message.type === 'ping') {
+          missedPing = true
+          return
+        }
+        server.send(raw)
+      })
+    })
+    await registerUser(page, 'heartbeat-player')
+    await createGame(page)
+    const phase = page.getByText('Waiting for players (1/2 joined)', { exact: true })
+    await expect(phase).toBeVisible()
+    dropHeartbeat = true
+    await page.clock.runFor(15_000)
+    await expect.poll(() => missedPing).toBe(true)
+    await page.clock.runFor(10_000)
+    await expect(page.getByText(/^Reconnecting/)).toBeVisible()
+    await page.clock.runFor(1_000)
+    await expect.poll(() => socketsOpened).toBe(2)
+    await expect(phase).toBeVisible()
   })
 
   test('player 1 UI updates when player 2 joins', async ({ browser }) => {

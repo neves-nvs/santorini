@@ -24,11 +24,6 @@ export interface BuildPosition extends Position {
   serverMoveObject?: Move;
 }
 
-interface PlayerReadyStatus {
-  userId: number;
-  isReady: boolean;
-}
-
 /**
  * Client-side game state that combines server view with local state
  */
@@ -53,8 +48,6 @@ export interface GameState {
 
   // Ready status fields
   currentUserReady?: boolean;
-  playersReadyStatus?: PlayerReadyStatus[];
-  readyCount?: number;
   totalPlayers?: number;
 
 }

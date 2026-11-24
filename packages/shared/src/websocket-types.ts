@@ -10,6 +10,7 @@ import type { ErrorCode } from './protocol.ts';
 
 export const WS_MESSAGE_TYPES = {
   // Client -> Server
+  PING: 'ping',
   SUBSCRIBE_GAME: 'subscribe_game',
   JOIN_GAME: 'join_game',
   MAKE_MOVE: 'make_move',
@@ -33,6 +34,7 @@ interface Command<Type extends string, Payload> {
 }
 
 export type ClientMessage =
+  | Command<typeof WS_MESSAGE_TYPES.PING, Record<string, never>>
   | Command<typeof WS_MESSAGE_TYPES.JOIN_GAME, { gameId: number }>
   | Command<typeof WS_MESSAGE_TYPES.LEAVE_GAME, { gameId: number }>
   | Command<typeof WS_MESSAGE_TYPES.SUBSCRIBE_GAME, { gameId: number }>
@@ -49,7 +51,7 @@ export interface WireError {
   details?: { issues: { path: string[]; message: string }[] };
 }
 
-/** The result of a command. Every command answers with the `gameId` it acted on, except `set_ready` and `make_move`. */
+/** The result of a command. Ping, set_ready and make_move answer with an empty payload. */
 export interface OkMessage {
   type: typeof WS_MESSAGE_TYPES.OK;
   id?: string;

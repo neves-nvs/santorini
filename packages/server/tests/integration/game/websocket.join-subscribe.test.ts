@@ -67,6 +67,29 @@ describe("Join and Subscribe Integration Tests", () => {
     await db.destroy();
   });
 
+  test("a heartbeat is answered before joining a game", async () => {
+    const owner = await helpers.createTestUserWithLogin();
+    const connection = await connectUser(owner.token);
+    connection.ws.send(JSON.stringify({ type: "ping", id: "heartbeat", payload: {} }));
+    expect(await waitFor(connection, WS_MESSAGE_TYPES.OK, (m) => m.id === "heartbeat")).toEqual({
+      type: "ok",
+      id: "heartbeat",
+      payload: {},
+    });
+  });
+
+  test("a subscription to an unknown game can be retried on the same socket", async () => {
+    const owner = await helpers.createTestUserWithLogin();
+    const gameId = await helpers.createTestGame(owner.token);
+    const connection = await connectUser(owner.token);
+    connection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, gameId + 10000);
+    await waitFor(connection, WS_MESSAGE_TYPES.ERROR);
+    connection.send(WS_MESSAGE_TYPES.SUBSCRIBE_GAME, gameId);
+    const state = await waitFor(connection, WS_MESSAGE_TYPES.GAME_STATE);
+    expect(state.payload.gameId).toBe(gameId);
+    await waitFor(connection, WS_MESSAGE_TYPES.OK);
+  });
+
   test("joining a game does not subscribe the socket to its updates", async () => {
     const [owner, guest] = await Promise.all([helpers.createTestUserWithLogin(), helpers.createTestUserWithLogin()]);
     const gameId = await helpers.createTestGame(owner.token);
