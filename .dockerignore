@@ -1,6 +1,7 @@
 # The images are built from the repository root: send only what the Dockerfiles copy.
 *
 !package.json
+!LICENSE
 !pnpm-lock.yaml
 !pnpm-workspace.yaml
 !packages
