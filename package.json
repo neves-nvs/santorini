@@ -2,10 +2,16 @@
   "name": "santorini",
   "private": true,
   "description": "Santorini Online: the web version of the board game",
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
-    "build:libraries": "npm run build -w @santorini/engine && npm run build -w @santorini/shared"
+    "build": "pnpm -r run build",
+    "build:libraries": "pnpm --filter @santorini/shared... -r run build",
+    "build:server": "pnpm --filter santorini-backend... -r run build",
+    "build:client": "pnpm --filter santorini-client-react... -r run build",
+    "dev": "scripts/dev",
+    "check": "scripts/check"
+  },
+  "packageManager": "pnpm@12.23.0",
+  "engines": {
+    "node": ">=26"
   }
 }

@@ -15,9 +15,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "node ../../node_modules/typescript-native/bin/tsc",
-    "dev": "node ../../node_modules/typescript-native/bin/tsc --watch --preserveWatchOutput",
-    "typecheck": "node ../../node_modules/typescript-native/bin/tsc --noEmit && node ../../node_modules/typescript-native/bin/tsc --noEmit -p tests/tsconfig.json",
+    "build": "node ./node_modules/typescript-native/bin/tsc",
+    "dev": "node ./node_modules/typescript-native/bin/tsc --watch --preserveWatchOutput",
+    "typecheck": "node ./node_modules/typescript-native/bin/tsc --noEmit && node ./node_modules/typescript-native/bin/tsc --noEmit -p tests/tsconfig.json",
     "test": "vitest run",
     "clean": "rm -rf dist"
   },

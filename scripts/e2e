@@ -12,5 +12,5 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export AUTH_RATE_LIMIT="${AUTH_RATE_LIMIT:-1000}"
 export RATE_LIMIT="${RATE_LIMIT:-100000}"
 export SMOKE_BROWSER_SET=all
-export SMOKE_TEST_COMMAND="npx playwright test"
+export SMOKE_TEST_COMMAND="pnpm exec playwright test"
 exec "$here/smoke" scripts

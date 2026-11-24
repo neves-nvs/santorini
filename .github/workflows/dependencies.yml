@@ -10,7 +10,8 @@ on:
       - packages/shared/**
       - packages/engine/**
       - package.json
-      - package-lock.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
       - .github/workflows/dependencies.yml
   pull_request:
     paths:
@@ -19,7 +20,8 @@ on:
       - packages/shared/**
       - packages/engine/**
       - package.json
-      - package-lock.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
       - .github/workflows/dependencies.yml
 
 permissions:
@@ -42,17 +44,21 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.1.1
+
       - name: Set up Node.js
         uses: actions/setup-node@v7.1.0
         with:
           node-version: 26
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build the shared and engine packages
-        run: npm run build:libraries
+        run: pnpm run build:libraries
 
       - name: Check for unused and unlisted dependencies
-        run: npm run knip
+        run: pnpm run knip
         working-directory: packages/${{ matrix.package }}

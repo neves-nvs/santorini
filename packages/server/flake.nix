@@ -13,20 +13,21 @@
       in {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            nodejs_26 # includes npm
+            nodejs_26
+            pnpm
             postgresql
           ];
 
           shellHook = ''
             if [[ $- == *i* ]]; then
               echo "Santorini server development environment"
-              echo "node: $(node --version), npm: $(npm --version)"
+              echo "node: $(node --version), pnpm: $(pnpm --version)"
               echo ""
               echo "Available commands:"
-              echo "  npm run dev              - Start development server"
-              echo "  npm run test             - Run all tests"
-              echo "  npm run test:unit        - Run unit tests"
-              echo "  npm run test:integration - Run integration tests"
+              echo "  pnpm run dev              - Start development server"
+              echo "  pnpm run test             - Run all tests"
+              echo "  pnpm run test:unit        - Run unit tests"
+              echo "  pnpm run test:integration - Run integration tests"
               echo ""
             fi
           '';

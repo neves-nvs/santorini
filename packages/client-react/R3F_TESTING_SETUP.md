@@ -51,7 +51,7 @@ Comprehensive example tests demonstrating:
 
 ```bash
 cd packages/client-react
-npm install
+pnpm install
 ```
 
 This will install `@react-three/test-renderer` and all dependencies.
@@ -60,13 +60,13 @@ This will install `@react-three/test-renderer` and all dependencies.
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run only R3F tests
-npm test -- official-renderer
+pnpm test official-renderer
 
 # Run specific test file
-npx vitest run src/__tests__/components/r3f/official-renderer.test.tsx
+pnpm exec vitest run src/__tests__/components/r3f/official-renderer.test.tsx
 ```
 
 ### Writing Tests
@@ -225,8 +225,8 @@ it('should render', async () => {
 
 ## Next Steps
 
-1. **Install dependencies**: Run `npm install` in `packages/client-react`
-2. **Run example tests**: `npm test -- official-renderer`
+1. **Install dependencies**: Run `pnpm install` in `packages/client-react`
+2. **Run example tests**: `pnpm test official-renderer`
 3. **Write tests for existing components**: Start with `GamePieces.tsx`
 4. **Migrate legacy tests**: Convert existing R3F tests to use official renderer
 

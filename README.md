@@ -76,19 +76,34 @@ This project is licensed under the **AGPL-3.0 License**. See the [LICENSE](./LIC
 
 ## Running it locally
 
-You need [Docker](https://www.docker.com/) (for PostgreSQL) and either [Node.js](https://nodejs.org/) 26 or [Nix](https://nixos.org/). The scripts start the Nix shell from `packages/server` by themselves when `npm` is not on your `PATH`. With [direnv](https://direnv.net/), run `direnv allow` in the repo root or in a package: it loads Node 26 from the Nix flake and prints the commands for that folder, or tells you what to install if Nix with flakes is not available.
+You need [Docker](https://www.docker.com/) (for PostgreSQL) and either [Node.js](https://nodejs.org/) 26 with pnpm 12.23.0 or [Nix](https://nixos.org/). When using Node directly, install pnpm first with `npm install --global pnpm@12.23.0`. The scripts start the Nix shell from `packages/server` by themselves when `pnpm` is not on your `PATH`. With [direnv](https://direnv.net/), run `direnv allow` in the repo root or in a package: it loads Node 26 and pnpm from the Nix flake and prints the commands for that folder, or tells you what to install if Nix with flakes is not available.
 
 ```bash
 git clone https://github.com/neves-nvs/santorini.git
 cd santorini
-scripts/install   # npm ci once at the root (the packages are npm workspaces), then builds packages/shared
+scripts/install   # frozen pnpm install, then builds engine and shared in dependency order
 scripts/dev       # starts PostgreSQL in Docker, runs migrations, then the server and client
 ```
 
 - Server: <http://localhost:3000>
 - Client: <http://localhost:5174>
 
-`scripts/dev` uses local development defaults (see the scripts for the variables). Running `npm run dev` yourself in `packages/server` and `packages/client-react` works without any setup too (after `scripts/install`; `packages/shared` is a built package, so run `npm run dev` there as well, or `npm run build` after changing it): the server listens on port 3000 and the client reaches it through the Vite proxy (`/api` and `/ws`); see [docs/dev-networking.md](./docs/dev-networking.md). The database container keeps running after you stop it; stop it with `scripts/db-down`.
+`scripts/dev` uses local development defaults (see the scripts for the variables). Running `pnpm run dev` yourself in `packages/server` and `packages/client-react` works without any setup too (after `scripts/install`; `packages/shared` is a built package, so run `pnpm run dev` there as well, or `pnpm run build` after changing it): the server listens on port 3000 and the client reaches it through the Vite proxy (`/api` and `/ws`); see [docs/dev-networking.md](./docs/dev-networking.md). The database container keeps running after you stop it; stop it with `scripts/db-down`.
+
+### Workspace commands
+
+The root `packageManager` field pins the version used locally, in CI and in Docker. There is one `pnpm-lock.yaml`; internal dependencies use `workspace:*` and each package can access only the dependencies it declares.
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build                # engine → shared → server and client
+pnpm build:server         # server and its workspace dependencies
+pnpm build:client         # client and its workspace dependencies
+pnpm --filter santorini-backend add <dependency>
+pnpm --filter santorini-client-react run type-check
+```
+
+`pnpm dev` starts the full development stack and `pnpm check` runs the local checks. The server Docker build uses `pnpm deploy --prod` to copy only compiled server files and production dependencies, including built workspace libraries. The frontend image contains only nginx and static assets.
 
 ### With Docker
 

@@ -13,13 +13,14 @@
       in rec {
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
-            nodejs_26 # includes npm
+            nodejs_26
+            pnpm
           ];
 
           shellHook = ''
             if [[ $- == *i* ]]; then
               echo "Santorini React client development environment"
-              echo "node: $(node --version), npm: $(npm --version)"
+              echo "node: $(node --version), pnpm: $(pnpm --version)"
               echo ""
             fi
           '';

@@ -6,7 +6,7 @@ set -euo pipefail
 #
 #   scripts/smoke [scripts|bare]
 #     scripts  start everything with scripts/dev
-#     bare     start the server and the client with plain `npm run dev`,
+#     bare     start the server and the client with plain `pnpm run dev`,
 #              without PORT or VITE_* settings
 #   With no argument both run. A throwaway database container is used.
 #   Set SMOKE_BROWSER_CHANNEL=chrome to use an installed Google Chrome instead of
@@ -15,7 +15,7 @@ set -euo pipefail
 #   app (scripts/e2e uses it to run the whole suite).
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-if ! command -v npm >/dev/null 2>&1; then
+if ! command -v pnpm >/dev/null 2>&1; then
   exec nix develop "$root/packages/server" --command "$0" "$@"
 fi
 
@@ -74,13 +74,13 @@ start_bare() {
 
   (
     cd "$root/packages/server"
-    exec env -u PORT JWT_SECRET=smoke DB_HOST=127.0.0.1 DB_USER=postgres DB_PASSWORD=postgres DB_DATABASE=santorini npm run dev
+    exec env -u PORT JWT_SECRET=smoke DB_HOST=127.0.0.1 DB_USER=postgres DB_PASSWORD=postgres DB_DATABASE=santorini pnpm run dev
   ) >"$log_dir/bare-server.log" 2>&1 &
   pids+=("$!")
 
   (
     cd "$root/packages/client-react"
-    exec env -u VITE_API_URL -u VITE_WS_URL npm run dev
+    exec env -u VITE_API_URL -u VITE_WS_URL pnpm run dev
   ) >"$log_dir/bare-client.log" 2>&1 &
   pids+=("$!")
 }
@@ -110,7 +110,7 @@ run_mode() {
   fi
 
   local status=0
-  (cd "$root/packages/client-react" && bash -c "${SMOKE_TEST_COMMAND:-npm run test:smoke}") || status=1
+  (cd "$root/packages/client-react" && bash -c "${SMOKE_TEST_COMMAND:-pnpm run test:smoke}") || status=1
   if [ "$status" -ne 0 ]; then
     show_logs
   fi

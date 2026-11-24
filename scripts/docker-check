@@ -47,11 +47,25 @@ env_args=(
 )
 
 echo "== image contents"
-unwanted="$(docker run --rm --entrypoint sh "$server_image" -c '
-  cd /app
-  find . -path ./node_modules -prune -o \( -name "*.test.*" -o -name tests \) -print
-  ls -d node_modules/typescript node_modules/jest 2>/dev/null || true
-')"
+unwanted="$(docker run --rm -i --entrypoint node "$server_image" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const forbidden = /^(typescript|eslint|jest|@jest\/|vitest|vite|react|testcontainers|@playwright\/|@testcontainers\/|@vitest\/)/;
+function inspect(directory, dependencies) {
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (!dependencies && (entry.name === "tests" || entry.name.includes(".test."))) console.log(file);
+    if (entry.isDirectory()) inspect(file, dependencies);
+    if (dependencies && entry.isFile() && entry.name === "package.json") {
+      const { name = "" } = JSON.parse(fs.readFileSync(file, "utf8"));
+      if (forbidden.test(name)) console.log(name);
+    }
+  }
+}
+inspect("/app/dist", false);
+inspect("/app/node_modules", true);
+NODE
+)"
 if [ -n "$unwanted" ]; then
   echo "FAIL test files or dev dependencies in the server image:" >&2
   echo "$unwanted" >&2

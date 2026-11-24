@@ -17,7 +17,8 @@ on:
       - packages/shared/**
       - packages/engine/**
       - package.json
-      - package-lock.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
       - .github/workflows/docker.yml
   pull_request:
     paths:
@@ -31,7 +32,8 @@ on:
       - packages/shared/**
       - packages/engine/**
       - package.json
-      - package-lock.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
       - .github/workflows/docker.yml
 
 permissions:

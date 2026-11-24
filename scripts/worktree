@@ -23,7 +23,7 @@ new_worktree() {
   [ ! -e "$dir" ] || die "$dir already exists."
   git -C "$main_dir" fetch -q origin
   git -C "$main_dir" worktree add --no-track -b "$branch" "$dir" origin/main >&2
-  (cd "$dir" && scripts/install --if-needed) >&2
+  (cd "$dir" && scripts/install) >&2
   echo "$dir"
 }
 

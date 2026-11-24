@@ -18,16 +18,16 @@
     "api"
   ],
   "scripts": {
-    "build": "node ../../node_modules/typescript-native/bin/tsc",
-    "dev": "node ../../node_modules/typescript-native/bin/tsc --watch --preserveWatchOutput",
-    "typecheck": "node ../../node_modules/typescript-native/bin/tsc --noEmit",
+    "build": "node ./node_modules/typescript-native/bin/tsc",
+    "dev": "node ./node_modules/typescript-native/bin/tsc --watch --preserveWatchOutput",
+    "typecheck": "node ./node_modules/typescript-native/bin/tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "devDependencies": {
     "typescript-native": "npm:typescript@^7.0.2"
   },
   "dependencies": {
-    "@santorini/engine": "*",
+    "@santorini/engine": "workspace:*",
     "zod": "^4.6.7"
   }
 }

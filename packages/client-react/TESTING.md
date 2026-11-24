@@ -17,22 +17,22 @@ This guide explains how to test the React Three Fiber frontend, including unit t
 
 ```bash
 # Run all unit tests
-npm test
+pnpm test
 
 # Run unit tests with UI
-npm run test:ui
+pnpm run test:ui
 
 # Run unit tests with coverage
-npm run test:coverage
+pnpm run test:coverage
 
 # Run E2E tests
-npm run test:e2e
+pnpm run test:e2e
 
 # Run E2E tests with UI (interactive)
-npm run test:e2e:ui
+pnpm run test:e2e:ui
 
 # Run E2E tests in headed mode (see browser)
-npm run test:e2e:headed
+pnpm run test:e2e:headed
 ```
 
 ---
@@ -80,13 +80,13 @@ describe('ApiService', () => {
 
 ```bash
 # Run tests matching a pattern
-npm test -- board-types
+pnpm test board-types
 
 # Run tests in a specific file
-npm test -- src/__tests__/services/ApiService.test.ts
+pnpm test src/__tests__/services/ApiService.test.ts
 
 # Run in watch mode
-npm test -- --watch
+pnpm test --watch
 ```
 
 ---
@@ -132,7 +132,7 @@ Playwright config is in `playwright.config.ts`:
 
 ```bash
 # Open last test report
-npx playwright show-report
+pnpm exec playwright show-report
 ```
 
 ---
@@ -468,7 +468,7 @@ describe('MyComponent', () => {
 ### 3. Run Test
 
 ```bash
-npm test -- MyComponent
+pnpm test MyComponent
 ```
 
 ---

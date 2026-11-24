@@ -23,7 +23,7 @@ Santorini Online is a real-time multiplayer board game built with a Node.js back
 - **Testing**: Vitest
 
 ### Shared
-- **Package**: `@santorini/shared` in `packages/shared/`, compiled to `dist/`. The repository is an npm workspace (one `package-lock.json` at the root), so the server and the client get it as a linked dependency. Both import from `@santorini/shared`.
+- **Package**: `@santorini/shared` in `packages/shared/`, compiled to `dist/`. The repository is a pnpm workspace (one `pnpm-lock.yaml` at the root), so the server and the client get it as a linked dependency. Both import from `@santorini/shared`.
 - **Type Definitions**: game views, move commands and the shapes the server sends
 - **WebSocket Protocol**: Typed message contracts (`ClientMessage`, `ServerMessage`)
 
@@ -223,10 +223,10 @@ error             { message: string }
 - **Unit Tests**: Game logic, move validation
 - **Integration Tests**: Full game flow with Testcontainers
 - **Commands**:
-  - `npm run test` - All tests
-  - `npm run test:unit` - Unit tests only
-  - `npm run test:integration` - Integration tests (requires Docker)
-  - `npm run test:concurrency` - Simultaneous requests against a real database, to catch races (requires Docker; not part of `scripts/check`)
+  - `pnpm run test` - All tests
+  - `pnpm run test:unit` - Unit tests only
+  - `pnpm run test:integration` - Integration tests (requires Docker)
+  - `pnpm run test:concurrency` - Simultaneous requests against a real database, to catch races (requires Docker; not part of `scripts/check`)
 
 ### Frontend
 - **Unit Tests**: Utility functions, state management
@@ -256,25 +256,15 @@ VITE_WS_URL=ws://localhost:3000
 
 ### Build & Run
 
-**Development**
+From the repository root:
+
 ```bash
-# Backend
-cd packages/server
-npm run dev          # Port 3000
-
-# Frontend
-cd packages/client-react
-npm run dev          # Port 5173
-```
-
-**Production**
-```bash
-# Backend
-npm run build
-npm start
-
-# Frontend
-npm run build        # Static files in dist/
+scripts/install          # Frozen install and dependency-ordered library builds
+pnpm dev                 # Database, library watchers, server (:3000), client (:5174)
+pnpm build               # Engine → shared → server and client
+pnpm build:server        # Server and its workspace dependencies
+pnpm build:client        # Client and its workspace dependencies; static files in packages/client-react/dist
+pnpm --filter santorini-backend start  # Run the compiled server
 ```
 
 ## Completion Criteria
