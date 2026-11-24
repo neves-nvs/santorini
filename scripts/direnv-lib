@@ -7,6 +7,6 @@ santorini_env() {
     use flake "$flake_dir"
     log_status "$commands"
   else
-    log_error "Nix with flakes was not found, so no tools were loaded. Install Node.js 26 and Docker, or Nix (https://nixos.org/download) with flakes enabled. Commands: $commands"
+    log_error "Nix with flakes was not found, so no tools were loaded. Install Node.js 26, pnpm 12.23.0 and Docker, or Nix (https://nixos.org/download) with flakes enabled. Commands: $commands"
   fi
 }

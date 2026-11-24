@@ -1,6 +1,6 @@
 import { defineConfig } from "vitest/config";
 
-// Not part of `npm test`, CI or scripts/check: run it on purpose with `npm run test:concurrency` (needs Docker).
+// Not part of `pnpm test`, CI or scripts/check: run it on purpose with `pnpm run test:concurrency` (needs Docker).
 export default defineConfig({
   resolve: { alias: { "@tests": `${import.meta.dirname}/tests`, "@": `${import.meta.dirname}/src` } },
   test: {

@@ -6,7 +6,7 @@ import { createInterface } from "node:readline/promises";
 import { chromium } from "@playwright/test";
 
 const channel = process.argv[2] || undefined;
-const installCommand = "npx playwright install chromium";
+const installCommand = "pnpm exec playwright install chromium";
 
 async function canLaunch() {
   try {
@@ -47,7 +47,7 @@ if (!(await canLaunch())) {
     fail(`The "${channel}" browser is not installed. Install it, or unset the channel to use Playwright's Chromium.`);
   }
   if (await confirmInstall()) {
-    const installed = spawnSync("npx", ["playwright", "install", "chromium"], { stdio: "inherit" });
+    const installed = spawnSync("pnpm", ["exec", "playwright", "install", "chromium"], { stdio: "inherit" });
     if (installed.status === 0 && (await canLaunch())) {
       process.exit(0);
     }

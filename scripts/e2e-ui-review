@@ -3,5 +3,5 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export SMOKE_BROWSER_SET=all
-export SMOKE_TEST_COMMAND="npx playwright test e2e/ui-review.spec.ts"
+export SMOKE_TEST_COMMAND="pnpm exec playwright test e2e/ui-review.spec.ts"
 exec "$here/smoke" scripts

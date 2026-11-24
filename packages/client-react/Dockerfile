@@ -1,27 +1,22 @@
 # syntax=docker/dockerfile:1
-
-# Build from the repository root with scripts/docker-build (docker-bake.hcl). The packages are npm workspaces
-# that share one lockfile, so the build stage installs from the root and builds packages/engine and packages/shared
-# (which depends on it) before the client.
 ARG NODE_VERSION=26
 
 FROM node:${NODE_VERSION}-slim AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN npm install --global "$(node -p 'require("./package.json").packageManager')"
 COPY packages/shared/package.json packages/shared/
 COPY packages/engine/package.json packages/engine/
 COPY packages/server/package.json packages/server/
 COPY packages/client-react/package.json packages/client-react/
-RUN --mount=type=cache,target=/root/.npm npm ci -w packages/engine -w packages/shared -w packages/client-react
+RUN --mount=type=cache,id=santorini-pnpm,target=/pnpm/store \
+  pnpm --store-dir=/pnpm/store --filter santorini-client-react... install --frozen-lockfile
 COPY packages/engine packages/engine
-RUN npm run build -w packages/engine
 COPY packages/shared packages/shared
-RUN npm run build -w packages/shared
 COPY packages/client-react packages/client-react
-WORKDIR /app/packages/client-react
 ENV VITE_API_URL=/api
 ENV VITE_WS_URL=/ws
-RUN npx vite build
+RUN pnpm run build:client
 
 FROM nginxinc/nginx-unprivileged:1-alpine
 ENV BACKEND_URL=http://server:3000

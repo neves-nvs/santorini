@@ -6,10 +6,10 @@ set -uo pipefail
 # The server integration tests need Docker and are skipped, with a note, when it is not running.
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-if ! command -v npm >/dev/null 2>&1; then
+if ! command -v pnpm >/dev/null 2>&1; then
   exec nix develop "$root/packages/server" --command "$0" "$@"
 fi
-"$root/scripts/install" --if-needed
+"$root/scripts/install"
 
 failed=0
 log="$(mktemp)"
@@ -28,29 +28,29 @@ step() {
 }
 
 check_shared() {
-  step "shared types" shared npm run typecheck
+  step "shared types" shared pnpm run typecheck
 }
 
 check_engine() {
-  step "engine types" engine npm run typecheck
-  step "engine unit tests" engine npm test
+  step "engine types" engine pnpm run typecheck
+  step "engine unit tests" engine pnpm test
 }
 
 check_server() {
-  step "server eslint" server npx eslint src tests
-  step "server prettier" server npx prettier --check 'src/**/*.ts' 'tests/**/*.ts'
-  step "server types" server npm run typecheck
-  step "server unit tests" server npm run test:unit
+  step "server eslint" server pnpm exec eslint src tests
+  step "server prettier" server pnpm exec prettier --check 'src/**/*.ts' 'tests/**/*.ts'
+  step "server types" server pnpm run typecheck
+  step "server unit tests" server pnpm run test:unit
   if docker info >/dev/null 2>&1; then
-    step "server integration tests" server npm run test:integration
+    step "server integration tests" server pnpm run test:integration
   else
     echo "skip  server integration tests (Docker is not running)"
   fi
 }
 
 check_client() {
-  step "client eslint" client-react npm run lint
-  step "client types" client-react npm run type-check
+  step "client eslint" client-react pnpm run lint
+  step "client types" client-react pnpm run type-check
   echo "skip  client unit tests (known failures, CI does not gate on them yet)"
 }
 

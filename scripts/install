@@ -1,38 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# scripts/install               npm ci at the repository root (one workspace install), then build packages/engine and packages/shared
-# scripts/install --if-needed   npm ci only when the installed dependencies do not match the package.json files and the
-#                               lockfile, and build a library package only when its dist is missing or older than its sources
-
+# pnpm checks the manifests and lockfile and reuses the existing installation.
+# Rebuild libraries in dependency order so downstream packages see current output.
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-if ! command -v npm >/dev/null 2>&1; then
+if ! command -v pnpm >/dev/null 2>&1; then
   exec nix develop "$root/packages/server" --command "$0" "$@"
 fi
-export NPM_CONFIG_CACHE="${NPM_CONFIG_CACHE:-$root/.npm}"
-export npm_config_audit="${npm_config_audit:-false}"
-export npm_config_fund="${npm_config_fund:-false}"
-export npm_config_update_notifier="${npm_config_update_notifier:-false}"
-
-only_if_needed=false
-if [ "${1:-}" = "--if-needed" ]; then
-  only_if_needed=true
-fi
-
-library_is_built() {
-  [ -f dist/index.js ] && [ -z "$(find src package.json tsconfig.json -newer dist/index.js -print -quit)" ]
-}
 
 cd "$root"
-if [ "$only_if_needed" = false ] || [ ! -d node_modules ] || ! npm ls --depth=0 --workspaces --include-workspace-root >/dev/null 2>&1; then
-  echo "npm ci"
-  npm ci
-fi
-
-for library in engine shared; do
-  cd "$root/packages/$library"
-  if [ "$only_if_needed" = false ] || ! library_is_built; then
-    echo "build: packages/$library"
-    npm run build
-  fi
-done
+pnpm install --frozen-lockfile --prefer-offline
+pnpm run build:libraries

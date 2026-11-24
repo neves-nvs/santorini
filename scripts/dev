@@ -3,7 +3,11 @@ set -euo pipefail
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
-"$root/scripts/install" --if-needed
+if ! command -v pnpm >/dev/null 2>&1; then
+  exec nix develop "$root/packages/server" --command "$0" "$@"
+fi
+
+"$root/scripts/install"
 "$root/scripts/db-up"
 "$root/scripts/migrate"
 
@@ -16,10 +20,10 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-(cd "$root/packages/engine" && exec npm run dev) &
+(cd "$root/packages/engine" && exec pnpm run dev) &
 pids+=("$!")
 
-(cd "$root/packages/shared" && exec npm run dev) &
+(cd "$root/packages/shared" && exec pnpm run dev) &
 pids+=("$!")
 
 "$root/scripts/server" &

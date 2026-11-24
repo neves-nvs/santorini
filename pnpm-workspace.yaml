@@ -1,0 +1,29 @@
+packages:
+  - packages/*
+
+# Some third-party declarations omit their @types peers. Keep only declarations
+# visible inside pnpm's virtual store; workspace roots remain isolated.
+hoistPattern:
+  - "@types/*"
+
+# tunnel-rat imports React but lists it only as a development dependency.
+packageExtensions:
+  tunnel-rat@0.1.2:
+    peerDependencies:
+      react: ">=18"
+
+# Keep the existing minimatch overrides at the workspace level.
+overrides:
+  glob>minimatch: ^11.0.8
+  "@typescript-eslint/typescript-estree>minimatch": ^11.0.8
+
+allowBuilds:
+  esbuild: true
+  cpu-features: false
+  fsevents: false
+  protobufjs: false
+  ssh2: false
+
+permissions:
+  tsdown:
+    skills: false

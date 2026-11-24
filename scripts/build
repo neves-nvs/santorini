@@ -2,12 +2,9 @@
 set -euo pipefail
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-if ! command -v npm >/dev/null 2>&1; then
+if ! command -v pnpm >/dev/null 2>&1; then
   exec nix develop "$root/packages/server" --command "$0" "$@"
 fi
 
 cd "$root"
-for package in shared engine server client-react; do
-  echo "build: packages/$package"
-  npm run build -w "packages/$package"
-done
+pnpm run build

@@ -7,7 +7,7 @@ const browsers = [
   ['WebKit', webkit],
   ['Firefox', firefox],
 ]
-const installCommand = 'npx playwright install chromium webkit firefox'
+const installCommand = 'pnpm exec playwright install chromium webkit firefox'
 
 async function missingBrowsers() {
   const missing = []
@@ -46,7 +46,7 @@ if (!(await confirmInstall(missing))) {
   process.exit(1)
 }
 
-const installed = spawnSync('npx', ['playwright', 'install', 'chromium', 'webkit', 'firefox'], { stdio: 'inherit' })
+const installed = spawnSync('pnpm', ['exec', 'playwright', 'install', 'chromium', 'webkit', 'firefox'], { stdio: 'inherit' })
 if (installed.status !== 0 || (await missingBrowsers()).length > 0) {
   console.error('One or more Playwright browser engines could not be installed.')
   process.exit(1)

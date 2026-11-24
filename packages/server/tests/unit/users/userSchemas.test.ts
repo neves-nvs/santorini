@@ -1,4 +1,4 @@
-import { MAX_PASSWORD_BYTES, createUserRequestSchema, loginRequestSchema } from "@santorini/shared";
+import { createUserRequestSchema, loginRequestSchema, MAX_PASSWORD_BYTES } from "@santorini/shared";
 
 const composed = "caf\u00E9-secret-1";
 const decomposed = "cafe\u0301-secret-1";

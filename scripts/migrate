@@ -2,7 +2,7 @@
 set -euo pipefail
 
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-if ! command -v npm >/dev/null 2>&1; then
+if ! command -v pnpm >/dev/null 2>&1; then
   exec nix develop "$root/packages/server" --command "$0" "$@"
 fi
 export PORT="${PORT:-3000}"
@@ -14,4 +14,4 @@ export DB_DATABASE="${DB_DATABASE:-santorini}"
 export DB_PASSWORD="${DB_PASSWORD:-postgres}"
 
 cd "$root/packages/server"
-npm run migrate
+pnpm run migrate
