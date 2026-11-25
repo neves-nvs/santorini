@@ -103,7 +103,7 @@ pnpm --filter santorini-backend add <dependency>
 pnpm --filter santorini-client-react run type-check
 ```
 
-`pnpm dev` starts the full development stack and `pnpm check` runs the local checks. The server Docker build uses `pnpm deploy --prod` to copy only compiled server files and production dependencies, including built workspace libraries. The frontend image contains only nginx and static assets.
+`pnpm dev` starts the full development stack and `pnpm check` runs the local checks. The server Docker build bundles and minifies its entry points, migrations and production dependencies with tsdown. The Distroless Node 26 runtime image contains `dist` and the package manifest, with no `node_modules`, npm or shell. Source maps preserve useful stack traces without embedding the source files. The frontend image contains only nginx and static assets.
 
 ### With Docker
 

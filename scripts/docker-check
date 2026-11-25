@@ -50,34 +50,34 @@ echo "== image contents"
 unwanted="$(docker run --rm -i --entrypoint node "$server_image" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
-const forbidden = /^(typescript|eslint|jest|@jest\/|vitest|vite|react|testcontainers|@playwright\/|@testcontainers\/|@vitest\/)/;
-function inspect(directory, dependencies) {
+function inspect(directory) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
-    if (!dependencies && (entry.name === "tests" || entry.name.includes(".test."))) console.log(file);
-    if (entry.isDirectory()) inspect(file, dependencies);
-    if (dependencies && entry.isFile() && entry.name === "package.json") {
-      const { name = "" } = JSON.parse(fs.readFileSync(file, "utf8"));
-      if (forbidden.test(name)) console.log(name);
-    }
+    if (entry.name === "tests" || entry.name.includes(".test.")) console.log(file);
+    if (entry.isDirectory()) inspect(file);
   }
 }
-inspect("/app/dist", false);
-inspect("/app/node_modules", true);
+for (const directory of ["/app/node_modules", "/app/src", "/app/packages"]) {
+  if (fs.existsSync(directory)) console.log(directory);
+}
+inspect("/app/dist");
+for (const file of ["/app/LICENSE", "/app/dist/THIRD_PARTY_NOTICES.txt"]) {
+  if (!fs.existsSync(file) || fs.statSync(file).size === 0) console.log(`missing license notice: ${file}`);
+}
 NODE
 )"
 if [ -n "$unwanted" ]; then
-  echo "FAIL test files or dev dependencies in the server image:" >&2
+  echo "FAIL unbundled dependencies, source, or tests in the server image:" >&2
   echo "$unwanted" >&2
   exit 1
 fi
-echo "ok   no test files or dev dependencies"
-for image in "$server_image" "$client_image"; do
-  if [ "$(docker run --rm --entrypoint id "$image" -u)" = 0 ]; then
-    echo "FAIL $image runs as root" >&2
-    exit 1
-  fi
-done
+echo "ok   bundled server has no node_modules, source, or tests"
+server_uid="$(docker run --rm --entrypoint node "$server_image" -p 'process.getuid()')"
+client_uid="$(docker run --rm --entrypoint id "$client_image" -u)"
+if [ "$server_uid" = 0 ] || [ "$client_uid" = 0 ]; then
+  echo "FAIL a production image runs as root" >&2
+  exit 1
+fi
 echo "ok   both images run as a non-root user"
 
 echo "== migrations"
@@ -151,3 +151,20 @@ expect_status 401 "POST /api/ws-ticket without a session" -X POST "$base/api/ws-
 ticket="$(curl -s -m 5 -b "$cookies" -X POST "$base/api/ws-ticket" | sed -n 's/.*"ticket":"\([^"]*\)".*/\1/p')"
 expect_status 101 "WebSocket upgrade with a ticket" "${websocket[@]}" "$base/ws?ticket=$ticket"
 expect_status 401 "WebSocket upgrade with the same ticket again" "${websocket[@]}" "$base/ws?ticket=$ticket"
+
+# Run inside the production image so the check cannot resolve host dependencies.
+echo "== live game in the packaged server"
+docker run --rm -i --network "$name" --entrypoint node "$server_image" \
+  --input-type=module - "http://$name-web:8080" < "$root/scripts/docker-game-check.mjs"
+
+for _ in $(seq 1 35); do
+  server_health="$(docker inspect --format '{{.State.Health.Status}}' "$name-app")"
+  if [ "$server_health" = healthy ]; then break; fi
+  sleep 1
+done
+if [ "$server_health" != healthy ]; then
+  echo "FAIL the server image healthcheck: $server_health" >&2
+  docker inspect --format '{{json .State.Health}}' "$name-app" >&2
+  exit 1
+fi
+echo "ok   the server image healthcheck reports healthy"

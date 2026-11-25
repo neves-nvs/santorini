@@ -11,6 +11,7 @@ on:
       - .dockerignore
       - scripts/docker-build
       - scripts/docker-check
+      - scripts/docker-game-check.mjs
       - .github/scripts/summarize-images
       - packages/server/**
       - packages/client-react/**
@@ -26,6 +27,7 @@ on:
       - .dockerignore
       - scripts/docker-build
       - scripts/docker-check
+      - scripts/docker-game-check.mjs
       - .github/scripts/summarize-images
       - packages/server/**
       - packages/client-react/**
